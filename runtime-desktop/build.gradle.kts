@@ -42,6 +42,9 @@ tasks.test {
     providers.gradleProperty("kmediaVlcTestHdrMedia").orNull?.let { hdrMedia ->
         systemProperty("kmediavlc.test.hdrMedia", hdrMedia)
     }
+    providers.gradleProperty("kmediaVlcTestHttpsHdrMedia").orNull?.let { httpsHdrMedia ->
+        systemProperty("kmediavlc.test.httpsHdrMedia", httpsHdrMedia)
+    }
     if (providers.gradleProperty("kmediaVlcDebugCallbacks").orNull == "true") {
         environment("KMEDIAVLC_DEBUG_CALLBACKS", "1")
     }

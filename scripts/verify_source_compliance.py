@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 
@@ -106,6 +107,45 @@ def verify_policy(root: Path) -> None:
         if not isinstance(expression, str) or expression.startswith(tuple(forbidden_prefixes)):
             fail(f"Forbidden copyleft expression in bundled policy: {expression!r}")
 
+    playback = load_json(root / "compliance/policy/windows-x86_64-playback-modules.json")
+    if playback.get("schemaVersion") != 1 or playback.get("target") != "windows-x86_64":
+        fail("Windows playback module policy has an unsupported identity.")
+    if playback.get("vlcRevision") != PINNED_REVISION:
+        fail("Windows playback module policy targets a different VLC revision.")
+    if playback.get("reviewStatus") not in {"pending-meson-dependency-audit", "approved"}:
+        fail("Windows playback module policy has an invalid review state.")
+    if playback.get("primaryLicenseSpdx") != "LGPL-2.1-or-later":
+        fail("Windows playback modules lost their reviewed primary license.")
+    families = playback.get("modulesByFamily")
+    expected_families = {
+        "access", "access/http", "audio_filter", "audio_mixer", "audio_output",
+        "codec", "demux", "hw/d3d11", "keystore", "logger", "misc", "packetizer",
+        "stream_filter", "text_renderer", "video_chroma", "video_output",
+        "video_output/win32",
+    }
+    if not isinstance(families, dict) or set(families) != expected_families:
+        fail("Windows playback module families are incomplete or overbroad.")
+    modules: list[str] = []
+    for family, names in families.items():
+        if not isinstance(names, list) or names != sorted(names) or not names:
+            fail(f"Windows playback module family is not a closed sorted list: {family}")
+        modules.extend(names)
+    if (
+        len(modules) != 90
+        or len(set(modules)) != len(modules)
+        or any(not isinstance(name, str) or not re.fullmatch(r"[a-z0-9_]+", name) for name in modules)
+    ):
+        fail("Windows playback module allowlist must contain 90 unique safe modules.")
+    if set(families).intersection(policy.get("forbiddenPluginFamilies", [])):
+        fail("Windows playback allowlist contains a forbidden plugin family.")
+    expected_additional = {
+        "mkv": ["MIT"],
+        "opus": ["BSD-3-Clause"],
+        "ts": ["BSD-3-Clause"],
+    }
+    if playback.get("additionalDirectSourceLicenses") != expected_additional:
+        fail("Windows playback direct-source license exceptions changed without review.")
+
     recipe = load_json(root / "build-recipes/windows.json")
     if recipe.get("vlcRevision") != PINNED_REVISION:
         fail("Windows build recipe does not match the pinned VLC revision.")
@@ -124,7 +164,7 @@ def verify_policy(root: Path) -> None:
     if recipe.get("nativeValidationRunner") != "windows-2022":
         fail("Source-built Windows binaries must be loaded and tested on a native Windows runner.")
     arguments = recipe.get("libVlcBuildArguments")
-    if not isinstance(arguments, list) or not all(flag in arguments for flag in ["-r", "-u", "-z", "-g", "a", "-m"]):
+    if not isinstance(arguments, list) or not all(flag in arguments for flag in ["-r", "-u", "-z", "-g", "l", "-m"]):
         fail("Windows VLC recipe is missing required release/UCRT/headless/LGPL flags.")
     if recipe.get("usesPrebuiltContribs") is not False:
         fail("Release recipe must build contribs from their verified source inputs.")
@@ -160,6 +200,8 @@ def verify_policy(root: Path) -> None:
         "KMEDIAVLC_TEST_PLUGIN_CACHE",
         "49b960ac28ae13153ba8e62e3fceb50408564c21f25fc38936e7c8a06b61f2db",
         "pinnedChromiumHdr10FixturePublishesFp16D3D11Frame",
+        "pinnedChromiumHttpsFixturePublishesCpuPullFrame",
+        "85af8764718f33f0d221e96f31f5d993f364b4a2",
         "intro-targets.json",
         'cp -a "$meson_info"',
     ]

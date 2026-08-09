@@ -38,14 +38,15 @@ if [[ -n "$(git -C "$source_directory" status --porcelain --untracked-files=no)"
 fi
 
 # This is VideoLAN's exact pinned Windows recipe in release/UCRT/headless mode.
-# -g a disables GPL and GNUv3 contribs. Prebuilt contribs are intentionally not
-# requested; the release inventory still audits every resulting binary/plugin.
+# -g l disables GPL contribs while permitting LGPLv3 dependencies required by
+# the HTTPS/TLS module. Prebuilt contribs are intentionally not requested; the
+# release inventory still audits every resulting binary/plugin.
 cd "$source_directory"
 ./extras/package/win32/build.sh \
     -r \
     -u \
     -z \
-    -g a \
+    -g l \
     -m \
     -a "$architecture"
 

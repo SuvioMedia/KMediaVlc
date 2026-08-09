@@ -169,6 +169,39 @@ final class VlcDesktopPlayerIntegrationTest {
         }
     }
 
+    @Test
+    void pinnedChromiumHttpsFixturePublishesCpuPullFrame() throws Exception {
+        String media = System.getProperty("kmediavlc.test.httpsHdrMedia");
+        Assumptions.assumeTrue(media != null, "The immutable Chromium HTTPS fixture is opt-in.");
+        var fixture = fixture();
+        var signal = new CountDownLatch(1);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.CPU_PULL,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        signal.countDown();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
+            assertTrue(player.open(media, Map.of(), true));
+            assertTrue(
+                    signal.await(30, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "No HTTPS CPU frame arrived."));
+            try (var frame = player.acquireLatestFrame().orElseThrow()) {
+                assertEquals(VlcNativeHandleType.CPU_ADDRESS, frame.handleType());
+                assertEquals(VlcPixelFormat.RGBA8_SRGB, frame.pixelFormat());
+                assertTrue(frame.width() > 0);
+                assertTrue(frame.height() > 0);
+                assertTrue(frame.cpuPixels().orElseThrow().remaining() >= frame.width() * frame.height() * 4);
+            }
+        }
+    }
+
     private Fixture fixture() throws Exception {
         String bridge = System.getProperty("kmediavlc.test.nativeBridge");
         String libVlc = System.getProperty("kmediavlc.test.libVlc");

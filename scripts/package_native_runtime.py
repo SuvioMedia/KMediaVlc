@@ -128,11 +128,11 @@ def validate_inventory(inventory: dict, policy: dict, target: str, staging: Path
         if license_spdx not in allowed_licenses:
             fail(f"Forbidden or unknown license {license_spdx!r} for {relative_text}")
         role = entry["role"]
-        if role not in {"BRIDGE", "LIBVLC", "CORE", "PLUGIN", "DEPENDENCY", "LEGAL"}:
+        if role not in {"BRIDGE", "LIBVLC", "CORE", "PLUGIN", "DEPENDENCY", "DATA", "LEGAL"}:
             fail(f"Unknown file role for {relative_text}")
         roles.add(role)
         linkage = entry["linkage"]
-        expected_linkage = "NONE" if role == "LEGAL" else "DYNAMIC"
+        expected_linkage = "NONE" if role in {"DATA", "LEGAL"} else "DYNAMIC"
         if linkage != expected_linkage:
             fail(f"Unsafe linkage {linkage!r} for {relative_text}; expected {expected_linkage}")
         if role == "PLUGIN" and relative.parts[1:2] and relative.parts[1] in forbidden_families:

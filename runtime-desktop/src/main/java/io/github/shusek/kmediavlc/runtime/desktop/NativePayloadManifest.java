@@ -139,7 +139,8 @@ record NativePayloadManifest(
             String source = required(properties, prefix + "source");
             validateSourceOffer(source);
             Linkage linkage = parseEnum(required(properties, prefix + "linkage"), Linkage.class, "file linkage");
-            Linkage expectedLinkage = role == FileRole.LEGAL ? Linkage.NONE : Linkage.DYNAMIC;
+            Linkage expectedLinkage =
+                    role == FileRole.DATA || role == FileRole.LEGAL ? Linkage.NONE : Linkage.DYNAMIC;
             if (linkage != expectedLinkage) {
                 return reject("Native manifest contains unsafe or incomplete relinking metadata.");
             }
@@ -339,6 +340,7 @@ record NativePayloadManifest(
         CORE,
         PLUGIN,
         DEPENDENCY,
+        DATA,
         LEGAL
     }
 

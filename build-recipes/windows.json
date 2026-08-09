@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "videolan-vlc-windows-lgplv21",
+  "id": "videolan-vlc-windows-lgpl",
   "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
   "publicationTargets": ["windows-x86_64", "windows-aarch64"],
   "auditToolchainImage": "registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331",
@@ -9,7 +9,7 @@
   "wineUse": "Meson-cross-executable-sanity-only",
   "nativeValidationRunner": "windows-2022",
   "upstreamBuildScript": "extras/package/win32/build.sh",
-  "libVlcBuildArguments": ["-r", "-u", "-z", "-g", "a", "-m"],
+  "libVlcBuildArguments": ["-r", "-u", "-z", "-g", "l", "-m"],
   "mesonInstallTags": ["runtime"],
   "stripInstalledTargets": true,
   "usesPrebuiltContribs": false,

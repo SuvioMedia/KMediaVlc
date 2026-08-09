@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "target": "windows-x86_64",
+  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+  "reviewStatus": "pending-meson-dependency-audit",
+  "primaryLicenseSpdx": "LGPL-2.1-or-later",
+  "additionalDirectSourceLicenses": {
+    "mkv": ["MIT"],
+    "opus": ["BSD-3-Clause"],
+    "ts": ["BSD-3-Clause"]
+  },
+  "modulesByFamily": {
+    "access": [
+      "access_mms",
+      "data",
+      "filesystem",
+      "ftp",
+      "http",
+      "sftp",
+      "tcp",
+      "udp"
+    ],
+    "access/http": [
+      "https",
+      "webdav"
+    ],
+    "audio_filter": [
+      "audio_format",
+      "simple_channel_mixer",
+      "soxr",
+      "speex_resampler",
+      "tospdif",
+      "trivial_channel_mixer"
+    ],
+    "audio_mixer": [
+      "float_mixer",
+      "integer_mixer"
+    ],
+    "audio_output": [
+      "adummy",
+      "mmdevice",
+      "wasapi"
+    ],
+    "codec": [
+      "avcodec",
+      "d3d11va",
+      "flac",
+      "jpeg",
+      "libass",
+      "mft",
+      "opus",
+      "png",
+      "rawvideo",
+      "spdif",
+      "subsdec",
+      "substx3g",
+      "vorbis",
+      "webvtt"
+    ],
+    "demux": [
+      "adaptive",
+      "asf",
+      "avi",
+      "es",
+      "h26x",
+      "image",
+      "mkv",
+      "mp4",
+      "ogg",
+      "playlist",
+      "ps",
+      "subtitle",
+      "ts",
+      "wav"
+    ],
+    "hw/d3d11": [
+      "direct3d11_filters"
+    ],
+    "keystore": [
+      "memory_keystore"
+    ],
+    "logger": [
+      "console_logger"
+    ],
+    "misc": [
+      "gnutls",
+      "xml"
+    ],
+    "packetizer": [
+      "packetizer_a52",
+      "packetizer_av1",
+      "packetizer_copy",
+      "packetizer_dts",
+      "packetizer_flac",
+      "packetizer_h264",
+      "packetizer_hevc",
+      "packetizer_mjpeg",
+      "packetizer_mlp",
+      "packetizer_mpeg4audio",
+      "packetizer_mpeg4video",
+      "packetizer_mpegaudio",
+      "packetizer_mpegvideo",
+      "packetizer_vc1"
+    ],
+    "stream_filter": [
+      "cache_read",
+      "inflate",
+      "prefetch",
+      "record",
+      "skiptags"
+    ],
+    "text_renderer": [
+      "freetype",
+      "tdummy"
+    ],
+    "video_chroma": [
+      "chain",
+      "i420_nv12",
+      "i420_rgb_sse2",
+      "orient",
+      "rv32",
+      "swscale",
+      "yuvp",
+      "yuy2_i420",
+      "yuy2_i422"
+    ],
+    "video_output": [
+      "vmem",
+      "wdummy",
+      "wextern"
+    ],
+    "video_output/win32": [
+      "direct3d11",
+      "win32_window",
+      "winhibit"
+    ]
+  }
+}

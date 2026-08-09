@@ -127,6 +127,21 @@ class PackageNativeRuntimePolicyTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.validate()
 
+    def test_accepts_generated_plugin_cache_as_non_linked_data(self) -> None:
+        cache = self.staging / "plugins/plugins.dat"
+        cache.write_bytes(b"closed plugin cache")
+        self.inventory["files"].append(
+            {
+                "path": "plugins/plugins.dat",
+                "component": "videolan-vlc",
+                "licenseSpdx": "LGPL-2.1-or-later",
+                "role": "DATA",
+                "source": "sources/vlc.tar.xz",
+                "linkage": "NONE",
+            }
+        )
+        self.assertEqual(5, len(self.validate()))
+
 
 if __name__ == "__main__":
     unittest.main()
