@@ -549,14 +549,27 @@ jobs:
             --source-offer $sourceOffer `
             --allow-audit-candidate
           if ($LASTEXITCODE -ne 0) { throw 'Candidate component inventory generation failed.' }
-          .\gradlew.bat :runtime-desktop:verifyRuntimeJar `
+          .\gradlew.bat :runtime-desktop:verifyRuntimeJar :runtime-desktop:test `
             "-PpublicationVersion=$env:CANDIDATE_VERSION" `
             "-PkmediaVlcNativeStagingDirectory=$env:KMEDIAVLC_CANDIDATE" `
             "-PkmediaVlcNativeInventory=$inventory" `
             -PkmediaVlcNativeTarget=windows-x86_64 `
             "-PkmediaVlcSourceOffer=$sourceOffer" `
             "-PrecipeRevision=$env:TESTED_COMMIT" `
+            -PkmediaVlcTestBundledRuntime=true `
+            --rerun-tasks `
             --no-daemon --stacktrace --console=plain
+          $bundled = @(
+            Get-ChildItem runtime-desktop\build\test-results\test -Filter 'TEST-*.xml' |
+              ForEach-Object { ([xml](Get-Content -LiteralPath $_.FullName -Raw)).testsuite.testcase } |
+              Where-Object { $_.name -eq 'bundledRuntimeExtractsAndPublishesCpuPullFrame' }
+          )
+          if ($bundled.Count -ne 1 -or $null -ne $bundled[0].skipped) {
+            throw 'The packaged-JAR extraction and playback test did not execute.'
+          }
+          $evidence = Join-Path $env:RUNNER_TEMP 'windows-validation-evidence'
+          Copy-Item -LiteralPath 'runtime-desktop\build\test-results\test' `
+            -Destination (Join-Path $evidence 'bundled-test-results') -Recurse
           $jar = Join-Path $env:GITHUB_WORKSPACE `
             "runtime-desktop\build\libs\runtime-desktop-$env:CANDIDATE_VERSION.jar"
           if (-not (Test-Path -LiteralPath $jar -PathType Leaf)) {

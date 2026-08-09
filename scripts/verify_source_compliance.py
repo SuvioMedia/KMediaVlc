@@ -271,6 +271,7 @@ def verify_policy(root: Path) -> None:
         "package_corresponding_source.py",
         "create_windows_native_inventory.py",
         ":runtime-desktop:verifyRuntimeJar",
+        "bundledRuntimeExtractsAndPublishesCpuPullFrame",
     ]
     if not all(marker in audit_workflow for marker in native_validation_markers):
         fail("The source-built VLC payload lacks mandatory native Windows validation.")

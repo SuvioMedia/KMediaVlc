@@ -22,6 +22,41 @@ final class VlcDesktopPlayerIntegrationTest {
     @TempDir Path temporaryDirectory;
 
     @Test
+    void bundledRuntimeExtractsAndPublishesCpuPullFrame() throws Exception {
+        Assumptions.assumeTrue(Boolean.getBoolean("kmediavlc.test.bundledRuntime"));
+        Path image = createImage();
+        var inspection = VlcDesktopRuntime.inspectBundled();
+        assertTrue(inspection.available());
+        var runtime = VlcDesktopRuntime.resolveBundled(
+                temporaryDirectory.resolve("bundled-runtime").toAbsolutePath());
+        var signal = new CountDownLatch(1);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.CPU_PULL,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        signal.countDown();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(runtime, config)) {
+            assertTrue(player.open(image.toUri().toString(), Map.of(), true));
+            assertTrue(
+                    signal.await(15, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "No bundled-runtime CPU frame arrived."));
+            try (var frame = player.acquireLatestFrame().orElseThrow()) {
+                assertEquals(VlcNativeHandleType.CPU_ADDRESS, frame.handleType());
+                assertEquals(VlcPixelFormat.RGBA8_SRGB, frame.pixelFormat());
+                assertEquals(64, frame.width());
+                assertEquals(36, frame.height());
+            }
+        }
+    }
+
+    @Test
     void pinnedVideoLanFixturePublishesCpuPullFrame() throws Exception {
         var fixture = fixture();
         var signal = new CountDownLatch(1);
@@ -209,16 +244,7 @@ final class VlcDesktopPlayerIntegrationTest {
         Assumptions.assumeTrue(
                 bridge != null && libVlc != null && plugins != null,
                 "The exact-commit VideoLAN fixture is opt-in and never a release payload.");
-        Path image = temporaryDirectory.resolve("frame.png");
-        var pixels = new BufferedImage(64, 36, BufferedImage.TYPE_INT_ARGB);
-        var graphics = pixels.createGraphics();
-        try {
-            graphics.setColor(new Color(255, 32, 8, 255));
-            graphics.fillRect(0, 0, 64, 36);
-        } finally {
-            graphics.dispose();
-        }
-        assertTrue(ImageIO.write(pixels, "png", image.toFile()));
+        Path image = createImage();
         var runtime = new VlcDesktopRuntimeResolution(
                 Path.of(bridge).toAbsolutePath(),
                 Path.of(libVlc).toAbsolutePath(),
@@ -233,6 +259,20 @@ final class VlcDesktopPlayerIntegrationTest {
                         Set.of(VlcRenderEngine.D3D11),
                         true));
         return new Fixture(runtime, image);
+    }
+
+    private Path createImage() throws Exception {
+        Path image = temporaryDirectory.resolve("frame.png");
+        var pixels = new BufferedImage(64, 36, BufferedImage.TYPE_INT_ARGB);
+        var graphics = pixels.createGraphics();
+        try {
+            graphics.setColor(new Color(255, 32, 8, 255));
+            graphics.fillRect(0, 0, 64, 36);
+        } finally {
+            graphics.dispose();
+        }
+        assertTrue(ImageIO.write(pixels, "png", image.toFile()));
+        return image;
     }
 
     private static String timeoutDiagnostics(VlcDesktopPlayer player, String fallback) {
