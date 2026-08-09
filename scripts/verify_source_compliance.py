@@ -111,6 +111,10 @@ def verify_policy(root: Path) -> None:
         fail("Windows build recipe does not match the pinned VLC revision.")
     if recipe.get("publicationTargets") != ["windows-x86_64", "windows-aarch64"]:
         fail("The initial publication target matrix must remain Windows-only.")
+    if recipe.get("auditToolchainImage") != (
+        "registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331"
+    ):
+        fail("Windows VLC audit must use the toolchain selected by the pinned upstream revision.")
     arguments = recipe.get("libVlcBuildArguments")
     if not isinstance(arguments, list) or not all(flag in arguments for flag in ["-r", "-u", "-z", "-g", "a", "-m"]):
         fail("Windows VLC recipe is missing required release/UCRT/headless/LGPL flags.")

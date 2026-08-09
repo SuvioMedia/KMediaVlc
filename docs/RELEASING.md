@@ -29,6 +29,15 @@ The release inventory is a reviewed input, not a generated license guess. A
 new or renamed DLL/plugin stops publication until its provenance and license
 are reviewed. The current stock-nightly test fixture is never release input.
 
+For the first build of a revision, dispatch `Build source VLC Windows audit
+candidate` with the exact tested KMediaVlc commit. It runs the pinned VideoLAN
+UCRT container, builds VLC and its contribs from source, and retains a
+seven-day audit artifact containing the installed-file hashes, contrib-source
+hashes, toolchain evidence, the runtime candidate, and a corresponding-source
+candidate. This workflow cannot create a tag, release, or Maven deployment.
+Review its complete DLL/plugin inventory and upstream licenses before using
+any of those bytes as release inputs.
+
 ## Stage the Maven repository
 
 With the audited paths available, publish into a new empty directory. The

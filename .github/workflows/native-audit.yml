@@ -1,0 +1,146 @@
+# SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+
+name: Build source VLC Windows audit candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      tested_commit:
+        description: Exact forty-character KMediaVlc commit tested locally
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kmediavlc-native-audit-${{ inputs.tested_commit }}
+  cancel-in-progress: false
+
+jobs:
+  windows-x86-64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    container:
+      image: registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331
+      options: --user 0
+    env:
+      TESTED_COMMIT: ${{ inputs.tested_commit }}
+      VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+      TOOLCHAIN_IMAGE: registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331
+    steps:
+      - name: Check out the exact KMediaVlc revision
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ inputs.tested_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check out the exact VLC source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          repository: videolan/vlc
+          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          path: .vlc-source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind the audit candidate to immutable sources
+        shell: bash
+        run: |
+          [[ "$TESTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$TESTED_COMMIT"
+          test "$(git -C .vlc-source rev-parse HEAD)" = "$VLC_REVISION"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          test -z "$(git -C .vlc-source status --porcelain --untracked-files=no)"
+          python3 scripts/verify_source_compliance.py --root .
+
+      - name: Verify and record the UCRT toolchain
+        shell: bash
+        run: |
+          cc=x86_64-w64-mingw32-gcc
+          command -v "$cc"
+          command -v x86_64-w64-mingw32-g++
+          command -v x86_64-w64-mingw32-strip
+          command -v x86_64-w64-mingw32-windres
+          command -v meson
+          if printf '#include <crtdefs.h>\n#if defined(_UCRT) || (__MSVCRT_VERSION__ >= 0x1400) || (__MSVCRT_VERSION__ >= 0xE00 && __MSVCRT_VERSION__ < 0x1000)\n#error UCRT\n#endif\n' |
+              "$cc" -E - >/dev/null 2>&1; then
+            echo "The selected compiler is not a UCRT toolchain." >&2
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/audit-assets"
+          {
+            echo "container=$TOOLCHAIN_IMAGE"
+            echo "kmediavlc=$TESTED_COMMIT"
+            echo "vlc=$VLC_REVISION"
+            "$cc" --version
+            meson --version
+            cat /etc/os-release
+            printf '\nUCRT macros:\n'
+            printf '#include <crtdefs.h>\n' | "$cc" -dM -E - | sort |
+              grep -E '^#define (_UCRT|__MSVCRT_VERSION__|_WIN32_WINNT|WINVER)'
+          } > "$RUNNER_TEMP/audit-assets/toolchain.txt"
+
+      - name: Build headless libVLC and every contrib from source
+        shell: bash
+        env:
+          JOBS: 4
+        run: |
+          bash scripts/build_vlc_windows.sh \
+            "$GITHUB_WORKSPACE/.vlc-source" \
+            x86_64 \
+            "$RUNNER_TEMP/vlc-install"
+
+      - name: Close the candidate file and source inventories
+        shell: bash
+        run: |
+          test "$(find "$RUNNER_TEMP/vlc-install" -type f -iname libvlc.dll | wc -l)" -eq 1
+          test "$(find "$RUNNER_TEMP/vlc-install" -type f -iname libvlccore.dll | wc -l)" -eq 1
+          test "$(find "$RUNNER_TEMP/vlc-install" -type f -iname '*.dll' | wc -l)" -gt 2
+          test -z "$(git -C .vlc-source status --porcelain --untracked-files=no)"
+          (
+            cd "$RUNNER_TEMP/vlc-install"
+            find . -type f -print0 | sort -z | xargs -0 sha256sum
+          ) > "$RUNNER_TEMP/audit-assets/installed-SHA256SUMS"
+          test -s "$RUNNER_TEMP/audit-assets/installed-SHA256SUMS"
+          (
+            cd .vlc-source/contrib/tarballs
+            find . -type f -print0 | sort -z | xargs -0 sha256sum
+          ) > "$RUNNER_TEMP/audit-assets/contrib-source-SHA256SUMS"
+          test -s "$RUNNER_TEMP/audit-assets/contrib-source-SHA256SUMS"
+
+      - name: Package the audit runtime and complete source candidate
+        shell: bash
+        run: |
+          epoch="$(git show -s --format=%ct "$TESTED_COMMIT")"
+          source_root="$RUNNER_TEMP/corresponding-source"
+          mkdir -p \
+            "$source_root/kmediavlc" \
+            "$source_root/vlc" \
+            "$source_root/contrib-tarballs"
+          git archive "$TESTED_COMMIT" | tar -xf - -C "$source_root/kmediavlc"
+          git -C .vlc-source archive "$VLC_REVISION" | tar -xf - -C "$source_root/vlc"
+          cp -a .vlc-source/contrib/tarballs/. "$source_root/contrib-tarballs/"
+          cp "$RUNNER_TEMP/audit-assets/toolchain.txt" "$source_root/BUILD-TOOLCHAIN.txt"
+          cp "$RUNNER_TEMP/audit-assets/contrib-source-SHA256SUMS" \
+            "$source_root/contrib-source-SHA256SUMS"
+          tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
+            -czf "$RUNNER_TEMP/audit-assets/vlc-windows-x86_64-source-build.tar.gz" \
+            -C "$RUNNER_TEMP" vlc-install
+          tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
+            -czf "$RUNNER_TEMP/audit-assets/kmedia-vlc-corresponding-source-candidate.tar.gz" \
+            -C "$RUNNER_TEMP" corresponding-source
+          (
+            cd "$RUNNER_TEMP/audit-assets"
+            sha256sum *.tar.gz > archive-SHA256SUMS
+          )
+
+      - name: Upload the non-release audit candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: vlc-windows-x86_64-source-audit-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit-assets
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

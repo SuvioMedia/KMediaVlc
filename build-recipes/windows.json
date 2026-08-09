@@ -3,6 +3,7 @@
   "id": "videolan-vlc-windows-lgplv21",
   "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
   "publicationTargets": ["windows-x86_64", "windows-aarch64"],
+  "auditToolchainImage": "registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331",
   "upstreamBuildScript": "extras/package/win32/build.sh",
   "libVlcBuildArguments": ["-r", "-u", "-z", "-g", "a", "-m"],
   "usesPrebuiltContribs": false,
