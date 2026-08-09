@@ -34,7 +34,7 @@ FORBIDDEN_BINARY_SUFFIXES = {
     ".so",
 }
 SPDX_EXTENSIONS = {".c", ".cpp", ".h", ".java", ".kt", ".kts", ".md", ".py", ".sh"}
-IGNORED_PARTS = {".git", ".gradle", ".idea", "build", "__pycache__"}
+IGNORED_PARTS = {".git", ".gradle", ".idea", ".vlc-source", "build", "__pycache__"}
 
 
 def fail(message: str) -> None:

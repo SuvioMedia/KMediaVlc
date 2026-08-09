@@ -27,9 +27,13 @@ class SourceCompliancePathTest(unittest.TestCase):
     def test_repository_build_directory_remains_ignored(self) -> None:
         with tempfile.TemporaryDirectory() as value:
             root = Path(value) / "repository"
-            generated = root / "build" / "generated.py"
-            generated.parent.mkdir(parents=True)
-            generated.write_text("print('generated')\n", encoding="utf-8")
+            ignored = [
+                root / "build" / "generated.py",
+                root / ".vlc-source" / "upstream.py",
+            ]
+            for path in ignored:
+                path.parent.mkdir(parents=True)
+                path.write_text("print('external or generated')\n", encoding="utf-8")
             COMPLIANCE.verify_spdx(root)
 
 
