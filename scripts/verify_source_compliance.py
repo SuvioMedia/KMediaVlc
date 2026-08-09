@@ -115,6 +115,12 @@ def verify_policy(root: Path) -> None:
         "registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331"
     ):
         fail("Windows VLC audit must use the toolchain selected by the pinned upstream revision.")
+    if recipe.get("compiler") != "LLVM-MinGW-UCRT":
+        fail("Windows VLC binaries must use the pinned LLVM/MinGW UCRT compiler.")
+    if recipe.get("wineUse") != "Meson-cross-executable-sanity-only":
+        fail("Wine must remain limited to Meson's cross-executable sanity probe.")
+    if recipe.get("nativeValidationRunner") != "windows-2022":
+        fail("Source-built Windows binaries must be loaded and tested on a native Windows runner.")
     arguments = recipe.get("libVlcBuildArguments")
     if not isinstance(arguments, list) or not all(flag in arguments for flag in ["-r", "-u", "-z", "-g", "a", "-m"]):
         fail("Windows VLC recipe is missing required release/UCRT/headless/LGPL flags.")
@@ -124,13 +130,25 @@ def verify_policy(root: Path) -> None:
         fail("Windows release recipe weakened the inventory or nightly prohibition.")
     builder = (root / "scripts/build_vlc_windows.sh").read_text(encoding="utf-8")
     install_markers = [
-        'meson install -C "$meson_build_directory" --destdir "$output_directory"',
+        'meson_executable="$source_directory/extras/tools/build/bin/meson"',
+        '"$meson_executable" install -C "$meson_build_directory" --destdir "$output_directory"',
         'win64-ucrt-meson',
         'winarm64-ucrt-meson',
         'VLC source build produced an empty install payload',
     ]
     if not all(marker in builder for marker in install_markers):
         fail("Windows VLC recipe does not close the headless Meson install step.")
+    audit_workflow = (root / ".github/workflows/native-audit.yml").read_text(encoding="utf-8")
+    native_validation_markers = [
+        "validate-windows-x86-64:",
+        "runs-on: windows-2022",
+        "Build the bridge natively with MSVC",
+        "-PkmediaVlcNativeBridgePath=$bridge",
+        "pinnedVideoLanFixturePublishesCpuPullFrame",
+        "hardware HDR evidence remains mandatory",
+    ]
+    if not all(marker in audit_workflow for marker in native_validation_markers):
+        fail("The source-built VLC payload lacks mandatory native Windows validation.")
 
 
 def verify_pin_occurrences(root: Path) -> None:

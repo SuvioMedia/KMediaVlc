@@ -22,6 +22,11 @@ committed to this repository.
 release, UCRT, headless, LGPLv2.1-compatible mode and intentionally does not
 consume prebuilt contrib archives. Its output is still not publishable until
 every selected DLL and plugin passes the per-file inventory packager.
+The Windows binaries are compiled by the pinned LLVM/MinGW UCRT cross-toolchain;
+Wine is used only for Meson's tiny cross-executable sanity probe. The resulting
+DLLs and the MSVC-built KMediaVlc bridge are then loaded and integration-tested
+on a native `windows-2022` runner. A hosted runner without a physical HDR
+display does not replace the required hardware HDR test.
 
 ## Frame transport
 

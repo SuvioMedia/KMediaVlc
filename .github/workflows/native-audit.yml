@@ -18,7 +18,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  windows-x86-64:
+  build-windows-x86-64:
+    name: Build VLC with the pinned VideoLAN UCRT toolchain
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     container:
@@ -86,14 +87,17 @@ jobs:
 
       - name: Restore the exact source-built contrib cache
         id: contrib_cache
-        uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             .vlc-source/contrib/tarballs
             .vlc-source/contrib/x86_64-w64-mingw32ucrt
             .vlc-source/contrib/contrib-win64-ucrt
             .vlc-source/extras/tools/build
-          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v1
+            .vlc-source/win64-ucrt-meson
+          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v2
+          restore-keys: |
+            vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v1
 
       - name: Build headless libVLC and every contrib from source
         id: source_build
@@ -110,16 +114,17 @@ jobs:
             x86_64 \
             "$RUNNER_TEMP/vlc-install"
 
-      - name: Save source-built contribs for an exact retry
+      - name: Save source-built VLC state for an exact retry
         if: always() && steps.contrib_cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             .vlc-source/contrib/tarballs
             .vlc-source/contrib/x86_64-w64-mingw32ucrt
             .vlc-source/contrib/contrib-win64-ucrt
             .vlc-source/extras/tools/build
-          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v1
+            .vlc-source/win64-ucrt-meson
+          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v2
 
       - name: Require a successful source build
         if: steps.source_build.outcome != 'success'
@@ -170,6 +175,17 @@ jobs:
             sha256sum *.tar.gz > archive-SHA256SUMS
           )
 
+      - name: Upload the runtime for native Windows validation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: vlc-windows-x86_64-runtime-input-${{ inputs.tested_commit }}
+          path: |
+            ${{ runner.temp }}/audit-assets/vlc-windows-x86_64-source-build.tar.gz
+            ${{ runner.temp }}/audit-assets/archive-SHA256SUMS
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
       - name: Upload the non-release audit candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -177,4 +193,178 @@ jobs:
           path: ${{ runner.temp }}/audit-assets
           if-no-files-found: error
           compression-level: 0
+          retention-days: 7
+
+  validate-windows-x86-64:
+    name: Load and test the source-built runtime on Windows
+    needs: build-windows-x86-64
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      TESTED_COMMIT: ${{ inputs.tested_commit }}
+      VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+    steps:
+      - name: Check out the exact KMediaVlc revision
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ inputs.tested_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check out the exact VLC headers
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          repository: videolan/vlc
+          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          path: .vlc-source
+          sparse-checkout: include
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind native validation to immutable sources
+        shell: pwsh
+        run: |
+          if ($env:TESTED_COMMIT -notmatch '^[0-9a-f]{40}$') {
+            throw 'tested_commit must be an exact lowercase commit.'
+          }
+          if ((git rev-parse HEAD).Trim() -ne $env:TESTED_COMMIT) {
+            throw 'KMediaVlc checkout does not match tested_commit.'
+          }
+          if ((git -C .vlc-source rev-parse HEAD).Trim() -ne $env:VLC_REVISION) {
+            throw 'VLC headers do not match the pinned source build.'
+          }
+
+      - name: Set up Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      - name: Download the source-built runtime
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: vlc-windows-x86_64-runtime-input-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/runtime-input
+
+      - name: Verify and extract the exact runtime archive
+        shell: pwsh
+        run: |
+          $inputDirectory = Join-Path $env:RUNNER_TEMP 'runtime-input'
+          $archive = Join-Path $inputDirectory 'vlc-windows-x86_64-source-build.tar.gz'
+          $checksumLine = Get-Content -LiteralPath (Join-Path $inputDirectory 'archive-SHA256SUMS') |
+            Where-Object { $_ -match '  vlc-windows-x86_64-source-build\.tar\.gz$' }
+          if (@($checksumLine).Count -ne 1 -or $checksumLine -notmatch '^([0-9a-f]{64})  ') {
+            throw 'The runtime archive has no unique closed SHA-256 entry.'
+          }
+          $expected = $Matches[1]
+          $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) {
+            throw "Runtime archive digest mismatch: $actual"
+          }
+
+          $extracted = Join-Path $env:RUNNER_TEMP 'source-built-runtime'
+          New-Item -ItemType Directory -Path $extracted | Out-Null
+          & tar.exe -xzf $archive -C $extracted
+          if ($LASTEXITCODE -ne 0) { throw 'Could not extract the source-built runtime.' }
+          $install = Join-Path $extracted 'vlc-install'
+          $libVlc = @(Get-ChildItem -LiteralPath $install -Recurse -File -Filter 'libvlc.dll')
+          $libVlcCore = @(Get-ChildItem -LiteralPath $install -Recurse -File -Filter 'libvlccore.dll')
+          $pluginDirectories = @(
+            Get-ChildItem -LiteralPath $install -Recurse -Directory |
+              Where-Object {
+                $_.Name -eq 'plugins' -and
+                @(Get-ChildItem -LiteralPath $_.FullName -Recurse -File -Filter '*.dll').Count -gt 0
+              }
+          )
+          if ($libVlc.Count -ne 1 -or $libVlcCore.Count -ne 1 -or $pluginDirectories.Count -ne 1) {
+            throw 'The source-built runtime layout is ambiguous or incomplete.'
+          }
+          "KMEDIAVLC_TEST_LIBVLC=$($libVlc[0].FullName)" >> $env:GITHUB_ENV
+          "KMEDIAVLC_TEST_LIBVLCCORE=$($libVlcCore[0].FullName)" >> $env:GITHUB_ENV
+          "KMEDIAVLC_TEST_PLUGINS=$($pluginDirectories[0].FullName)" >> $env:GITHUB_ENV
+
+      - name: Build the bridge natively with MSVC
+        shell: pwsh
+        run: |
+          .\gradlew.bat check complianceCheck buildNativeBridge `
+            "-PkmediaVlcVlcSourceDir=$env:GITHUB_WORKSPACE\.vlc-source" `
+            --no-daemon --stacktrace --console=plain
+
+      - name: Run the bridge and libVLC integration natively
+        shell: pwsh
+        run: |
+          $bridge = Join-Path $env:GITHUB_WORKSPACE `
+            'build\native\windows-x86_64\RelWithDebInfo\kmediavlc_bridge.dll'
+          if (-not (Test-Path -LiteralPath $bridge -PathType Leaf)) {
+            throw 'The MSVC bridge binary is missing.'
+          }
+          .\gradlew.bat :runtime-desktop:test --rerun-tasks `
+            "-PkmediaVlcNativeBridgePath=$bridge" `
+            "-PkmediaVlcTestLibVlcPath=$env:KMEDIAVLC_TEST_LIBVLC" `
+            "-PkmediaVlcTestPluginDirectory=$env:KMEDIAVLC_TEST_PLUGINS" `
+            -PkmediaVlcDebugCallbacks=true `
+            --no-daemon --stacktrace --console=plain
+
+      - name: Require executed native integration tests
+        shell: pwsh
+        run: |
+          $testCases = @(
+            Get-ChildItem runtime-desktop\build\test-results\test -Filter 'TEST-*.xml' |
+              ForEach-Object { ([xml](Get-Content -LiteralPath $_.FullName -Raw)).testsuite.testcase }
+          )
+          foreach ($required in @(
+            'loadsBridgeBuiltAgainstPinnedLibVlcHeaders',
+            'pinnedVideoLanFixturePublishesCpuPullFrame'
+          )) {
+            $test = @($testCases | Where-Object { $_.name -eq $required })
+            if ($test.Count -ne 1 -or $null -ne $test[0].skipped) {
+              throw "Required native test did not execute: $required"
+            }
+          }
+          $gpu = @($testCases | Where-Object {
+            $_.name -eq 'pinnedVideoLanFixtureKeepsSdrD3D11FrameSrgbOnHdrHost'
+          })
+          if ($gpu.Count -ne 1) { throw 'The native D3D11 test result is missing.' }
+          if ($null -ne $gpu[0].skipped) {
+            Write-Host 'Hosted runner has no eligible hardware DXGI adapter; hardware HDR evidence remains mandatory.'
+          } else {
+            Write-Host 'The native D3D11 import test executed on the hosted runner.'
+          }
+
+      - name: Record native Windows validation evidence
+        if: always()
+        shell: pwsh
+        run: |
+          $evidence = Join-Path $env:RUNNER_TEMP 'windows-validation-evidence'
+          New-Item -ItemType Directory -Path $evidence -Force | Out-Null
+          $bridge = Join-Path $env:GITHUB_WORKSPACE `
+            'build\native\windows-x86_64\RelWithDebInfo\kmediavlc_bridge.dll'
+          @(
+            "kmediavlc=$env:TESTED_COMMIT"
+            "vlc=$env:VLC_REVISION"
+            "runner=$env:RUNNER_NAME"
+            "os=$env:RUNNER_OS"
+          ) | Set-Content -LiteralPath (Join-Path $evidence 'environment.txt')
+          foreach ($file in @($bridge, $env:KMEDIAVLC_TEST_LIBVLC, $env:KMEDIAVLC_TEST_LIBVLCCORE)) {
+            if ($file -and (Test-Path -LiteralPath $file -PathType Leaf)) {
+              Get-FileHash -LiteralPath $file -Algorithm SHA256 |
+                Format-List Path,Hash |
+                Out-File -LiteralPath (Join-Path $evidence 'native-SHA256SUMS.txt') -Append
+            }
+          }
+          $results = 'runtime-desktop\build\test-results\test'
+          if (Test-Path -LiteralPath $results) {
+            Copy-Item -LiteralPath $results -Destination (Join-Path $evidence 'test-results') -Recurse
+          }
+
+      - name: Upload native Windows validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: kmediavlc-windows-x86_64-native-validation-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/windows-validation-evidence
+          if-no-files-found: error
           retention-days: 7

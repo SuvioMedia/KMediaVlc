@@ -31,10 +31,15 @@ are reviewed. The current stock-nightly test fixture is never release input.
 
 For the first build of a revision, dispatch `Build source VLC Windows audit
 candidate` with the exact tested KMediaVlc commit. It runs the pinned VideoLAN
-UCRT container, builds VLC and its contribs from source, and retains a
+LLVM/MinGW UCRT container, builds VLC and its contribs from source, then loads
+the resulting DLLs and an MSVC-built bridge on a native `windows-2022` runner.
+Wine is limited to Meson's cross-executable sanity probe during the upstream
+cross-build; it is not the runtime test environment. The workflow retains a
 seven-day audit artifact containing the installed-file hashes, contrib-source
-hashes, toolchain evidence, the runtime candidate, and a corresponding-source
-candidate. This workflow cannot create a tag, release, or Maven deployment.
+hashes, toolchain evidence, the runtime candidate, corresponding-source
+candidate, and native Windows test results. This workflow cannot create a tag,
+release, or Maven deployment. Standard hosted runners have no physical HDR
+display, so separate hardware HDR evidence remains mandatory.
 Review its complete DLL/plugin inventory and upstream licenses before using
 any of those bytes as release inputs.
 
