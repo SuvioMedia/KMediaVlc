@@ -586,6 +586,13 @@ jobs:
             "kmediavlc-windows-x86_64-audit-candidate-$env:TESTED_COMMIT.zip"
           Compress-Archive -Path "$env:KMEDIAVLC_CANDIDATE\*" `
             -DestinationPath $archive -CompressionLevel Optimal
+          $roundTrip = Join-Path $env:RUNNER_TEMP 'windows-x86_64-candidate-round-trip'
+          python scripts/extract_windows_candidate.py `
+            --archive $archive `
+            --inventory $env:KMEDIAVLC_CANDIDATE_INVENTORY `
+            --output $roundTrip `
+            --allow-audit-candidate
+          if ($LASTEXITCODE -ne 0) { throw 'Archived Windows candidate did not round-trip.' }
           "KMEDIAVLC_CANDIDATE_ARCHIVE=$archive" >> $env:GITHUB_ENV
 
       - name: Upload native Windows validation evidence

@@ -1,0 +1,313 @@
+# SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+
+name: Create immutable KMediaVlc release
+run-name: Release KMediaVlc v${{ inputs.version }} from audit ${{ inputs.audit_run_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Immutable release version, including RCs
+        required: true
+        default: 0.1.0-rc.1
+        type: string
+      tested_commit:
+        description: Exact forty-character commit used by the successful native audit
+        required: true
+        type: string
+      audit_run_id:
+        description: Successful native-audit Actions run containing the tested artifacts
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: kmediavlc-release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      VERSION: ${{ inputs.version }}
+      TESTED_COMMIT: ${{ inputs.tested_commit }}
+      AUDIT_RUN_ID: ${{ inputs.audit_run_id }}
+      NATIVE_AUDIT_WORKFLOW_ID: "330617636"
+    steps:
+      - name: Check out the exact audited revision
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ inputs.tested_commit }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Validate the immutable release request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          semver='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?$'
+          [[ "$VERSION" =~ $semver ]]
+          [[ "${VERSION^^}" != *SNAPSHOT* ]]
+          [[ "$TESTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$AUDIT_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          test "$(git rev-parse HEAD)" = "$TESTED_COMMIT"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          python3 scripts/verify_source_compliance.py --root .
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+          test "$(jq -r .reviewStatus compliance/policy/windows-x86_64-playback-modules.json)" = approved
+          test "$(jq -r .reviewStatus compliance/policy/windows-x86_64-binary-components.json)" = approved
+
+          tag="v$VERSION"
+          remote_tag="$(git ls-remote --tags origin "refs/tags/$tag" | awk '{print $1}')"
+          if [[ -n "$remote_tag" && "$remote_tag" != "$TESTED_COMMIT" ]]; then
+            echo "Tag $tag already points to a different commit: $remote_tag" >&2
+            exit 1
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists and will not be replaced." >&2
+            exit 1
+          fi
+
+      - name: Bind every input to the successful native audit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run="$RUNNER_TEMP/audit-run.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$AUDIT_RUN_ID" > "$run"
+          test "$(jq -r .workflow_id "$run")" = "$NATIVE_AUDIT_WORKFLOW_ID"
+          test "$(jq -r .path "$run")" = ".github/workflows/native-audit.yml"
+          test "$(jq -r .event "$run")" = workflow_dispatch
+          test "$(jq -r .status "$run")" = completed
+          test "$(jq -r .conclusion "$run")" = success
+          test "$(jq -r .head_sha "$run")" = "$TESTED_COMMIT"
+          test "$(jq -r .head_repository.full_name "$run")" = "$GITHUB_REPOSITORY"
+
+          artifacts="$RUNNER_TEMP/audit-artifacts.json"
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$AUDIT_RUN_ID/artifacts?per_page=100" \
+            --slurp > "$artifacts"
+          for name in \
+            "vlc-windows-x86_64-source-audit-$TESTED_COMMIT" \
+            "kmediavlc-windows-x86_64-tested-candidate-$TESTED_COMMIT" \
+            "kmediavlc-windows-x86_64-native-validation-$TESTED_COMMIT"; do
+            count="$(jq --arg name "$name" \
+              '[.[].artifacts[] | select(.name == $name and .expired == false)] | length' \
+              "$artifacts")"
+            test "$count" = 1
+          done
+
+      - name: Download the audited source and link evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.audit_run_id }}
+          name: vlc-windows-x86_64-source-audit-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit/source
+
+      - name: Download the exact tested Windows candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.audit_run_id }}
+          name: kmediavlc-windows-x86_64-tested-candidate-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit/candidate
+
+      - name: Download the native Windows test evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.audit_run_id }}
+          name: kmediavlc-windows-x86_64-native-validation-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit/native-validation
+
+      - name: Reopen and verify the closed release inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          unique_file() {
+            local root="$1" pattern="$2"
+            mapfile -d '' matches < <(find "$root" -type f -name "$pattern" -print0)
+            test "${#matches[@]}" -eq 1
+            printf '%s' "${matches[0]}"
+          }
+
+          candidate="$(unique_file "$RUNNER_TEMP/audit/candidate" \
+            "kmediavlc-windows-x86_64-audit-candidate-$TESTED_COMMIT.zip")"
+          inventory="$(unique_file "$RUNNER_TEMP/audit/candidate" \
+            'windows-x86_64-native-inventory.json')"
+          audited_jar="$(unique_file "$RUNNER_TEMP/audit/candidate" \
+            "runtime-desktop-$VERSION.jar")"
+          source_archive="$(unique_file "$RUNNER_TEMP/audit/source" \
+            "kmedia-vlc-$VERSION-corresponding-source-audit.tar.gz")"
+
+          stage="$RUNNER_TEMP/windows-x86_64-stage"
+          python3 scripts/extract_windows_candidate.py \
+            --archive "$candidate" --inventory "$inventory" --output "$stage"
+          python3 scripts/verify_corresponding_source_archive.py \
+            --root . --archive "$source_archive" \
+            --version "$VERSION" --tested-commit "$TESTED_COMMIT"
+
+          release_dir="$RUNNER_TEMP/release"
+          mkdir "$release_dir"
+          final_source="$release_dir/kmedia-vlc-$VERSION-corresponding-source.tar.gz"
+          final_runtime="$release_dir/kmedia-vlc-$VERSION-windows-x86_64-runtime.zip"
+          final_inventory="$release_dir/kmedia-vlc-$VERSION-windows-x86_64-native-inventory.json"
+          cp "$source_archive" "$final_source"
+          cp "$candidate" "$final_runtime"
+          cp "$inventory" "$final_inventory"
+          {
+            echo "KMEDIAVLC_STAGE=$stage"
+            echo "KMEDIAVLC_INVENTORY=$inventory"
+            echo "KMEDIAVLC_AUDITED_JAR=$audited_jar"
+            echo "KMEDIAVLC_SOURCE_ARCHIVE=$final_source"
+            echo "KMEDIAVLC_RELEASE_DIR=$release_dir"
+          } >> "$GITHUB_ENV"
+
+      - name: Set up Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      - name: Build the public Maven repository from the audited payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          repository="$RUNNER_TEMP/maven-repository"
+          mkdir "$repository"
+          source_offer="https://github.com/SuvioMedia/KMediaVlc/releases/download/v$VERSION/kmedia-vlc-$VERSION-corresponding-source.tar.gz"
+          ./gradlew check complianceCheck \
+            :runtime-desktop:publishMavenPublicationToReleaseRepository \
+            -PpublicationVersion="$VERSION" \
+            -PkmediaVlcNativeStagingDirectory="$KMEDIAVLC_STAGE" \
+            -PkmediaVlcNativeInventory="$KMEDIAVLC_INVENTORY" \
+            -PkmediaVlcNativeTarget=windows-x86_64 \
+            -PkmediaVlcSourceOffer="$source_offer" \
+            -PrecipeRevision="$TESTED_COMMIT" \
+            -PcorrespondingSourceArchive="$KMEDIAVLC_SOURCE_ARCHIVE" \
+            -PreleaseRepository="$repository" \
+            --no-daemon --stacktrace --console=plain
+          python3 scripts/build_maven_central_bundle.py normalize \
+            --staging "$repository" --version "$VERSION"
+
+          primary="$repository/io/github/shusek/kmedia-vlc-runtime-desktop/$VERSION/kmedia-vlc-runtime-desktop-$VERSION.jar"
+          test -s "$primary"
+          test "$(sha256sum "$primary" | awk '{print $1}')" = \
+            "$(sha256sum "$KMEDIAVLC_AUDITED_JAR" | awk '{print $1}')"
+          repository_asset="$KMEDIAVLC_RELEASE_DIR/kmedia-vlc-$VERSION-maven-repository.tar.gz"
+          python3 scripts/package_release_repository.py \
+            --staging "$repository" --version "$VERSION" \
+            --epoch "$(git show -s --format=%ct HEAD)" --output "$repository_asset"
+
+      - name: Package release evidence and legal notices
+        shell: bash
+        run: |
+          set -euo pipefail
+          epoch="$(git show -s --format=%ct HEAD)"
+          evidence="$RUNNER_TEMP/release-evidence"
+          mkdir -p "$evidence/source-build" "$evidence/native-validation" "$evidence/release"
+          rsync -a --exclude='*.tar.gz' "$RUNNER_TEMP/audit/source/" "$evidence/source-build/"
+          rsync -a "$RUNNER_TEMP/audit/native-validation/" "$evidence/native-validation/"
+          cp "$RUNNER_TEMP/audit-run.json" "$evidence/release/audit-run.json"
+          cp "$RUNNER_TEMP/audit-artifacts.json" "$evidence/release/audit-artifacts.json"
+          {
+            echo "version=$VERSION"
+            echo "tested_commit=$TESTED_COMMIT"
+            echo "audit_run_id=$AUDIT_RUN_ID"
+          } > "$evidence/release/release-inputs.txt"
+          (
+            cd "$KMEDIAVLC_RELEASE_DIR"
+            sha256sum \
+              "kmedia-vlc-$VERSION-corresponding-source.tar.gz" \
+              "kmedia-vlc-$VERSION-windows-x86_64-runtime.zip" \
+              "kmedia-vlc-$VERSION-windows-x86_64-native-inventory.json" \
+              "kmedia-vlc-$VERSION-maven-repository.tar.gz" \
+              > "$evidence/release/release-input-SHA256SUMS"
+          )
+          evidence_asset="$KMEDIAVLC_RELEASE_DIR/kmedia-vlc-$VERSION-release-evidence.tar.gz"
+          tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
+            -czf "$evidence_asset" -C "$RUNNER_TEMP" release-evidence
+
+          cp LICENSE NOTICE THIRD_PARTY_NOTICES.md "$KMEDIAVLC_RELEASE_DIR/"
+          cp docs/LICENSING.md docs/RELINKING.md "$KMEDIAVLC_RELEASE_DIR/"
+          (
+            cd "$KMEDIAVLC_RELEASE_DIR"
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%P\0' | sort -z | \
+              xargs -0 sha256sum > SHA256SUMS
+            sha256sum -c SHA256SUMS
+          )
+
+      - name: Create the immutable tag and GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v$VERSION"
+          remote_tag="$(git ls-remote --tags origin "refs/tags/$tag" | awk '{print $1}')"
+          if [[ -z "$remote_tag" ]]; then
+            git push origin "$TESTED_COMMIT:refs/tags/$tag"
+          elif [[ "$remote_tag" != "$TESTED_COMMIT" ]]; then
+            echo "Tag $tag changed during the release build." >&2
+            exit 1
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag appeared during the release build and will not be modified." >&2
+            exit 1
+          fi
+
+          notes="$RUNNER_TEMP/release-notes.md"
+          {
+            echo "Optional KMediaVlc libVLC 4 preview backend for desktop."
+            echo
+            echo "- Audited KMediaVlc commit: \`$TESTED_COMMIT\`"
+            echo "- Native source build and Windows validation: https://github.com/$GITHUB_REPOSITORY/actions/runs/$AUDIT_RUN_ID"
+            echo "- Windows runtime: source-built VLC 4 UCRT payload plus the natively built MSVC bridge"
+            echo "- Maven coordinate: \`io.github.shusek:kmedia-vlc-runtime-desktop:$VERSION\`"
+            echo "- The corresponding-source and relinking assets accompany the LGPL payload."
+            echo
+            echo "This is a prerelease. Hosted Actions validates loading, HTTPS playback, CPU pull frames, packaging and available D3D11 paths; physical-display HDR acceptance remains a separate hardware test."
+          } > "$notes"
+          mapfile -d '' assets < <(find "$KMEDIAVLC_RELEASE_DIR" -maxdepth 1 -type f -print0 | sort -z)
+          test "${#assets[@]}" -ge 10
+          gh release create "$tag" "${assets[@]}" \
+            --verify-tag \
+            --title "KMediaVlc $VERSION" \
+            --notes-file "$notes" \
+            --prerelease
+
+      - name: Re-download and verify every public release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          public="$RUNNER_TEMP/public-release"
+          mkdir "$public"
+          gh release download "v$VERSION" --dir "$public"
+          (
+            cd "$public"
+            sha256sum -c SHA256SUMS
+            expected="$(mktemp)"
+            actual="$(mktemp)"
+            { awk '{print $2}' SHA256SUMS; echo SHA256SUMS; } | sed 's|^\./||' | sort > "$expected"
+            find . -maxdepth 1 -type f -printf '%P\n' | sort > "$actual"
+            cmp "$expected" "$actual"
+          )
+          test "$(gh release view "v$VERSION" --json isDraft --jq .isDraft)" = false
+          test "$(gh release view "v$VERSION" --json isPrerelease --jq .isPrerelease)" = true
+          printf 'Published immutable GitHub prerelease v%s from native audit %s.\n' \
+            "$VERSION" "$AUDIT_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
