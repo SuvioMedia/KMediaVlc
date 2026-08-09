@@ -118,6 +118,15 @@ def verify_policy(root: Path) -> None:
         fail("Release recipe must build contribs from their verified source inputs.")
     if recipe.get("requiresPerFileInventory") is not True or recipe.get("forbidsStockNightly") is not True:
         fail("Windows release recipe weakened the inventory or nightly prohibition.")
+    builder = (root / "scripts/build_vlc_windows.sh").read_text(encoding="utf-8")
+    install_markers = [
+        'meson install -C "$meson_build_directory" --destdir "$output_directory"',
+        'win64-ucrt-meson',
+        'winarm64-ucrt-meson',
+        'VLC source build produced an empty install payload',
+    ]
+    if not all(marker in builder for marker in install_markers):
+        fail("Windows VLC recipe does not close the headless Meson install step.")
 
 
 def verify_pin_occurrences(root: Path) -> None:

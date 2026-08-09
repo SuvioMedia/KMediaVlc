@@ -41,7 +41,7 @@ fi
 # -g a disables GPL and GNUv3 contribs. Prebuilt contribs are intentionally not
 # requested; the release inventory still audits every resulting binary/plugin.
 cd "$source_directory"
-exec ./extras/package/win32/build.sh \
+./extras/package/win32/build.sh \
     -r \
     -u \
     -z \
@@ -49,3 +49,25 @@ exec ./extras/package/win32/build.sh \
     -m \
     -a "$architecture" \
     -o "$output_directory"
+
+# With Meson, upstream clears INSTALLER for a headless build and therefore
+# does not execute its guarded install step even when -o is present. Install
+# the already-built tree explicitly so a successful compile cannot yield an
+# empty release payload.
+case "$architecture" in
+    x86_64) readonly meson_build_directory="$source_directory/win64-ucrt-meson" ;;
+    aarch64) readonly meson_build_directory="$source_directory/winarm64-ucrt-meson" ;;
+esac
+if [[ ! -d "$output_directory" ]] ||
+   [[ -z "$(find "$output_directory" -type f -print -quit 2>/dev/null)" ]]; then
+    if [[ ! -d "$meson_build_directory" ]]; then
+        echo "VLC Meson build directory is missing: $meson_build_directory" >&2
+        exit 1
+    fi
+    meson install -C "$meson_build_directory" --destdir "$output_directory"
+fi
+if [[ ! -d "$output_directory" ]] ||
+   [[ -z "$(find "$output_directory" -type f -print -quit 2>/dev/null)" ]]; then
+    echo "VLC source build produced an empty install payload" >&2
+    exit 1
+fi
