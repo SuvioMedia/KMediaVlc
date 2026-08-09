@@ -14,6 +14,7 @@ class NativePayloadManifestTest {
     void acceptsPinnedGpuPushAndCpuPullPayload() {
         var manifest = NativePayloadManifest.parse(validManifest().getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64");
         assertEquals(4, manifest.capabilities().libVlcAbiMajor());
+        assertEquals(NativePayloadManifest.BRIDGE_ABI_VERSION, manifest.capabilities().bridgeAbiVersion());
         assertEquals("0123456789abcdef0123456789abcdef01234567", manifest.recipeRevision());
         assertTrue(manifest.capabilities().frameDeliveryModes().contains(VlcFrameDeliveryMode.GPU_PUSH));
         assertTrue(manifest.capabilities().frameDeliveryModes().contains(VlcFrameDeliveryMode.CPU_PULL));
@@ -56,7 +57,7 @@ class NativePayloadManifestTest {
                 libvlc.abiMajor=4
                 libvlc.version=4.0.0-dev
                 libvlc.revision=%s
-                bridge.abiVersion=1
+                bridge.abiVersion=2
                 runtimeId=kmediavlc4-0123456789abcdef
                 recipeRevision=0123456789abcdef0123456789abcdef01234567
                 sourceOffer=corresponding-source.tar.gz

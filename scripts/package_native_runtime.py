@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 
 PINNED_VERSION = "4.0.0-dev"
 PINNED_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+BRIDGE_ABI_VERSION = 2
 ALLOWED_TARGETS = {
     "windows-x86_64": {"D3D11"},
     "windows-aarch64": {"D3D11"},
@@ -84,6 +85,8 @@ def load_inventory(path: Path) -> dict:
 
 def validate_inventory(inventory: dict, policy: dict, target: str, staging: Path) -> list[dict]:
     staging = staging.resolve(strict=True)
+    if policy.get("bridgeAbiVersion") != BRIDGE_ABI_VERSION:
+        fail("Release policy does not match the native bridge ABI.")
     if inventory.get("schemaVersion") != 1:
         fail("Unsupported component inventory schema.")
     if inventory.get("provenance") != "source-build":
@@ -190,7 +193,7 @@ def manifest_text(
         "libvlc.abiMajor=4",
         f"libvlc.version={PINNED_VERSION}",
         f"libvlc.revision={PINNED_REVISION}",
-        "bridge.abiVersion=1",
+        f"bridge.abiVersion={BRIDGE_ABI_VERSION}",
         f"runtimeId={runtime_id}",
         f"recipeRevision={recipe_revision}",
         f"sourceOffer={source_offer}",

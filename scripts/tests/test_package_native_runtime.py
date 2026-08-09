@@ -86,6 +86,12 @@ class PackageNativeRuntimePolicyTest(unittest.TestCase):
             self.inventory, files, "kmediavlc4-0123456789abcdef", "source.tar.gz", revision
         )
         self.assertIn(f"recipeRevision={revision}\n", manifest)
+        self.assertIn(f"bridge.abiVersion={PACKAGER.BRIDGE_ABI_VERSION}\n", manifest)
+
+    def test_rejects_policy_for_a_different_bridge_abi(self) -> None:
+        self.policy["bridgeAbiVersion"] = PACKAGER.BRIDGE_ABI_VERSION - 1
+        with self.assertRaises(SystemExit):
+            self.validate()
 
     def test_rejects_non_commit_recipe_revision(self) -> None:
         self.assertEqual(

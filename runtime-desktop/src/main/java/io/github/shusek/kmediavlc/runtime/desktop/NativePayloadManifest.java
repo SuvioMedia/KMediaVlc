@@ -31,6 +31,7 @@ record NativePayloadManifest(
 
     static final String VLC_VERSION = "4.0.0-dev";
     static final String VLC_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee";
+    static final int BRIDGE_ABI_VERSION = 2;
     static final int MAX_MANIFEST_BYTES = 256 * 1024;
     private static final int MAX_FILES = 2_048;
     private static final long MAX_FILE_BYTES = 1024L * 1024L * 1024L;
@@ -76,7 +77,10 @@ record NativePayloadManifest(
         requireEqual("4", required(properties, "libvlc.abiMajor"), "libVLC ABI major");
         requireEqual(VLC_VERSION, required(properties, "libvlc.version"), "libVLC version");
         requireEqual(VLC_REVISION, required(properties, "libvlc.revision"), "libVLC revision");
-        requireEqual("1", required(properties, "bridge.abiVersion"), "bridge ABI");
+        requireEqual(
+                Integer.toString(BRIDGE_ABI_VERSION),
+                required(properties, "bridge.abiVersion"),
+                "bridge ABI");
 
         String runtimeId = required(properties, "runtimeId");
         if (!RUNTIME_ID.matcher(runtimeId).matches()) {
