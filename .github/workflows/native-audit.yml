@@ -84,15 +84,47 @@ jobs:
               grep -E '^#define (_UCRT|__MSVCRT_VERSION__|_WIN32_WINNT|WINVER)'
           } > "$RUNNER_TEMP/audit-assets/toolchain.txt"
 
+      - name: Restore the exact source-built contrib cache
+        id: contrib_cache
+        uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            .vlc-source/contrib/tarballs
+            .vlc-source/contrib/x86_64-w64-mingw32ucrt
+            .vlc-source/contrib/contrib-win64-ucrt
+            .vlc-source/extras/tools/build
+          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v1
+
       - name: Build headless libVLC and every contrib from source
+        id: source_build
+        continue-on-error: true
         shell: bash
         env:
+          HOME: ${{ runner.temp }}/container-home
           JOBS: 4
+          WINEPREFIX: ${{ runner.temp }}/wine-prefix
         run: |
+          mkdir -p "$HOME" "$WINEPREFIX"
           bash scripts/build_vlc_windows.sh \
             "$GITHUB_WORKSPACE/.vlc-source" \
             x86_64 \
             "$RUNNER_TEMP/vlc-install"
+
+      - name: Save source-built contribs for an exact retry
+        if: always() && steps.contrib_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            .vlc-source/contrib/tarballs
+            .vlc-source/contrib/x86_64-w64-mingw32ucrt
+            .vlc-source/contrib/contrib-win64-ucrt
+            .vlc-source/extras/tools/build
+          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v1
+
+      - name: Require a successful source build
+        if: steps.source_build.outcome != 'success'
+        shell: bash
+        run: exit 1
 
       - name: Close the candidate file and source inventories
         shell: bash
