@@ -1,0 +1,9 @@
+.gradle/
+.idea/
+build/
+**/build/
+local.properties
+*.iml
+*.log
+__pycache__/
+*.pyc

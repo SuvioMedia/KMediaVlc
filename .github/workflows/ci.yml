@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - name: Check out KMediaVlc
+        uses: actions/checkout@v6
+
+      - name: Check out the exact VLC headers
+        uses: actions/checkout@v6
+        with:
+          repository: videolan/vlc
+          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          path: .vlc-source
+          sparse-checkout: include
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Verify JVM, licensing, and the native bridge
+        shell: pwsh
+        run: >-
+          .\gradlew.bat check complianceCheck buildNativeBridge
+          "-PkmediaVlcVlcSourceDir=$env:GITHUB_WORKSPACE\.vlc-source"
+          --stacktrace --console=plain

@@ -1,0 +1,44 @@
+KMediaVlc Proprietary License 1.0
+
+Copyright (C) 2026 Shusek. All rights reserved.
+
+1. Scope
+
+This license applies only to KMediaVlc material that identifies itself with
+"SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary" (the
+"Proprietary Material"). It does not apply to VideoLAN software or any other
+third-party material, which remains governed by its own license and notices.
+
+2. No general public license
+
+Except for the limited permissions in section 3 or a separate written
+agreement with Shusek (the "Licensor"), no permission is granted to use,
+copy, modify, distribute, sublicense, publish, sell, or create derivative
+works from the Proprietary Material.
+
+3. LGPL interoperability exception
+
+If the Licensor or an authorized redistributor lawfully conveys to you an
+executable combined work containing Proprietary Material and a library
+covered by the GNU Lesser General Public License version 2.1 or later, the
+Licensor grants a non-exclusive, royalty-free license to the supplied
+relinking material solely to modify or replace that LGPL library, relink and
+run the resulting executable for your own use, and reverse engineer the
+combined work solely to debug those modifications.
+
+This exception does not grant a right to distribute, publish, sublicense,
+sell, or provide the Proprietary Material or a modified combined work to
+others. Nothing here restricts permissions granted directly by an upstream
+open-source license.
+
+4. Third-party material
+
+Third-party files and libraries retain their upstream copyright, license,
+notice, source-offer, and replacement requirements. Nothing in this license
+limits or replaces those grants.
+
+5. Disclaimer
+
+THE PROPRIETARY MATERIAL IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE LICENSOR WILL NOT BE LIABLE FOR
+ANY CLAIM OR DAMAGE ARISING FROM ITS USE.

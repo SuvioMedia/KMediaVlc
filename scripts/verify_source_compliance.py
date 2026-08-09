@@ -1,0 +1,161 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+
+PINNED_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+PINNED_VERSION = "4.0.0-dev"
+ALLOWED_LICENSES = {
+    "0BSD",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "LicenseRef-KMediaVlc-Proprietary",
+    "LGPL-2.0-or-later",
+    "LGPL-2.1-or-later",
+    "LGPL-3.0-or-later",
+    "MIT",
+    "MPL-2.0",
+    "Zlib",
+}
+FORBIDDEN_BINARY_SUFFIXES = {
+    ".a",
+    ".dll",
+    ".dylib",
+    ".exe",
+    ".lib",
+    ".o",
+    ".obj",
+    ".so",
+}
+SPDX_EXTENSIONS = {".c", ".cpp", ".h", ".java", ".kt", ".kts", ".md", ".py", ".sh"}
+IGNORED_PARTS = {".git", ".gradle", ".idea", "build", "__pycache__"}
+
+
+def fail(message: str) -> None:
+    raise SystemExit(message)
+
+
+def load_json(path: Path) -> dict:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as failure:
+        fail(f"Invalid JSON file {path}: {failure}")
+    if not isinstance(value, dict):
+        fail(f"JSON root must be an object: {path}")
+    return value
+
+
+def verify_spdx(root: Path) -> None:
+    missing: list[str] = []
+    for path in root.rglob("*"):
+        if not path.is_file() or any(part in IGNORED_PARTS for part in path.parts):
+            continue
+        if path.suffix.lower() not in SPDX_EXTENSIONS:
+            continue
+        head = path.read_text(encoding="utf-8", errors="strict")[:4096]
+        if "SPDX-License-Identifier:" not in head:
+            missing.append(path.relative_to(root).as_posix())
+    if missing:
+        fail("Files without SPDX identifiers: " + ", ".join(sorted(missing)))
+
+
+def verify_no_native_payload(root: Path) -> None:
+    forbidden: list[str] = []
+    for path in root.rglob("*"):
+        if not path.is_file() or any(part in IGNORED_PARTS for part in path.parts):
+            continue
+        lower_name = path.name.lower()
+        if path.suffix.lower() in FORBIDDEN_BINARY_SUFFIXES or ".so." in lower_name:
+            forbidden.append(path.relative_to(root).as_posix())
+    if forbidden:
+        fail("Checked-in native payload is forbidden: " + ", ".join(sorted(forbidden)))
+
+
+def verify_policy(root: Path) -> None:
+    component = load_json(root / "compliance/components/vlc.json")
+    policy = load_json(root / "compliance/policy/release-policy.json")
+    if component.get("revision") != PINNED_REVISION:
+        fail("VLC component revision does not match the pinned bridge ABI.")
+    if component.get("version") != PINNED_VERSION:
+        fail("VLC component version does not match the pinned bridge ABI.")
+    if component.get("stockNightlyReleaseEligible") is not False:
+        fail("Stock VLC nightlies must remain release-ineligible.")
+    if component.get("releaseRequiresPerBinaryLicenseInventory") is not True:
+        fail("Per-binary license inventory must be mandatory.")
+    if policy.get("libvlcAbiMajor") != 4 or policy.get("bridgeAbiVersion") != 1:
+        fail("Release policy ABI pins are invalid.")
+    if sorted(policy.get("requiredFrameDeliveryModes", [])) != ["CPU_PULL", "GPU_PUSH"]:
+        fail("Release policy must require both CPU_PULL and GPU_PUSH.")
+    if policy.get("allowStockNightly") is not False:
+        fail("Release policy must reject stock nightly payloads.")
+    allowed = policy.get("allowedLicenseSpdx")
+    if not isinstance(allowed, list) or set(allowed) != ALLOWED_LICENSES or len(allowed) != len(ALLOWED_LICENSES):
+        fail("Allowed license inventory must match the audited runtime allowlist exactly.")
+    forbidden_prefixes = policy.get("forbiddenLicensePrefixes")
+    if forbidden_prefixes != ["GPL-", "AGPL-", "LicenseRef-NonFree", "unknown"]:
+        fail("Forbidden license prefix policy is incomplete.")
+    for expression in allowed:
+        if not isinstance(expression, str) or expression.startswith(tuple(forbidden_prefixes)):
+            fail(f"Forbidden copyleft expression in bundled policy: {expression!r}")
+
+    recipe = load_json(root / "build-recipes/windows.json")
+    if recipe.get("vlcRevision") != PINNED_REVISION:
+        fail("Windows build recipe does not match the pinned VLC revision.")
+    if recipe.get("publicationTargets") != ["windows-x86_64", "windows-aarch64"]:
+        fail("The initial publication target matrix must remain Windows-only.")
+    arguments = recipe.get("libVlcBuildArguments")
+    if not isinstance(arguments, list) or not all(flag in arguments for flag in ["-r", "-u", "-z", "-g", "a", "-m"]):
+        fail("Windows VLC recipe is missing required release/UCRT/headless/LGPL flags.")
+    if recipe.get("usesPrebuiltContribs") is not False:
+        fail("Release recipe must build contribs from their verified source inputs.")
+    if recipe.get("requiresPerFileInventory") is not True or recipe.get("forbidsStockNightly") is not True:
+        fail("Windows release recipe weakened the inventory or nightly prohibition.")
+
+
+def verify_pin_occurrences(root: Path) -> None:
+    parser = (
+        root
+        / "runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifest.java"
+    ).read_text(encoding="utf-8")
+    notices = (root / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+    if PINNED_REVISION not in parser or PINNED_REVISION not in notices:
+        fail("Pinned VLC revision is not consistent across runtime code and notices.")
+    if PINNED_VERSION not in parser:
+        fail("Pinned VLC version is not enforced by the runtime parser.")
+
+
+def verify_legal_files(root: Path) -> None:
+    required = [
+        root / "LICENSE",
+        root / "NOTICE",
+        root / "THIRD_PARTY_NOTICES.md",
+        root / "LICENSES/LGPL-2.1.txt",
+        root / "LICENSES/ISC-kmediavlc-client-api.txt",
+        root / "gradle/wrapper/LICENSE",
+    ]
+    missing = [str(path.relative_to(root)) for path in required if not path.is_file() or path.stat().st_size < 100]
+    if missing:
+        fail("Missing or truncated legal files: " + ", ".join(missing))
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", type=Path, required=True)
+    args = parser.parse_args()
+    root = args.root.resolve(strict=True)
+    verify_spdx(root)
+    verify_no_native_payload(root)
+    verify_policy(root)
+    verify_pin_occurrences(root)
+    verify_legal_files(root)
+    print("KMediaVlc source and licensing policy verified.")
+
+
+if __name__ == "__main__":
+    main()

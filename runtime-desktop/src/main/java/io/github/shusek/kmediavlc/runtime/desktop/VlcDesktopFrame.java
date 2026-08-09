@@ -1,0 +1,115 @@
+// SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+
+package io.github.shusek.kmediavlc.runtime.desktop;
+
+import java.nio.ByteBuffer;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/** One bridge-owned video frame. Ownership is released exactly once. */
+public final class VlcDesktopFrame implements VlcReleasableFrame {
+    public static final int NO_FENCE = -1;
+
+    private final long nativeFrame;
+    private final long serial;
+    private final long generation;
+    private final long ptsMicroseconds;
+    private final int width;
+    private final int height;
+    private final VlcPixelFormat pixelFormat;
+    private final VlcNativeHandleType handleType;
+    private final long platformHandle;
+    private final int acquireFenceFd;
+    private final int stride;
+    private final int fourcc;
+    private final int offset;
+    private final long modifier;
+    private final float sdrWhiteNits;
+    private final float contentPeakNits;
+    private final boolean premultipliedAlpha;
+    private final ByteBuffer cpuPixels;
+    private final AtomicBoolean released = new AtomicBoolean();
+
+    VlcDesktopFrame(long[] values, ByteBuffer cpuPixels) {
+        long ownedFrame = values != null && values.length > 0 ? values[0] : 0;
+        try {
+            if (values == null || values.length != 18) {
+                throw new VlcRuntimeException(
+                        VlcRuntimeException.Reason.NATIVE_CALL_FAILED,
+                        "The VLC bridge returned malformed frame metadata.");
+            }
+            nativeFrame = requirePositive(values[0], "native frame");
+            serial = requirePositive(values[1], "serial");
+            generation = requirePositive(values[2], "output generation");
+            ptsMicroseconds = values[3];
+            width = requirePositiveInt(values[4], "width");
+            height = requirePositiveInt(values[5], "height");
+            pixelFormat = VlcPixelFormat.fromNative(Math.toIntExact(values[6]));
+            handleType = VlcNativeHandleType.fromNative(Math.toIntExact(values[7]));
+            platformHandle = values[8];
+            acquireFenceFd = Math.toIntExact(values[9]);
+            stride = Math.toIntExact(values[10]);
+            fourcc = Math.toIntExact(values[11]);
+            offset = Math.toIntExact(values[12]);
+            modifier = values[13];
+            sdrWhiteNits = Float.intBitsToFloat(Math.toIntExact(values[14]));
+            contentPeakNits = Float.intBitsToFloat(Math.toIntExact(values[15]));
+            premultipliedAlpha = values[16] != 0;
+            long cpuBytes = values[17];
+            if (handleType == VlcNativeHandleType.CPU_ADDRESS) {
+                if (cpuPixels == null || !cpuPixels.isDirect() || cpuPixels.capacity() != cpuBytes) {
+                    throw new VlcRuntimeException(
+                            VlcRuntimeException.Reason.NATIVE_CALL_FAILED,
+                            "The VLC bridge returned an invalid CPU frame buffer.");
+                }
+                this.cpuPixels = cpuPixels.asReadOnlyBuffer();
+            } else {
+                this.cpuPixels = null;
+            }
+        } catch (RuntimeException failure) {
+            if (ownedFrame > 0) NativeBridge.releaseFrame(ownedFrame, NO_FENCE);
+            throw failure;
+        }
+    }
+
+    @Override public long serial() { return serial; }
+    @Override public long generation() { return generation; }
+    public long ptsMicroseconds() { return ptsMicroseconds; }
+    public int width() { return width; }
+    public int height() { return height; }
+    public VlcPixelFormat pixelFormat() { return pixelFormat; }
+    public VlcNativeHandleType handleType() { return handleType; }
+    public long platformHandle() { return platformHandle; }
+    public int acquireFenceFd() { return acquireFenceFd; }
+    public int stride() { return stride; }
+    public int fourcc() { return fourcc; }
+    public int offset() { return offset; }
+    public long modifier() { return modifier; }
+    public float sdrWhiteNits() { return sdrWhiteNits; }
+    public float contentPeakNits() { return contentPeakNits; }
+    public boolean premultipliedAlpha() { return premultipliedAlpha; }
+    public Optional<ByteBuffer> cpuPixels() {
+        return Optional.ofNullable(cpuPixels).map(ByteBuffer::asReadOnlyBuffer);
+    }
+
+    public void release(int releaseFenceFd) {
+        if (released.compareAndSet(false, true)) {
+            NativeBridge.releaseFrame(nativeFrame, releaseFenceFd);
+        } else if (releaseFenceFd >= 0) {
+            NativeBridge.closeFence(releaseFenceFd);
+        }
+    }
+
+    @Override public void close() { release(NO_FENCE); }
+
+    private static long requirePositive(long value, String name) {
+        if (value <= 0) throw new IllegalArgumentException(name + " must be positive.");
+        return value;
+    }
+
+    private static int requirePositiveInt(long value, String name) {
+        int result = Math.toIntExact(value);
+        if (result <= 0) throw new IllegalArgumentException(name + " must be positive.");
+        return result;
+    }
+}

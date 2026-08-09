@@ -1,0 +1,11 @@
+SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+
+KMediaVlc
+Copyright (C) 2026 Shusek
+
+KMediaVlc is an optional client and distribution boundary for libVLC 4.
+Project-authored loaders, APIs, and adapters retain the repository license.
+VideoLAN VLC, its plugins, and every transitive native dependency retain
+their upstream terms. A release is eligible only when its exact binary graph,
+licenses, notices, source offer, and hashes pass the repository compliance
+policy.

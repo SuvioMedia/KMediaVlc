@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "libvlcAbiMajor": 4,
+  "bridgeAbiVersion": 1,
+  "requiredFrameDeliveryModes": ["GPU_PUSH", "CPU_PULL"],
+  "allowedLicenseSpdx": [
+    "0BSD",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "LicenseRef-KMediaVlc-Proprietary",
+    "LGPL-2.0-or-later",
+    "LGPL-2.1-or-later",
+    "LGPL-3.0-or-later",
+    "MIT",
+    "MPL-2.0",
+    "Zlib"
+  ],
+  "forbiddenLicensePrefixes": ["GPL-", "AGPL-", "LicenseRef-NonFree", "unknown"],
+  "forbiddenPluginFamilies": [
+    "gui",
+    "skins2",
+    "stream_out",
+    "access_output",
+    "services_discovery",
+    "visualization"
+  ],
+  "requireCorrespondingSource": true,
+  "requireDynamicLibVlc": true,
+  "allowStockNightly": false
+}

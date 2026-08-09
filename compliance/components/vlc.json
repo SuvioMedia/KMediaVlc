@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "videolan-vlc",
+  "version": "4.0.0-dev",
+  "revision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+  "source": "https://code.videolan.org/videolan/vlc.git",
+  "projectLicenseSpdx": "LGPL-2.1-or-later",
+  "releaseRequiresPerBinaryLicenseInventory": true,
+  "stockNightlyReleaseEligible": false
+}
