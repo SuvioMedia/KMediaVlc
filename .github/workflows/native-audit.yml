@@ -48,6 +48,8 @@ jobs:
       - name: Bind the audit candidate to immutable sources
         shell: bash
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/.vlc-source"
           [[ "$TESTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
           test "$(git rev-parse HEAD)" = "$TESTED_COMMIT"
           test "$(git -C .vlc-source rev-parse HEAD)" = "$VLC_REVISION"
