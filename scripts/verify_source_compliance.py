@@ -150,6 +150,10 @@ def verify_policy(root: Path) -> None:
         "hardware HDR evidence remains mandatory",
         ".vlc-source/contrib/python-venv",
         'rm -f "$stamp"',
+        "runtime_sha256: ${{ steps.package.outputs.runtime_sha256 }}",
+        "EXPECTED_RUNTIME_SHA256",
+        "Generate the plugin cache natively",
+        "KMEDIAVLC_TEST_PLUGIN_CACHE",
     ]
     if not all(marker in audit_workflow for marker in native_validation_markers):
         fail("The source-built VLC payload lacks mandatory native Windows validation.")

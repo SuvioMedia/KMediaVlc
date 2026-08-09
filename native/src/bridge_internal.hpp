@@ -28,6 +28,7 @@ public:
     decltype(&libvlc_new) new_instance = nullptr;
     decltype(&libvlc_release) release_instance = nullptr;
     decltype(&libvlc_errmsg) error_message = nullptr;
+    decltype(&libvlc_log_set) log_set = nullptr;
     decltype(&libvlc_media_player_new) media_player_new = nullptr;
     decltype(&libvlc_media_player_release) media_player_release = nullptr;
     decltype(&libvlc_media_player_set_media) media_player_set_media = nullptr;

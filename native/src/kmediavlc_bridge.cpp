@@ -6,6 +6,8 @@
 #include <array>
 #include <cctype>
 #include <cmath>
+#include <cstdarg>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -28,9 +30,28 @@ constexpr std::uint32_t kMaximumCpuDimension = 16'384;
 constexpr std::size_t kMaximumCpuFrameBytes = 512U * 1024U * 1024U;
 
 std::mutex g_api_mutex;
+std::mutex g_debug_log_mutex;
 std::shared_ptr<kmediavlc::LibVlcApi> g_api;
 std::filesystem::path g_api_path;
 std::filesystem::path g_plugin_path;
+#if defined(_WIN32)
+std::filesystem::path g_runtime_dll_directory_path;
+PVOID g_runtime_dll_directory_cookie = nullptr;
+#endif
+
+bool diagnostic_logging_enabled() {
+    const char* value = std::getenv("KMEDIAVLC_DEBUG_CALLBACKS");
+    return value != nullptr && value[0] == '1' && value[1] == '\0';
+}
+
+void diagnostic_log(void*, int level, const libvlc_log_t*, const char* format, va_list arguments) {
+    if (!diagnostic_logging_enabled() || format == nullptr) return;
+    std::lock_guard lock(g_debug_log_mutex);
+    std::fprintf(stderr, "[KMediaVlc libVLC level=%d] ", level);
+    std::vfprintf(stderr, format, arguments);
+    std::fputc('\n', stderr);
+    std::fflush(stderr);
+}
 
 std::filesystem::path path_from_utf8(const char* value) {
     if (value == nullptr || *value == '\0') return {};
@@ -65,7 +86,10 @@ bool configure_plugin_directory(const char* value, std::string& error) {
         return false;
     }
 #if defined(_WIN32)
-    if (!SetEnvironmentVariableW(L"VLC_PLUGIN_PATH", path.c_str())) {
+    // libVLC reads VLC_PLUGIN_PATH through the UCRT environment. Updating only
+    // the Win32 environment block with SetEnvironmentVariableW leaves the CRT
+    // copy stale when the host process was already running (for example a JVM).
+    if (_wputenv_s(L"VLC_PLUGIN_PATH", path.c_str()) != 0) {
         error = "The verified VLC_PLUGIN_PATH could not be configured.";
         return false;
     }
@@ -80,6 +104,52 @@ bool configure_plugin_directory(const char* value, std::string& error) {
 }
 
 #if defined(_WIN32)
+bool configure_runtime_dll_directory(const std::filesystem::path& library_path, std::string& error) {
+    const auto directory = library_path.parent_path();
+    if (directory.empty() || !std::filesystem::is_directory(directory)) {
+        error = "The verified libVLC runtime directory is invalid.";
+        return false;
+    }
+    if (g_runtime_dll_directory_cookie != nullptr) {
+        if (g_runtime_dll_directory_path != directory) {
+            error = "One process cannot use DLL directories from two different VLC runtimes.";
+            return false;
+        }
+        return true;
+    }
+
+    const HMODULE kernel32 = GetModuleHandleW(L"kernel32.dll");
+    if (kernel32 == nullptr) {
+        error = "The Windows DLL loader could not be resolved.";
+        return false;
+    }
+    using SetDefaultDllDirectoriesFunction = BOOL(WINAPI*)(DWORD);
+    using AddDllDirectoryFunction = PVOID(WINAPI*)(PCWSTR);
+    const auto set_default_dll_directories = reinterpret_cast<SetDefaultDllDirectoriesFunction>(
+        GetProcAddress(kernel32, "SetDefaultDllDirectories"));
+    const auto add_dll_directory = reinterpret_cast<AddDllDirectoryFunction>(
+        GetProcAddress(kernel32, "AddDllDirectory"));
+    if (set_default_dll_directories == nullptr || add_dll_directory == nullptr) {
+        error = "The Windows host lacks secure DLL directory APIs required by KMediaVlc.";
+        return false;
+    }
+    if (!set_default_dll_directories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)) {
+        error = "The secure Windows DLL search policy could not be configured.";
+        return false;
+    }
+    const PVOID cookie = add_dll_directory(directory.c_str());
+    if (cookie == nullptr) {
+        error = "The verified libVLC runtime directory could not be registered.";
+        return false;
+    }
+    // libVLC loads plugins on worker threads. Keep its one verified directory in
+    // the process search path for the same lifetime as the deliberately retained
+    // libVLC module; removing it while a player is stopping would race plugin loads.
+    g_runtime_dll_directory_path = directory;
+    g_runtime_dll_directory_cookie = cookie;
+    return true;
+}
+
 void* open_module(const std::filesystem::path& path, std::string& error) {
     HMODULE module = LoadLibraryExW(
         path.c_str(),
@@ -375,6 +445,9 @@ std::shared_ptr<LibVlcApi> LibVlcApi::load(const char* path_value, std::string& 
         }
         return g_api;
     }
+#if defined(_WIN32)
+    if (!configure_runtime_dll_directory(path, error)) return {};
+#endif
     void* module = open_module(path, error);
     if (module == nullptr) return {};
     auto api = std::shared_ptr<LibVlcApi>(new LibVlcApi(module));
@@ -383,6 +456,7 @@ std::shared_ptr<LibVlcApi> LibVlcApi::load(const char* path_value, std::string& 
     KMEDIAVLC_BIND(new_instance, "libvlc_new");
     KMEDIAVLC_BIND(release_instance, "libvlc_release");
     KMEDIAVLC_BIND(error_message, "libvlc_errmsg");
+    KMEDIAVLC_BIND(log_set, "libvlc_log_set");
     KMEDIAVLC_BIND(media_player_new, "libvlc_media_player_new");
     KMEDIAVLC_BIND(media_player_release, "libvlc_media_player_release");
     KMEDIAVLC_BIND(media_player_set_media, "libvlc_media_player_set_media");
@@ -483,6 +557,9 @@ kmediavlc_player* kmediavlc_player_create(const kmediavlc_player_config* config)
             : "--quiet");
     player->instance = player->api->new_instance(static_cast<int>(arguments.size()), arguments.data());
     if (player->instance == nullptr) return nullptr;
+    if (diagnostic_logging_enabled()) {
+        player->api->log_set(player->instance, diagnostic_log, player.get());
+    }
 
     player->media_player_callbacks.version = 0;
     player->media_player_callbacks.on_media_stopping = on_media_stopping;

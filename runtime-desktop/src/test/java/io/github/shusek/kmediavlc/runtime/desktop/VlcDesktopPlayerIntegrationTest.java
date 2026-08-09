@@ -39,7 +39,9 @@ final class VlcDesktopPlayerIntegrationTest {
 
         try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
             assertTrue(player.open(fixture.image().toUri().toString(), Map.of(), true));
-            assertTrue(signal.await(15, TimeUnit.SECONDS), player.lastError().orElse("No CPU frame arrived."));
+            assertTrue(
+                    signal.await(15, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "No CPU frame arrived."));
             try (var frame = player.acquireLatestFrame().orElseThrow()) {
                 assertEquals(VlcNativeHandleType.CPU_ADDRESS, frame.handleType());
                 assertEquals(VlcPixelFormat.RGBA8_SRGB, frame.pixelFormat());
@@ -80,7 +82,9 @@ final class VlcDesktopPlayerIntegrationTest {
                     1_000f,
                     adapterLuid)));
             assertTrue(player.open(fixture.image().toUri().toString(), Map.of(), true));
-            assertTrue(signal.await(15, TimeUnit.SECONDS), player.lastError().orElse("No D3D11 frame arrived."));
+            assertTrue(
+                    signal.await(15, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "No D3D11 frame arrived."));
             try (var frame = player.acquireLatestFrame().orElseThrow()) {
                 assertEquals(VlcNativeHandleType.D3D11_SHARED_HANDLE, frame.handleType());
                 assertEquals(VlcPixelFormat.RGBA8_SRGB, frame.pixelFormat());
@@ -126,7 +130,7 @@ final class VlcDesktopPlayerIntegrationTest {
                 Path.of(bridge).toAbsolutePath(),
                 Path.of(libVlc).toAbsolutePath(),
                 Path.of(plugins).toAbsolutePath(),
-                "videolan-nightly-b5536cde-test-only",
+                "videolan-source-build-b5536cde-test-only",
                 new VlcRuntimeCapabilities(
                         4,
                         2,
@@ -136,6 +140,10 @@ final class VlcDesktopPlayerIntegrationTest {
                         Set.of(VlcRenderEngine.D3D11),
                         true));
         return new Fixture(runtime, image);
+    }
+
+    private static String timeoutDiagnostics(VlcDesktopPlayer player, String fallback) {
+        return player.lastError().orElse(fallback) + " Snapshot: " + player.snapshot();
     }
 
     private record Fixture(VlcDesktopRuntimeResolution runtime, Path image) {}

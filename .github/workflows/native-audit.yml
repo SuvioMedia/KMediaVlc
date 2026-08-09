@@ -22,6 +22,8 @@ jobs:
     name: Build VLC with the pinned VideoLAN UCRT toolchain
     runs-on: ubuntu-24.04
     timeout-minutes: 360
+    outputs:
+      runtime_sha256: ${{ steps.package.outputs.runtime_sha256 }}
     container:
       image: registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331
       options: --user 0
@@ -164,6 +166,7 @@ jobs:
           test -s "$RUNNER_TEMP/audit-assets/contrib-source-SHA256SUMS"
 
       - name: Package the audit runtime and complete source candidate
+        id: package
         shell: bash
         run: |
           epoch="$(git show -s --format=%ct "$TESTED_COMMIT")"
@@ -188,14 +191,16 @@ jobs:
             cd "$RUNNER_TEMP/audit-assets"
             sha256sum *.tar.gz > archive-SHA256SUMS
           )
+          runtime_sha256="$(sha256sum \
+            "$RUNNER_TEMP/audit-assets/vlc-windows-x86_64-source-build.tar.gz" | cut -d ' ' -f 1)"
+          test "$runtime_sha256" != ""
+          echo "runtime_sha256=$runtime_sha256" >> "$GITHUB_OUTPUT"
 
       - name: Upload the runtime for native Windows validation
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: vlc-windows-x86_64-runtime-input-${{ inputs.tested_commit }}
-          path: |
-            ${{ runner.temp }}/audit-assets/vlc-windows-x86_64-source-build.tar.gz
-            ${{ runner.temp }}/audit-assets/archive-SHA256SUMS
+          path: ${{ runner.temp }}/audit-assets/vlc-windows-x86_64-source-build.tar.gz
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
@@ -217,6 +222,7 @@ jobs:
     env:
       TESTED_COMMIT: ${{ inputs.tested_commit }}
       VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+      EXPECTED_RUNTIME_SHA256: ${{ needs.build-windows-x86-64.outputs.runtime_sha256 }}
     steps:
       - name: Check out the exact KMediaVlc revision
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -267,13 +273,18 @@ jobs:
         shell: pwsh
         run: |
           $inputDirectory = Join-Path $env:RUNNER_TEMP 'runtime-input'
-          $archive = Join-Path $inputDirectory 'vlc-windows-x86_64-source-build.tar.gz'
-          $checksumLine = Get-Content -LiteralPath (Join-Path $inputDirectory 'archive-SHA256SUMS') |
-            Where-Object { $_ -match '  vlc-windows-x86_64-source-build\.tar\.gz$' }
-          if (@($checksumLine).Count -ne 1 -or $checksumLine -notmatch '^([0-9a-f]{64})  ') {
-            throw 'The runtime archive has no unique closed SHA-256 entry.'
+          $archives = @(
+            Get-ChildItem -LiteralPath $inputDirectory -Recurse -File `
+              -Filter 'vlc-windows-x86_64-source-build.tar.gz'
+          )
+          if ($archives.Count -ne 1) {
+            throw 'The downloaded artifact has no unique runtime archive.'
           }
-          $expected = $Matches[1]
+          if ($env:EXPECTED_RUNTIME_SHA256 -notmatch '^[0-9a-f]{64}$') {
+            throw 'The source-build job did not close the runtime SHA-256 output.'
+          }
+          $archive = $archives[0].FullName
+          $expected = $env:EXPECTED_RUNTIME_SHA256
           $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actual -ne $expected) {
             throw "Runtime archive digest mismatch: $actual"
@@ -299,6 +310,30 @@ jobs:
           "KMEDIAVLC_TEST_LIBVLC=$($libVlc[0].FullName)" >> $env:GITHUB_ENV
           "KMEDIAVLC_TEST_LIBVLCCORE=$($libVlcCore[0].FullName)" >> $env:GITHUB_ENV
           "KMEDIAVLC_TEST_PLUGINS=$($pluginDirectories[0].FullName)" >> $env:GITHUB_ENV
+
+      - name: Generate the plugin cache natively
+        shell: pwsh
+        run: |
+          $install = Join-Path $env:RUNNER_TEMP 'source-built-runtime\vlc-install'
+          $generators = @(
+            Get-ChildItem -LiteralPath $install -Recurse -File -Filter 'vlc-cache-gen.exe'
+          )
+          if ($generators.Count -ne 1) {
+            throw 'The source-built runtime has no unique VLC cache generator.'
+          }
+          $pluginCache = Join-Path $env:KMEDIAVLC_TEST_PLUGINS 'plugins.dat'
+          if (Test-Path -LiteralPath $pluginCache) {
+            Remove-Item -LiteralPath $pluginCache -Force
+          }
+          $binDirectory = Split-Path -Parent $env:KMEDIAVLC_TEST_LIBVLC
+          $env:PATH = "$binDirectory;$env:PATH"
+          & $generators[0].FullName $env:KMEDIAVLC_TEST_PLUGINS
+          if ($LASTEXITCODE -ne 0) { throw 'Native VLC plugin cache generation failed.' }
+          if (-not (Test-Path -LiteralPath $pluginCache -PathType Leaf) -or
+              (Get-Item -LiteralPath $pluginCache).Length -le 0) {
+            throw 'Native VLC plugin cache generation produced no cache.'
+          }
+          "KMEDIAVLC_TEST_PLUGIN_CACHE=$pluginCache" >> $env:GITHUB_ENV
 
       - name: Build the bridge natively with MSVC
         shell: pwsh
@@ -362,7 +397,12 @@ jobs:
             "runner=$env:RUNNER_NAME"
             "os=$env:RUNNER_OS"
           ) | Set-Content -LiteralPath (Join-Path $evidence 'environment.txt')
-          foreach ($file in @($bridge, $env:KMEDIAVLC_TEST_LIBVLC, $env:KMEDIAVLC_TEST_LIBVLCCORE)) {
+          foreach ($file in @(
+            $bridge,
+            $env:KMEDIAVLC_TEST_LIBVLC,
+            $env:KMEDIAVLC_TEST_LIBVLCCORE,
+            $env:KMEDIAVLC_TEST_PLUGIN_CACHE
+          )) {
             if ($file -and (Test-Path -LiteralPath $file -PathType Leaf)) {
               Get-FileHash -LiteralPath $file -Algorithm SHA256 |
                 Format-List Path,Hash |
