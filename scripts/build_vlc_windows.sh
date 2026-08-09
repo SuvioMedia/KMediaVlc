@@ -39,12 +39,11 @@ fi
 
 # This is VideoLAN's exact pinned Windows recipe in release/UCRT/headless mode.
 # -g l disables GPL contribs while permitting LGPLv3 dependencies required by
-# the HTTPS/TLS module. KMediaVlc is playback-only, so stream-output encoders
-# and their build tools (including cargo-c/rav1e) are explicitly excluded.
-# Prebuilt contribs are intentionally not requested; the release inventory
-# still audits every resulting binary/plugin.
-export CONTRIBFLAGS="--disable-sout"
-export MCONFIGFLAGS="-Dstream_outputs=false -Dvideolan_manager=false"
+# the HTTPS/TLS module. rav1e is an optional AV1 encoder that is not used by
+# the closed playback plugin set and requires cargo-c, which is not supplied
+# by the pinned VideoLAN toolchain image. Prebuilt contribs are intentionally
+# not requested; the release inventory still audits every resulting binary.
+export CONTRIBFLAGS="--disable-rav1e"
 cd "$source_directory"
 ./extras/package/win32/build.sh \
     -r \

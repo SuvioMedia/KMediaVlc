@@ -224,13 +224,8 @@ def verify_policy(root: Path) -> None:
     arguments = recipe.get("libVlcBuildArguments")
     if not isinstance(arguments, list) or not all(flag in arguments for flag in ["-r", "-u", "-z", "-g", "l", "-m"]):
         fail("Windows VLC recipe is missing required release/UCRT/headless/GPL-disabled flags.")
-    if recipe.get("contribBuildArguments") != ["--disable-sout"]:
-        fail("Windows playback recipe must exclude stream-output encoder contribs.")
-    if recipe.get("mesonBuildOptions") != [
-        "-Dstream_outputs=false",
-        "-Dvideolan_manager=false",
-    ]:
-        fail("Windows playback recipe must disable stream outputs and VLM in Meson.")
+    if recipe.get("contribBuildArguments") != ["--disable-rav1e"]:
+        fail("Windows playback recipe must exclude the unused rav1e encoder contrib.")
     if recipe.get("usesPrebuiltContribs") is not False:
         fail("Release recipe must build contribs from their verified source inputs.")
     if recipe.get("mesonInstallTags") != ["runtime"] or recipe.get("stripInstalledTargets") is not True:
@@ -245,8 +240,7 @@ def verify_policy(root: Path) -> None:
         '--strip',
         'win64-ucrt-meson',
         'winarm64-ucrt-meson',
-        'export CONTRIBFLAGS="--disable-sout"',
-        'export MCONFIGFLAGS="-Dstream_outputs=false -Dvideolan_manager=false"',
+        'export CONTRIBFLAGS="--disable-rav1e"',
         'VLC source build produced an empty install payload',
     ]
     if not all(marker in builder for marker in install_markers):
