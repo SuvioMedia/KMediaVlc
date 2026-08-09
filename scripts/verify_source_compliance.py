@@ -273,6 +273,7 @@ def verify_policy(root: Path) -> None:
         'cp -a "$meson_info"',
         "ninja-commands.txt",
         "ninja-graph.dot",
+        "vlc-windows-x86_64-link-audit-",
         "candidate_version:",
         "package_corresponding_source.py",
         "create_windows_native_inventory.py",
