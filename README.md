@@ -9,7 +9,7 @@ or package VLC binaries.
 
 ```kotlin
 dependencies {
-    implementation("io.github.shusek:kmedia-vlc-runtime-desktop:0.1.0")
+    implementation("io.github.shusek:kmedia-vlc-runtime-desktop:0.1.0-rc.1")
 }
 ```
 

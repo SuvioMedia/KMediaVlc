@@ -37,12 +37,12 @@ candidate` with the exact tested KMediaVlc commit. It runs the pinned VideoLAN
 LLVM/MinGW UCRT container, builds VLC and its contribs from source, then loads
 the resulting DLLs and an MSVC-built bridge on a native `windows-2022` runner.
 Wine is limited to Meson's cross-executable sanity probe during the upstream
-cross-build; it is not the runtime test environment. The workflow retains a
-seven-day audit artifact containing the installed-file hashes, contrib-source
-hashes, toolchain evidence, the runtime candidate, corresponding-source
-candidate, and native Windows test results. This workflow cannot create a tag,
-release, or Maven deployment. Standard hosted runners have no physical HDR
-display, so separate hardware HDR evidence remains mandatory.
+cross-build; it is not the runtime test environment. The workflow retains
+separate seven-day artifacts for the reviewed corresponding source, native
+link metadata, exact tested runtime candidate, and native Windows test
+results. This workflow cannot create a tag, release, or Maven deployment.
+Standard hosted runners have no physical HDR display, so separate hardware
+HDR evidence remains mandatory.
 Review its complete DLL/plugin inventory and upstream licenses before using
 any of those bytes as release inputs.
 
@@ -102,10 +102,14 @@ tested KMediaVlc commit, and create a non-draft public GitHub release. RC
 versions are prereleases. Do not replace an asset after publishing the release;
 issue another version instead.
 
-Before enabling a fully automatic stage-one release workflow, the first
-source-built VLC output and its per-file inventory must be reviewed and added
-to the release policy. This repository intentionally does not contain a
-workflow that guesses licenses from DLL names.
+After the first source-built VLC output and its native link graph have been
+reviewed, set both Windows policy review states to `approved`, commit the exact
+policy and notices, and run the native audit again for that approved commit.
+Then dispatch **Create immutable KMediaVlc release** with the version, exact
+commit, and successful audit run ID. The workflow repeats the checks above,
+requires byte-for-byte equality with the runtime JAR tested on Windows, and
+creates the immutable tag and prerelease. It never guesses licenses from DLL
+names or replaces an existing release.
 
 ## Publish to Central and verify
 
