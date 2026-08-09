@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
@@ -18,6 +19,7 @@ ALLOWED_TARGETS = {
     "windows-aarch64": {"D3D11"},
 }
 REQUIRED_ROLES = {"BRIDGE", "LIBVLC", "CORE", "PLUGIN"}
+COMMIT_REVISION = re.compile(r"[0-9a-f]{40}")
 
 
 def fail(message: str) -> None:
@@ -58,6 +60,12 @@ def validate_source_reference(source: object, label: str) -> str:
     else:
         safe_path(source)
     return source
+
+
+def validate_recipe_revision(revision: str) -> str:
+    if not COMMIT_REVISION.fullmatch(revision):
+        fail("Recipe revision must be an exact lowercase forty-character Git commit.")
+    return revision
 
 
 def load_policy(root: Path) -> dict:
@@ -162,7 +170,13 @@ def validate_inventory(inventory: dict, policy: dict, target: str, staging: Path
     return validated
 
 
-def manifest_text(inventory: dict, files: list[dict], runtime_id: str, source_offer: str) -> str:
+def manifest_text(
+    inventory: dict,
+    files: list[dict],
+    runtime_id: str,
+    source_offer: str,
+    recipe_revision: str,
+) -> str:
     bridge = next(entry["path"] for entry in files if entry["role"] == "BRIDGE")
     libvlc = next(entry["path"] for entry in files if entry["role"] == "LIBVLC")
     lines = [
@@ -177,6 +191,7 @@ def manifest_text(inventory: dict, files: list[dict], runtime_id: str, source_of
         f"libvlc.revision={PINNED_REVISION}",
         "bridge.abiVersion=1",
         f"runtimeId={runtime_id}",
+        f"recipeRevision={recipe_revision}",
         f"sourceOffer={source_offer}",
         f"frameDeliveryModes={','.join(inventory['frameDeliveryModes'])}",
         f"renderEngines={','.join(inventory['renderEngines'])}",
@@ -213,6 +228,7 @@ def main() -> None:
     parser.add_argument("--inventory", type=Path, required=True)
     parser.add_argument("--target", choices=sorted(ALLOWED_TARGETS), required=True)
     parser.add_argument("--source-offer", required=True)
+    parser.add_argument("--recipe-revision", required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -227,6 +243,7 @@ def main() -> None:
     policy = load_policy(root)
     inventory = load_inventory(inventory_path)
     source_offer = validate_source_reference(args.source_offer, "release source offer")
+    recipe_revision = validate_recipe_revision(args.recipe_revision)
     files = validate_inventory(inventory, policy, args.target, staging)
     digest_input = json.dumps(files, sort_keys=True, separators=(",", ":")).encode("utf-8")
     runtime_id = "kmediavlc4-" + hashlib.sha256(digest_input).hexdigest()[:16]
@@ -239,7 +256,7 @@ def main() -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
     (destination / "manifest.properties").write_text(
-        manifest_text(inventory, files, runtime_id, source_offer),
+        manifest_text(inventory, files, runtime_id, source_offer, recipe_revision),
         encoding="iso-8859-1",
         newline="\n",
     )

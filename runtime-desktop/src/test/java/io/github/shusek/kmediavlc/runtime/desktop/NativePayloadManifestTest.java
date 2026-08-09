@@ -14,6 +14,7 @@ class NativePayloadManifestTest {
     void acceptsPinnedGpuPushAndCpuPullPayload() {
         var manifest = NativePayloadManifest.parse(validManifest().getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64");
         assertEquals(4, manifest.capabilities().libVlcAbiMajor());
+        assertEquals("0123456789abcdef0123456789abcdef01234567", manifest.recipeRevision());
         assertTrue(manifest.capabilities().frameDeliveryModes().contains(VlcFrameDeliveryMode.GPU_PUSH));
         assertTrue(manifest.capabilities().frameDeliveryModes().contains(VlcFrameDeliveryMode.CPU_PULL));
         assertTrue(manifest.capabilities().renderEngines().contains(VlcRenderEngine.D3D11));
@@ -35,6 +36,14 @@ class NativePayloadManifestTest {
         assertThrows(VlcRuntimeException.class, () -> NativePayloadManifest.parse(mode.getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64"));
     }
 
+    @Test
+    void rejectsRecipeRevisionThatIsNotAnExactLowercaseCommit() {
+        String revision = validManifest().replace(
+                "0123456789abcdef0123456789abcdef01234567", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        assertThrows(VlcRuntimeException.class, () -> NativePayloadManifest.parse(
+                revision.getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64"));
+    }
+
     private static String validManifest() {
         String hash = "a".repeat(64);
         return """
@@ -49,6 +58,7 @@ class NativePayloadManifestTest {
                 libvlc.revision=%s
                 bridge.abiVersion=1
                 runtimeId=kmediavlc4-0123456789abcdef
+                recipeRevision=0123456789abcdef0123456789abcdef01234567
                 sourceOffer=corresponding-source.tar.gz
                 frameDeliveryModes=GPU_PUSH,CPU_PULL
                 renderEngines=D3D11

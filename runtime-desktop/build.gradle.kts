@@ -66,7 +66,21 @@ require(nativePackagingInputs.none { it } || nativePackagingConfigured) {
 }
 val nativePayloadDirectory = rootProject.layout.buildDirectory.dir("verified-native-payload")
 val recipeRevision = providers.gradleProperty("recipeRevision")
+val checkoutRevision =
+    providers.exec {
+        workingDir(rootProject.layout.projectDirectory)
+        commandLine(
+            "git",
+            "-c",
+            "safe.directory=${rootProject.layout.projectDirectory.asFile.absolutePath.replace('\\', '/')}",
+            "rev-parse",
+            "HEAD",
+        )
+        isIgnoreExitValue = false
+    }.standardOutput.asText.map(String::trim)
 val publicationVersionValue = project.version.toString()
+val correspondingSourceArchive =
+    rootProject.providers.gradleProperty("correspondingSourceArchive").map(rootProject::file)
 
 val packageNativeRuntime =
     tasks.register<Exec>("packageNativeRuntime") {
@@ -80,10 +94,14 @@ val packageNativeRuntime =
             inputs.file(rootProject.layout.projectDirectory.file("scripts/package_native_runtime.py"))
             inputs.property("nativeTarget", nativeTarget)
             inputs.property("nativeSourceOffer", nativeSourceOffer)
+            inputs.property("recipeRevision", recipeRevision)
             outputs.dir(nativePayloadDirectory)
         }
         doFirst {
             require(nativePackagingConfigured) { "Native release packaging inputs are incomplete." }
+            require(recipeRevision.isPresent) {
+                "Native release packaging requires -PrecipeRevision with the immutable build commit."
+            }
             project.delete(nativePayloadDirectory.get().asFile)
             commandLine(
                 rootProject.providers
@@ -102,6 +120,8 @@ val packageNativeRuntime =
                 nativeTarget.get(),
                 "--source-offer",
                 nativeSourceOffer.get(),
+                "--recipe-revision",
+                recipeRevision.get(),
                 "--output",
                 nativePayloadDirectory.get().asFile.absolutePath,
             )
@@ -168,7 +188,13 @@ val verifyNoCheckedInNativePayload =
 val validatePublicationVersion =
     tasks.register("validatePublicationVersion") {
         group = "verification"
-        val semVer = Regex("(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?")
+        val semVerNumber = "(?:0|[1-9][0-9]*)"
+        val semVerPreReleaseIdentifier = "(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
+        val semVer =
+            Regex(
+                "$semVerNumber\\.$semVerNumber\\.$semVerNumber" +
+                    "(?:-$semVerPreReleaseIdentifier(?:\\.$semVerPreReleaseIdentifier)*)?",
+            )
         inputs.property("publicationVersion", publicationVersionValue)
         doLast {
             require(semVer.matches(publicationVersionValue)) {
@@ -214,6 +240,27 @@ val requireNativePayloadForPublication =
             require(recipeRevision.isPresent) {
                 "Publishing requires -PrecipeRevision with the immutable build commit."
             }
+            require(recipeRevision.get().matches(Regex("[0-9a-f]{40}"))) {
+                "recipeRevision must be an exact lowercase forty-character Git commit."
+            }
+            require(recipeRevision.get() == checkoutRevision.get()) {
+                "recipeRevision must match the checked-out KMediaVlc commit."
+            }
+            require(!publicationVersionValue.contains("SNAPSHOT", ignoreCase = true)) {
+                "Publishing requires an immutable non-SNAPSHOT version."
+            }
+            val expectedSourceOffer =
+                "https://github.com/SuvioMedia/KMediaVlc/releases/download/" +
+                    "v$publicationVersionValue/kmedia-vlc-$publicationVersionValue-corresponding-source.tar.gz"
+            require(nativeSourceOffer.get() == expectedSourceOffer) {
+                "kmediaVlcSourceOffer must identify the corresponding-source asset of this exact release."
+            }
+            require(correspondingSourceArchive.isPresent) {
+                "Publishing requires -PcorrespondingSourceArchive."
+            }
+            require(correspondingSourceArchive.get().isFile && correspondingSourceArchive.get().length() > 0L) {
+                "The corresponding source archive must be a non-empty regular file."
+            }
         }
     }
 
@@ -236,6 +283,12 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             from(components["java"])
+            correspondingSourceArchive.orNull?.let { archive ->
+                artifact(archive) {
+                    classifier = "corresponding-source"
+                    extension = "tar.gz"
+                }
+            }
             groupId = "io.github.shusek"
             artifactId = "kmedia-vlc-runtime-desktop"
             version = publicationVersionValue
@@ -260,12 +313,14 @@ publishing {
                     developer {
                         id.set("Shusek")
                         name.set("Shusek")
+                        url.set("https://github.com/Shusek")
                     }
                 }
                 scm {
                     connection.set("scm:git:https://github.com/SuvioMedia/KMediaVlc.git")
                     developerConnection.set("scm:git:ssh://git@github.com/SuvioMedia/KMediaVlc.git")
                     url.set("https://github.com/SuvioMedia/KMediaVlc")
+                    tag.set("v$publicationVersionValue")
                 }
             }
         }

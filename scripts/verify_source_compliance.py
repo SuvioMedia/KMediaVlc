@@ -54,13 +54,14 @@ def load_json(path: Path) -> dict:
 def verify_spdx(root: Path) -> None:
     missing: list[str] = []
     for path in root.rglob("*"):
-        if not path.is_file() or any(part in IGNORED_PARTS for part in path.parts):
+        relative = path.relative_to(root)
+        if not path.is_file() or any(part in IGNORED_PARTS for part in relative.parts):
             continue
         if path.suffix.lower() not in SPDX_EXTENSIONS:
             continue
         head = path.read_text(encoding="utf-8", errors="strict")[:4096]
         if "SPDX-License-Identifier:" not in head:
-            missing.append(path.relative_to(root).as_posix())
+            missing.append(relative.as_posix())
     if missing:
         fail("Files without SPDX identifiers: " + ", ".join(sorted(missing)))
 
@@ -68,11 +69,12 @@ def verify_spdx(root: Path) -> None:
 def verify_no_native_payload(root: Path) -> None:
     forbidden: list[str] = []
     for path in root.rglob("*"):
-        if not path.is_file() or any(part in IGNORED_PARTS for part in path.parts):
+        relative = path.relative_to(root)
+        if not path.is_file() or any(part in IGNORED_PARTS for part in relative.parts):
             continue
         lower_name = path.name.lower()
         if path.suffix.lower() in FORBIDDEN_BINARY_SUFFIXES or ".so." in lower_name:
-            forbidden.append(path.relative_to(root).as_posix())
+            forbidden.append(relative.as_posix())
     if forbidden:
         fail("Checked-in native payload is forbidden: " + ", ".join(sorted(forbidden)))
 

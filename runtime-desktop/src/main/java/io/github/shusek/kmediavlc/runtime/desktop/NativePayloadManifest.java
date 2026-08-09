@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 record NativePayloadManifest(
         String target,
         String runtimeId,
+        String recipeRevision,
         String sourceOffer,
         String bridgePath,
         String libVlcPath,
@@ -36,6 +37,7 @@ record NativePayloadManifest(
     private static final long MAX_PAYLOAD_BYTES = 3L * 1024L * 1024L * 1024L;
     private static final Pattern SHA_256 = Pattern.compile("[0-9a-f]{64}");
     private static final Pattern RUNTIME_ID = Pattern.compile("kmediavlc4-[0-9a-f]{16}");
+    private static final Pattern COMMIT_REVISION = Pattern.compile("[0-9a-f]{40}");
     private static final Pattern COMPONENT = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._+\\-]{0,127}");
     private static final Pattern SAFE_DIRECTORY = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._+\\-/]{0,510}");
     private static final Set<String> ALLOWED_LICENSES =
@@ -79,6 +81,10 @@ record NativePayloadManifest(
         String runtimeId = required(properties, "runtimeId");
         if (!RUNTIME_ID.matcher(runtimeId).matches()) {
             return reject("Runtime identity is invalid.");
+        }
+        String recipeRevision = required(properties, "recipeRevision");
+        if (!COMMIT_REVISION.matcher(recipeRevision).matches()) {
+            return reject("Runtime recipe revision is invalid.");
         }
         String sourceOffer = required(properties, "sourceOffer");
         validateSourceOffer(sourceOffer);
@@ -156,6 +162,7 @@ record NativePayloadManifest(
         return new NativePayloadManifest(
                 expectedTarget,
                 runtimeId,
+                recipeRevision,
                 sourceOffer,
                 bridgePath,
                 libVlcPath,
@@ -291,6 +298,7 @@ record NativePayloadManifest(
                                 "libvlc.revision",
                                 "bridge.abiVersion",
                                 "runtimeId",
+                                "recipeRevision",
                                 "sourceOffer",
                                 "frameDeliveryModes",
                                 "renderEngines",

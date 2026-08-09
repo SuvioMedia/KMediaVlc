@@ -1,0 +1,170 @@
+# SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+
+name: Publish existing KMediaVlc release to Maven Central
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing immutable release version, including RCs
+        required: true
+        type: string
+      publishing_type:
+        description: Keep the first release in Central Portal for manual approval
+        required: true
+        default: USER_MANAGED
+        type: choice
+        options: [USER_MANAGED, AUTOMATIC]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kmediavlc-central-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: maven-central
+    env:
+      VERSION: ${{ inputs.version }}
+      PUBLISHING_TYPE: ${{ inputs.publishing_type }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: refs/tags/v${{ inputs.version }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Bind the request to the exact immutable release tag
+        shell: bash
+        run: |
+          [[ "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]
+          [[ "${VERSION^^}" != *SNAPSHOT* ]]
+          test "$(git describe --tags --exact-match HEAD)" = "v$VERSION"
+          python3 scripts/verify_source_compliance.py --root .
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+
+      - name: Download and hash-bind the staged public repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir "$RUNNER_TEMP/release" "$RUNNER_TEMP/staging"
+          test "$(gh release view "v$VERSION" --json isDraft --jq .isDraft)" = false
+          name="kmedia-vlc-$VERSION-maven-repository.tar.gz"
+          gh release download "v$VERSION" --dir "$RUNNER_TEMP/release" \
+            --pattern "$name" --pattern SHA256SUMS
+          matches="$(awk -v p="$name" '$2 == p || $2 == "./" p {print $1}' "$RUNNER_TEMP/release/SHA256SUMS")"
+          test "$(printf '%s\n' "$matches" | sed '/^$/d' | wc -l)" -eq 1
+          expected="$matches"
+          [[ "$expected" =~ ^[0-9a-f]{64}$ ]]
+          test "$expected" = "$(sha256sum "$RUNNER_TEMP/release/$name" | awk '{print $1}')"
+          python3 scripts/extract_release_repository.py \
+            --archive "$RUNNER_TEMP/release/$name" --output "$RUNNER_TEMP/staging"
+          python3 scripts/build_maven_central_bundle.py normalize \
+            --staging "$RUNNER_TEMP/staging" --version "$VERSION"
+
+      - name: Sign staged artifacts without exposing protected values
+        env:
+          MAVEN_SIGNING_KEY: ${{ secrets.MAVEN_SIGNING_KEY }}
+          MAVEN_SIGNING_PASSWORD: ${{ secrets.MAVEN_SIGNING_PASSWORD }}
+        shell: bash
+        run: |
+          test -n "$MAVEN_SIGNING_KEY"
+          test -n "$MAVEN_SIGNING_PASSWORD"
+          umask 077
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -m 700 "$GNUPGHOME"
+          key="$RUNNER_TEMP/signing-key"
+          password="$RUNNER_TEMP/signing-password"
+          trap 'rm -f "$key" "$password"; rm -rf "$GNUPGHOME"' EXIT
+          printf '%s' "$MAVEN_SIGNING_KEY" > "$key"
+          printf '%s' "$MAVEN_SIGNING_PASSWORD" > "$password"
+          unset MAVEN_SIGNING_KEY MAVEN_SIGNING_PASSWORD
+          gpg --batch --homedir "$GNUPGHOME" --import "$key" >/dev/null 2>&1
+          rm -f "$key"
+          signing_key="$(gpg --batch --homedir "$GNUPGHOME" --with-colons \
+            --list-secret-keys | awk -F: \
+            '$1 == "sec" {primary = 1; next} primary && $1 == "fpr" {print $10; primary = 0}')"
+          test "$(printf '%s\n' "$signing_key" | sed '/^$/d' | wc -l)" -eq 1
+          [[ "$signing_key" =~ ^[0-9A-Fa-f]{40}$ ]]
+          while IFS= read -r -d '' artifact; do
+            gpg --batch --yes --homedir "$GNUPGHOME" --pinentry-mode loopback \
+              --passphrase-file "$password" --local-user "${signing_key}!" \
+              --armor --detach-sign \
+              --output "$artifact.asc" "$artifact"
+          done < <(find "$RUNNER_TEMP/staging/io/github/shusek" -type f \
+            ! -name '*.asc' ! -name '*.md5' ! -name '*.sha1' \
+            ! -name '*.sha256' ! -name '*.sha512' -print0 | sort -z)
+          python3 scripts/build_maven_central_bundle.py checksums \
+            --staging "$RUNNER_TEMP/staging" --version "$VERSION"
+
+      - name: Build and reopen the fail-closed Central bundle
+        shell: bash
+        run: |
+          bundle="$RUNNER_TEMP/kmedia-vlc-$VERSION-central.zip"
+          python3 scripts/build_maven_central_bundle.py package \
+            --staging "$RUNNER_TEMP/staging" --version "$VERSION" \
+            --epoch "$(git show -s --format=%ct HEAD)" --output "$bundle"
+          unzip -tq "$bundle"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: kmediavlc-central-${{ inputs.version }}
+          path: ${{ runner.temp }}/kmedia-vlc-${{ inputs.version }}-central.zip
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Submit to Central Portal and wait for completion
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        shell: bash
+        run: |
+          test -n "$MAVEN_CENTRAL_USERNAME"
+          test -n "$MAVEN_CENTRAL_PASSWORD"
+          umask 077
+          credentials="$RUNNER_TEMP/central-credentials"
+          config="$RUNNER_TEMP/central-curl.conf"
+          trap 'rm -f "$credentials" "$config"' EXIT
+          printf '%s:%s' "$MAVEN_CENTRAL_USERNAME" "$MAVEN_CENTRAL_PASSWORD" > "$credentials"
+          unset MAVEN_CENTRAL_USERNAME MAVEN_CENTRAL_PASSWORD
+          authorization="$(base64 --wrap=0 < "$credentials")"
+          rm -f "$credentials"
+          printf 'header = "Authorization: Bearer %s"\n' "$authorization" > "$config"
+          unset authorization
+          bundle="$RUNNER_TEMP/kmedia-vlc-$VERSION-central.zip"
+          response="$RUNNER_TEMP/upload-response"
+          curl --config "$config" --fail-with-body --silent --show-error --request POST \
+            --form "bundle=@$bundle;type=application/octet-stream" --output "$response" \
+            --url "https://central.sonatype.com/api/v1/publisher/upload?name=KMediaVlc%20$VERSION&publishingType=$PUBLISHING_TYPE"
+          deployment="$(tr -d '\r\n' < "$response")"
+          [[ "$deployment" =~ ^[0-9a-fA-F-]{36}$ ]]
+          for attempt in {1..240}; do
+            status="$RUNNER_TEMP/deployment-status"
+            curl --config "$config" --fail-with-body --silent --show-error --request POST \
+              --output "$status" \
+              --url "https://central.sonatype.com/api/v1/publisher/status?id=$deployment"
+            state="$(jq -er '.deploymentState' "$status")"
+            case "$state" in
+              PUBLISHED)
+                printf 'Central deployment `%s` is published.\n' "$deployment" >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+                ;;
+              VALIDATED)
+                if [[ "$PUBLISHING_TYPE" = USER_MANAGED ]]; then
+                  printf 'Central deployment `%s` is validated and awaits manual publication.\n' \
+                    "$deployment" >> "$GITHUB_STEP_SUMMARY"
+                  exit 0
+                fi
+                ;;
+              FAILED) jq . "$status"; exit 1 ;;
+              PENDING|VALIDATING|PUBLISHING) ;;
+              *) jq . "$status"; exit 1 ;;
+            esac
+            sleep 10
+          done
+          exit 1

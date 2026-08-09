@@ -61,11 +61,14 @@ python scripts/verify_source_compliance.py --root .
 Publishing additionally requires all of
 `kmediaVlcNativeStagingDirectory`, `kmediaVlcNativeInventory`,
 `kmediaVlcNativeTarget`, `kmediaVlcSourceOffer`, and the immutable
-`recipeRevision`. The Gradle publication consumes only the packager's verified
-output; an arbitrary directory cannot bypass the component/license inventory.
+`recipeRevision`, plus `correspondingSourceArchive`. The recipe revision is
+embedded in the native manifest and must match the checked-out KMediaVlc
+commit. The Gradle publication consumes only the packager's verified output;
+an arbitrary directory cannot bypass the component/license inventory.
 
 The portable CPU-pull implementation exists for controlled tests, but the
 published native payload matrix remains Windows-only in this version.
 
 See `docs/ARCHITECTURE.md`, `docs/FRAME-TRANSPORT.md`, and
-`docs/LICENSING.md`.
+`docs/LICENSING.md`. Release setup and the exact four GitHub secrets are
+documented in `docs/RELEASING.md` and `docs/MAVEN-CENTRAL.md`.

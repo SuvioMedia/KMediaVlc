@@ -81,6 +81,20 @@ class PackageNativeRuntimePolicyTest(unittest.TestCase):
         files = self.validate()
         self.assertEqual(4, len(files))
         self.assertTrue(all(len(entry["sha256"]) == 64 for entry in files))
+        revision = "0123456789abcdef0123456789abcdef01234567"
+        manifest = PACKAGER.manifest_text(
+            self.inventory, files, "kmediavlc4-0123456789abcdef", "source.tar.gz", revision
+        )
+        self.assertIn(f"recipeRevision={revision}\n", manifest)
+
+    def test_rejects_non_commit_recipe_revision(self) -> None:
+        self.assertEqual(
+            "0123456789abcdef0123456789abcdef01234567",
+            PACKAGER.validate_recipe_revision("0123456789abcdef0123456789abcdef01234567"),
+        )
+        for revision in ("main", "A" * 40, "a" * 39, "a" * 41):
+            with self.subTest(revision=revision), self.assertRaises(SystemExit):
+                PACKAGER.validate_recipe_revision(revision)
 
     def test_rejects_gpl_or_static_component(self) -> None:
         self.inventory["files"][3]["licenseSpdx"] = "GPL-2.0-or-later"
