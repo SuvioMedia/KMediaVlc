@@ -39,6 +39,9 @@ tasks.test {
     providers.gradleProperty("kmediaVlcTestPluginDirectory").orNull?.let { pluginDirectory ->
         systemProperty("kmediavlc.test.plugins", pluginDirectory)
     }
+    providers.gradleProperty("kmediaVlcTestHdrMedia").orNull?.let { hdrMedia ->
+        systemProperty("kmediavlc.test.hdrMedia", hdrMedia)
+    }
     if (providers.gradleProperty("kmediaVlcDebugCallbacks").orNull == "true") {
         environment("KMEDIAVLC_DEBUG_CALLBACKS", "1")
     }

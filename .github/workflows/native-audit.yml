@@ -164,6 +164,17 @@ jobs:
             find . -type f -print0 | sort -z | xargs -0 sha256sum
           ) > "$RUNNER_TEMP/audit-assets/contrib-source-SHA256SUMS"
           test -s "$RUNNER_TEMP/audit-assets/contrib-source-SHA256SUMS"
+          meson_info=.vlc-source/win64-ucrt-meson/meson-info
+          for metadata in \
+            intro-buildoptions.json \
+            intro-dependencies.json \
+            intro-installed.json \
+            intro-install_plan.json \
+            intro-machines.json \
+            intro-targets.json; do
+            test -s "$meson_info/$metadata"
+          done
+          cp -a "$meson_info" "$RUNNER_TEMP/audit-assets/meson-info"
 
       - name: Package the audit runtime and complete source candidate
         id: package
@@ -335,6 +346,18 @@ jobs:
           }
           "KMEDIAVLC_TEST_PLUGIN_CACHE=$pluginCache" >> $env:GITHUB_ENV
 
+      - name: Fetch the immutable Chromium HDR10 fixture
+        shell: pwsh
+        run: |
+          $uri = 'https://chromium.googlesource.com/chromium/src/media/%2B/refs/heads/main/test/data/bear-1280x720-hevc-10bit-hdr10.mp4?format=TEXT'
+          $fixture = Join-Path $env:RUNNER_TEMP 'bear-1280x720-hevc-10bit-hdr10.mp4'
+          $encoded = (Invoke-WebRequest -Uri $uri -UseBasicParsing).Content
+          [System.IO.File]::WriteAllBytes($fixture, [Convert]::FromBase64String($encoded))
+          $expected = '49b960ac28ae13153ba8e62e3fceb50408564c21f25fc38936e7c8a06b61f2db'
+          $actual = (Get-FileHash -LiteralPath $fixture -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "Chromium HDR10 fixture digest mismatch: $actual" }
+          "KMEDIAVLC_TEST_HDR_MEDIA=$fixture" >> $env:GITHUB_ENV
+
       - name: Build the bridge natively with MSVC
         shell: pwsh
         run: |
@@ -354,6 +377,7 @@ jobs:
             "-PkmediaVlcNativeBridgePath=$bridge" `
             "-PkmediaVlcTestLibVlcPath=$env:KMEDIAVLC_TEST_LIBVLC" `
             "-PkmediaVlcTestPluginDirectory=$env:KMEDIAVLC_TEST_PLUGINS" `
+            "-PkmediaVlcTestHdrMedia=$env:KMEDIAVLC_TEST_HDR_MEDIA" `
             -PkmediaVlcDebugCallbacks=true `
             --no-daemon --stacktrace --console=plain
 
@@ -382,6 +406,15 @@ jobs:
           } else {
             Write-Host 'The native D3D11 import test executed on the hosted runner.'
           }
+          $hdr = @($testCases | Where-Object {
+            $_.name -eq 'pinnedChromiumHdr10FixturePublishesFp16D3D11Frame'
+          })
+          if ($hdr.Count -ne 1) { throw 'The native HDR10 test result is missing.' }
+          if ($null -ne $hdr[0].skipped) {
+            Write-Host 'Hosted runner has no eligible hardware DXGI adapter; hardware HDR evidence remains mandatory.'
+          } else {
+            Write-Host 'The native HDR10 FP16 import test executed on the hosted runner.'
+          }
 
       - name: Record native Windows validation evidence
         if: always()
@@ -401,7 +434,8 @@ jobs:
             $bridge,
             $env:KMEDIAVLC_TEST_LIBVLC,
             $env:KMEDIAVLC_TEST_LIBVLCCORE,
-            $env:KMEDIAVLC_TEST_PLUGIN_CACHE
+            $env:KMEDIAVLC_TEST_PLUGIN_CACHE,
+            $env:KMEDIAVLC_TEST_HDR_MEDIA
           )) {
             if ($file -and (Test-Path -LiteralPath $file -PathType Leaf)) {
               Get-FileHash -LiteralPath $file -Algorithm SHA256 |

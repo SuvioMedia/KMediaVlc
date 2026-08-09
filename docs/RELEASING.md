@@ -27,7 +27,8 @@ build:
 
 The release inventory is a reviewed input, not a generated license guess. A
 new or renamed DLL/plugin stops publication until its provenance and license
-are reviewed. The current stock-nightly test fixture is never release input.
+are reviewed. Test media and the raw source-build audit candidate are never
+release payloads.
 
 For the first build of a revision, dispatch `Build source VLC Windows audit
 candidate` with the exact tested KMediaVlc commit. It runs the pinned VideoLAN

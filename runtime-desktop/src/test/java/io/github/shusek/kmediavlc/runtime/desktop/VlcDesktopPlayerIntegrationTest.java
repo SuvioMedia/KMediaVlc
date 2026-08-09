@@ -109,6 +109,66 @@ final class VlcDesktopPlayerIntegrationTest {
         }
     }
 
+    @Test
+    void pinnedChromiumHdr10FixturePublishesFp16D3D11Frame() throws Exception {
+        Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase().contains("windows"));
+        String mediaPath = System.getProperty("kmediavlc.test.hdrMedia");
+        Assumptions.assumeTrue(mediaPath != null, "The immutable Chromium HDR10 fixture is opt-in.");
+        Path media = Path.of(mediaPath).toAbsolutePath();
+        Assumptions.assumeTrue(media.toFile().isFile(), "The Chromium HDR10 fixture is missing.");
+        var fixture = fixture();
+        NativeBridge.load(fixture.runtime().bridgePath());
+        long adapterLuid = NativeBridge.defaultWindowsAdapterLuid();
+        Assumptions.assumeTrue(adapterLuid != 0, "No hardware DXGI adapter is available.");
+        var signal = new CountDownLatch(1);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.GPU_PUSH,
+                true,
+                203f,
+                1_000f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        signal.countDown();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
+            assertTrue(player.updateOutput(new VlcWindowsOutputTarget(
+                    23,
+                    320,
+                    180,
+                    true,
+                    203f,
+                    1_000f,
+                    adapterLuid)));
+            assertTrue(player.open(media.toUri().toString(), Map.of(), true));
+            assertTrue(
+                    signal.await(20, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "No HDR10 D3D11 frame arrived."));
+            try (var frame = player.acquireLatestFrame().orElseThrow()) {
+                assertEquals(VlcNativeHandleType.D3D11_SHARED_HANDLE, frame.handleType());
+                assertEquals(VlcPixelFormat.RGBA16F_LINEAR_SRGB, frame.pixelFormat());
+                assertEquals(VlcSourceDynamicRange.HDR10, frame.sourceDynamicRange());
+                assertEquals(23, frame.generation());
+                assertEquals(320, frame.width());
+                assertEquals(180, frame.height());
+                assertTrue(frame.contentPeakNits() >= 1_000f);
+                float[] inspection = NativeBridge.inspectWindowsD3D11Frame(
+                        adapterLuid, frame.platformHandle());
+                assertNotNull(inspection, "A second D3D11 device must import and lock the HDR frame.");
+                assertEquals(7, inspection.length);
+                assertEquals(10, Math.round(inspection[0]), "DXGI_FORMAT_R16G16B16A16_FLOAT");
+                assertEquals(320, Math.round(inspection[1]));
+                assertEquals(180, Math.round(inspection[2]));
+                assertTrue(Float.isFinite(inspection[3]));
+                assertTrue(Float.isFinite(inspection[4]));
+                assertTrue(Float.isFinite(inspection[5]));
+                assertTrue(Float.isFinite(inspection[6]) && inspection[6] > 0.9f);
+            }
+        }
+    }
+
     private Fixture fixture() throws Exception {
         String bridge = System.getProperty("kmediavlc.test.nativeBridge");
         String libVlc = System.getProperty("kmediavlc.test.libVlc");

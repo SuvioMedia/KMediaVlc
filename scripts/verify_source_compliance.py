@@ -154,6 +154,10 @@ def verify_policy(root: Path) -> None:
         "EXPECTED_RUNTIME_SHA256",
         "Generate the plugin cache natively",
         "KMEDIAVLC_TEST_PLUGIN_CACHE",
+        "49b960ac28ae13153ba8e62e3fceb50408564c21f25fc38936e7c8a06b61f2db",
+        "pinnedChromiumHdr10FixturePublishesFp16D3D11Frame",
+        "intro-targets.json",
+        'cp -a "$meson_info"',
     ]
     if not all(marker in audit_workflow for marker in native_validation_markers):
         fail("The source-built VLC payload lacks mandatory native Windows validation.")
