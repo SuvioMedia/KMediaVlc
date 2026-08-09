@@ -15,13 +15,17 @@ ALLOWED_LICENSES = {
     "Apache-2.0",
     "BSD-2-Clause",
     "BSD-3-Clause",
+    "FTL",
+    "IJG",
     "ISC",
     "LicenseRef-KMediaVlc-Proprietary",
     "LGPL-2.0-or-later",
     "LGPL-2.1-or-later",
     "LGPL-3.0-or-later",
+    "Libpng-2.0",
     "MIT",
     "MPL-2.0",
+    "TU-Berlin-1.0",
     "Zlib",
 }
 FORBIDDEN_BINARY_SUFFIXES = {
@@ -146,6 +150,60 @@ def verify_policy(root: Path) -> None:
     if playback.get("additionalDirectSourceLicenses") != expected_additional:
         fail("Windows playback direct-source license exceptions changed without review.")
 
+    binary = load_json(root / "compliance/policy/windows-x86_64-binary-components.json")
+    if (
+        binary.get("schemaVersion") != 1
+        or binary.get("target") != "windows-x86_64"
+        or binary.get("vlcRevision") != PINNED_REVISION
+    ):
+        fail("Windows binary component policy has an unsupported identity.")
+    if binary.get("toolchainImage") != "registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331":
+        fail("Windows binary component policy targets a different toolchain.")
+    if binary.get("reviewStatus") not in {"pending-link-command-audit", "approved"}:
+        fail("Windows binary component policy has an invalid review state.")
+    components = binary.get("components")
+    if not isinstance(components, dict) or list(components) != sorted(components) or not components:
+        fail("Windows binary components must be a non-empty sorted closed map.")
+    for component_id, component_policy in components.items():
+        if not re.fullmatch(r"[a-z0-9-]+", component_id) or not isinstance(component_policy, dict):
+            fail(f"Invalid Windows binary component: {component_id!r}")
+        if set(component_policy) != {"version", "licenseSpdx", "sourceArchive"}:
+            fail(f"Windows binary component fields are not closed: {component_id}")
+        licenses = component_policy["licenseSpdx"]
+        if not isinstance(licenses, list) or licenses != sorted(set(licenses)) or not licenses:
+            fail(f"Windows binary component licenses are not canonical: {component_id}")
+        if any(license_id not in ALLOWED_LICENSES for license_id in licenses):
+            fail(f"Windows binary component has an unapproved license: {component_id}")
+        if not isinstance(component_policy["version"], str) or not component_policy["version"]:
+            fail(f"Windows binary component version is missing: {component_id}")
+        if not re.fullmatch(r"[A-Za-z0-9.+_-]+\.tar\.(?:gz|xz|bz2)", component_policy["sourceArchive"]):
+            fail(f"Windows binary component source archive is unsafe: {component_id}")
+    module_components = binary.get("moduleComponents")
+    expected_component_modules = {
+        "adaptive", "avcodec", "flac", "freetype", "gnutls", "inflate", "jpeg",
+        "libass", "mkv", "mp4", "ogg", "opus", "png", "sftp", "soxr",
+        "speex_resampler", "swscale", "ts", "vorbis", "xml",
+    }
+    if not isinstance(module_components, dict) or set(module_components) != expected_component_modules:
+        fail("Windows binary module/component closure changed without review.")
+    referenced_components: set[str] = set()
+    for module, component_ids in module_components.items():
+        if module not in modules or component_ids != sorted(set(component_ids)) or not component_ids:
+            fail(f"Windows binary module components are not canonical: {module}")
+        if any(component_id not in components for component_id in component_ids):
+            fail(f"Windows binary module references an unknown component: {module}")
+        referenced_components.update(component_ids)
+    core_components = binary.get("coreComponents")
+    if core_components != sorted(set(core_components or [])) or any(
+        component_id not in components for component_id in (core_components or [])
+    ):
+        fail("Windows core component closure is not canonical.")
+    referenced_components.update(core_components)
+    if referenced_components != set(components):
+        fail("Windows binary component policy contains unused or missing components.")
+    if binary.get("moduleAdditionalLicenses") != expected_additional:
+        fail("Windows binary direct-source license exceptions changed without review.")
+
     recipe = load_json(root / "build-recipes/windows.json")
     if recipe.get("vlcRevision") != PINNED_REVISION:
         fail("Windows build recipe does not match the pinned VLC revision.")
@@ -209,6 +267,10 @@ def verify_policy(root: Path) -> None:
         'cp -a "$meson_info"',
         "ninja-commands.txt",
         "ninja-graph.dot",
+        "candidate_version:",
+        "package_corresponding_source.py",
+        "create_windows_native_inventory.py",
+        ":runtime-desktop:verifyRuntimeJar",
     ]
     if not all(marker in audit_workflow for marker in native_validation_markers):
         fail("The source-built VLC payload lacks mandatory native Windows validation.")

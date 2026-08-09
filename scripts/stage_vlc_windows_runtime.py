@@ -65,6 +65,19 @@ def load_policy(root: Path, allow_audit_candidate: bool) -> tuple[dict, list[tup
         fail("Windows playback modules target a different VLC revision.")
     if policy.get("reviewStatus") != "approved" and not allow_audit_candidate:
         fail("Windows playback module dependencies have not completed review.")
+    binary_policy = json.loads(
+        (root / "compliance/policy/windows-x86_64-binary-components.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if (
+        binary_policy.get("schemaVersion") != 1
+        or binary_policy.get("target") != "windows-x86_64"
+        or binary_policy.get("vlcRevision") != PINNED_REVISION
+    ):
+        fail("Unsupported Windows binary component policy.")
+    if binary_policy.get("reviewStatus") != "approved" and not allow_audit_candidate:
+        fail("Windows binary link inputs have not completed review.")
     if policy.get("primaryLicenseSpdx") != "LGPL-2.1-or-later":
         fail("Windows playback modules must retain their reviewed primary license.")
     families = policy.get("modulesByFamily")

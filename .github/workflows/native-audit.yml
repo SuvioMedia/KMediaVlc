@@ -9,6 +9,11 @@ on:
         description: Exact forty-character KMediaVlc commit tested locally
         required: true
         type: string
+      candidate_version:
+        description: Immutable SemVer intended for this audited candidate
+        required: true
+        default: 0.1.0-rc.1
+        type: string
 
 permissions:
   contents: read
@@ -29,6 +34,7 @@ jobs:
       options: --user 0
     env:
       TESTED_COMMIT: ${{ inputs.tested_commit }}
+      CANDIDATE_VERSION: ${{ inputs.candidate_version }}
       VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
       TOOLCHAIN_IMAGE: registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331
     steps:
@@ -211,6 +217,13 @@ jobs:
           tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
             -czf "$RUNNER_TEMP/audit-assets/kmedia-vlc-corresponding-source-candidate.tar.gz" \
             -C "$RUNNER_TEMP" corresponding-source
+          python3 scripts/package_corresponding_source.py \
+            --root "$GITHUB_WORKSPACE" \
+            --candidate "$RUNNER_TEMP/audit-assets/kmedia-vlc-corresponding-source-candidate.tar.gz" \
+            --output "$RUNNER_TEMP/audit-assets/kmedia-vlc-$CANDIDATE_VERSION-corresponding-source-audit.tar.gz" \
+            --tested-commit "$TESTED_COMMIT" \
+            --epoch "$epoch" \
+            --allow-audit-candidate
           (
             cd "$RUNNER_TEMP/audit-assets"
             sha256sum *.tar.gz > archive-SHA256SUMS
@@ -245,6 +258,7 @@ jobs:
     timeout-minutes: 45
     env:
       TESTED_COMMIT: ${{ inputs.tested_commit }}
+      CANDIDATE_VERSION: ${{ inputs.candidate_version }}
       VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
       EXPECTED_RUNTIME_SHA256: ${{ needs.build-windows-x86-64.outputs.runtime_sha256 }}
       KMEDIAVLC_TEST_HTTPS_HDR_MEDIA: https://raw.githubusercontent.com/chromium/chromium/85af8764718f33f0d221e96f31f5d993f364b4a2/media/test/data/bear-1280x720-hevc-10bit-hdr10.mp4
@@ -500,7 +514,7 @@ jobs:
               -Destination (Join-Path $evidence 'staging-report.json')
           }
 
-      - name: Close and archive the exact tested Windows candidate
+      - name: Close the exact tested Windows runtime file set
         shell: pwsh
         run: |
           $files = @(Get-ChildItem -LiteralPath $env:KMEDIAVLC_CANDIDATE -Recurse -File)
@@ -520,6 +534,40 @@ jobs:
           }
           $hashes | Set-Content -LiteralPath `
             (Join-Path $env:KMEDIAVLC_CANDIDATE 'SHA256SUMS') -Encoding ascii
+
+      - name: Create and verify the candidate component inventory
+        shell: pwsh
+        run: |
+          $inventory = Join-Path $env:RUNNER_TEMP 'windows-x86_64-native-inventory.json'
+          $sourceOffer = "https://github.com/SuvioMedia/KMediaVlc/releases/download/" +
+            "v$env:CANDIDATE_VERSION/kmedia-vlc-$env:CANDIDATE_VERSION-corresponding-source.tar.gz"
+          python scripts/create_windows_native_inventory.py `
+            --root $env:GITHUB_WORKSPACE `
+            --staging $env:KMEDIAVLC_CANDIDATE `
+            --output $inventory `
+            --version $env:CANDIDATE_VERSION `
+            --source-offer $sourceOffer `
+            --allow-audit-candidate
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate component inventory generation failed.' }
+          .\gradlew.bat :runtime-desktop:verifyRuntimeJar `
+            "-PpublicationVersion=$env:CANDIDATE_VERSION" `
+            "-PkmediaVlcNativeStagingDirectory=$env:KMEDIAVLC_CANDIDATE" `
+            "-PkmediaVlcNativeInventory=$inventory" `
+            -PkmediaVlcNativeTarget=windows-x86_64 `
+            "-PkmediaVlcSourceOffer=$sourceOffer" `
+            "-PrecipeRevision=$env:TESTED_COMMIT" `
+            --no-daemon --stacktrace --console=plain
+          $jar = Join-Path $env:GITHUB_WORKSPACE `
+            "runtime-desktop\build\libs\runtime-desktop-$env:CANDIDATE_VERSION.jar"
+          if (-not (Test-Path -LiteralPath $jar -PathType Leaf)) {
+            throw 'Verified candidate runtime JAR is missing.'
+          }
+          "KMEDIAVLC_CANDIDATE_INVENTORY=$inventory" >> $env:GITHUB_ENV
+          "KMEDIAVLC_CANDIDATE_JAR=$jar" >> $env:GITHUB_ENV
+
+      - name: Archive the verified Windows candidate
+        shell: pwsh
+        run: |
           $archive = Join-Path $env:RUNNER_TEMP `
             "kmediavlc-windows-x86_64-audit-candidate-$env:TESTED_COMMIT.zip"
           Compress-Archive -Path "$env:KMEDIAVLC_CANDIDATE\*" `
@@ -539,7 +587,10 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: kmediavlc-windows-x86_64-tested-candidate-${{ inputs.tested_commit }}
-          path: ${{ env.KMEDIAVLC_CANDIDATE_ARCHIVE }}
+          path: |
+            ${{ env.KMEDIAVLC_CANDIDATE_ARCHIVE }}
+            ${{ env.KMEDIAVLC_CANDIDATE_INVENTORY }}
+            ${{ env.KMEDIAVLC_CANDIDATE_JAR }}
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
