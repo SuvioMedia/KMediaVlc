@@ -55,10 +55,12 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
         first = self.base / "first.tar.gz"
         second = self.base / "second.tar.gz"
         first_hash = PACKAGER.package(
-            ROOT, self.candidate, first, COMMIT, 1_700_000_000, allow_audit_candidate=True
+            ROOT, self.candidate, first, COMMIT, "0.1.0-rc.1", 1_700_000_000,
+            allow_audit_candidate=True
         )
         second_hash = PACKAGER.package(
-            ROOT, self.candidate, second, COMMIT, 1_700_000_000, allow_audit_candidate=True
+            ROOT, self.candidate, second, COMMIT, "0.1.0-rc.1", 1_700_000_000,
+            allow_audit_candidate=True
         )
         self.assertEqual(first_hash, second_hash)
         self.assertEqual(first.read_bytes(), second.read_bytes())
@@ -69,6 +71,7 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
             )
             manifest = json.load(archive.extractfile("corresponding-source/SOURCE-MANIFEST.json"))
         self.assertEqual(COMMIT, manifest["testedCommit"])
+        self.assertEqual("0.1.0-rc.1", manifest["releaseVersion"])
         self.assertEqual("pending-link-command-audit", manifest["componentReviewStatus"])
 
     def test_release_mode_rejects_pending_binary_review(self) -> None:
@@ -78,6 +81,7 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
                 self.candidate,
                 self.base / "release.tar.gz",
                 COMMIT,
+                "0.1.0-rc.1",
                 1_700_000_000,
             )
 
@@ -94,6 +98,7 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
                 unsafe,
                 self.base / "unsafe-output.tar.gz",
                 COMMIT,
+                "0.1.0-rc.1",
                 1_700_000_000,
                 allow_audit_candidate=True,
             )

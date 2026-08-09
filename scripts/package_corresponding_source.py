@@ -17,6 +17,10 @@ from pathlib import Path, PurePosixPath
 
 PINNED_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
 COMMIT = re.compile(r"[0-9a-f]{40}")
+SEMVER = re.compile(
+    r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
+    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+)
 ROOT = PurePosixPath("corresponding-source")
 MAX_MEMBERS = 200_000
 MAX_FILE_SIZE = 900 * 1024 * 1024
@@ -92,6 +96,7 @@ def package(
     candidate: Path,
     output: Path,
     tested_commit: str,
+    version: str,
     epoch: int,
     allow_audit_candidate: bool = False,
 ) -> str:
@@ -104,6 +109,8 @@ def package(
         fail("Corresponding-source output must be a new file in a real directory.")
     if not COMMIT.fullmatch(tested_commit):
         fail("Corresponding source requires an exact tested KMediaVlc commit.")
+    if not SEMVER.fullmatch(version) or "SNAPSHOT" in version.upper():
+        fail("Corresponding source requires immutable non-SNAPSHOT SemVer.")
     policy, selected_archives = load_policy(root, allow_audit_candidate)
     archive_paths = {
         ROOT / "contrib-tarballs" / archive: archive for archive in selected_archives
@@ -150,6 +157,7 @@ def package(
         manifest = {
             "schemaVersion": 1,
             "target": policy["target"],
+            "releaseVersion": version,
             "testedCommit": tested_commit,
             "vlcRevision": policy["vlcRevision"],
             "toolchainImage": policy["toolchainImage"],
@@ -197,6 +205,7 @@ def main() -> int:
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--tested-commit", required=True)
+    parser.add_argument("--version", required=True)
     parser.add_argument("--epoch", type=int, required=True)
     parser.add_argument("--allow-audit-candidate", action="store_true")
     arguments = parser.parse_args()
@@ -205,6 +214,7 @@ def main() -> int:
         arguments.candidate,
         arguments.output,
         arguments.tested_commit,
+        arguments.version,
         arguments.epoch,
         arguments.allow_audit_candidate,
     )

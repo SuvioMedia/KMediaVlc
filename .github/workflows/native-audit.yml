@@ -222,6 +222,7 @@ jobs:
             --candidate "$RUNNER_TEMP/audit-assets/kmedia-vlc-corresponding-source-candidate.tar.gz" \
             --output "$RUNNER_TEMP/audit-assets/kmedia-vlc-$CANDIDATE_VERSION-corresponding-source-audit.tar.gz" \
             --tested-commit "$TESTED_COMMIT" \
+            --version "$CANDIDATE_VERSION" \
             --epoch "$epoch" \
             --allow-audit-candidate
           (
