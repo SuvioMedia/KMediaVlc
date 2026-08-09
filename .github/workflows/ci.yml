@@ -9,7 +9,8 @@ permissions:
 
 jobs:
   verify:
-    runs-on: windows-latest
+    # The Gradle native task deliberately targets the VS 17 2022 generator.
+    runs-on: windows-2022
     steps:
       - name: Check out KMediaVlc
         uses: actions/checkout@v6
