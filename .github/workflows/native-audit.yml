@@ -70,8 +70,9 @@ jobs:
         shell: bash
         run: |
           cc=x86_64-w64-mingw32-gcc
+          cxx=x86_64-w64-mingw32-g++
           command -v "$cc"
-          command -v x86_64-w64-mingw32-g++
+          command -v "$cxx"
           command -v x86_64-w64-mingw32-strip
           command -v x86_64-w64-mingw32-windres
           command -v meson
@@ -86,12 +87,43 @@ jobs:
             echo "kmediavlc=$TESTED_COMMIT"
             echo "vlc=$VLC_REVISION"
             "$cc" --version
+            "$cxx" --version
+            "$cc" -print-search-dirs
             meson --version
             cat /etc/os-release
             printf '\nUCRT macros:\n'
             printf '#include <crtdefs.h>\n' | "$cc" -dM -E - | sort |
               grep -E '^#define (_UCRT|__MSVCRT_VERSION__|_WIN32_WINNT|WINVER)'
           } > "$RUNNER_TEMP/audit-assets/toolchain.txt"
+          {
+            for archive in \
+              libunwind.a \
+              libpthread.a \
+              libc++.a \
+              libc++abi.a \
+              libclang_rt.builtins-x86_64.a; do
+              resolved="$("$cxx" --print-file-name="$archive")"
+              if [[ "$resolved" != "$archive" && -f "$resolved" ]]; then
+                sha256sum "$resolved"
+              fi
+            done
+            runtime="$("$cc" -print-libgcc-file-name)"
+            test -f "$runtime"
+            sha256sum "$runtime"
+          } | sort -u > "$RUNNER_TEMP/audit-assets/toolchain-static-archives-SHA256SUMS"
+          test -s "$RUNNER_TEMP/audit-assets/toolchain-static-archives-SHA256SUMS"
+
+          license_root="$RUNNER_TEMP/audit-assets/toolchain-licenses"
+          mkdir "$license_root"
+          while IFS= read -r -d '' license; do
+            relative="${license#/opt/llvm-mingw/}"
+            destination="$license_root/$relative"
+            mkdir -p "$(dirname "$destination")"
+            cp "$license" "$destination"
+          done < <(find /opt/llvm-mingw -type f \
+            \( -iname 'LICENSE*' -o -iname 'COPYING*' -o -iname 'NOTICE*' \) \
+            -print0 | sort -z)
+          test -n "$(find "$license_root" -type f -print -quit)"
 
       - name: Restore the exact source-built contrib cache
         id: contrib_cache
@@ -271,6 +303,8 @@ jobs:
           name: vlc-windows-x86_64-link-audit-${{ inputs.tested_commit }}
           path: |
             ${{ runner.temp }}/audit-assets/toolchain.txt
+            ${{ runner.temp }}/audit-assets/toolchain-static-archives-SHA256SUMS
+            ${{ runner.temp }}/audit-assets/toolchain-licenses
             ${{ runner.temp }}/audit-assets/installed-SHA256SUMS
             ${{ runner.temp }}/audit-assets/contrib-source-SHA256SUMS
             ${{ runner.temp }}/audit-assets/meson-info
