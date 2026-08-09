@@ -128,12 +128,16 @@ def verify_policy(root: Path) -> None:
         fail("Windows VLC recipe is missing required release/UCRT/headless/LGPL flags.")
     if recipe.get("usesPrebuiltContribs") is not False:
         fail("Release recipe must build contribs from their verified source inputs.")
+    if recipe.get("mesonInstallTags") != ["runtime"] or recipe.get("stripInstalledTargets") is not True:
+        fail("Windows release install must contain only stripped Meson runtime targets.")
     if recipe.get("requiresPerFileInventory") is not True or recipe.get("forbidsStockNightly") is not True:
         fail("Windows release recipe weakened the inventory or nightly prohibition.")
     builder = (root / "scripts/build_vlc_windows.sh").read_text(encoding="utf-8")
     install_markers = [
         'meson_executable="$source_directory/extras/tools/build/bin/meson"',
-        '"$meson_executable" install -C "$meson_build_directory" --destdir "$output_directory"',
+        '"$meson_executable" install',
+        '--tags runtime',
+        '--strip',
         'win64-ucrt-meson',
         'winarm64-ucrt-meson',
         'VLC source build produced an empty install payload',

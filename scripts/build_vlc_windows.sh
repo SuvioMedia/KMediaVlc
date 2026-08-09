@@ -47,30 +47,30 @@ cd "$source_directory"
     -z \
     -g a \
     -m \
-    -a "$architecture" \
-    -o "$output_directory"
+    -a "$architecture"
 
-# With Meson, upstream clears INSTALLER for a headless build and therefore
-# does not execute its guarded install step even when -o is present. Install
-# the already-built tree explicitly so a successful compile cannot yield an
-# empty release payload.
+# A headless build intentionally leaves installation to this closed packaging
+# step. Install only runtime-tagged files and strip targets with the pinned
+# cross toolchain; headers, import libraries, and build-only executables must
+# never enter the native payload candidate.
 case "$architecture" in
     x86_64) readonly meson_build_directory="$source_directory/win64-ucrt-meson" ;;
     aarch64) readonly meson_build_directory="$source_directory/winarm64-ucrt-meson" ;;
 esac
 readonly meson_executable="$source_directory/extras/tools/build/bin/meson"
-if [[ ! -d "$output_directory" ]] ||
-   [[ -z "$(find "$output_directory" -type f -print -quit 2>/dev/null)" ]]; then
-    if [[ ! -d "$meson_build_directory" ]]; then
-        echo "VLC Meson build directory is missing: $meson_build_directory" >&2
-        exit 1
-    fi
-    if [[ ! -x "$meson_executable" ]]; then
-        echo "VLC bundled Meson is missing: $meson_executable" >&2
-        exit 1
-    fi
-    "$meson_executable" install -C "$meson_build_directory" --destdir "$output_directory"
+if [[ ! -d "$meson_build_directory" ]]; then
+    echo "VLC Meson build directory is missing: $meson_build_directory" >&2
+    exit 1
 fi
+if [[ ! -x "$meson_executable" ]]; then
+    echo "VLC bundled Meson is missing: $meson_executable" >&2
+    exit 1
+fi
+"$meson_executable" install \
+    -C "$meson_build_directory" \
+    --destdir "$output_directory" \
+    --tags runtime \
+    --strip
 if [[ ! -d "$output_directory" ]] ||
    [[ -z "$(find "$output_directory" -type f -print -quit 2>/dev/null)" ]]; then
     echo "VLC source build produced an empty install payload" >&2

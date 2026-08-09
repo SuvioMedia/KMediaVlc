@@ -18,6 +18,8 @@ build:
 - a clean KMediaVlc checkout and its forty-character commit;
 - VLC revision `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`;
 - output of `scripts/build_vlc_windows.sh`, never a VideoLAN nightly;
+- a stripped Meson `runtime`-tag install, without headers, import libraries, or
+  other development-only files;
 - the KMediaVlc bridge built against headers from that exact VLC revision;
 - an exact JSON inventory for every staged file, including component, SPDX
   license, dynamic linkage, source location, role, and target;

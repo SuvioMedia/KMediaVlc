@@ -10,6 +10,8 @@
   "nativeValidationRunner": "windows-2022",
   "upstreamBuildScript": "extras/package/win32/build.sh",
   "libVlcBuildArguments": ["-r", "-u", "-z", "-g", "a", "-m"],
+  "mesonInstallTags": ["runtime"],
+  "stripInstalledTargets": true,
   "usesPrebuiltContribs": false,
   "requiresPerFileInventory": true,
   "forbidsStockNightly": true
