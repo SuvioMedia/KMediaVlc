@@ -8,9 +8,9 @@ SPDX expression, binary hash, linkage, and corresponding-source location for
 every library and plugin.
 
 The packager accepts `DYNAMIC` linkage for every executable component and
-`NONE` only for legal files. Static or omitted linkage is rejected; this keeps
-libVLC, libvlccore, plugins, dependencies, and the bridge replaceable without
-depending on an undocumented relinking exception.
+`NONE` only for data and legal files. Static or omitted linkage is rejected;
+this keeps libVLC, libvlccore, plugins, dependencies, and the bridge
+replaceable without depending on an undocumented relinking exception.
 
 The release gate rejects:
 

@@ -165,7 +165,7 @@ def verify_policy(root: Path) -> None:
         fail("Source-built Windows binaries must be loaded and tested on a native Windows runner.")
     arguments = recipe.get("libVlcBuildArguments")
     if not isinstance(arguments, list) or not all(flag in arguments for flag in ["-r", "-u", "-z", "-g", "l", "-m"]):
-        fail("Windows VLC recipe is missing required release/UCRT/headless/LGPL flags.")
+        fail("Windows VLC recipe is missing required release/UCRT/headless/GPL-disabled flags.")
     if recipe.get("usesPrebuiltContribs") is not False:
         fail("Release recipe must build contribs from their verified source inputs.")
     if recipe.get("mesonInstallTags") != ["runtime"] or recipe.get("stripInstalledTargets") is not True:
@@ -196,7 +196,10 @@ def verify_policy(root: Path) -> None:
         'rm -f "$stamp"',
         "runtime_sha256: ${{ steps.package.outputs.runtime_sha256 }}",
         "EXPECTED_RUNTIME_SHA256",
-        "Generate the plugin cache natively",
+        "Stage the closed Windows playback candidate",
+        "--allow-audit-candidate",
+        "Generate the plugin cache for the closed candidate",
+        "windows-x86_64-candidate",
         "KMEDIAVLC_TEST_PLUGIN_CACHE",
         "49b960ac28ae13153ba8e62e3fceb50408564c21f25fc38936e7c8a06b61f2db",
         "pinnedChromiumHdr10FixturePublishesFp16D3D11Frame",

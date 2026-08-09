@@ -320,33 +320,22 @@ jobs:
           if ($libVlc.Count -ne 1 -or $libVlcCore.Count -ne 1 -or $pluginDirectories.Count -ne 1) {
             throw 'The source-built runtime layout is ambiguous or incomplete.'
           }
-          "KMEDIAVLC_TEST_LIBVLC=$($libVlc[0].FullName)" >> $env:GITHUB_ENV
-          "KMEDIAVLC_TEST_LIBVLCCORE=$($libVlcCore[0].FullName)" >> $env:GITHUB_ENV
-          "KMEDIAVLC_TEST_PLUGINS=$($pluginDirectories[0].FullName)" >> $env:GITHUB_ENV
+          "KMEDIAVLC_RAW_INSTALL=$install" >> $env:GITHUB_ENV
+          "KMEDIAVLC_RAW_LIBVLC=$($libVlc[0].FullName)" >> $env:GITHUB_ENV
+          "KMEDIAVLC_RAW_LIBVLCCORE=$($libVlcCore[0].FullName)" >> $env:GITHUB_ENV
+          "KMEDIAVLC_RAW_PLUGINS=$($pluginDirectories[0].FullName)" >> $env:GITHUB_ENV
 
-      - name: Generate the plugin cache natively
+      - name: Locate the source-built plugin cache generator
         shell: pwsh
         run: |
-          $install = Join-Path $env:RUNNER_TEMP 'source-built-runtime\vlc-install'
           $generators = @(
-            Get-ChildItem -LiteralPath $install -Recurse -File -Filter 'vlc-cache-gen.exe'
+            Get-ChildItem -LiteralPath $env:KMEDIAVLC_RAW_INSTALL -Recurse -File `
+              -Filter 'vlc-cache-gen.exe'
           )
           if ($generators.Count -ne 1) {
             throw 'The source-built runtime has no unique VLC cache generator.'
           }
-          $pluginCache = Join-Path $env:KMEDIAVLC_TEST_PLUGINS 'plugins.dat'
-          if (Test-Path -LiteralPath $pluginCache) {
-            Remove-Item -LiteralPath $pluginCache -Force
-          }
-          $binDirectory = Split-Path -Parent $env:KMEDIAVLC_TEST_LIBVLC
-          $env:PATH = "$binDirectory;$env:PATH"
-          & $generators[0].FullName $env:KMEDIAVLC_TEST_PLUGINS
-          if ($LASTEXITCODE -ne 0) { throw 'Native VLC plugin cache generation failed.' }
-          if (-not (Test-Path -LiteralPath $pluginCache -PathType Leaf) -or
-              (Get-Item -LiteralPath $pluginCache).Length -le 0) {
-            throw 'Native VLC plugin cache generation produced no cache.'
-          }
-          "KMEDIAVLC_TEST_PLUGIN_CACHE=$pluginCache" >> $env:GITHUB_ENV
+          "KMEDIAVLC_RAW_CACHE_GENERATOR=$($generators[0].FullName)" >> $env:GITHUB_ENV
 
       - name: Fetch the immutable Chromium HDR10 fixture
         shell: pwsh
@@ -365,13 +354,55 @@ jobs:
         run: |
           .\gradlew.bat check complianceCheck buildNativeBridge `
             "-PkmediaVlcVlcSourceDir=$env:GITHUB_WORKSPACE\.vlc-source" `
+            -PkmediaVlcNativeBuildType=Release `
             --no-daemon --stacktrace --console=plain
+
+      - name: Stage the closed Windows playback candidate
+        shell: pwsh
+        run: |
+          $bridge = Join-Path $env:GITHUB_WORKSPACE `
+            'build\native\windows-x86_64\Release\kmediavlc_bridge.dll'
+          if (-not (Test-Path -LiteralPath $bridge -PathType Leaf)) {
+            throw 'The release-mode MSVC bridge binary is missing.'
+          }
+          $candidate = Join-Path $env:RUNNER_TEMP 'windows-x86_64-candidate'
+          $report = Join-Path $env:RUNNER_TEMP 'windows-x86_64-staging-report.json'
+          python scripts/stage_vlc_windows_runtime.py `
+            --root $env:GITHUB_WORKSPACE `
+            --install $env:KMEDIAVLC_RAW_INSTALL `
+            --bridge $bridge `
+            --output $candidate `
+            --report $report `
+            --allow-audit-candidate
+          if ($LASTEXITCODE -ne 0) { throw 'Closed Windows candidate staging failed.' }
+          "KMEDIAVLC_TEST_LIBVLC=$(Join-Path $candidate 'bin\libvlc.dll')" >> $env:GITHUB_ENV
+          "KMEDIAVLC_TEST_LIBVLCCORE=$(Join-Path $candidate 'bin\libvlccore-9.dll')" >> $env:GITHUB_ENV
+          "KMEDIAVLC_TEST_PLUGINS=$(Join-Path $candidate 'lib\vlc\plugins')" >> $env:GITHUB_ENV
+          "KMEDIAVLC_CANDIDATE=$candidate" >> $env:GITHUB_ENV
+          "KMEDIAVLC_CANDIDATE_REPORT=$report" >> $env:GITHUB_ENV
+
+      - name: Generate the plugin cache for the closed candidate
+        shell: pwsh
+        run: |
+          $pluginCache = Join-Path $env:KMEDIAVLC_TEST_PLUGINS 'plugins.dat'
+          if (Test-Path -LiteralPath $pluginCache) {
+            throw 'The closed stager unexpectedly copied a generated plugin cache.'
+          }
+          $binDirectory = Split-Path -Parent $env:KMEDIAVLC_TEST_LIBVLC
+          $env:PATH = "$binDirectory;$env:PATH"
+          & $env:KMEDIAVLC_RAW_CACHE_GENERATOR $env:KMEDIAVLC_TEST_PLUGINS
+          if ($LASTEXITCODE -ne 0) { throw 'Native VLC plugin cache generation failed.' }
+          if (-not (Test-Path -LiteralPath $pluginCache -PathType Leaf) -or
+              (Get-Item -LiteralPath $pluginCache).Length -le 0) {
+            throw 'Native VLC plugin cache generation produced no cache.'
+          }
+          "KMEDIAVLC_TEST_PLUGIN_CACHE=$pluginCache" >> $env:GITHUB_ENV
 
       - name: Run the bridge and libVLC integration natively
         shell: pwsh
         run: |
           $bridge = Join-Path $env:GITHUB_WORKSPACE `
-            'build\native\windows-x86_64\RelWithDebInfo\kmediavlc_bridge.dll'
+            'build\native\windows-x86_64\Release\kmediavlc_bridge.dll'
           if (-not (Test-Path -LiteralPath $bridge -PathType Leaf)) {
             throw 'The MSVC bridge binary is missing.'
           }
@@ -427,7 +458,7 @@ jobs:
           $evidence = Join-Path $env:RUNNER_TEMP 'windows-validation-evidence'
           New-Item -ItemType Directory -Path $evidence -Force | Out-Null
           $bridge = Join-Path $env:GITHUB_WORKSPACE `
-            'build\native\windows-x86_64\RelWithDebInfo\kmediavlc_bridge.dll'
+            'build\native\windows-x86_64\Release\kmediavlc_bridge.dll'
           @(
             "kmediavlc=$env:TESTED_COMMIT"
             "vlc=$env:VLC_REVISION"
@@ -451,6 +482,37 @@ jobs:
           if (Test-Path -LiteralPath $results) {
             Copy-Item -LiteralPath $results -Destination (Join-Path $evidence 'test-results') -Recurse
           }
+          if ($env:KMEDIAVLC_CANDIDATE_REPORT -and
+              (Test-Path -LiteralPath $env:KMEDIAVLC_CANDIDATE_REPORT -PathType Leaf)) {
+            Copy-Item -LiteralPath $env:KMEDIAVLC_CANDIDATE_REPORT `
+              -Destination (Join-Path $evidence 'staging-report.json')
+          }
+
+      - name: Close and archive the exact tested Windows candidate
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem -LiteralPath $env:KMEDIAVLC_CANDIDATE -Recurse -File)
+          if ($files.Count -ne 94) {
+            throw "Closed Windows candidate has $($files.Count) files instead of 94."
+          }
+          $relative = @($files | ForEach-Object {
+            $_.FullName.Substring($env:KMEDIAVLC_CANDIDATE.Length + 1).Replace('\', '/')
+          })
+          if (@($relative | Where-Object { $_ -like 'libexec/*' -or $_ -eq 'bin/vlc.exe' }).Count -ne 0) {
+            throw 'The tested candidate contains a non-runtime executable.'
+          }
+          $hashes = foreach ($file in $files | Sort-Object FullName) {
+            $path = $file.FullName.Substring($env:KMEDIAVLC_CANDIDATE.Length + 1).Replace('\', '/')
+            $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $path"
+          }
+          $hashes | Set-Content -LiteralPath `
+            (Join-Path $env:KMEDIAVLC_CANDIDATE 'SHA256SUMS') -Encoding ascii
+          $archive = Join-Path $env:RUNNER_TEMP `
+            "kmediavlc-windows-x86_64-audit-candidate-$env:TESTED_COMMIT.zip"
+          Compress-Archive -Path "$env:KMEDIAVLC_CANDIDATE\*" `
+            -DestinationPath $archive -CompressionLevel Optimal
+          "KMEDIAVLC_CANDIDATE_ARCHIVE=$archive" >> $env:GITHUB_ENV
 
       - name: Upload native Windows validation evidence
         if: always()
@@ -459,4 +521,13 @@ jobs:
           name: kmediavlc-windows-x86_64-native-validation-${{ inputs.tested_commit }}
           path: ${{ runner.temp }}/windows-validation-evidence
           if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload the exact tested non-release Windows candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: kmediavlc-windows-x86_64-tested-candidate-${{ inputs.tested_commit }}
+          path: ${{ env.KMEDIAVLC_CANDIDATE_ARCHIVE }}
+          if-no-files-found: error
+          compression-level: 0
           retention-days: 7

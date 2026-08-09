@@ -19,8 +19,9 @@ native code at runtime. Native payloads are release inputs and are never
 committed to this repository.
 
 `scripts/build_vlc_windows.sh` wraps VideoLAN's own pinned Windows build in
-release, UCRT, headless, LGPLv2.1-compatible mode and intentionally does not
-consume prebuilt contrib archives. Its output is still not publishable until
+release, UCRT, headless, GPL-disabled mode. It permits the reviewed LGPLv3
+dependencies required for HTTPS/TLS and intentionally does not consume
+prebuilt contrib archives. Its output is still not publishable until
 every selected DLL and plugin passes the per-file inventory packager.
 The Windows binaries are compiled by the pinned LLVM/MinGW UCRT cross-toolchain;
 Wine is used only for Meson's tiny cross-executable sanity probe. The resulting
