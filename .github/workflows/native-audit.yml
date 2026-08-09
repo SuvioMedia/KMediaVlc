@@ -448,6 +448,18 @@ jobs:
             "-PkmediaVlcVlcSourceDir=$env:GITHUB_WORKSPACE\.vlc-source" `
             -PkmediaVlcNativeBuildType=Release `
             --no-daemon --stacktrace --console=plain
+          $projects = @(
+            Get-ChildItem build\native\windows-x86_64 -Recurse -File `
+              -Filter 'kmediavlc_bridge.vcxproj'
+          )
+          if ($projects.Count -ne 1) {
+            throw 'The native bridge has no unique generated MSVC project.'
+          }
+          $projectText = Get-Content -LiteralPath $projects[0].FullName -Raw
+          if ($projectText -notmatch '<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>') {
+            throw 'The Release bridge is not explicitly linked to the dynamic MSVC runtime.'
+          }
+          "KMEDIAVLC_BRIDGE_PROJECT=$($projects[0].FullName)" >> $env:GITHUB_ENV
 
       - name: Stage the closed Windows playback candidate
         shell: pwsh
@@ -578,6 +590,22 @@ jobs:
               (Test-Path -LiteralPath $env:KMEDIAVLC_CANDIDATE_REPORT -PathType Leaf)) {
             Copy-Item -LiteralPath $env:KMEDIAVLC_CANDIDATE_REPORT `
               -Destination (Join-Path $evidence 'staging-report.json')
+          }
+          if ($env:KMEDIAVLC_BRIDGE_PROJECT -and
+              (Test-Path -LiteralPath $env:KMEDIAVLC_BRIDGE_PROJECT -PathType Leaf)) {
+            Copy-Item -LiteralPath $env:KMEDIAVLC_BRIDGE_PROJECT `
+              -Destination (Join-Path $evidence 'kmediavlc_bridge.vcxproj')
+            $nativeRoot = Join-Path $env:GITHUB_WORKSPACE 'build\native\windows-x86_64'
+            $linkLogs = @(
+              Get-ChildItem -LiteralPath $nativeRoot -Recurse -File `
+                -Filter 'link.command.1.tlog' |
+                Where-Object { $_.Directory.Name -eq 'kmediavlc_bridge.tlog' }
+            )
+            if ($linkLogs.Count -ne 1) {
+              throw 'The Release bridge has no unique MSVC link command log.'
+            }
+            Copy-Item -LiteralPath $linkLogs[0].FullName `
+              -Destination (Join-Path $evidence 'bridge-link.command.1.tlog')
           }
 
       - name: Close the exact tested Windows runtime file set

@@ -245,11 +245,16 @@ def verify_policy(root: Path) -> None:
     ]
     if not all(marker in builder for marker in install_markers):
         fail("Windows VLC recipe does not close the headless Meson install step.")
+    bridge_cmake = (root / "native/CMakeLists.txt").read_text(encoding="utf-8")
+    if 'MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"' not in bridge_cmake:
+        fail("The Windows bridge must explicitly use the dynamic MSVC runtime.")
     audit_workflow = (root / ".github/workflows/native-audit.yml").read_text(encoding="utf-8")
     native_validation_markers = [
         "validate-windows-x86-64:",
         "runs-on: windows-2022",
         "Build the bridge natively with MSVC",
+        "MultiThreadedDLL</RuntimeLibrary>",
+        "bridge-link.command.1.tlog",
         "-PkmediaVlcNativeBridgePath=$bridge",
         "pinnedVideoLanFixturePublishesCpuPullFrame",
         "hardware HDR evidence remains mandatory",

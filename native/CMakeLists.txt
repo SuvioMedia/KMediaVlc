@@ -51,6 +51,9 @@ set_target_properties(kmediavlc_bridge PROPERTIES
 )
 
 if(MSVC)
+    set_property(TARGET kmediavlc_bridge PROPERTY
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+    )
     target_compile_options(kmediavlc_bridge PRIVATE /W4 /permissive- /EHsc /utf-8)
     target_compile_definitions(kmediavlc_bridge PRIVATE
         WIN32_LEAN_AND_MEAN
