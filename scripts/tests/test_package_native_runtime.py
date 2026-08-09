@@ -118,6 +118,18 @@ class PackageNativeRuntimePolicyTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.validate()
 
+    def test_accepts_only_sorted_closed_spdx_conjunctions(self) -> None:
+        self.inventory["files"][3]["licenseSpdx"] = "BSD-3-Clause AND LGPL-2.1-or-later"
+        self.assertEqual(4, len(self.validate()))
+        for expression in (
+            "LGPL-2.1-or-later AND BSD-3-Clause",
+            "BSD-3-Clause AND BSD-3-Clause",
+            "BSD-3-Clause OR LGPL-2.1-or-later",
+        ):
+            self.inventory["files"][3]["licenseSpdx"] = expression
+            with self.subTest(expression=expression), self.assertRaises(SystemExit):
+                self.validate()
+
     def test_rejects_stock_nightly_and_uninventoried_file(self) -> None:
         self.inventory["provenance"] = "videolan-nightly"
         with self.assertRaises(SystemExit):

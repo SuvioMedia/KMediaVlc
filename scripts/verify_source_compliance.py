@@ -207,6 +207,8 @@ def verify_policy(root: Path) -> None:
         "85af8764718f33f0d221e96f31f5d993f364b4a2",
         "intro-targets.json",
         'cp -a "$meson_info"',
+        "ninja-commands.txt",
+        "ninja-graph.dot",
     ]
     if not all(marker in audit_workflow for marker in native_validation_markers):
         fail("The source-built VLC payload lacks mandatory native Windows validation.")

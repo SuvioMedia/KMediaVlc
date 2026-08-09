@@ -7,10 +7,11 @@ release consumes an exact component inventory containing the source revision,
 SPDX expression, binary hash, linkage, and corresponding-source location for
 every library and plugin.
 
-The packager accepts `DYNAMIC` linkage for every executable component and
-`NONE` only for data and legal files. Static or omitted linkage is rejected;
-this keeps libVLC, libvlccore, plugins, dependencies, and the bridge
-replaceable without depending on an undocumented relinking exception.
+The packager accepts `DYNAMIC` linkage for every executable payload file and
+`NONE` only for data and legal files. A bundled DLL may contain only the
+separately audited static contribs listed in its canonical SPDX conjunction;
+their corresponding source and relinking recipe remain mandatory. An
+uninventoried static contrib or a static libVLC/bridge payload is rejected.
 
 The release gate rejects:
 

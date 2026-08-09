@@ -176,6 +176,18 @@ jobs:
             test -s "$meson_info/$metadata"
           done
           cp -a "$meson_info" "$RUNNER_TEMP/audit-assets/meson-info"
+          build_root=.vlc-source/win64-ucrt-meson
+          for metadata in build.ninja compile_commands.json meson-logs/meson-log.txt; do
+            test -s "$build_root/$metadata"
+            destination="$(printf '%s' "$metadata" | tr '/' '-')"
+            cp "$build_root/$metadata" "$RUNNER_TEMP/audit-assets/$destination"
+          done
+          ninja -C "$build_root" -t commands \
+            > "$RUNNER_TEMP/audit-assets/ninja-commands.txt"
+          ninja -C "$build_root" -t graph \
+            > "$RUNNER_TEMP/audit-assets/ninja-graph.dot"
+          test -s "$RUNNER_TEMP/audit-assets/ninja-commands.txt"
+          test -s "$RUNNER_TEMP/audit-assets/ninja-graph.dot"
 
       - name: Package the audit runtime and complete source candidate
         id: package

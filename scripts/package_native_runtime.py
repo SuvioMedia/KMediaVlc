@@ -83,6 +83,18 @@ def load_inventory(path: Path) -> dict:
     return value
 
 
+def validate_license_expression(expression: object, allowed_licenses: set[str]) -> str:
+    if not isinstance(expression, str) or not expression:
+        fail("License expression must be a non-empty canonical SPDX string.")
+    identifiers = expression.split(" AND ")
+    if identifiers != sorted(set(identifiers)):
+        fail(f"License expression is not a sorted conjunction: {expression!r}")
+    unknown = [identifier for identifier in identifiers if identifier not in allowed_licenses]
+    if unknown:
+        fail(f"Forbidden or unknown license expression {expression!r}")
+    return expression
+
+
 def validate_inventory(inventory: dict, policy: dict, target: str, staging: Path) -> list[dict]:
     staging = staging.resolve(strict=True)
     if policy.get("bridgeAbiVersion") != BRIDGE_ABI_VERSION:
@@ -124,9 +136,7 @@ def validate_inventory(inventory: dict, policy: dict, target: str, staging: Path
             fail(f"Duplicate inventory path: {relative_text}")
         inventoried.add(relative_text)
         source = validate_source_reference(entry["source"], relative_text)
-        license_spdx = entry["licenseSpdx"]
-        if license_spdx not in allowed_licenses:
-            fail(f"Forbidden or unknown license {license_spdx!r} for {relative_text}")
+        license_spdx = validate_license_expression(entry["licenseSpdx"], allowed_licenses)
         role = entry["role"]
         if role not in {"BRIDGE", "LIBVLC", "CORE", "PLUGIN", "DEPENDENCY", "DATA", "LEGAL"}:
             fail(f"Unknown file role for {relative_text}")
