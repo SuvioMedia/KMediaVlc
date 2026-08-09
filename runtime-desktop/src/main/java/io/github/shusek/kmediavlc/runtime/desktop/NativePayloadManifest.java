@@ -167,7 +167,7 @@ record NativePayloadManifest(
                 bridgePath,
                 libVlcPath,
                 pluginDirectory,
-                new VlcRuntimeCapabilities(4, 1, VLC_VERSION, VLC_REVISION, modes, engines, hdr10Metadata),
+                new VlcRuntimeCapabilities(4, 2, VLC_VERSION, VLC_REVISION, modes, engines, hdr10Metadata),
                 List.copyOf(files));
     }
 

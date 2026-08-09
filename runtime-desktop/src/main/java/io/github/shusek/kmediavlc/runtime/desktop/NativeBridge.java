@@ -38,7 +38,7 @@ final class NativeBridge {
             try {
                 System.load(normalized.toString());
                 int abi = bridgeAbiVersion();
-                if (abi != 1) {
+                if (abi != 2) {
                     throw new VlcRuntimeException(
                             INCOMPATIBLE_BRIDGE, "The loaded KMediaVlc bridge ABI is incompatible.");
                 }

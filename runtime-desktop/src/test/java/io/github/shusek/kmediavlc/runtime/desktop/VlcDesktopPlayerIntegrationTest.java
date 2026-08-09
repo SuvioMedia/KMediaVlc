@@ -51,7 +51,7 @@ final class VlcDesktopPlayerIntegrationTest {
     }
 
     @Test
-    void pinnedVideoLanFixturePublishesFp16D3D11Frame() throws Exception {
+    void pinnedVideoLanFixtureKeepsSdrD3D11FrameSrgbOnHdrHost() throws Exception {
         Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase().contains("windows"));
         var fixture = fixture();
         NativeBridge.load(fixture.runtime().bridgePath());
@@ -83,7 +83,8 @@ final class VlcDesktopPlayerIntegrationTest {
             assertTrue(signal.await(15, TimeUnit.SECONDS), player.lastError().orElse("No D3D11 frame arrived."));
             try (var frame = player.acquireLatestFrame().orElseThrow()) {
                 assertEquals(VlcNativeHandleType.D3D11_SHARED_HANDLE, frame.handleType());
-                assertEquals(VlcPixelFormat.RGBA16F_LINEAR_SRGB, frame.pixelFormat());
+                assertEquals(VlcPixelFormat.RGBA8_SRGB, frame.pixelFormat());
+                assertEquals(VlcSourceDynamicRange.SDR, frame.sourceDynamicRange());
                 assertEquals(17, frame.generation());
                 assertEquals(128, frame.width());
                 assertEquals(72, frame.height());
@@ -93,7 +94,7 @@ final class VlcDesktopPlayerIntegrationTest {
                         adapterLuid, frame.platformHandle());
                 assertNotNull(inspection, "A second D3D11 device must import and lock the shared frame.");
                 assertEquals(7, inspection.length);
-                assertEquals(10, Math.round(inspection[0]), "DXGI_FORMAT_R16G16B16A16_FLOAT");
+                assertEquals(28, Math.round(inspection[0]), "DXGI_FORMAT_R8G8B8A8_UNORM");
                 assertEquals(128, Math.round(inspection[1]));
                 assertEquals(72, Math.round(inspection[2]));
                 assertTrue(Float.isFinite(inspection[3]) && inspection[3] > 0.25f);
@@ -128,7 +129,7 @@ final class VlcDesktopPlayerIntegrationTest {
                 "videolan-nightly-b5536cde-test-only",
                 new VlcRuntimeCapabilities(
                         4,
-                        1,
+                        2,
                         "4.0.0-dev",
                         "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
                         Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),

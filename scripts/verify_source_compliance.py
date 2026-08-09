@@ -90,7 +90,7 @@ def verify_policy(root: Path) -> None:
         fail("Stock VLC nightlies must remain release-ineligible.")
     if component.get("releaseRequiresPerBinaryLicenseInventory") is not True:
         fail("Per-binary license inventory must be mandatory.")
-    if policy.get("libvlcAbiMajor") != 4 or policy.get("bridgeAbiVersion") != 1:
+    if policy.get("libvlcAbiMajor") != 4 or policy.get("bridgeAbiVersion") != 2:
         fail("Release policy ABI pins are invalid.")
     if sorted(policy.get("requiredFrameDeliveryModes", [])) != ["CPU_PULL", "GPU_PUSH"]:
         fail("Release policy must require both CPU_PULL and GPU_PUSH.")

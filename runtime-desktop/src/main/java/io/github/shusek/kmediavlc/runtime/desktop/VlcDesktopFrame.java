@@ -17,6 +17,7 @@ public final class VlcDesktopFrame implements VlcReleasableFrame {
     private final int width;
     private final int height;
     private final VlcPixelFormat pixelFormat;
+    private final VlcSourceDynamicRange sourceDynamicRange;
     private final VlcNativeHandleType handleType;
     private final long platformHandle;
     private final int acquireFenceFd;
@@ -33,7 +34,7 @@ public final class VlcDesktopFrame implements VlcReleasableFrame {
     VlcDesktopFrame(long[] values, ByteBuffer cpuPixels) {
         long ownedFrame = values != null && values.length > 0 ? values[0] : 0;
         try {
-            if (values == null || values.length != 18) {
+            if (values == null || values.length != 19) {
                 throw new VlcRuntimeException(
                         VlcRuntimeException.Reason.NATIVE_CALL_FAILED,
                         "The VLC bridge returned malformed frame metadata.");
@@ -45,17 +46,18 @@ public final class VlcDesktopFrame implements VlcReleasableFrame {
             width = requirePositiveInt(values[4], "width");
             height = requirePositiveInt(values[5], "height");
             pixelFormat = VlcPixelFormat.fromNative(Math.toIntExact(values[6]));
-            handleType = VlcNativeHandleType.fromNative(Math.toIntExact(values[7]));
-            platformHandle = values[8];
-            acquireFenceFd = Math.toIntExact(values[9]);
-            stride = Math.toIntExact(values[10]);
-            fourcc = Math.toIntExact(values[11]);
-            offset = Math.toIntExact(values[12]);
-            modifier = values[13];
-            sdrWhiteNits = Float.intBitsToFloat(Math.toIntExact(values[14]));
-            contentPeakNits = Float.intBitsToFloat(Math.toIntExact(values[15]));
-            premultipliedAlpha = values[16] != 0;
-            long cpuBytes = values[17];
+            sourceDynamicRange = VlcSourceDynamicRange.fromNative(Math.toIntExact(values[7]));
+            handleType = VlcNativeHandleType.fromNative(Math.toIntExact(values[8]));
+            platformHandle = values[9];
+            acquireFenceFd = Math.toIntExact(values[10]);
+            stride = Math.toIntExact(values[11]);
+            fourcc = Math.toIntExact(values[12]);
+            offset = Math.toIntExact(values[13]);
+            modifier = values[14];
+            sdrWhiteNits = Float.intBitsToFloat(Math.toIntExact(values[15]));
+            contentPeakNits = Float.intBitsToFloat(Math.toIntExact(values[16]));
+            premultipliedAlpha = values[17] != 0;
+            long cpuBytes = values[18];
             if (handleType == VlcNativeHandleType.CPU_ADDRESS) {
                 if (cpuPixels == null || !cpuPixels.isDirect() || cpuPixels.capacity() != cpuBytes) {
                     throw new VlcRuntimeException(
@@ -78,6 +80,7 @@ public final class VlcDesktopFrame implements VlcReleasableFrame {
     public int width() { return width; }
     public int height() { return height; }
     public VlcPixelFormat pixelFormat() { return pixelFormat; }
+    public VlcSourceDynamicRange sourceDynamicRange() { return sourceDynamicRange; }
     public VlcNativeHandleType handleType() { return handleType; }
     public long platformHandle() { return platformHandle; }
     public int acquireFenceFd() { return acquireFenceFd; }

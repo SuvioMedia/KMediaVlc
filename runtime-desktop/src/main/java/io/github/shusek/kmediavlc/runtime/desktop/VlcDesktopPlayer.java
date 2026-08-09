@@ -166,7 +166,7 @@ public final class VlcDesktopPlayer implements AutoCloseable {
     public Optional<VlcDesktopFrame> acquireLatestFrame() {
         long[] values = callNative(() -> NativeBridge.acquireLatestFrame(nativePlayer));
         if (values == null) return Optional.empty();
-        ByteBuffer cpuPixels = values.length == 18 && values[7] == VlcNativeHandleType.CPU_ADDRESS.nativeValue()
+        ByteBuffer cpuPixels = values.length == 19 && values[8] == VlcNativeHandleType.CPU_ADDRESS.nativeValue()
                 ? callNative(() -> NativeBridge.cpuFrameBuffer(values[0]))
                 : null;
         return Optional.of(new VlcDesktopFrame(values, cpuPixels));

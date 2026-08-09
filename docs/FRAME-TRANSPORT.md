@@ -11,6 +11,11 @@ not acquire the previous pending frame, that frame is released immediately.
 The producer then emits a lightweight notification containing only serial and
 generation. The notification never transfers a native handle.
 
+Each acquired frame also carries the decoded source dynamic range separately
+from its output pixel format. An HDR-capable host therefore does not turn an
+SDR source into a false HDR frame; PQ and HLG sources may use linear FP16,
+while SDR remains sRGB unless the consumer explicitly requests another route.
+
 `acquireLatest()` removes and returns the newest pending frame. There is one
 consumer, and it must release the frame after Nucleus has imported it or after
 an acquire fence fails. Closing the transport releases the pending frame and

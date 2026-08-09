@@ -280,7 +280,7 @@ bool inspect_shared_fp16(
     D3D11_MAPPED_SUBRESOURCE mapped{};
     std::uint32_t x = 0;
     std::uint32_t y = 0;
-    const std::uint16_t* pixel = nullptr;
+    std::array<float, 4> sample{};
 
     HRESULT result = CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&factory));
     if (FAILED(result) || factory == nullptr) goto cleanup;
@@ -323,7 +323,8 @@ bool inspect_shared_fp16(
     acquired = true;
 
     texture->GetDesc(&description);
-    if (description.Format != DXGI_FORMAT_R16G16B16A16_FLOAT ||
+    if ((description.Format != DXGI_FORMAT_R16G16B16A16_FLOAT &&
+         description.Format != DXGI_FORMAT_R8G8B8A8_UNORM) ||
         description.Width == 0 || description.Height == 0) goto cleanup;
     staging_description = description;
     staging_description.Usage = D3D11_USAGE_STAGING;
@@ -338,18 +339,38 @@ bool inspect_shared_fp16(
     if (FAILED(result) || mapped.pData == nullptr) goto cleanup;
     x = description.Width / 2U;
     y = description.Height / 2U;
-    pixel = reinterpret_cast<const std::uint16_t*>(
-        static_cast<const std::uint8_t*>(mapped.pData) +
-        static_cast<std::size_t>(y) * mapped.RowPitch +
-        static_cast<std::size_t>(x) * 8U);
+    if (description.Format == DXGI_FORMAT_R16G16B16A16_FLOAT) {
+        const auto* pixel = reinterpret_cast<const std::uint16_t*>(
+            static_cast<const std::uint8_t*>(mapped.pData) +
+            static_cast<std::size_t>(y) * mapped.RowPitch +
+            static_cast<std::size_t>(x) * 8U);
+        sample = {
+            half_to_float(pixel[0]),
+            half_to_float(pixel[1]),
+            half_to_float(pixel[2]),
+            half_to_float(pixel[3]),
+        };
+    } else {
+        const auto* pixel =
+            static_cast<const std::uint8_t*>(mapped.pData) +
+            static_cast<std::size_t>(y) * mapped.RowPitch +
+            static_cast<std::size_t>(x) * 4U;
+        constexpr float inverse_byte = 1.0F / 255.0F;
+        sample = {
+            pixel[0] * inverse_byte,
+            pixel[1] * inverse_byte,
+            pixel[2] * inverse_byte,
+            pixel[3] * inverse_byte,
+        };
+    }
     output = {
         static_cast<float>(description.Format),
         static_cast<float>(description.Width),
         static_cast<float>(description.Height),
-        half_to_float(pixel[0]),
-        half_to_float(pixel[1]),
-        half_to_float(pixel[2]),
-        half_to_float(pixel[3]),
+        sample[0],
+        sample[1],
+        sample[2],
+        sample[3],
     };
     context->Unmap(staging, 0);
     success = true;
@@ -646,7 +667,7 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_acquireLatestFrame(
     info.bridge_abi_version = KMEDIAVLC_BRIDGE_ABI_VERSION;
     kmediavlc_frame* frame = kmediavlc_player_acquire_latest_frame(player->native, &info);
     if (frame == nullptr) return nullptr;
-    const jlong values[18]{
+    const jlong values[19]{
         static_cast<jlong>(reinterpret_cast<std::uintptr_t>(frame)),
         static_cast<jlong>(info.serial),
         static_cast<jlong>(info.output_generation),
@@ -654,6 +675,7 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_acquireLatestFrame(
         static_cast<jlong>(info.width),
         static_cast<jlong>(info.height),
         static_cast<jlong>(info.pixel_format),
+        static_cast<jlong>(info.source_dynamic_range),
         static_cast<jlong>(info.handle_type),
         static_cast<jlong>(info.platform_handle),
         static_cast<jlong>(info.acquire_fence),
@@ -666,12 +688,12 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_acquireLatestFrame(
         info.premultiplied_alpha ? 1 : 0,
         static_cast<jlong>(info.cpu_byte_count),
     };
-    jlongArray result = env->NewLongArray(18);
+    jlongArray result = env->NewLongArray(19);
     if (result == nullptr) {
         kmediavlc_frame_release(frame, -1);
         return nullptr;
     }
-    env->SetLongArrayRegion(result, 0, 18, values);
+    env->SetLongArrayRegion(result, 0, 19, values);
     if (env->ExceptionCheck()) {
         kmediavlc_frame_release(frame, -1);
         return nullptr;

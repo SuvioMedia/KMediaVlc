@@ -142,7 +142,11 @@ kmediavlc_playback_state map_state(libvlc_state_t state) {
 }
 
 void on_state_changed(void* opaque, libvlc_state_t state) {
-    notify_state(static_cast<kmediavlc_player*>(opaque), map_state(state));
+    auto* player = static_cast<kmediavlc_player*>(opaque);
+    if (player == nullptr) return;
+    const auto mapped = map_state(state);
+    player->state_before_buffering.store(mapped, std::memory_order_release);
+    notify_state(player, mapped);
 }
 
 void on_buffering_changed(void* opaque, float buffering) {
@@ -152,7 +156,18 @@ void on_buffering_changed(void* opaque, float buffering) {
     player->buffered_permille.store(
         static_cast<std::uint32_t>(std::lround(bounded * 1000.0F)),
         std::memory_order_release);
-    if (bounded < 1.0F) notify_state(player, KMEDIAVLC_STATE_BUFFERING);
+    if (bounded < 1.0F) {
+        const auto current = player->state.load(std::memory_order_acquire);
+        if (current != KMEDIAVLC_STATE_BUFFERING) {
+            player->state_before_buffering.store(current, std::memory_order_release);
+        }
+        notify_state(player, KMEDIAVLC_STATE_BUFFERING);
+    } else if (player->state.load(std::memory_order_acquire) == KMEDIAVLC_STATE_BUFFERING) {
+        const auto previous = player->state_before_buffering.load(std::memory_order_acquire);
+        notify_state(
+            player,
+            previous == KMEDIAVLC_STATE_BUFFERING ? KMEDIAVLC_STATE_PLAYING : previous);
+    }
 }
 
 void on_position_changed(void* opaque, libvlc_time_t time, double) {
@@ -282,6 +297,7 @@ void cpu_display(void* opaque, void* picture_value) {
     frame->info.width = picture->width;
     frame->info.height = picture->height;
     frame->info.pixel_format = KMEDIAVLC_RGBA8_SRGB;
+    frame->info.source_dynamic_range = KMEDIAVLC_SOURCE_DYNAMIC_RANGE_UNKNOWN;
     frame->info.handle_type = KMEDIAVLC_CPU_ADDRESS;
     frame->info.platform_handle = reinterpret_cast<std::uintptr_t>(frame->cpu_pixels.data());
     frame->info.acquire_fence = -1;
@@ -547,6 +563,7 @@ bool kmediavlc_player_open(
     player->position_microseconds.store(0, std::memory_order_release);
     player->duration_microseconds.store(0, std::memory_order_release);
     player->buffered_permille.store(0, std::memory_order_release);
+    player->state_before_buffering.store(KMEDIAVLC_STATE_IDLE, std::memory_order_release);
     notify_state(player, KMEDIAVLC_STATE_IDLE);
     if (!autoplay) return true;
     if (player->api->media_player_play(player->media_player) == 0) return true;

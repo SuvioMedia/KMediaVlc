@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "libvlcAbiMajor": 4,
-  "bridgeAbiVersion": 1,
+  "bridgeAbiVersion": 2,
   "requiredFrameDeliveryModes": ["GPU_PUSH", "CPU_PULL"],
   "allowedLicenseSpdx": [
     "0BSD",

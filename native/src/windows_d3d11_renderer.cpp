@@ -330,32 +330,45 @@ private:
             set_error(player_, "The D3D11 render device no longer matches the TextureView host generation.");
             return false;
         }
-        const DXGI_FORMAT published_format = target.request_hdr
+        source_dynamic_range_ = source_dynamic_range(config);
+        source_extended_ = source_dynamic_range_ == KMEDIAVLC_SOURCE_DYNAMIC_RANGE_HDR10 ||
+            source_dynamic_range_ == KMEDIAVLC_SOURCE_DYNAMIC_RANGE_HLG;
+        const bool hdr_output = target.request_hdr && source_extended_;
+        const DXGI_FORMAT published_format = hdr_output
             ? DXGI_FORMAT_R16G16B16A16_FLOAT
             : DXGI_FORMAT_R8G8B8A8_UNORM;
-        const DXGI_FORMAT producer_format = target.request_hdr
+        const DXGI_FORMAT producer_format = hdr_output
             ? DXGI_FORMAT_R16G16B16A16_UNORM
             : DXGI_FORMAT_R8G8B8A8_UNORM;
         if (!ensure_textures(target.width, target.height, published_format, producer_format)) return false;
-        source_extended_ = config != nullptr &&
-            (config->transfer == libvlc_video_transfer_func_PQ ||
-             config->transfer == libvlc_video_transfer_func_HLG);
         player_->video_width.store(target.width, std::memory_order_release);
         player_->video_height.store(target.height, std::memory_order_release);
         output->u.dxgi_format = producer_format;
         output->full_range = true;
-        output->colorspace = target.request_hdr
+        output->colorspace = hdr_output
             ? libvlc_video_colorspace_BT2020
             : libvlc_video_colorspace_BT709;
-        output->primaries = target.request_hdr
+        output->primaries = hdr_output
             ? libvlc_video_primaries_BT2020
             : libvlc_video_primaries_BT709;
-        output->transfer = target.request_hdr
+        output->transfer = hdr_output
             ? libvlc_video_transfer_func_PQ
             : libvlc_video_transfer_func_SRGB;
         output->orientation = libvlc_video_orient_top_left;
-        trace_callback(target.request_hdr ? "update-output complete: rgba16f" : "update-output complete: rgba8");
+        trace_callback(hdr_output ? "update-output complete: rgba16f" : "update-output complete: rgba8");
         return true;
+    }
+
+    static kmediavlc_source_dynamic_range source_dynamic_range(
+        const libvlc_video_render_cfg_t* config) noexcept {
+        if (config == nullptr) return KMEDIAVLC_SOURCE_DYNAMIC_RANGE_UNKNOWN;
+        if (config->transfer == libvlc_video_transfer_func_PQ) {
+            return KMEDIAVLC_SOURCE_DYNAMIC_RANGE_HDR10;
+        }
+        if (config->transfer == libvlc_video_transfer_func_HLG) {
+            return KMEDIAVLC_SOURCE_DYNAMIC_RANGE_HLG;
+        }
+        return KMEDIAVLC_SOURCE_DYNAMIC_RANGE_SDR;
     }
 
     bool ensure_textures(
@@ -694,12 +707,15 @@ private:
         frame->info.pixel_format = texture->format == DXGI_FORMAT_R16G16B16A16_FLOAT
             ? KMEDIAVLC_RGBA16F_LINEAR_SRGB
             : KMEDIAVLC_RGBA8_SRGB;
+        frame->info.source_dynamic_range = source_dynamic_range_;
         frame->info.handle_type = KMEDIAVLC_D3D11_SHARED_HANDLE;
         frame->info.platform_handle = reinterpret_cast<std::uintptr_t>(texture->shared_handle);
         frame->info.acquire_fence = -1;
         frame->info.sdr_white_nits = target.sdr_white_nits;
         const float metadata_peak = content_peak_nits_.load(std::memory_order_acquire);
-        frame->info.content_peak_nits = metadata_peak > 0.0F ? metadata_peak : target.display_peak_nits;
+        frame->info.content_peak_nits = source_extended_
+            ? (metadata_peak > 0.0F ? metadata_peak : target.display_peak_nits)
+            : target.sdr_white_nits;
         frame->info.premultiplied_alpha = true;
         publish_frame(player_, std::move(frame));
         trace_callback("frame published");
@@ -747,6 +763,8 @@ private:
     ID3D11Buffer* conversion_constants_ = nullptr;
     bool callback_context_reference_ = false;
     bool source_extended_ = false;
+    kmediavlc_source_dynamic_range source_dynamic_range_ =
+        KMEDIAVLC_SOURCE_DYNAMIC_RANGE_UNKNOWN;
     LUID device_luid_{};
     std::mutex render_mutex_;
     bool render_lock_held_ = false;

@@ -19,7 +19,7 @@ public record VlcRuntimeCapabilities(
         if (libVlcAbiMajor != 4) {
             throw new IllegalArgumentException("Only the audited libVLC 4 ABI is accepted.");
         }
-        if (bridgeAbiVersion != 1) {
+        if (bridgeAbiVersion != 2) {
             throw new IllegalArgumentException("Unsupported KMediaVlc bridge ABI.");
         }
         Objects.requireNonNull(libVlcVersion, "libVlcVersion");

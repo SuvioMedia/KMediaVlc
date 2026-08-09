@@ -21,7 +21,7 @@ extern "C" {
 #  define KMEDIAVLC_API __attribute__((visibility("default")))
 #endif
 
-#define KMEDIAVLC_BRIDGE_ABI_VERSION 1u
+#define KMEDIAVLC_BRIDGE_ABI_VERSION 2u
 
 typedef struct kmediavlc_player kmediavlc_player;
 typedef struct kmediavlc_frame kmediavlc_frame;
@@ -35,6 +35,13 @@ typedef enum kmediavlc_pixel_format {
     KMEDIAVLC_RGBA8_SRGB = 1,
     KMEDIAVLC_RGBA16F_LINEAR_SRGB = 2,
 } kmediavlc_pixel_format;
+
+typedef enum kmediavlc_source_dynamic_range {
+    KMEDIAVLC_SOURCE_DYNAMIC_RANGE_UNKNOWN = 0,
+    KMEDIAVLC_SOURCE_DYNAMIC_RANGE_SDR = 1,
+    KMEDIAVLC_SOURCE_DYNAMIC_RANGE_HDR10 = 2,
+    KMEDIAVLC_SOURCE_DYNAMIC_RANGE_HLG = 3,
+} kmediavlc_source_dynamic_range;
 
 typedef enum kmediavlc_platform_handle_type {
     KMEDIAVLC_CPU_ADDRESS = 1,
@@ -95,6 +102,7 @@ typedef struct kmediavlc_frame_info {
     uint32_t width;
     uint32_t height;
     kmediavlc_pixel_format pixel_format;
+    kmediavlc_source_dynamic_range source_dynamic_range;
     kmediavlc_platform_handle_type handle_type;
     uintptr_t platform_handle;
     intptr_t acquire_fence;
