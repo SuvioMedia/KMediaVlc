@@ -39,11 +39,12 @@ fi
 
 # This is VideoLAN's exact pinned Windows recipe in release/UCRT/headless mode.
 # -g l disables GPL contribs while permitting LGPLv3 dependencies required by
-# the HTTPS/TLS module. rav1e is an optional AV1 encoder that is not used by
-# the closed playback plugin set and requires cargo-c, which is not supplied
-# by the pinned VideoLAN toolchain image. Prebuilt contribs are intentionally
-# not requested; the release inventory still audits every resulting binary.
-export CONTRIBFLAGS="--disable-rav1e"
+# the HTTPS/TLS module. Stream-output encoders are not used by the closed
+# playback plugin set. libshout remains explicitly available because the
+# pinned upstream Meson recipe enables its module even in a headless build.
+# Prebuilt contribs are intentionally not requested; the release inventory
+# still audits every resulting binary.
+export CONTRIBFLAGS="--disable-sout --enable-shout"
 cd "$source_directory"
 ./extras/package/win32/build.sh \
     -r \

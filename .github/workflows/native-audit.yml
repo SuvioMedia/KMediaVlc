@@ -104,19 +104,28 @@ jobs:
             .vlc-source/contrib/python-venv
             .vlc-source/extras/tools/build
             .vlc-source/win64-ucrt-meson
-          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-lgpl-20260611225331-v4
+          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v5
           restore-keys: |
+            vlc-b5536cde-windows-x86_64-llvm-ucrt-lgpl-20260611225331-v4
             vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v3
             vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v2
             vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v1
 
-      - name: Repair an incomplete legacy contrib cache
+      - name: Prepare the exact playback contrib state
+        env:
+          EXACT_CACHE_HIT: ${{ steps.contrib_cache.outputs.cache-hit }}
         shell: bash
         run: |
           venv=.vlc-source/contrib/python-venv
           stamp=.vlc-source/contrib/contrib-win64-ucrt/.python-venv
           if [[ -f "$stamp" && ! -x "$venv/bin/pip3" ]]; then
             rm -f "$stamp"
+          fi
+          if [[ "$EXACT_CACHE_HIT" != true ]]; then
+            rm -rf \
+              .vlc-source/contrib/x86_64-w64-mingw32ucrt \
+              .vlc-source/contrib/contrib-win64-ucrt \
+              .vlc-source/win64-ucrt-meson
           fi
 
       - name: Build headless libVLC and required contribs from source
@@ -145,7 +154,7 @@ jobs:
             .vlc-source/contrib/python-venv
             .vlc-source/extras/tools/build
             .vlc-source/win64-ucrt-meson
-          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-lgpl-20260611225331-v4
+          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v5
 
       - name: Require a successful source build
         if: steps.source_build.outcome != 'success'

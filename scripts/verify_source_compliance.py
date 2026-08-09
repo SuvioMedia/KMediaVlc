@@ -224,8 +224,8 @@ def verify_policy(root: Path) -> None:
     arguments = recipe.get("libVlcBuildArguments")
     if not isinstance(arguments, list) or not all(flag in arguments for flag in ["-r", "-u", "-z", "-g", "l", "-m"]):
         fail("Windows VLC recipe is missing required release/UCRT/headless/GPL-disabled flags.")
-    if recipe.get("contribBuildArguments") != ["--disable-rav1e"]:
-        fail("Windows playback recipe must exclude the unused rav1e encoder contrib.")
+    if recipe.get("contribBuildArguments") != ["--disable-sout", "--enable-shout"]:
+        fail("Windows playback recipe must exclude encoders while retaining upstream libshout.")
     if recipe.get("usesPrebuiltContribs") is not False:
         fail("Release recipe must build contribs from their verified source inputs.")
     if recipe.get("mesonInstallTags") != ["runtime"] or recipe.get("stripInstalledTargets") is not True:
@@ -240,7 +240,7 @@ def verify_policy(root: Path) -> None:
         '--strip',
         'win64-ucrt-meson',
         'winarm64-ucrt-meson',
-        'export CONTRIBFLAGS="--disable-rav1e"',
+        'export CONTRIBFLAGS="--disable-sout --enable-shout"',
         'VLC source build produced an empty install payload',
     ]
     if not all(marker in builder for marker in install_markers):
@@ -255,6 +255,9 @@ def verify_policy(root: Path) -> None:
         "hardware HDR evidence remains mandatory",
         ".vlc-source/contrib/python-venv",
         'rm -f "$stamp"',
+        "llvm-ucrt-lgpl-playback-20260611225331-v5",
+        "EXACT_CACHE_HIT",
+        ".vlc-source/contrib/x86_64-w64-mingw32ucrt",
         "runtime_sha256: ${{ steps.package.outputs.runtime_sha256 }}",
         "EXPECTED_RUNTIME_SHA256",
         "Stage the closed Windows playback candidate",

@@ -10,7 +10,7 @@
   "nativeValidationRunner": "windows-2022",
   "upstreamBuildScript": "extras/package/win32/build.sh",
   "libVlcBuildArguments": ["-r", "-u", "-z", "-g", "l", "-m"],
-  "contribBuildArguments": ["--disable-rav1e"],
+  "contribBuildArguments": ["--disable-sout", "--enable-shout"],
   "mesonInstallTags": ["runtime"],
   "stripInstalledTargets": true,
   "usesPrebuiltContribs": false,
