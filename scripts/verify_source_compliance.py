@@ -148,6 +148,8 @@ def verify_policy(root: Path) -> None:
         "-PkmediaVlcNativeBridgePath=$bridge",
         "pinnedVideoLanFixturePublishesCpuPullFrame",
         "hardware HDR evidence remains mandatory",
+        ".vlc-source/contrib/python-venv",
+        'rm -f "$stamp"',
     ]
     if not all(marker in audit_workflow for marker in native_validation_markers):
         fail("The source-built VLC payload lacks mandatory native Windows validation.")
