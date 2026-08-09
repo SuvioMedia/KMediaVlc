@@ -83,6 +83,7 @@ def load_inventory(path: Path) -> dict:
 
 
 def validate_inventory(inventory: dict, policy: dict, target: str, staging: Path) -> list[dict]:
+    staging = staging.resolve(strict=True)
     if inventory.get("schemaVersion") != 1:
         fail("Unsupported component inventory schema.")
     if inventory.get("provenance") != "source-build":

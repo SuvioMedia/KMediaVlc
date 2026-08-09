@@ -96,6 +96,13 @@ class PackageNativeRuntimePolicyTest(unittest.TestCase):
             with self.subTest(revision=revision), self.assertRaises(SystemExit):
                 PACKAGER.validate_recipe_revision(revision)
 
+    def test_accepts_canonical_alias_of_staging_directory(self) -> None:
+        aliased_staging = self.staging / ".." / self.staging.name
+        files = PACKAGER.validate_inventory(
+            self.inventory, self.policy, "windows-x86_64", aliased_staging
+        )
+        self.assertEqual(4, len(files))
+
     def test_rejects_gpl_or_static_component(self) -> None:
         self.inventory["files"][3]["licenseSpdx"] = "GPL-2.0-or-later"
         with self.assertRaises(SystemExit):
