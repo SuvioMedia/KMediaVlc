@@ -245,11 +245,16 @@ jobs:
           mkdir -p \
             "$source_root/kmediavlc" \
             "$source_root/vlc" \
-            "$source_root/contrib-tarballs"
+            "$source_root/contrib-tarballs" \
+            "$source_root/toolchain-licenses"
           git archive "$TESTED_COMMIT" | tar -xf - -C "$source_root/kmediavlc"
           git -C .vlc-source archive "$VLC_REVISION" | tar -xf - -C "$source_root/vlc"
           cp -a .vlc-source/contrib/tarballs/. "$source_root/contrib-tarballs/"
           cp "$RUNNER_TEMP/audit-assets/toolchain.txt" "$source_root/BUILD-TOOLCHAIN.txt"
+          cp "$RUNNER_TEMP/audit-assets/toolchain-static-archives-SHA256SUMS" \
+            "$source_root/TOOLCHAIN-STATIC-ARCHIVES-SHA256SUMS"
+          cp -a "$RUNNER_TEMP/audit-assets/toolchain-licenses/." \
+            "$source_root/toolchain-licenses/"
           cp "$RUNNER_TEMP/audit-assets/contrib-source-SHA256SUMS" \
             "$source_root/contrib-source-SHA256SUMS"
           tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \

@@ -144,12 +144,37 @@ def verify(root: Path, archive: Path, version: str, tested_commit: str) -> str:
             manifest_path,
             checksum_path,
             ROOT / "BUILD-TOOLCHAIN.txt",
+            ROOT / "TOOLCHAIN-STATIC-ARCHIVES-SHA256SUMS",
             ROOT / "kmediavlc" / "build.gradle.kts",
             ROOT / "vlc" / "meson.build",
         )
         for path in required:
             if path not in by_path or not by_path[path].isfile():
                 fail(f"Corresponding source omits required input: {path}")
+        toolchain_license_paths = {
+            path
+            for path, member in by_path.items()
+            if member.isfile() and path.is_relative_to(ROOT / "toolchain-licenses")
+        }
+        if not toolchain_license_paths:
+            fail("Corresponding source omits pinned toolchain licenses.")
+        toolchain_sums = read_member(
+            source,
+            by_path[ROOT / "TOOLCHAIN-STATIC-ARCHIVES-SHA256SUMS"],
+            16 * 1024 * 1024,
+        )
+        try:
+            toolchain_lines = toolchain_sums.decode("ascii").splitlines()
+        except UnicodeDecodeError as error:
+            raise ValueError("Toolchain archive checksums are not ASCII.") from error
+        if not toolchain_lines or any(
+            len(line) < 67
+            or line[64:66] != "  "
+            or not SHA256.fullmatch(line[:64])
+            or not line[66:].startswith("/opt/llvm-mingw/")
+            for line in toolchain_lines
+        ):
+            fail("Toolchain static archive checksum inventory is invalid.")
 
         manifest = json.loads(read_member(source, by_path[manifest_path], 16 * 1024 * 1024))
         expected_identity = {

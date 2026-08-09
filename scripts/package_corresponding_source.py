@@ -134,17 +134,27 @@ def package(
                 continue
             if relative.parts[0] in {"kmediavlc", "vlc"}:
                 selected[path] = member
-            elif path == ROOT / "BUILD-TOOLCHAIN.txt" or path in archive_paths:
+            elif (
+                path in {
+                    ROOT / "BUILD-TOOLCHAIN.txt",
+                    ROOT / "TOOLCHAIN-STATIC-ARCHIVES-SHA256SUMS",
+                }
+                or relative.parts[0] == "toolchain-licenses"
+                or path in archive_paths
+            ):
                 selected[path] = member
 
         for required in (
             ROOT / "kmediavlc" / "build.gradle.kts",
             ROOT / "vlc" / "meson.build",
             ROOT / "BUILD-TOOLCHAIN.txt",
+            ROOT / "TOOLCHAIN-STATIC-ARCHIVES-SHA256SUMS",
             *archive_paths,
         ):
             if required not in selected:
                 fail(f"Corresponding-source candidate omits required input: {required}")
+        if not any(path.is_relative_to(ROOT / "toolchain-licenses") for path in selected):
+            fail("Corresponding-source candidate omits pinned toolchain licenses.")
 
         archive_hashes: dict[str, str] = {}
         for path, archive in archive_paths.items():

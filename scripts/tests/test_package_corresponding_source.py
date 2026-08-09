@@ -34,6 +34,10 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
             "corresponding-source/vlc/meson.build": b"project('vlc')\n",
             "corresponding-source/vlc/modules/codec.c": b"/* codec */\n",
             "corresponding-source/BUILD-TOOLCHAIN.txt": b"immutable toolchain\n",
+            "corresponding-source/TOOLCHAIN-STATIC-ARCHIVES-SHA256SUMS": (
+                b"0" * 64 + b"  /opt/llvm-mingw/lib/libunwind.a\n"
+            ),
+            "corresponding-source/toolchain-licenses/LICENSE.TXT": b"toolchain license\n",
             "corresponding-source/contrib-tarballs/forbidden-gpl.tar.xz": b"excluded",
         }
         files.update(

@@ -56,6 +56,10 @@ class VerifyCorrespondingSourceArchiveTest(unittest.TestCase):
             "corresponding-source/kmediavlc/build.gradle.kts": b"plugins { base }\n",
             "corresponding-source/vlc/meson.build": b"project('vlc')\n",
             "corresponding-source/BUILD-TOOLCHAIN.txt": b"immutable toolchain\n",
+            "corresponding-source/TOOLCHAIN-STATIC-ARCHIVES-SHA256SUMS": (
+                b"0" * 64 + b"  /opt/llvm-mingw/lib/libunwind.a\n"
+            ),
+            "corresponding-source/toolchain-licenses/LICENSE.TXT": b"toolchain license\n",
             "corresponding-source/contrib-tarballs/zlib-1.3.2.tar.xz": b"zlib source\n",
         }
         with tarfile.open(self.candidate, "w:gz") as archive:
