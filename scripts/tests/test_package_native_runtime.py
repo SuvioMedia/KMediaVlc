@@ -26,7 +26,7 @@ class PackageNativeRuntimePolicyTest(unittest.TestCase):
         paths = [
             "kmediavlc_bridge.dll",
             "libvlc.dll",
-            "libvlccore.dll",
+            "libvlccore-9.dll",
             "plugins/codec/libcodec_plugin.dll",
         ]
         for relative in paths:

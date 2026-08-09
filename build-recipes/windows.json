@@ -5,6 +5,7 @@
   "publicationTargets": ["windows-x86_64", "windows-aarch64"],
   "auditToolchainImage": "registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331",
   "compiler": "LLVM-MinGW-UCRT",
+  "libVlcCoreAbiMajor": 9,
   "wineUse": "Meson-cross-executable-sanity-only",
   "nativeValidationRunner": "windows-2022",
   "upstreamBuildScript": "extras/package/win32/build.sh",

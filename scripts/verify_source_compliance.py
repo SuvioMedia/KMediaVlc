@@ -117,6 +117,8 @@ def verify_policy(root: Path) -> None:
         fail("Windows VLC audit must use the toolchain selected by the pinned upstream revision.")
     if recipe.get("compiler") != "LLVM-MinGW-UCRT":
         fail("Windows VLC binaries must use the pinned LLVM/MinGW UCRT compiler.")
+    if recipe.get("libVlcCoreAbiMajor") != 9:
+        fail("The pinned VLC 4 build must retain its exact internal core ABI dependency.")
     if recipe.get("wineUse") != "Meson-cross-executable-sanity-only":
         fail("Wine must remain limited to Meson's cross-executable sanity probe.")
     if recipe.get("nativeValidationRunner") != "windows-2022":

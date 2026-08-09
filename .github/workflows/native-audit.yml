@@ -134,8 +134,10 @@ jobs:
       - name: Close the candidate file and source inventories
         shell: bash
         run: |
+          test -f "$RUNNER_TEMP/vlc-install/bin/libvlc.dll"
           test "$(find "$RUNNER_TEMP/vlc-install" -type f -iname libvlc.dll | wc -l)" -eq 1
-          test "$(find "$RUNNER_TEMP/vlc-install" -type f -iname libvlccore.dll | wc -l)" -eq 1
+          test -f "$RUNNER_TEMP/vlc-install/bin/libvlccore-9.dll"
+          test "$(find "$RUNNER_TEMP/vlc-install" -type f -iname libvlccore-9.dll | wc -l)" -eq 1
           test "$(find "$RUNNER_TEMP/vlc-install" -type f -iname '*.dll' | wc -l)" -gt 2
           test -z "$(git -C .vlc-source status --porcelain --untracked-files=no)"
           (
@@ -271,7 +273,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Could not extract the source-built runtime.' }
           $install = Join-Path $extracted 'vlc-install'
           $libVlc = @(Get-ChildItem -LiteralPath $install -Recurse -File -Filter 'libvlc.dll')
-          $libVlcCore = @(Get-ChildItem -LiteralPath $install -Recurse -File -Filter 'libvlccore.dll')
+          $libVlcCore = @(Get-ChildItem -LiteralPath $install -Recurse -File -Filter 'libvlccore-9.dll')
           $pluginDirectories = @(
             Get-ChildItem -LiteralPath $install -Recurse -Directory |
               Where-Object {

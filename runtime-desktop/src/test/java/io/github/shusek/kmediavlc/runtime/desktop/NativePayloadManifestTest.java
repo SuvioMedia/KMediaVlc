@@ -84,7 +84,7 @@ class NativePayloadManifestTest {
                 file.1.role=LIBVLC
                 file.1.source=sources/vlc-b5536cde.tar.xz
                 file.1.linkage=DYNAMIC
-                file.2.path=libvlccore.dll
+                file.2.path=libvlccore-9.dll
                 file.2.size=30
                 file.2.sha256=%s
                 file.2.component=videolan-vlc
