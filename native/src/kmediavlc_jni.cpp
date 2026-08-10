@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
 
 #include "kmediavlc_client.h"
+#if defined(__linux__) && !defined(__ANDROID__)
+#  include "linux_dmabuf_inspector.hpp"
+#endif
 
 #include <jni.h>
 
@@ -482,6 +485,102 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_inspectMacIosurface
 #else
     (void)env;
     (void)surface_id;
+    return nullptr;
+#endif
+}
+
+JNIEXPORT jlongArray JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_linuxDmaBufModifiers(
+    JNIEnv* env, jclass, jstring render_node) {
+#if defined(__linux__) && !defined(__ANDROID__)
+    const std::string node = utf8_from_java(env, render_node);
+    const auto modifiers = kmediavlc::linux_dmabuf_consumer_modifiers(node);
+    if (modifiers.empty() ||
+        modifiers.size() > static_cast<std::size_t>(std::numeric_limits<jsize>::max())) {
+        return nullptr;
+    }
+    std::vector<jlong> values;
+    values.reserve(modifiers.size());
+    for (const auto modifier : modifiers) values.push_back(static_cast<jlong>(modifier));
+    jlongArray result = env->NewLongArray(static_cast<jsize>(values.size()));
+    if (result != nullptr) {
+        env->SetLongArrayRegion(result, 0, static_cast<jsize>(values.size()), values.data());
+    }
+    return result;
+#else
+    (void)env;
+    (void)render_node;
+    return nullptr;
+#endif
+}
+
+JNIEXPORT jintArray JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_inspectLinuxDmaBufFrame(
+    JNIEnv* env,
+    jclass,
+    jstring render_node,
+    jlong dma_buf_fd,
+    jint acquire_fence_fd,
+    jint width,
+    jint height,
+    jint stride,
+    jint fourcc,
+    jint offset,
+    jlong modifier) {
+#if defined(__linux__) && !defined(__ANDROID__)
+    if (dma_buf_fd < 0 || dma_buf_fd > std::numeric_limits<int>::max() ||
+        acquire_fence_fd < 0 || width <= 0 || height <= 0 || stride <= 0 || offset < 0) {
+        if (acquire_fence_fd >= 0) close(acquire_fence_fd);
+        return nullptr;
+    }
+    kmediavlc::LinuxDmaBufInspection inspection;
+    const std::string node = utf8_from_java(env, render_node);
+    if (!kmediavlc::inspect_linux_dmabuf_frame(
+            node,
+            static_cast<int>(dma_buf_fd),
+            acquire_fence_fd,
+            static_cast<std::uint32_t>(width),
+            static_cast<std::uint32_t>(height),
+            static_cast<std::uint32_t>(stride),
+            static_cast<std::uint32_t>(fourcc),
+            static_cast<std::uint32_t>(offset),
+            static_cast<std::uint64_t>(modifier),
+            inspection)) {
+        return nullptr;
+    }
+    const jint values[5]{
+        inspection.release_fence_fd,
+        inspection.rgba[0],
+        inspection.rgba[1],
+        inspection.rgba[2],
+        inspection.rgba[3],
+    };
+    jintArray result = env->NewIntArray(5);
+    if (result == nullptr) {
+        close(inspection.release_fence_fd);
+        return nullptr;
+    }
+    env->SetIntArrayRegion(result, 0, 5, values);
+    if (env->ExceptionCheck()) {
+        close(inspection.release_fence_fd);
+        return nullptr;
+    }
+    return result;
+#else
+    (void)env;
+    (void)render_node;
+    (void)dma_buf_fd;
+    (void)width;
+    (void)height;
+    (void)stride;
+    (void)fourcc;
+    (void)offset;
+    (void)modifier;
+#  if !defined(_WIN32)
+    if (acquire_fence_fd >= 0) close(acquire_fence_fd);
+#  else
+    (void)acquire_fence_fd;
+#  endif
     return nullptr;
 #endif
 }

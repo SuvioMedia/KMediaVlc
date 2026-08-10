@@ -55,6 +55,17 @@ final class NativeBridge {
     static native long defaultWindowsAdapterLuid();
     static native float[] inspectWindowsD3D11Frame(long adapterLuid, long sharedHandle);
     static native long[] inspectMacIosurfaceFrame(long iosurfaceId);
+    static native long[] linuxDmaBufModifiers(String renderNode);
+    static native int[] inspectLinuxDmaBufFrame(
+            String renderNode,
+            long dmaBufFd,
+            int acquireFenceFd,
+            int width,
+            int height,
+            int stride,
+            int fourcc,
+            int offset,
+            long modifier);
     static native long createPlayer(
             String libVlcPath,
             String pluginDirectory,

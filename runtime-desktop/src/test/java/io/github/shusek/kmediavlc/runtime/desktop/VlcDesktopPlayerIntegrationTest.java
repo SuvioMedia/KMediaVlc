@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -20,6 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 final class VlcDesktopPlayerIntegrationTest {
+    private static final int DRM_FORMAT_ABGR8888 = 0x34324241;
+
     @TempDir Path temporaryDirectory;
 
     @Test
@@ -85,6 +88,103 @@ final class VlcDesktopPlayerIntegrationTest {
                 assertEquals(36, frame.height());
                 assertTrue(frame.cpuPixels().orElseThrow().remaining() >= 64 * 36 * 4);
             }
+        }
+    }
+
+    @Test
+    void pinnedVideoLanFixtureImportsLinuxDmaBufsAndReturnsExplicitFences() throws Exception {
+        Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase().contains("linux"));
+        String renderNode = System.getProperty("kmediavlc.test.linuxRenderNode");
+        Assumptions.assumeTrue(renderNode != null, "The physical Linux DRM probe is opt-in.");
+        var fixture = fixture();
+        NativeBridge.load(fixture.runtime().bridgePath());
+        long[] modifiers = NativeBridge.linuxDmaBufModifiers(renderNode);
+        Assumptions.assumeTrue(
+                modifiers != null && modifiers.length > 0,
+                "The render node has no concrete ABGR8888 modifier with explicit fences.");
+        int[] formats = new int[modifiers.length];
+        Arrays.fill(formats, DRM_FORMAT_ABGR8888);
+        var signal = new Semaphore(0);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.GPU_PUSH,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        signal.release();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
+            for (int iteration = 0; iteration < 7; iteration++) {
+                long generation = 70L + iteration;
+                signal.drainPermits();
+                assertTrue(player.updateOutput(new VlcLinuxOutputTarget(
+                        generation,
+                        128,
+                        72,
+                        false,
+                        203f,
+                        203f,
+                        renderNode,
+                        formats,
+                        modifiers,
+                        true,
+                        true)));
+                assertTrue(player.open(fixture.image().toUri().toString(), Map.of(), true));
+                try (var frame = awaitFrame(
+                        player,
+                        signal,
+                        generation,
+                        128,
+                        72,
+                        "Real libVLC did not publish an importable Linux DMA-BUF.")) {
+                    assertEquals(VlcNativeHandleType.DMABUF, frame.handleType());
+                    assertEquals(VlcPixelFormat.RGBA8_SRGB, frame.pixelFormat());
+                    assertEquals(DRM_FORMAT_ABGR8888, frame.fourcc());
+                    assertTrue(frame.platformHandle() >= 0);
+                    assertTrue(frame.platformHandle() <= Integer.MAX_VALUE);
+                    assertTrue(Arrays.stream(modifiers).anyMatch(value -> value == frame.modifier()));
+                    int acquireFence = frame.acquireFenceFd();
+                    assertTrue(acquireFence >= 0);
+                    int[] inspection = NativeBridge.inspectLinuxDmaBufFrame(
+                            renderNode,
+                            frame.platformHandle(),
+                            acquireFence,
+                            frame.width(),
+                            frame.height(),
+                            frame.stride(),
+                            frame.fourcc(),
+                            frame.offset(),
+                            frame.modifier());
+                    assertNotNull(inspection, "A separate EGL context must import and read the DMA-BUF.");
+                    assertEquals(5, inspection.length);
+                    int releaseFence = inspection[0];
+                    try {
+                        assertTrue(releaseFence >= 0);
+                        assertTrue(inspection[1] >= 128, "The imported center pixel must remain red.");
+                        assertTrue(inspection[2] <= 128);
+                        assertTrue(inspection[3] <= 128);
+                        assertTrue(inspection[4] >= 200);
+                        if (iteration == 2) {
+                            // Exercise the fail-closed retirement path once,
+                            // then require four more imported frames.
+                            NativeBridge.closeFence(releaseFence);
+                            releaseFence = VlcDesktopFrame.NO_FENCE;
+                            frame.release(VlcDesktopFrame.NO_FENCE);
+                        } else {
+                            int transferredFence = releaseFence;
+                            releaseFence = VlcDesktopFrame.NO_FENCE;
+                            frame.release(transferredFence);
+                        }
+                    } finally {
+                        if (releaseFence >= 0) NativeBridge.closeFence(releaseFence);
+                    }
+                }
+            }
+            assertTrue(player.stop());
         }
     }
 

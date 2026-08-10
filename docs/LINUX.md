@@ -81,6 +81,15 @@ promised release fences but releases an acquired frame without one, that GBM
 buffer is retired and replaced rather than reused unsafely. Skipped frames
 were never imported by the consumer and return directly to the pool.
 
+The `-PkmediaVlcTestLinuxRenderNode=/dev/dri/renderD128` opt-in physical probe
+creates a second, independent GBM/EGL context on the requested render node.
+It enumerates concrete consumer modifiers, waits on each acquire sync-file,
+imports the published DMA-BUF, reads back a pixel, and returns a new release
+sync-file. Seven sequential imports deliberately omit one release fence and
+then require four more successful frames, covering fail-closed retirement and
+replacement. Hosted runners compile this probe but do not run it or claim
+hardware evidence.
+
 The current Linux transport is SDR RGBA8/sRGB. PQ and HLG source identity is
 still reported in frame metadata, but libVLC tone-maps those sources to the
 BT.709/sRGB output. `requestHdr=true` therefore does not claim a native Linux

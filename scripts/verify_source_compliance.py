@@ -1416,9 +1416,48 @@ def verify_linux_runtime_contract(root: Path) -> None:
     if not all(marker in renderer for marker in renderer_markers):
         fail("The Linux GBM/EGL DMA-BUF and explicit-fence ownership contract is incomplete.")
 
+    inspector = (root / "native/src/linux_dmabuf_inspector.cpp").read_text(encoding="utf-8")
+    inspector_markers = [
+        "drmGetNodeTypeFromFd",
+        "EGL_EXT_image_dma_buf_import_modifiers",
+        "EGL_SYNC_NATIVE_FENCE_FD_ANDROID",
+        "eglWaitSyncKHR",
+        "eglDupNativeFenceFDANDROID",
+        "glReadPixels",
+        "DRM_FORMAT_ABGR8888",
+        "DRM_FORMAT_MOD_INVALID",
+    ]
+    if not all(marker in inspector for marker in inspector_markers):
+        fail("The Linux physical probe does not independently import DMA-BUFs and fences.")
+
+    integration_test = (
+        root
+        / "runtime-desktop/src/test/java/io/github/shusek/kmediavlc/runtime/desktop/"
+        "VlcDesktopPlayerIntegrationTest.java"
+    ).read_text(encoding="utf-8")
+    integration_markers = [
+        "pinnedVideoLanFixtureImportsLinuxDmaBufsAndReturnsExplicitFences",
+        'System.getProperty("kmediavlc.test.linuxRenderNode")',
+        "NativeBridge.linuxDmaBufModifiers",
+        "NativeBridge.inspectLinuxDmaBufFrame",
+        "iteration == 2",
+        "frame.release(VlcDesktopFrame.NO_FENCE)",
+    ]
+    if not all(marker in integration_test for marker in integration_markers):
+        fail("The Linux hardware probe lost import, fence, or retirement coverage.")
+
+    desktop_build = (root / "runtime-desktop/build.gradle.kts").read_text(encoding="utf-8")
+    desktop_build_markers = [
+        'providers.gradleProperty("kmediaVlcTestLinuxRenderNode")',
+        'systemProperty("kmediavlc.test.linuxRenderNode", renderNode)',
+    ]
+    if not all(marker in desktop_build for marker in desktop_build_markers):
+        fail("The Linux hardware probe render node is not forwarded to the test JVM.")
+
     cmake = (root / "native/CMakeLists.txt").read_text(encoding="utf-8")
     cmake_markers = [
         'CMAKE_SYSTEM_NAME STREQUAL "Linux"',
+        "src/linux_dmabuf_inspector.cpp",
         "src/linux_dmabuf_renderer.cpp",
         "PkgConfig::KMEDIAVLC_LINUX_GRAPHICS",
         "egl",

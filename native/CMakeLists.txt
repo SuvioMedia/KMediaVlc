@@ -49,7 +49,10 @@ elseif(WIN32)
 elseif(APPLE)
     list(APPEND KMEDIAVLC_SOURCES src/macos_iosurface_renderer.cpp)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND KMEDIAVLC_SOURCES src/linux_dmabuf_renderer.cpp)
+    list(APPEND KMEDIAVLC_SOURCES
+        src/linux_dmabuf_inspector.cpp
+        src/linux_dmabuf_renderer.cpp
+    )
 else()
     list(APPEND KMEDIAVLC_SOURCES src/platform_renderer_stub.cpp)
 endif()

@@ -33,6 +33,7 @@ val libVlcTestPath = providers.gradleProperty("kmediaVlcTestLibVlcPath")
 val fakeLibVlcTestPath = providers.gradleProperty("kmediaVlcTestFakeLibVlcPath")
 val pluginTestDirectory = providers.gradleProperty("kmediaVlcTestPluginDirectory")
 val hdrTestMedia = providers.gradleProperty("kmediaVlcTestHdrMedia")
+val linuxRenderNode = providers.gradleProperty("kmediaVlcTestLinuxRenderNode")
 
 tasks.test {
     useJUnitPlatform()
@@ -55,6 +56,10 @@ tasks.test {
     hdrTestMedia.orNull?.let { hdrMedia ->
         inputs.file(hdrMedia).withPropertyName("hdrTestMedia")
         systemProperty("kmediavlc.test.hdrMedia", hdrMedia)
+    }
+    linuxRenderNode.orNull?.let { renderNode ->
+        inputs.property("linuxRenderNode", renderNode)
+        systemProperty("kmediavlc.test.linuxRenderNode", renderNode)
     }
     providers.gradleProperty("kmediaVlcTestHttpsHdrMedia").orNull?.let { httpsHdrMedia ->
         systemProperty("kmediavlc.test.httpsHdrMedia", httpsHdrMedia)
