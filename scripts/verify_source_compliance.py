@@ -1317,6 +1317,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "make -j1 .meson-machinefile",
         "--default-library=shared",
         "--wrap-mode=nodownload",
+        "-Wl,-Bsymbolic",
         "-Dauto_features=disabled",
         "-Dlua=disabled",
         "-Dgles2=enabled",

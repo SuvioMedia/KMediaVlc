@@ -172,7 +172,11 @@ if [[ ! -f "$contrib_native_file" || -L "$contrib_native_file" ]]; then
 fi
 
 readonly common_c_flags="-O2 -fPIC -fstack-protector-strong -D_FORTIFY_SOURCE=3 -ffile-prefix-map=$source_directory=/usr/src/vlc -ffile-prefix-map=$build_directory=/usr/src/kmediavlc-build"
-readonly common_link_flags="-Wl,-z,relro,-z,now,--as-needed -Wl,--build-id=sha1"
+readonly common_link_flags="-Wl,-z,relro,-z,now,--as-needed -Wl,--build-id=sha1 -Wl,-Bsymbolic"
+# The staged shared objects are private to this application runtime. Bind each
+# object's own definitions locally so AArch64 data references from the pinned
+# static FFmpeg contrib cannot be interposed. Undefined plugin ABI symbols are
+# unaffected and continue to resolve from libvlccore.
 # The contrib native file points at source-built static archives. Do not set
 # Meson's global static preference: the six reviewed system dependencies use
 # their distribution shared objects rather than non-PIC development archives.

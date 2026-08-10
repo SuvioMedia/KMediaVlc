@@ -14,6 +14,12 @@ the stager independently closes all resulting ELF dependencies and symbol
 version ceilings. Every other selected codec, demuxer, text renderer, and TLS
 dependency comes from the pinned VLC contrib source graph.
 
+Every staged shared object is private to the application runtime and links
+with `-Bsymbolic`. Definitions inside each object therefore bind locally rather
+than being interposed. This also makes the pinned static FFmpeg data references
+valid in AArch64 VLC plugins; undefined plugin ABI symbols still resolve from
+`libvlccore` normally.
+
 ## GPU frame transport
 
 `GPU_PUSH` uses libVLC 4's GLES2 output callbacks and a private EGL context on
