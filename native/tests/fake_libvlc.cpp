@@ -2,12 +2,15 @@
 
 #include <vlc/vlc.h>
 
+#include <cstdint>
+#include <cstring>
 #include <new>
 #include <string_view>
 
 struct libvlc_instance_t final {};
 struct libvlc_media_t final {
     bool hdr = false;
+    bool eos_sequence = false;
 };
 
 struct FakeOutputCallbacks final {
@@ -23,11 +26,23 @@ struct FakeOutputCallbacks final {
     bool setup_active = false;
 };
 
+struct FakeVmemCallbacks final {
+    libvlc_video_lock_cb lock = nullptr;
+    libvlc_video_unlock_cb unlock = nullptr;
+    libvlc_video_display_cb display = nullptr;
+    libvlc_video_format_cb format = nullptr;
+    libvlc_video_cleanup_cb cleanup = nullptr;
+    void* opaque = nullptr;
+    bool setup_active = false;
+};
+
 struct libvlc_media_player_t final {
     const libvlc_media_player_cbs* callbacks = nullptr;
     void* callbacks_opaque = nullptr;
     FakeOutputCallbacks output;
+    FakeVmemCallbacks vmem;
     bool hdr = false;
+    bool eos_sequence = false;
 };
 
 namespace {
@@ -36,6 +51,56 @@ void cleanup_output(libvlc_media_player_t* player) {
     if (player == nullptr || !player->output.setup_active) return;
     if (player->output.cleanup != nullptr) player->output.cleanup(player->output.opaque);
     player->output.setup_active = false;
+}
+
+void cleanup_vmem(libvlc_media_player_t* player) {
+    if (player == nullptr || !player->vmem.setup_active) return;
+    if (player->vmem.cleanup != nullptr) player->vmem.cleanup(player->vmem.opaque);
+    player->vmem.setup_active = false;
+}
+
+bool publish_cpu_test_frame(libvlc_media_player_t* player) {
+    if (player == nullptr || player->vmem.lock == nullptr || player->vmem.display == nullptr ||
+        player->vmem.format == nullptr) {
+        return false;
+    }
+    cleanup_vmem(player);
+    char chroma[5] = {'I', '4', '2', '0', '\0'};
+    unsigned widths[2] = {128U, 128U};
+    unsigned heights[2] = {86U, 72U};
+    unsigned pitches[4]{};
+    unsigned lines[4]{};
+    void* opaque = player->vmem.opaque;
+    if (player->vmem.format(&opaque, chroma, widths, heights, pitches, lines) == 0U) {
+        return false;
+    }
+    player->vmem.opaque = opaque;
+    player->vmem.setup_active = true;
+    if (std::memcmp(chroma, "RGBA", 4U) != 0 || widths[0] != widths[1] ||
+        heights[0] != heights[1] || widths[0] != 128U || heights[0] != 72U ||
+        pitches[0] < widths[0] * 4U || lines[0] < heights[0]) {
+        cleanup_vmem(player);
+        return false;
+    }
+    void* planes[4]{};
+    void* picture = player->vmem.lock(opaque, planes);
+    if (picture == nullptr || planes[0] == nullptr) {
+        cleanup_vmem(player);
+        return false;
+    }
+    auto* pixels = static_cast<std::uint8_t*>(planes[0]);
+    for (unsigned y = 0; y < heights[0]; ++y) {
+        for (unsigned x = 0; x < widths[0]; ++x) {
+            const std::size_t offset = static_cast<std::size_t>(y) * pitches[0] + x * 4U;
+            pixels[offset] = static_cast<std::uint8_t>(x);
+            pixels[offset + 1U] = static_cast<std::uint8_t>(y);
+            pixels[offset + 2U] = UINT8_C(64);
+            pixels[offset + 3U] = UINT8_MAX;
+        }
+    }
+    if (player->vmem.unlock != nullptr) player->vmem.unlock(opaque, picture, planes);
+    player->vmem.display(opaque, picture);
+    return true;
 }
 
 bool publish_test_frame(libvlc_media_player_t* player) {
@@ -119,17 +184,36 @@ libvlc_media_player_t* libvlc_media_player_new(
 
 void libvlc_media_player_release(libvlc_media_player_t* player) {
     cleanup_output(player);
+    cleanup_vmem(player);
     delete player;
 }
 
 void libvlc_media_player_set_media(libvlc_media_player_t* player, libvlc_media_t* media) {
-    if (player != nullptr) player->hdr = media != nullptr && media->hdr;
+    if (player == nullptr) return;
+    player->hdr = media != nullptr && media->hdr;
+    player->eos_sequence = media != nullptr && media->eos_sequence;
 }
 
 int libvlc_media_player_play(libvlc_media_player_t* player) {
-    if (!publish_test_frame(player)) return -1;
+    const bool published = player != nullptr &&
+        (player->output.engine == libvlc_video_engine_disable
+             ? publish_cpu_test_frame(player)
+             : publish_test_frame(player));
+    if (!published) return -1;
     if (player->callbacks != nullptr && player->callbacks->on_state_changed != nullptr) {
         player->callbacks->on_state_changed(player->callbacks_opaque, libvlc_Playing);
+    }
+    if (player->eos_sequence && player->callbacks != nullptr) {
+        if (player->callbacks->on_media_stopping != nullptr) {
+            player->callbacks->on_media_stopping(
+                player->callbacks_opaque,
+                nullptr,
+                libvlc_stopping_reason_eos);
+        }
+        if (player->callbacks->on_state_changed != nullptr) {
+            player->callbacks->on_state_changed(player->callbacks_opaque, libvlc_Stopping);
+            player->callbacks->on_state_changed(player->callbacks_opaque, libvlc_Stopped);
+        }
     }
     return 0;
 }
@@ -153,7 +237,9 @@ int libvlc_audio_set_volume(libvlc_media_player_t*, int) { return 0; }
 libvlc_media_t* libvlc_media_new_location(const char* location) {
     auto* media = new (std::nothrow) libvlc_media_t();
     if (media != nullptr && location != nullptr) {
-        media->hdr = std::string_view(location).find("hdr") != std::string_view::npos;
+        const std::string_view value(location);
+        media->hdr = value.find("hdr") != std::string_view::npos;
+        media->eos_sequence = value.find("eos-terminal") != std::string_view::npos;
     }
     return media;
 }
@@ -167,16 +253,28 @@ void libvlc_media_add_option(libvlc_media_t*, const char*) {}
 void libvlc_media_release(libvlc_media_t* media) { delete media; }
 
 void libvlc_video_set_callbacks(
-    libvlc_media_player_t*,
-    libvlc_video_lock_cb,
-    libvlc_video_unlock_cb,
-    libvlc_video_display_cb,
-    void*) {}
+    libvlc_media_player_t* player,
+    libvlc_video_lock_cb lock,
+    libvlc_video_unlock_cb unlock,
+    libvlc_video_display_cb display,
+    void* opaque) {
+    if (player == nullptr) return;
+    cleanup_vmem(player);
+    player->vmem.lock = lock;
+    player->vmem.unlock = unlock;
+    player->vmem.display = display;
+    player->vmem.opaque = opaque;
+}
 
 void libvlc_video_set_format_callbacks(
-    libvlc_media_player_t*,
-    libvlc_video_format_cb,
-    libvlc_video_cleanup_cb) {}
+    libvlc_media_player_t* player,
+    libvlc_video_format_cb format,
+    libvlc_video_cleanup_cb cleanup) {
+    if (player == nullptr) return;
+    cleanup_vmem(player);
+    player->vmem.format = format;
+    player->vmem.cleanup = cleanup;
+}
 
 bool libvlc_video_set_output_callbacks(
     libvlc_media_player_t* player,

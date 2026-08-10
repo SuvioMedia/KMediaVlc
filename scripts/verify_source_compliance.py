@@ -856,6 +856,7 @@ def verify_android_contract(root: Path) -> None:
         'libvlc_video_engine_disable',
         'libvlc_media_add_option(media, ":no-hw-dec")',
         "JNI_OnLoad",
+        "current == kStateEnded || current == kStateError",
     ]
     if not all(marker in bridge for marker in bridge_markers):
         fail("The Android ANativeWindow ownership or playback bridge is incomplete.")
@@ -897,6 +898,17 @@ def verify_android_contract(root: Path) -> None:
         fail("Android must invoke the VLC core JNI_OnLoad before loading its narrow bridge.")
     if "Map.of(" in player_api or ".isBlank()" in player_api:
         fail("The minSdk 28 API must not call Java library methods introduced in API 30+.")
+
+    instrumented_playback = (
+        root
+        / "runtime-android/src/androidTest/java/io/github/shusek/kmediavlc/runtime/android/"
+        "VlcAndroidPlaybackInstrumentedTest.java"
+    ).read_text(encoding="utf-8")
+    if not all(
+        marker in instrumented_playback
+        for marker in ["VlcAndroidPlaybackState.ENDED", '"the end-of-stream state"']
+    ):
+        fail("The Android bundled playback gate does not preserve end-of-stream state.")
 
     android_build = (root / "runtime-android/build.gradle.kts").read_text(encoding="utf-8")
     gradle_markers = [
@@ -1755,6 +1767,9 @@ def verify_ios_runtime_contract(root: Path) -> None:
     smoke_source = (root / "scripts/ios-smoke/KMediaVlcSmoke.m").read_text(encoding="utf-8")
     smoke_markers = [
         '!= "87"',
+        "PLAYBACK_FIXTURE_SHA256",
+        "libaudiounit_ios_plugin",
+        "kmediavlc-playback.mkv",
         "simctl install",
         "simctl launch --terminate-running-process",
         "-target arm64-apple-ios16.2-simulator",
@@ -1765,7 +1780,11 @@ def verify_ios_runtime_contract(root: Path) -> None:
         "kmediavlc_player_open",
         "kmediavlc_player_acquire_latest_frame",
         "KMEDIAVLC_CPU_ADDRESS",
-        "UIImagePNGRepresentation",
+        "kmediavlc_player_get_snapshot",
+        "kmediavlc_player_seek",
+        "KMEDIAVLC_STATE_ENDED",
+        "create_audio_fixture",
+        "audioDurationUs",
     ]
     if (
         not all(marker in smoke_script for marker in smoke_markers)

@@ -214,6 +214,12 @@ void on_state_changed(void* opaque, libvlc_state_t state) {
     auto* player = static_cast<AndroidPlayer*>(opaque);
     if (player == nullptr) return;
     const auto mapped = map_state(state);
+    if (mapped == kStateStopped) {
+        const auto current = player->state.load(std::memory_order_acquire);
+        // Preserve the semantic stop reason from on_media_stopping when VLC
+        // follows it with a generic Stopping/Stopped notification.
+        if (current == kStateEnded || current == kStateError) return;
+    }
     player->state_before_buffering.store(mapped, std::memory_order_release);
     player->state.store(mapped, std::memory_order_release);
 }

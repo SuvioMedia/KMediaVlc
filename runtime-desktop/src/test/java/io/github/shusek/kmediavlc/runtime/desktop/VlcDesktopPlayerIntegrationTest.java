@@ -92,6 +92,71 @@ final class VlcDesktopPlayerIntegrationTest {
     }
 
     @Test
+    void fakeLibVlcCpuPullPublishesVisibleDimensionsAndPreservesEndedState() throws Exception {
+        String bridge = System.getProperty("kmediavlc.test.nativeBridge");
+        String fakeLibVlc = System.getProperty("kmediavlc.test.fakeLibVlc");
+        Assumptions.assumeTrue(
+                bridge != null && fakeLibVlc != null, "The native CPU-pull fixture is opt-in.");
+        Path fakeLibVlcPath = Path.of(fakeLibVlc).toAbsolutePath();
+        Path plugins = fakeLibVlcPath.getParent();
+        assertNotNull(plugins);
+        var runtime = new VlcDesktopRuntimeResolution(
+                Path.of(bridge).toAbsolutePath(),
+                fakeLibVlcPath,
+                plugins,
+                "fake-libvlc-cpu-visible-dimensions",
+                new VlcRuntimeCapabilities(
+                        4,
+                        2,
+                        "4.0.0-dev",
+                        "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+                        Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
+                        Set.of(VlcRenderEngine.OPENGL),
+                        false));
+        var frameSignal = new CountDownLatch(1);
+        var endedSignal = new CountDownLatch(1);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.CPU_PULL,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        frameSignal.countDown();
+                    }
+
+                    @Override
+                    public void onPlaybackStateChanged(
+                            VlcPlaybackState state, long mediaGeneration) {
+                        if (state == VlcPlaybackState.ENDED) endedSignal.countDown();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(runtime, config)) {
+            assertTrue(player.open("test://cpu-visible-dimensions/eos-terminal", Map.of(), true));
+            assertTrue(
+                    frameSignal.await(10, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "The fake CPU-pull frame did not arrive."));
+            try (var frame = player.acquireLatestFrame().orElseThrow()) {
+                assertEquals(VlcNativeHandleType.CPU_ADDRESS, frame.handleType());
+                assertEquals(VlcPixelFormat.RGBA8_SRGB, frame.pixelFormat());
+                assertEquals(128, frame.width());
+                assertEquals(72, frame.height());
+                assertTrue(frame.stride() >= 128 * 4);
+                assertTrue(frame.cpuPixels().orElseThrow().remaining() >= frame.stride() * 72);
+            }
+            assertTrue(
+                    endedSignal.await(10, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "The fake EOS state did not arrive."));
+            var snapshot = player.snapshot();
+            assertEquals(VlcPlaybackState.ENDED, snapshot.state());
+            assertEquals(128, snapshot.videoWidth());
+            assertEquals(72, snapshot.videoHeight());
+        }
+    }
+
+    @Test
     void pinnedVideoLanFixtureImportsLinuxDmaBufsAndReturnsExplicitFences() throws Exception {
         Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase().contains("linux"));
         String renderNode = System.getProperty("kmediavlc.test.linuxRenderNode");
@@ -335,11 +400,12 @@ final class VlcDesktopPlayerIntegrationTest {
         String bridge = System.getProperty("kmediavlc.test.nativeBridge");
         String fakeLibVlc = System.getProperty("kmediavlc.test.fakeLibVlc");
         Assumptions.assumeTrue(bridge != null && fakeLibVlc != null, "The native macOS fixture is opt-in.");
-        Path plugins = temporaryDirectory.resolve("fake-vlc-plugins").toAbsolutePath();
-        java.nio.file.Files.createDirectories(plugins);
+        Path fakeLibVlcPath = Path.of(fakeLibVlc).toAbsolutePath();
+        Path plugins = fakeLibVlcPath.getParent();
+        assertNotNull(plugins);
         var runtime = new VlcDesktopRuntimeResolution(
                 Path.of(bridge).toAbsolutePath(),
-                Path.of(fakeLibVlc).toAbsolutePath(),
+                fakeLibVlcPath,
                 plugins,
                 "fake-libvlc-macos-callback-test",
                 new VlcRuntimeCapabilities(

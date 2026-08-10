@@ -4,6 +4,7 @@
 set -euo pipefail
 
 readonly BUNDLE_ID="io.github.shusek.kmediavlc.smoke"
+readonly PLAYBACK_FIXTURE_SHA256="f9cee3480b4619e2d94979a30b40f19cbb417289d3453e7bbb890a871c6f9718"
 
 if [[ $# -ne 3 ]]; then
     echo "usage: $0 <simulator-frameworks-directory> <new-absolute-work-directory> <booted-simulator-udid>" >&2
@@ -16,6 +17,7 @@ simulator_udid="$3"
 repository_root="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd -P)"
 source_file="$repository_root/scripts/ios-smoke/KMediaVlcSmoke.m"
 plist_file="$repository_root/scripts/ios-smoke/Info.plist"
+playback_fixture="$repository_root/runtime-android/src/androidTest/assets/kmediavlc-android-playback.mkv"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
     echo "the iOS simulator smoke test must run on macOS" >&2
@@ -30,12 +32,18 @@ if [[ ! "$simulator_udid" =~ ^[0-9A-Fa-f-]{36}$ ]]; then
     echo "the simulator UDID is invalid" >&2
     exit 2
 fi
-if [[ ! -f "$source_file" || ! -f "$plist_file" ]] ||
-   [[ -L "$source_file" || -L "$plist_file" ]]; then
+if [[ ! -f "$source_file" || ! -f "$plist_file" || ! -f "$playback_fixture" ]] ||
+   [[ -L "$source_file" || -L "$plist_file" || -L "$playback_fixture" ]]; then
     echo "the checked-in iOS smoke application sources are missing or unsafe" >&2
     exit 1
 fi
-for framework in KMediaVlc KMediaVlcLibVlc KMediaVlcCore libvmem_plugin; do
+playback_fixture_sha256="$(/usr/bin/shasum -a 256 "$playback_fixture" | /usr/bin/awk '{print $1}')"
+if [[ "$playback_fixture_sha256" != "$PLAYBACK_FIXTURE_SHA256" ]]; then
+    echo "the shared playback fixture differs from its pinned hash" >&2
+    exit 1
+fi
+for framework in KMediaVlc KMediaVlcLibVlc KMediaVlcCore \
+                 libaudiounit_ios_plugin libvmem_plugin; do
     if [[ ! -f "$frameworks/$framework.framework/$framework" ]]; then
         echo "required simulator framework is missing: $framework" >&2
         exit 1
@@ -55,11 +63,15 @@ app="$work_directory/KMediaVlcSmoke.app"
 mkdir "$app"
 mkdir "$app/Frameworks"
 /bin/cp "$plist_file" "$app/Info.plist"
+/bin/cp "$playback_fixture" "$app/kmediavlc-playback.mkv"
 /bin/cp -R "$frameworks/." "$app/Frameworks/"
 
 sdk_root="$(/usr/bin/xcrun --sdk iphonesimulator --show-sdk-path)"
 /usr/bin/xcrun --sdk iphonesimulator clang \
     -fobjc-arc \
+    -Wall \
+    -Wextra \
+    -Werror \
     -target arm64-apple-ios16.2-simulator \
     -isysroot "$sdk_root" \
     -F "$frameworks" \

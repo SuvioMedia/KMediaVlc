@@ -215,6 +215,12 @@ void on_state_changed(void* opaque, libvlc_state_t state) {
     auto* player = static_cast<kmediavlc_player*>(opaque);
     if (player == nullptr) return;
     const auto mapped = map_state(state);
+    if (mapped == KMEDIAVLC_STATE_STOPPED) {
+        const auto current = player->state.load(std::memory_order_acquire);
+        // VLC reports the semantic stop reason separately, then may emit a
+        // generic Stopping/Stopped state. Keep the richer terminal result.
+        if (current == KMEDIAVLC_STATE_ENDED || current == KMEDIAVLC_STATE_ERROR) return;
+    }
     player->state_before_buffering.store(mapped, std::memory_order_release);
     notify_state(player, mapped);
 }
@@ -278,20 +284,36 @@ unsigned cpu_format(
     unsigned* pitches,
     unsigned* lines) {
     if (opaque == nullptr || *opaque == nullptr || chroma == nullptr || width == nullptr ||
-        height == nullptr || pitches == nullptr || lines == nullptr || *width == 0 || *height == 0 ||
-        *width > kMaximumCpuDimension || *height > kMaximumCpuDimension) {
+        height == nullptr || pitches == nullptr || lines == nullptr) {
         return 0;
     }
     auto* player = static_cast<kmediavlc_player*>(*opaque);
+    // VLC 4 passes coded and visible dimensions as adjacent entries. vmem later
+    // adopts entry zero as the output geometry, so explicitly request the
+    // visible rectangle instead of exposing decoder padding through our ABI.
+    constexpr std::size_t coded_dimension = 0U;
+    constexpr std::size_t visible_dimension = 1U;
+    const unsigned coded_width = width[coded_dimension];
+    const unsigned coded_height = height[coded_dimension];
+    const unsigned visible_width = width[visible_dimension];
+    const unsigned visible_height = height[visible_dimension];
+    if (coded_width == 0 || coded_height == 0 || visible_width == 0 || visible_height == 0 ||
+        coded_width > kMaximumCpuDimension || coded_height > kMaximumCpuDimension ||
+        visible_width > coded_width || visible_height > coded_height) {
+        kmediavlc::set_error(player, "The decoded CPU frame geometry is invalid.");
+        return 0;
+    }
+    width[coded_dimension] = visible_width;
+    height[coded_dimension] = visible_height;
     constexpr std::size_t maximum = std::numeric_limits<std::size_t>::max();
-    const std::size_t width_value = static_cast<std::size_t>(*width);
+    const std::size_t width_value = static_cast<std::size_t>(visible_width);
     if (width_value > (maximum - (kCpuAlignment - 1U)) / 4U) {
         kmediavlc::set_error(player, "The decoded CPU frame dimensions are unsafe.");
         return 0;
     }
     const std::size_t raw_stride = width_value * 4U;
     const std::size_t stride = (raw_stride + kCpuAlignment - 1U) & ~(kCpuAlignment - 1U);
-    const std::size_t height_value = static_cast<std::size_t>(*height);
+    const std::size_t height_value = static_cast<std::size_t>(visible_height);
     if (stride > std::numeric_limits<unsigned>::max() || height_value > maximum / stride) {
         kmediavlc::set_error(player, "The decoded CPU frame dimensions are unsafe.");
         return 0;
@@ -308,8 +330,8 @@ unsigned cpu_format(
         kmediavlc::set_error(player, "The decoded CPU frame buffer could not be allocated.");
         return 0;
     }
-    picture->width = *width;
-    picture->height = *height;
+    picture->width = visible_width;
+    picture->height = visible_height;
     picture->stride = static_cast<std::uint32_t>(stride);
     {
         std::lock_guard lock(player->cpu_mutex);
@@ -317,9 +339,9 @@ unsigned cpu_format(
     }
     std::memcpy(chroma, "RGBA", 4);
     pitches[0] = static_cast<unsigned>(stride);
-    lines[0] = *height;
-    player->video_width.store(*width, std::memory_order_release);
-    player->video_height.store(*height, std::memory_order_release);
+    lines[0] = visible_height;
+    player->video_width.store(visible_width, std::memory_order_release);
+    player->video_height.store(visible_height, std::memory_order_release);
     return 1;
 }
 

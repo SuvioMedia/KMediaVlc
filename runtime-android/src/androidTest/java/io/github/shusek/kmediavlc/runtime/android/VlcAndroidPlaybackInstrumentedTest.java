@@ -140,6 +140,10 @@ public final class VlcAndroidPlaybackInstrumentedTest {
                     videoSignature,
                     postSeekSignature);
             pixels.awaitSubtitle(activeHost, "subtitle output after seek");
+            awaitCondition(
+                    () -> activePlayer.snapshot().getState() == VlcAndroidPlaybackState.ENDED,
+                    PLAYBACK_TIMEOUT_MILLIS,
+                    "the end-of-stream state");
 
             assertTrue("libVLC rejected stop.", activePlayer.stop());
             awaitCondition(
