@@ -47,6 +47,7 @@ record NativePayloadManifest(
                     "Apache-2.0",
                     "BSD-2-Clause",
                     "BSD-3-Clause",
+                    "BSL-1.0",
                     "FTL",
                     "IJG",
                     "ISC",

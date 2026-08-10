@@ -5,6 +5,11 @@ project(kmediavlc_bridge VERSION 0.1.0 LANGUAGES CXX)
 
 option(KMEDIAVLC_BUILD_TEST_FIXTURES "Build hermetic native ABI fixtures" OFF)
 
+set(KMEDIAVLC_IOS OFF)
+if(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(KMEDIAVLC_IOS ON)
+endif()
+
 set(KMEDIAVLC_VLC_SOURCE_DIR "" CACHE PATH "Exact pinned VideoLAN VLC source checkout")
 if(NOT KMEDIAVLC_VLC_SOURCE_DIR)
     message(FATAL_ERROR "KMEDIAVLC_VLC_SOURCE_DIR is required")
@@ -26,13 +31,20 @@ if(NOT KMEDIAVLC_GIT_RESULT EQUAL 0 OR
         "LibVLC headers must come from ${KMEDIAVLC_PINNED_VLC_REVISION}; got ${KMEDIAVLC_VLC_REVISION}")
 endif()
 
-find_package(JNI REQUIRED)
-
 set(KMEDIAVLC_SOURCES
     src/kmediavlc_bridge.cpp
-    src/kmediavlc_jni.cpp
 )
-if(WIN32)
+if(NOT KMEDIAVLC_IOS)
+    find_package(JNI REQUIRED)
+    list(APPEND KMEDIAVLC_SOURCES src/kmediavlc_jni.cpp)
+endif()
+
+if(KMEDIAVLC_IOS)
+    # iOS clients call the stable C ABI directly. Native executable code is
+    # embedded and signed by Xcode, so neither JNI nor the macOS CGL renderer
+    # belongs in this slice. CPU pull remains available in the shared bridge.
+    list(APPEND KMEDIAVLC_SOURCES src/platform_renderer_stub.cpp)
+elseif(WIN32)
     list(APPEND KMEDIAVLC_SOURCES src/windows_d3d11_renderer.cpp)
 elseif(APPLE)
     list(APPEND KMEDIAVLC_SOURCES src/macos_iosurface_renderer.cpp)
@@ -47,14 +59,19 @@ target_include_directories(kmediavlc_bridge PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${KMEDIAVLC_VLC_SOURCE_DIR}/include"
-    ${JNI_INCLUDE_DIRS}
 )
+if(NOT KMEDIAVLC_IOS)
+    target_include_directories(kmediavlc_bridge PRIVATE ${JNI_INCLUDE_DIRS})
+endif()
 set_target_properties(kmediavlc_bridge PROPERTIES
     CXX_EXTENSIONS OFF
     OUTPUT_NAME "kmediavlc_bridge"
 )
 
-if(MSVC)
+if(KMEDIAVLC_IOS)
+    target_compile_options(kmediavlc_bridge PRIVATE -Wall -Wextra -Wpedantic -Wconversion)
+    target_link_libraries(kmediavlc_bridge PRIVATE ${CMAKE_DL_LIBS})
+elseif(MSVC)
     set_property(TARGET kmediavlc_bridge PROPERTY
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
     )

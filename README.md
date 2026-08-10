@@ -53,6 +53,14 @@ calls Compose and never waits for a UI render.
   contract plus a relocatable source-built VLC candidate are implemented, but
   publication remains fail-closed until the static component/license inventory,
   Metal-consumer integration, and hardware SDR/HDR evidence are audited.
+- iOS 16.2 arm64 device and Apple-silicon simulator source-build recipes now
+  produce shared libVLC 4 candidates. The stable C bridge excludes JNI, starts
+  with fail-closed CPU pull, and packages an 84-plugin allowlist as 87 dynamic
+  frameworks per slice. Both source-built slices pass relocation audit, and the
+  repository now contains deterministic XCFramework/CocoaPods assembly plus an
+  independent archive verifier. Real simulator playback through the packaged
+  graph passes; iOS remains unpublished until the paired archive is reproduced,
+  device playback passes, and the full binary and license audits close.
 - Linux remains release-ineligible until its DMA-BUF import, explicit-fence
   ownership, and native integration tests exist.
 - CPU pull is available for controlled SDR and diagnostics.
@@ -81,6 +89,6 @@ The portable CPU-pull implementation exists for controlled tests. The runtime
 recognizes `macos-aarch64`, but no macOS payload is published in this version;
 resolution therefore fails closed until an audited resource is added.
 
-See `docs/ARCHITECTURE.md`, `docs/FRAME-TRANSPORT.md`, `docs/MACOS.md`, and
-`docs/LICENSING.md`. Release setup and the exact four GitHub secrets are
+See `docs/ARCHITECTURE.md`, `docs/FRAME-TRANSPORT.md`, `docs/MACOS.md`,
+`docs/IOS.md`, and `docs/LICENSING.md`. Release setup and the exact four GitHub secrets are
 documented in `docs/RELEASING.md` and `docs/MAVEN-CENTRAL.md`.

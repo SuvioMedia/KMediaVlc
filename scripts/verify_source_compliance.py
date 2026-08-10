@@ -15,6 +15,7 @@ ALLOWED_LICENSES = {
     "Apache-2.0",
     "BSD-2-Clause",
     "BSD-3-Clause",
+    "BSL-1.0",
     "FTL",
     "IJG",
     "ISC",
@@ -59,6 +60,7 @@ COMPONENT_NOTICE_FILES = {
     "opus": "Opus-COPYING.txt",
     "soxr": "SoXR-LICENCE.txt",
     "speexdsp": "SpeexDSP-COPYING.txt",
+    "utfcpp": "BSL-1.0.txt",
     "zlib": "zlib-LICENSE.txt",
 }
 FORBIDDEN_BINARY_SUFFIXES = {
@@ -71,7 +73,7 @@ FORBIDDEN_BINARY_SUFFIXES = {
     ".obj",
     ".so",
 }
-SPDX_EXTENSIONS = {".c", ".cpp", ".h", ".java", ".kt", ".kts", ".md", ".py", ".sh"}
+SPDX_EXTENSIONS = {".c", ".cpp", ".h", ".java", ".kt", ".kts", ".m", ".md", ".py", ".sh"}
 IGNORED_PARTS = {".git", ".gradle", ".idea", ".vlc-source", "build", "__pycache__"}
 
 
@@ -689,17 +691,364 @@ def verify_macos_transport_contract(root: Path) -> None:
         fail("The macOS target must remain exact-engine and publication-fail-closed.")
 
 
+def verify_ios_runtime_contract(root: Path) -> None:
+    playback = load_json(root / "compliance/policy/ios-playback-modules.json")
+    expected_targets = ["ios-arm64", "ios-simulator-arm64"]
+    if (
+        playback.get("schemaVersion") != 1
+        or playback.get("targets") != expected_targets
+        or playback.get("vlcRevision") != PINNED_REVISION
+    ):
+        fail("iOS playback module policy has an unsupported identity.")
+    if playback.get("reviewStatus") not in {
+        "pending-framework-and-source-license-audit",
+        "approved",
+    }:
+        fail("iOS playback module policy has an invalid review state.")
+    if playback.get("primaryLicenseSpdx") != "LGPL-2.1-or-later":
+        fail("iOS playback modules lost their reviewed primary license.")
+    families = playback.get("modulesByFamily")
+    expected_families = {
+        "access",
+        "audio_filter",
+        "audio_mixer",
+        "audio_output",
+        "codec",
+        "demux",
+        "keystore",
+        "logger",
+        "misc",
+        "packetizer",
+        "stream_filter",
+        "text_renderer",
+        "video_chroma",
+        "video_output",
+    }
+    if not isinstance(families, dict) or set(families) != expected_families:
+        fail("iOS playback module families are incomplete or overbroad.")
+    modules: list[str] = []
+    for family, names in families.items():
+        if not isinstance(names, list) or names != sorted(names) or not names:
+            fail(f"iOS playback module family is not a closed sorted list: {family}")
+        modules.extend(names)
+    required_modules = {
+        "audiounit_ios",
+        "avcodec",
+        "cvpx",
+        "https",
+        "libass",
+        "mkv",
+        "mp4",
+        "securetransport",
+        "videotoolbox",
+        "vmem",
+    }
+    if (
+        len(modules) != 84
+        or len(set(modules)) != 84
+        or not required_modules.issubset(modules)
+        or "vgl" in modules
+        or any(not isinstance(name, str) or not re.fullmatch(r"[a-z0-9_]+", name) for name in modules)
+    ):
+        fail("iOS playback allowlist must contain its 84 unique CPU-pull modules.")
+    expected_additional = {
+        "mkv": ["MIT"],
+        "opus": ["BSD-3-Clause"],
+        "ts": ["BSD-3-Clause"],
+    }
+    if playback.get("additionalDirectSourceLicenses") != expected_additional:
+        fail("iOS playback direct-source license exceptions changed without review.")
+
+    binary = load_json(root / "compliance/policy/ios-binary-components.json")
+    if (
+        binary.get("schemaVersion") != 1
+        or binary.get("targets") != expected_targets
+        or binary.get("vlcRevision") != PINNED_REVISION
+    ):
+        fail("iOS binary component policy has an unsupported identity.")
+    expected_toolchain = {
+        "xcodeVersion": "26.6",
+        "xcodeBuild": "17F113",
+        "sdkVersion": "26.5",
+        "minimumIos": "16.2",
+        "architecture": "arm64",
+    }
+    if binary.get("toolchain") != expected_toolchain:
+        fail("iOS binary component policy targets a different toolchain.")
+    if binary.get("reviewStatus") not in {
+        "pending-link-command-and-license-audit",
+        "approved",
+    }:
+        fail("iOS binary component policy has an invalid review state.")
+    if binary.get("buildOnlyContribPackages") != []:
+        fail("iOS contrib closure contains an unreviewed build-only package.")
+    expected_components = {
+        "dav1d", "ffmpeg", "flac", "freetype", "fribidi", "gsm", "harfbuzz",
+        "libass", "libdvbpsi", "libebml", "libjpeg-turbo", "libmatroska",
+        "libogg", "libpng", "libvorbis", "libvpx", "libxml2", "openjpeg",
+        "opus", "soxr", "utfcpp", "zlib",
+    }
+    components = binary.get("components")
+    if (
+        not isinstance(components, dict)
+        or list(components) != sorted(components)
+        or set(components) != expected_components
+    ):
+        fail("iOS binary components must match the closed playback dependency map.")
+    for component_id, component_policy in components.items():
+        if not re.fullmatch(r"[a-z0-9-]+", component_id) or not isinstance(component_policy, dict):
+            fail(f"Invalid iOS binary component: {component_id!r}")
+        if set(component_policy) != {"version", "licenseSpdx", "sourceArchive"}:
+            fail(f"iOS binary component fields are not closed: {component_id}")
+        licenses = component_policy["licenseSpdx"]
+        if not isinstance(licenses, list) or licenses != sorted(set(licenses)) or not licenses:
+            fail(f"iOS binary component licenses are not canonical: {component_id}")
+        if any(license_id not in ALLOWED_LICENSES for license_id in licenses):
+            fail(f"iOS binary component has an unapproved license: {component_id}")
+        if not isinstance(component_policy["version"], str) or not component_policy["version"]:
+            fail(f"iOS binary component version is missing: {component_id}")
+        if not re.fullmatch(
+            r"[A-Za-z0-9.+_-]+\.tar\.(?:gz|xz|bz2)",
+            component_policy["sourceArchive"],
+        ):
+            fail(f"iOS binary component source archive is unsafe: {component_id}")
+    module_components = binary.get("moduleComponents")
+    expected_component_modules = {
+        "avcodec", "dav1d", "flac", "freetype", "inflate", "jpeg", "libass",
+        "mkv", "mp4", "ogg", "opus", "packetizer_avparser", "png", "soxr",
+        "swscale", "ts", "vorbis", "vpx", "xml",
+    }
+    if not isinstance(module_components, dict) or set(module_components) != expected_component_modules:
+        fail("iOS binary module/component closure changed without review.")
+    referenced: set[str] = set()
+    for module, component_ids in module_components.items():
+        if module not in modules or component_ids != sorted(set(component_ids)) or not component_ids:
+            fail(f"iOS binary module components are not canonical: {module}")
+        if any(component_id not in components for component_id in component_ids):
+            fail(f"iOS binary module references an unknown component: {module}")
+        referenced.update(component_ids)
+    if binary.get("coreComponents") != []:
+        fail("iOS core must use only platform-system dynamic dependencies.")
+    if referenced != set(components):
+        fail("iOS binary component policy contains unused or missing components.")
+    if binary.get("moduleAdditionalLicenses") != expected_additional:
+        fail("iOS binary direct-source license exceptions changed without review.")
+
+    selected_contribs = [
+        "ass", "dav1d", "dvbpsi", "ebml", "ffmpeg", "flac", "freetype2",
+        "fribidi", "harfbuzz", "jpeg", "libxml2", "matroska", "ogg", "opus",
+        "png", "soxr", "vorbis", "vpx", "zlib",
+    ]
+    resolved_contribs = sorted(selected_contribs + ["gsm", "openjpeg", "utfcpp"])
+    targets = {
+        "ios-arm64": {
+            "sdk": "iphoneos",
+            "architecture": "arm64",
+            "minimumOs": "16.2",
+            "simulator": False,
+        },
+        "ios-simulator-arm64": {
+            "sdk": "iphonesimulator",
+            "architecture": "arm64",
+            "minimumOs": "16.2",
+            "simulator": True,
+        },
+    }
+    build_arguments = {
+        target: [
+            "--arch=arm64",
+            f"--sdk={settings['sdk']}",
+            "--enable-shared",
+            "--disable-debug",
+            "--config=build-recipes/vlc-apple.conf",
+        ]
+        for target, settings in targets.items()
+    }
+    recipe = load_json(root / "build-recipes/ios.json")
+    if (
+        recipe.get("targets") != targets
+        or recipe.get("vlcRevision") != PINNED_REVISION
+        or recipe.get("buildMode") != "shared-frameworks"
+        or recipe.get("libVlcBuildArguments") != build_arguments
+        or recipe.get("sourcePatches") != [
+            "build-recipes/patches/vlc-ios-meson-native-compiler.patch",
+            "build-recipes/patches/fribidi-meson-native-generator.patch",
+        ]
+        or recipe.get("mesonNativeFile") != "build-recipes/vlc-apple-native.ini"
+        or recipe.get("sourceOverlays") != ["build-recipes/vlc-contrib-utfcpp-rules.mak"]
+        or recipe.get("selectedContribPackages") != selected_contribs
+        or recipe.get("resolvedContribPackages") != resolved_contribs
+        or recipe.get("usesPrebuiltContribs") is not False
+        or recipe.get("requiredFrameDeliveryModes") != ["CPU_PULL"]
+        or recipe.get("stagedPluginCount") != 84
+        or recipe.get("rawSourceBuildPluginCount") != 285
+        or recipe.get("frameworkCountPerSlice") != 87
+        or recipe.get("requiresApplicationPrivateRelocation") is not True
+        or recipe.get("requiresConsumerCodeSigning") is not True
+        or recipe.get("candidateReleaseEligible") is not False
+    ):
+        fail("The pinned iOS source-build recipe is incomplete or release-open.")
+
+    profile = (root / "build-recipes/vlc-apple.conf").read_text(encoding="utf-8")
+    for marker in (
+        'VLC_DEPLOYMENT_TARGET_IOS="16.2"',
+        'VLC_DEPLOYMENT_TARGET_IOS_SIMULATOR="16.2"',
+        "VLC_CONTRIB_OPTIONS_IOS=()",
+        "VLC_CONFIG_OPTIONS_IOS=(",
+        "VLC_MODULE_REMOVAL_LIST_IOS=()",
+    ):
+        if marker not in profile:
+            fail("The Apple VLC profile does not pin its iOS target contract.")
+    builder = (root / "scripts/build_vlc_ios.sh").read_text(encoding="utf-8")
+    builder_markers = [
+        'readonly PINNED_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"',
+        "iphoneos)",
+        "iphonesimulator)",
+        'git -C "$source_directory" apply --check "$source_patch"',
+        'KMEDIAVLC_MESON_NATIVE_FILE="$meson_native_file"',
+        'KMEDIAVLC_MESON_NATIVE_TMPDIR="$meson_native_tmpdir"',
+        'contrib/src/utfcpp',
+        'make -C "$contrib_directory" list',
+    ]
+    if not all(marker in builder for marker in builder_markers):
+        fail("The iOS VLC build wrapper does not preserve the closed source recipe.")
+    source_patch = (
+        root / "build-recipes/patches/vlc-ios-meson-native-compiler.patch"
+    ).read_text(encoding="utf-8")
+    patch_markers = [
+        "KMEDIAVLC_MESON_NATIVE_FILE",
+        "KMEDIAVLC_MESON_NATIVE_TMPDIR",
+        "kmediavlc-meson-native-generator.patch",
+        "retain the Apple cross target and deployment flags from HOSTVARS_PIC",
+        "CFLAGS +=",
+    ]
+    if not all(marker in source_patch for marker in patch_markers):
+        fail("The iOS VLC source patch does not preserve host tools and deployment flags.")
+    bridge_builder = (root / "scripts/build_kmediavlc_ios_bridge.sh").read_text(encoding="utf-8")
+    bridge_markers = [
+        "-DCMAKE_SYSTEM_NAME=iOS",
+        "-DCMAKE_OSX_SYSROOT=\"$sdk\"",
+        "-DCMAKE_OSX_ARCHITECTURES=arm64",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=\"$MINIMUM_IOS\"",
+        'platform $expected_platform',
+        'minos $MINIMUM_IOS',
+    ]
+    if not all(marker in bridge_builder for marker in bridge_markers):
+        fail("The iOS bridge build wrapper does not pin its SDK and ABI.")
+    stager = (root / "scripts/stage_vlc_ios_frameworks.py").read_text(encoding="utf-8")
+    stager_markers = [
+        'CORE_INSTALL_NAME = f"@rpath/{CORE_FRAMEWORK}.framework/{CORE_FRAMEWORK}"',
+        'return f"lib{module}_plugin"',
+        'EXPECTED_MINIMUM_IOS = "16.2"',
+        'EXPECTED_RAW_PLUGIN_COUNT = 285',
+        '"otoolPlatform": "2"',
+        '"otoolPlatform": "7"',
+        'if "cmd LC_RPATH" in layout',
+        'frameworkCount',
+    ]
+    if (
+        not all(marker in stager for marker in stager_markers)
+        or "codesign" in stager
+        or "os.environ" in stager
+    ):
+        fail("The iOS framework stager does not close relocation and tool inputs.")
+    assembler = (root / "scripts/assemble_ios_xcframeworks.py").read_text(
+        encoding="utf-8"
+    )
+    assembler_markers = [
+        "EXPECTED_FRAMEWORK_COUNT",
+        '"-create-xcframework"',
+        "Frameworks/*.xcframework",
+        'git_output(["status", "--porcelain"])',
+        "evidenceSha256",
+        "auditCandidate",
+        "kmedia-vlc-{version}-ios-xcframeworks.zip",
+    ]
+    if (
+        not all(marker in assembler for marker in assembler_markers)
+        or "codesign" in assembler
+        or "os.environ" in assembler
+    ):
+        fail("The iOS XCFramework assembler is not deterministic and fail-closed.")
+    archive_verifier = (
+        root / "scripts/verify_ios_xcframework_archive.py"
+    ).read_text(encoding="utf-8")
+    verifier_markers = [
+        "safe_members",
+        "LC_BUILD_VERSION",
+        "LC_ID_DYLIB",
+        "LC_RPATH",
+        "IOS_16_2_0",
+        "evidenceSha256",
+        "allow_audit_candidate",
+        "verify_podspec",
+    ]
+    if not all(marker in archive_verifier for marker in verifier_markers):
+        fail("The iOS XCFramework archive verifier does not independently close the payload.")
+    cmake = (root / "native/CMakeLists.txt").read_text(encoding="utf-8")
+    cmake_markers = [
+        'CMAKE_SYSTEM_NAME STREQUAL "iOS"',
+        "if(NOT KMEDIAVLC_IOS)",
+        "src/platform_renderer_stub.cpp",
+        "target_link_libraries(kmediavlc_bridge PRIVATE ${CMAKE_DL_LIBS})",
+    ]
+    if not all(marker in cmake for marker in cmake_markers):
+        fail("The iOS bridge must exclude JNI and the macOS renderer.")
+    smoke_script = (root / "scripts/run_ios_simulator_smoke.sh").read_text(encoding="utf-8")
+    smoke_source = (root / "scripts/ios-smoke/KMediaVlcSmoke.m").read_text(encoding="utf-8")
+    smoke_markers = [
+        '!= "87"',
+        "simctl install",
+        "simctl launch --terminate-running-process",
+        "-target arm64-apple-ios16.2-simulator",
+        "-Wl,-rpath,@executable_path/Frameworks",
+    ]
+    source_markers = [
+        "KMEDIAVLC_CPU_PULL",
+        "kmediavlc_player_open",
+        "kmediavlc_player_acquire_latest_frame",
+        "KMEDIAVLC_CPU_ADDRESS",
+        "UIImagePNGRepresentation",
+    ]
+    if (
+        not all(marker in smoke_script for marker in smoke_markers)
+        or not all(marker in smoke_source for marker in source_markers)
+    ):
+        fail("The packaged iOS simulator CPU-pull playback gate is incomplete.")
+    documentation = (root / "docs/IOS.md").read_text(encoding="utf-8")
+    documentation_markers = [
+        "iOS 16.2",
+        "CPU_PULL",
+        "84 playback modules",
+        "87 dynamic frameworks",
+        "XCFramework",
+        "Publication gates still open",
+        "not release-eligible",
+    ]
+    if not all(marker in documentation for marker in documentation_markers):
+        fail("The iOS runtime documentation must remain exact and publication-fail-closed.")
+
+
 def verify_legal_files(root: Path) -> None:
     windows_binary = load_json(root / "compliance/policy/windows-x86_64-binary-components.json")
     macos_binary = load_json(root / "compliance/policy/macos-aarch64-binary-components.json")
+    ios_binary = load_json(root / "compliance/policy/ios-binary-components.json")
     windows_components = windows_binary.get("components")
     macos_components = macos_binary.get("components")
-    if not isinstance(windows_components, dict) or not isinstance(macos_components, dict):
+    ios_components = ios_binary.get("components")
+    if (
+        not isinstance(windows_components, dict)
+        or not isinstance(macos_components, dict)
+        or not isinstance(ios_components, dict)
+    ):
         fail("Legal notice component inventories are invalid.")
-    for component_id in set(windows_components).intersection(macos_components):
-        if windows_components[component_id] != macos_components[component_id]:
+    policies = [windows_components, macos_components, ios_components]
+    all_component_ids = set().union(*(set(policy) for policy in policies))
+    for component_id in all_component_ids:
+        definitions = [policy[component_id] for policy in policies if component_id in policy]
+        if any(definition != definitions[0] for definition in definitions[1:]):
             fail(f"Cross-platform component terms disagree: {component_id}")
-    components = {**windows_components, **macos_components}
+    components = {**windows_components, **macos_components, **ios_components}
     if set(components) != set(COMPONENT_NOTICE_FILES):
         fail("Legal notice mapping must cover the Windows/macOS component union exactly.")
     required = [
@@ -726,6 +1075,13 @@ def verify_legal_files(root: Path) -> None:
     )
     if macos_toolchain_notice not in notices:
         fail("Third-party notices omit the pinned macOS toolchain.")
+    ios_toolchain = ios_binary.get("toolchain", {})
+    ios_toolchain_notice = (
+        f"Xcode {ios_toolchain.get('xcodeVersion')} "
+        f"({ios_toolchain.get('xcodeBuild')})"
+    )
+    if ios_toolchain_notice not in notices:
+        fail("Third-party notices omit the pinned iOS toolchain.")
     for component_id, component in components.items():
         licenses = " AND ".join(component["licenseSpdx"])
         row = f"| {component_id} | {component['version']} | {licenses} |"
@@ -748,6 +1104,7 @@ def main() -> None:
     verify_policy(root)
     verify_pin_occurrences(root)
     verify_macos_transport_contract(root)
+    verify_ios_runtime_contract(root)
     verify_legal_files(root)
     print("KMediaVlc source and licensing policy verified.")
 

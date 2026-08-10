@@ -6,7 +6,7 @@ KMediaVlc is an optional client and distribution boundary for libVLC 4. Project-
 
 ## VideoLAN VLC / libVLC
 
-The Windows runtime and macOS audit candidate are built from VideoLAN VLC revision `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`. VLC/libVLC and the selected playback modules are distributed under LGPL-2.1-or-later except for the additional direct-source terms recorded in each closed module policy. The LGPL-2.1 text is included as `LICENSES/LGPL-2.1.txt`.
+The Windows runtime and Apple audit candidates are built from VideoLAN VLC revision `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`. VLC/libVLC and the selected playback modules are distributed under LGPL-2.1-or-later except for the additional direct-source terms recorded in each closed module policy. The LGPL-2.1 text is included as `LICENSES/LGPL-2.1.txt`.
 
 Official source: https://code.videolan.org/videolan/vlc
 
@@ -66,6 +66,22 @@ The macOS candidate is built with Xcode 26.6 (17F113), the macOS 26.5 SDK,
 an arm64-only target, and a minimum deployment version of macOS 14.0. Its
 component and module review states remain pending; this inventory does not make
 the candidate release-eligible.
+
+## iOS arm64 playback dependency inventory
+
+The iOS device and Apple-silicon simulator candidates reuse the applicable
+macOS rows above, but use the system iOS iconv implementation instead of
+shipping libiconv. The local contrib closure also records the header-only
+dependency compiled into libEBML's Matroska path:
+
+| Component | Version | SPDX license | Reviewed source input | Included notice/terms |
+| --- | --- | --- | --- | --- |
+| utfcpp | 3.2.5 | BSL-1.0 | `utfcpp-3.2.5.tar.gz` | `LICENSES/BSL-1.0.txt` |
+
+Both iOS slices are built with Xcode 26.6 (17F113), the iOS 26.5 SDK, arm64,
+and a minimum deployment version of iOS 16.2. The 84 selected VLC plugins,
+their application-private framework graph, and real simulator playback remain
+candidate gates; this inventory does not make the iOS payload release-eligible.
 
 ## Toolchain runtime inputs
 

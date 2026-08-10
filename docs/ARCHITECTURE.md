@@ -36,7 +36,14 @@ with sRGB transfer; requested HDR output uses RGBA16F linear-sRGB storage.
 This producer, its hermetic callback/IOSurface test, and a relocatable
 source-built libVLC candidate are implemented. Per-binary source/license
 closure, real media/HDR coverage, and Metal host acceptance remain release
-gates. Linux still uses the fail-closed platform stub.
+gates.
+
+The first iOS producer uses the stable bridge's CPU-pull callbacks. Its arm64
+device and Apple-silicon simulator slices keep libVLC, core, bridge, and each
+allowlisted VLC plugin dynamically replaceable as flattened iOS frameworks.
+Xcode embeds and signs the selected XCFramework slices; KMediaVlc never extracts
+native code from Maven at runtime. iOS GPU push remains fail-closed. Linux still
+uses the fail-closed platform stub.
 
 Supporting libVLC 3 remains an adapter concern. A process selects exactly one
 major runtime and never loads libVLC 3 and 4 plugin graphs together.
