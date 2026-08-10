@@ -36,7 +36,7 @@ if [[ ! "$jobs" =~ ^[1-9][0-9]*$ ]]; then
     exit 2
 fi
 
-for tool in cc c++ curl git make pkg-config python3 readelf; do
+for tool in cc c++ curl git make pkg-config python3 readelf readlink; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "required Linux build tool is missing: $tool" >&2
         exit 1
@@ -281,9 +281,11 @@ if [[ ! -x "$cache_generator" || -L "$cache_generator" ]]; then
 fi
 
 readonly libvlc="$install_directory/lib/libvlc.so"
-readonly core="$install_directory/lib/libvlccore.so.9"
+readonly core="$install_directory/lib/libvlccore.so.9.0.0"
+readonly core_link="$install_directory/lib/libvlccore.so.9"
 readonly plugin_directory="$install_directory/lib/vlc/plugins"
-if [[ ! -f "$libvlc" || ! -f "$core" ]] ||
+if [[ ! -f "$libvlc" || ! -f "$core" || -L "$core" ]] ||
+   [[ ! -L "$core_link" || "$(readlink "$core_link")" != "libvlccore.so.9.0.0" ]] ||
    [[ -z "$(find "$plugin_directory" -type f -name 'lib*_plugin.so' -print -quit 2>/dev/null)" ]]; then
     echo "VLC source build did not produce the expected shared Linux install" >&2
     exit 1

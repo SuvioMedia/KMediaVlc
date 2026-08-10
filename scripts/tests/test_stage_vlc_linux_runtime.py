@@ -61,7 +61,7 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             tools = temporary / "tools"
             tools.mkdir()
             self.write_file(install / "lib/libvlc.so")
-            self.write_file(install / "lib/libvlccore.so.9")
+            self.write_file(install / "lib/libvlccore.so.9.0.0")
             self.write_file(bridge)
 
             policy = json.loads(
