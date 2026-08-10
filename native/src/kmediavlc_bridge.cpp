@@ -505,8 +505,10 @@ void publish_frame(kmediavlc_player* player, std::unique_ptr<kmediavlc_frame> fr
     frame->info.serial = player->next_serial.fetch_add(1, std::memory_order_acq_rel);
     const auto serial = frame->info.serial;
     const auto generation = frame->info.output_generation;
+    std::unique_ptr<kmediavlc_frame> superseded;
     {
         std::lock_guard lock(player->frame_mutex);
+        superseded = std::move(player->pending_frame);
         player->pending_frame = std::move(frame);
     }
     if (!player->callbacks_enabled.load(std::memory_order_acquire)) return;
@@ -516,6 +518,19 @@ void publish_frame(kmediavlc_player* player, std::unique_ptr<kmediavlc_frame> fr
 }
 
 } // namespace kmediavlc
+
+kmediavlc_frame::~kmediavlc_frame() {
+#if !defined(_WIN32)
+    if (info.acquire_fence >= 0) close(static_cast<int>(info.acquire_fence));
+    if (info.handle_type == KMEDIAVLC_DMABUF &&
+        info.platform_handle <= static_cast<std::uintptr_t>(std::numeric_limits<int>::max())) {
+        close(static_cast<int>(info.platform_handle));
+    }
+#endif
+    if (platform_release != nullptr) {
+        platform_release(platform_owner.get(), -1, acquired);
+    }
+}
 
 extern "C" {
 
@@ -800,10 +815,18 @@ kmediavlc_frame* kmediavlc_player_acquire_latest_frame(
     }
     if (!frame) return nullptr;
     *output = frame->info;
+    frame->acquired = true;
+    frame->info.acquire_fence = -1;
     return frame.release();
 }
 
 void kmediavlc_frame_release(kmediavlc_frame* frame, intptr_t release_fence) {
+    if (frame != nullptr && frame->platform_release != nullptr) {
+        frame->platform_release(
+            frame->platform_owner.get(), release_fence, frame->acquired);
+        frame->platform_release = nullptr;
+        release_fence = -1;
+    }
 #if !defined(_WIN32)
     if (release_fence >= 0) close(static_cast<int>(release_fence));
 #else
@@ -822,9 +845,10 @@ const void* kmediavlc_frame_cpu_pixels(kmediavlc_frame* frame, size_t* byte_coun
 void kmediavlc_player_destroy(kmediavlc_player* player) {
     if (player == nullptr) return;
     player->callbacks_enabled.store(false, std::memory_order_release);
+    std::unique_ptr<kmediavlc_frame> pending;
     {
         std::lock_guard lock(player->frame_mutex);
-        player->pending_frame.reset();
+        pending = std::move(player->pending_frame);
     }
     if (player->renderer && player->media_player) player->renderer->uninstall(player->media_player);
     if (player->media_player) player->api->media_player_release(player->media_player);

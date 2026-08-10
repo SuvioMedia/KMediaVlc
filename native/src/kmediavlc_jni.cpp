@@ -719,11 +719,17 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_acquireLatestFrame(
     };
     jlongArray result = env->NewLongArray(19);
     if (result == nullptr) {
+#if !defined(_WIN32)
+        if (info.acquire_fence >= 0) close(static_cast<int>(info.acquire_fence));
+#endif
         kmediavlc_frame_release(frame, -1);
         return nullptr;
     }
     env->SetLongArrayRegion(result, 0, 19, values);
     if (env->ExceptionCheck()) {
+#if !defined(_WIN32)
+        if (info.acquire_fence >= 0) close(static_cast<int>(info.acquire_fence));
+#endif
         kmediavlc_frame_release(frame, -1);
         return nullptr;
     }
