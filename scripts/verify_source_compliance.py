@@ -1216,6 +1216,15 @@ def verify_linux_runtime_contract(root: Path) -> None:
         referenced_components.update(component_ids)
     if binary.get("coreComponents") != []:
         fail("Linux core component closure changed without review.")
+    expected_support_libraries = {
+        "libvlc_pulse.so": {
+            "licenseSpdx": ["LGPL-2.1-or-later"],
+            "requiredByModules": ["pulse"],
+            "sourceFiles": ["modules/audio_output/vlcpulse.c"],
+        }
+    }
+    if binary.get("runtimeSupportLibraries") != expected_support_libraries:
+        fail("Linux private runtime support libraries changed without review.")
     if referenced_components != set(components):
         fail("Linux binary component policy contains unused or missing components.")
     if binary.get("moduleAdditionalLicenses") != expected_additional:
@@ -1296,6 +1305,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         or recipe.get("resolvedContribPackages") != expected_resolved_contribs
         or recipe.get("generatedContribMetadataTarget") != "meson-machinefile"
         or recipe.get("systemBuildDependencies") != expected_system_packages
+        or recipe.get("runtimeSupportLibraries") != ["libvlc_pulse.so"]
         or recipe.get("renderEngine") != "GLES2"
         or recipe.get("frameTransport") != "DMA_BUF"
         or recipe.get("requiredFrameDeliveryModes") != ["CPU_PULL", "GPU_PUSH"]
@@ -1371,6 +1381,8 @@ def verify_linux_runtime_contract(root: Path) -> None:
         'return "$ORIGIN/../../../bin" if role == "PLUGIN" else "$ORIGIN"',
         '(require_plain_file(install, "lib/libvlc.so"), "bin/libvlc.so.12", "LIBVLC")',
         'require_plain_file(install, "lib/libvlccore.so.9.0.0")',
+        'require_plain_file(install, f"lib/{filename}")',
+        'binary["runtimeSupportLibraries"]',
         "source = require_plain_file(plugin_root, filename)",
         'dependency not in allowed_system_dependencies',
         'binary["allowedSystemDependenciesByTarget"][args.target]',

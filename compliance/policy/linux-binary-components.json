@@ -7,6 +7,19 @@
   "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
   "reviewStatus": "pending-link-command-and-license-audit",
   "buildOnlyContribPackages": [],
+  "runtimeSupportLibraries": {
+    "libvlc_pulse.so": {
+      "licenseSpdx": [
+        "LGPL-2.1-or-later"
+      ],
+      "requiredByModules": [
+        "pulse"
+      ],
+      "sourceFiles": [
+        "modules/audio_output/vlcpulse.c"
+      ]
+    }
+  },
   "components": {
     "dav1d": {
       "version": "1.5.4",

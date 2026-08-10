@@ -70,6 +70,9 @@
     "libdrm",
     "libpulse"
   ],
+  "runtimeSupportLibraries": [
+    "libvlc_pulse.so"
+  ],
   "runtimeSystemDependencyPolicy": "closed-elf-audit-pending",
   "renderEngine": "GLES2",
   "frameTransport": "DMA_BUF",

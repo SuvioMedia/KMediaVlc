@@ -18,6 +18,7 @@ TARGET_MACHINES = {
     "linux-aarch64": "AArch64",
 }
 MODULE_NAME = re.compile(r"[a-z0-9_]+")
+SUPPORT_LIBRARY_NAME = re.compile(r"libvlc_[a-z0-9_]+\.so")
 VERSION_TOKEN = re.compile(r"\b(GLIBCXX|GLIBC|CXXABI)_([0-9]+(?:\.[0-9]+)*)\b")
 ALLOWED_FAMILIES = {
     "access",
@@ -184,6 +185,7 @@ def load_policy(
     components = binary.get("components")
     module_components = binary.get("moduleComponents")
     core_components = binary.get("coreComponents")
+    support_libraries = binary.get("runtimeSupportLibraries")
     allowed_system = binary.get("allowedSystemDependencies")
     allowed_system_by_target = binary.get("allowedSystemDependenciesByTarget")
     ceilings = binary.get("maximumSymbolVersions")
@@ -191,6 +193,8 @@ def load_policy(
         not isinstance(components, dict)
         or not isinstance(module_components, dict)
         or not isinstance(core_components, list)
+        or not isinstance(support_libraries, dict)
+        or list(support_libraries) != sorted(support_libraries)
         or not isinstance(allowed_system, list)
         or allowed_system != sorted(set(allowed_system))
         or not isinstance(allowed_system_by_target, dict)
@@ -207,6 +211,28 @@ def load_policy(
         or binary.get("buildOnlyContribPackages") != []
     ):
         fail("Linux binary component closure is invalid.")
+    for filename, support in support_libraries.items():
+        if (
+            not SUPPORT_LIBRARY_NAME.fullmatch(filename)
+            or not isinstance(support, dict)
+            or set(support) != {"licenseSpdx", "requiredByModules", "sourceFiles"}
+            or support["licenseSpdx"] != ["LGPL-2.1-or-later"]
+            or not isinstance(support["requiredByModules"], list)
+            or support["requiredByModules"] != sorted(set(support["requiredByModules"]))
+            or not support["requiredByModules"]
+            or not set(support["requiredByModules"]).issubset(seen)
+            or not isinstance(support["sourceFiles"], list)
+            or support["sourceFiles"] != sorted(set(support["sourceFiles"]))
+            or not support["sourceFiles"]
+            or any(
+                not isinstance(source, str)
+                or source.startswith("/")
+                or ".." in source.split("/")
+                or not source.endswith(".c")
+                for source in support["sourceFiles"]
+            )
+        ):
+            fail(f"Linux runtime support library policy is invalid: {filename!r}")
     referenced = set(core_components)
     for component_ids in module_components.values():
         if not isinstance(component_ids, list) or component_ids != sorted(set(component_ids)):
@@ -236,6 +262,8 @@ def expected_soname(role: str, filename: str) -> str:
         return "libvlc.so.12"
     if role == "CORE":
         return "libvlccore.so.9"
+    if role == "SUPPORT":
+        return filename
     if role == "PLUGIN":
         return filename
     fail(f"Unsupported Linux ELF role: {role}")
@@ -284,7 +312,7 @@ def audit_elf(
     if any("/" in dependency for dependency in dependencies):
         fail(f"Linux runtime contains an absolute DT_NEEDED entry: {path.name}")
     core_count = dependencies.count("libvlccore.so.9")
-    if role == "LIBVLC":
+    if role in {"LIBVLC", "SUPPORT"}:
         if core_count != 1:
             fail(f"Linux runtime core dependency is not closed: {path.name}")
     elif role == "PLUGIN":
@@ -375,13 +403,27 @@ def main() -> None:
         ),
         (bridge, "bin/libkmediavlc_bridge.so", "BRIDGE"),
     ]
+    fixed_files.extend(
+        (
+            require_plain_file(install, f"lib/{filename}"),
+            f"bin/{filename}",
+            "SUPPORT",
+        )
+        for filename in binary["runtimeSupportLibraries"]
+    )
     for source, relative, role in fixed_files:
         destination = output.joinpath(*relative.split("/"))
         result = copy_file(source, destination)
         source_components = binary["coreComponents"] if role == "CORE" else []
-        copied.append(
-            {**result, "path": relative, "role": role, "sourceComponents": source_components}
-        )
+        entry = {
+            **result,
+            "path": relative,
+            "role": role,
+            "sourceComponents": source_components,
+        }
+        if role == "SUPPORT":
+            entry.update(binary["runtimeSupportLibraries"][source.name])
+        copied.append(entry)
         elf_files.append((destination, role))
 
     plugin_root = install / "lib/vlc/plugins"

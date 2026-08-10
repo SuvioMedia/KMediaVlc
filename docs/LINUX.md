@@ -31,6 +31,13 @@ The ELF audit accepts zero or one exact private-core edge for a plugin, while
 still requiring exactly one for `libvlc`; every other dependency remains on
 the closed system allowlist.
 
+The selected PulseAudio output also requires VideoLAN's
+`libvlc_pulse.so` helper, built from the pinned LGPL-2.1-or-later
+`modules/audio_output/vlcpulse.c`. It is explicitly inventoried, staged next
+to the private core, relocated with its own SONAME and `$ORIGIN` RUNPATH, and
+audited under the same ELF closure and symbol ceilings. It is not treated as a
+system-library exception.
+
 The pinned prerelease Meson graph installs libVLC as the unversioned
 `libvlc.so`. Staging deliberately renames that input to the application-private
 `libvlc.so.12` contract and writes the matching SONAME and `$ORIGIN` RUNPATH;

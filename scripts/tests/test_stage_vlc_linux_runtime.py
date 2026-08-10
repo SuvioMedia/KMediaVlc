@@ -62,6 +62,7 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             tools.mkdir()
             self.write_file(install / "lib/libvlc.so")
             self.write_file(install / "lib/libvlccore.so.9.0.0")
+            self.write_file(install / "lib/libvlc_pulse.so")
             self.write_file(bridge)
 
             policy = json.loads(
@@ -115,8 +116,20 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             self.assertEqual(85, evidence["selectedPluginCount"])
             self.assertEqual(85, evidence["rawPluginCount"])
             self.assertTrue(evidence["auditCandidate"])
-            self.assertEqual(89, len(evidence["files"]))
-            self.assertEqual(88, len(evidence["elf"]))
+            self.assertEqual(90, len(evidence["files"]))
+            self.assertEqual(89, len(evidence["elf"]))
+            self.assertEqual(
+                ["libvlccore.so.9", "libpulse.so.0", "libc.so.6"],
+                evidence["elf"]["bin/libvlc_pulse.so"]["dependencies"],
+            )
+            support = next(
+                entry
+                for entry in evidence["files"]
+                if entry["path"] == "bin/libvlc_pulse.so"
+            )
+            self.assertEqual("SUPPORT", support["role"])
+            self.assertEqual(["LGPL-2.1-or-later"], support["licenseSpdx"])
+            self.assertEqual(["pulse"], support["requiredByModules"])
             self.assertEqual(
                 ["libc.so.6"],
                 evidence["elf"][
@@ -144,6 +157,8 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             role = "libvlc"
         elif name == "libvlccore.so.9":
             role = "core"
+        elif name == "libvlc_pulse.so":
+            role = "support"
         else:
             role = "plugin"
 
@@ -154,10 +169,12 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             )
         if "-dW" in arguments:
             dependencies = ""
-            if role == "libvlc" or (
+            if role in {"libvlc", "support"} or (
                 role == "plugin" and name != "libfloat_mixer_plugin.so"
             ):
                 dependencies += " (NEEDED) Shared library: [libvlccore.so.9]\n"
+            if role == "support":
+                dependencies += " (NEEDED) Shared library: [libpulse.so.0]\n"
             dependencies += " (NEEDED) Shared library: [libc.so.6]\n"
             runpath = "$ORIGIN/../../../bin" if role == "plugin" else "$ORIGIN"
             return (
