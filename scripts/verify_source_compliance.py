@@ -1402,6 +1402,21 @@ def verify_linux_runtime_contract(root: Path) -> None:
     if not all(marker in cmake for marker in cmake_markers):
         fail("The Linux renderer is not linked to its bounded hardened graphics graph.")
 
+    documentation = (root / "docs/LINUX.md").read_text(encoding="utf-8")
+    documentation_markers = [
+        "glibc 2.39",
+        "85-plugin",
+        "DRM_FORMAT_ABGR8888",
+        "EGL_SYNC_NATIVE_FENCE_ANDROID",
+        "buffer is retired",
+        "tone-maps",
+        "VR",
+        "Publication gates still open",
+        "not release-eligible",
+    ]
+    if not all(marker in documentation for marker in documentation_markers):
+        fail("The Linux candidate documentation no longer states its exact fail-closed contract.")
+
 
 def verify_legal_files(root: Path) -> None:
     windows_binary = load_json(root / "compliance/policy/windows-x86_64-binary-components.json")

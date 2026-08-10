@@ -42,8 +42,17 @@ The first iOS producer uses the stable bridge's CPU-pull callbacks. Its arm64
 device and Apple-silicon simulator slices keep libVLC, core, bridge, and each
 allowlisted VLC plugin dynamically replaceable as flattened iOS frameworks.
 Xcode embeds and signs the selected XCFramework slices; KMediaVlc never extracts
-native code from Maven at runtime. iOS GPU push remains fail-closed. Linux still
-uses the fail-closed platform stub.
+native code from Maven at runtime. iOS GPU push remains fail-closed.
+
+The Linux x86-64/AArch64 producer gives pinned libVLC 4 a private GLES2 context
+on the consumer's DRM render node. It renders into four explicitly modified
+ABGR8888 GBM buffers, publishes one DMA-BUF fd per acquired frame, and transfers
+native sync-file ownership in both directions. Missing promised release fences
+retire buffers instead of allowing unsafe reuse. HDR sources are currently
+tone-mapped into the declared SDR sRGB transport. The source build, renderer,
+and fail-closed stager are implemented; physical GPU/fence evidence,
+KMediaPlayer normal and VR-projection acceptance, and legal review remain
+publication gates.
 
 Supporting libVLC 3 remains an adapter concern. A process selects exactly one
 major runtime and never loads libVLC 3 and 4 plugin graphs together.

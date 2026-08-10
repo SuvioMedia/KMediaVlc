@@ -1,0 +1,79 @@
+<!-- SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary -->
+
+# Linux bundled runtime candidate
+
+Linux x86-64 and AArch64 are implemented as source-built, unpublished
+libVLC 4 candidates. Both targets use the exact VideoLAN revision
+`b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`, an 85-plugin closed playback
+allowlist, and the reviewed 26-component contrib graph. No Linux native
+payload is downloaded at runtime or retained by validation CI.
+
+The candidate baseline is glibc 2.39. The six deliberately system-provided
+build dependencies are EGL, GLES2, GBM, libdrm, fontconfig, and PulseAudio;
+the stager independently closes all resulting ELF dependencies and symbol
+version ceilings. Every other selected codec, demuxer, text renderer, and TLS
+dependency comes from the pinned VLC contrib source graph.
+
+## GPU frame transport
+
+`GPU_PUSH` uses libVLC 4's GLES2 output callbacks and a private EGL context on
+the consumer-supplied DRM render node. The consumer must advertise concrete
+DRM format/modifier pairs. The first bounded transport deliberately supports
+only single-plane `DRM_FORMAT_ABGR8888` that is both importable by EGL and
+renderable as a GLES2 framebuffer; implicit `DRM_FORMAT_MOD_INVALID` layouts
+are rejected.
+
+The producer owns four explicitly modified GBM buffer objects. A published
+frame retains its buffer object and one exported DMA-BUF descriptor until
+`frame_release`. The descriptor, `stride`, `offset`, FourCC, and 64-bit
+modifier are authoritative for import. A buffer referenced by an acquired
+frame cannot be selected for another VLC render.
+
+When acquire fences are negotiated, the producer inserts an
+`EGL_SYNC_NATIVE_FENCE_ANDROID`, flushes GLES2, and transfers the duplicated
+sync-file descriptor with the frame. Without acquire fences it completes the
+producer work with `glFinish` before publication. A supplied consumer release
+fence transfers back to EGL before the buffer is reused. If the consumer
+promised release fences but releases an acquired frame without one, that GBM
+buffer is retired and replaced rather than reused unsafely. Skipped frames
+were never imported by the consumer and return directly to the pool.
+
+The current Linux transport is SDR RGBA8/sRGB. PQ and HLG source identity is
+still reported in frame metadata, but libVLC tone-maps those sources to the
+BT.709/sRGB output. `requestHdr=true` therefore does not claim a native Linux
+HDR surface yet.
+
+## CPU pull and VR
+
+`CPU_PULL` remains the deterministic compatibility and diagnostic path. The
+validation workflow builds both native architectures, stages exactly the
+allowlisted graph, and must decode a real CPU frame against the staged
+runtime.
+
+KMediaPlayer's current “VR” scope is projection of a decoded video frame, not
+a separate Linux operating-system target. It consumes the same DMA-BUF frame
+contract as the normal Linux GPU path. Release eligibility still requires a
+real KMediaPlayer projection consumer to import frames on representative DRM
+hardware and return working release fences. A future Quest, visionOS, or other
+standalone platform would need its own target and is not implied by this
+Linux candidate.
+
+## Publication gates still open
+
+Linux remains fail-closed and is not release-eligible until all of these gates
+are recorded:
+
+- green source builds, closed ELF staging, and real CPU playback on x86-64 and
+  AArch64;
+- real render-node allocation and DMA-BUF import on representative Intel/AMD
+  and ARM graphics drivers;
+- acquire-fence and release-fence ownership tests, including missing-fence
+  retirement and buffer reuse;
+- KMediaPlayer/Nucleus normal and VR-projection consumer acceptance;
+- final per-binary source and license review;
+- enabling Linux in the runtime manifest/parser and publication policy only
+  after the preceding evidence exists.
+
+The hosted source-validation runners are intentionally insufficient for the
+physical GPU and VR gates. Candidate reports continue to record those fields
+as pending, and the release packager rejects Linux.

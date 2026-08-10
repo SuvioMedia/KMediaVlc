@@ -50,3 +50,23 @@ context and IOSurface and reopens the published ID through JNI. It proves ABI,
 ownership, and allocation behavior without making an unaudited VLC binary a
 release input. Real playback, Metal import, and hardware color acceptance are
 separate publication gates.
+
+## Linux DMA-BUF hand-off
+
+The Linux producer owns four GBM buffer objects negotiated as concrete
+single-plane ABGR8888 format/modifier pairs. libVLC renders into their EGLImage
+GLES2 framebuffers. Publishing duplicates the selected buffer's DMA-BUF fd;
+the native frame retains that fd and the buffer object until release, while
+the consumer owns any acquire sync-file returned by `acquireLatest()`.
+
+With explicit synchronization enabled, a producer native-fence sync is
+inserted after rendering and its duplicated fd accompanies the frame. The
+consumer transfers its completion fence back through `release`. EGL waits on
+that fence before the producer reuses the buffer. An acquired frame released
+without a fence after the consumer advertised release-fence support permanently
+retires that buffer allocation. A superseded, unacquired frame needs no
+consumer fence and is immediately reusable.
+
+The first Linux transport is RGBA8/sRGB even for an HDR source; the decoded
+source range remains separate metadata, and libVLC tone-maps PQ/HLG to SDR.
+Real DRM import and fence behavior are physical-hardware publication gates.

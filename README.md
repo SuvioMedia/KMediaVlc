@@ -61,8 +61,11 @@ calls Compose and never waits for a UI render.
   independent archive verifier. Real simulator playback through the packaged
   graph and paired archive verification pass; iOS remains unpublished until
   device playback passes and the full binary and license audits close.
-- Linux remains release-ineligible until its DMA-BUF import, explicit-fence
-  ownership, and native integration tests exist.
+- Linux x86-64/AArch64 now has a source-built 85-plugin candidate and a real
+  GLES2/GBM producer backed by a bounded four-buffer DMA-BUF pool. It negotiates
+  concrete ABGR8888 modifiers and exact acquire/release sync-file ownership,
+  but remains release-ineligible until physical render-node, fence, normal
+  consumer, and VR-projection acceptance plus the binary/license audit pass.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 
@@ -90,5 +93,5 @@ recognizes `macos-aarch64`, but no macOS payload is published in this version;
 resolution therefore fails closed until an audited resource is added.
 
 See `docs/ARCHITECTURE.md`, `docs/FRAME-TRANSPORT.md`, `docs/MACOS.md`,
-`docs/IOS.md`, and `docs/LICENSING.md`. Release setup and the exact four GitHub secrets are
+`docs/IOS.md`, `docs/LINUX.md`, and `docs/LICENSING.md`. Release setup and the exact four GitHub secrets are
 documented in `docs/RELEASING.md` and `docs/MAVEN-CENTRAL.md`.
