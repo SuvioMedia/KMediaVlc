@@ -63,9 +63,11 @@ calls Compose and never waits for a UI render.
   device playback passes and the full binary and license audits close.
 - Linux x86-64/AArch64 now has a source-built 85-plugin candidate and a real
   GLES2/GBM producer backed by a bounded four-buffer DMA-BUF pool. It negotiates
-  concrete ABGR8888 modifiers and exact acquire/release sync-file ownership,
-  but remains release-ineligible until physical render-node, fence, normal
-  consumer, and VR-projection acceptance plus the binary/license audit pass.
+  concrete ABGR8888 modifiers and exact acquire/release sync-file ownership.
+  Both hosted architectures pass source build, closed ELF/cache staging, and
+  real CPU-frame playback, but remain release-ineligible until physical
+  render-node, fence, normal consumer, and VR-projection acceptance plus the
+  binary/license audit pass.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 
