@@ -292,6 +292,7 @@ def audit_elf(
     role: str,
     target: str,
     readelf: Path,
+    required_private_dependencies: set[str],
     allowed_system_dependencies: set[str],
     ceilings: dict[str, str],
 ) -> dict:
@@ -323,10 +324,15 @@ def audit_elf(
             fail(f"Linux runtime core dependency is not closed: {path.name}")
     elif core_count != 0:
         fail(f"Unexpected Linux runtime core dependency: {path.name}")
+    for dependency in sorted(required_private_dependencies):
+        if dependencies.count(dependency) != 1:
+            fail(f"Linux runtime private dependency is not closed: {path.name}")
+    private_dependencies = {"libvlccore.so.9"} | required_private_dependencies
     forbidden = sorted(
         dependency
         for dependency in dependencies
-        if dependency != "libvlccore.so.9" and dependency not in allowed_system_dependencies
+        if dependency not in private_dependencies
+        and dependency not in allowed_system_dependencies
     )
     if forbidden:
         fail(f"Linux runtime contains an external ELF dependency: {path.name}: {forbidden}")
@@ -355,6 +361,7 @@ def audit_elf(
         "soname": soname,
         "runpath": runpath,
         "dependencies": dependencies,
+        "requiredPrivateDependencies": sorted(required_private_dependencies),
         "maximumSymbolVersions": versions,
         "buildId": build_ids[0],
         "gnuRelro": True,
@@ -393,7 +400,7 @@ def main() -> None:
 
     playback, binary, modules = load_policy(root, args.target, args.allow_audit_candidate)
     copied: list[dict] = []
-    elf_files: list[tuple[Path, str]] = []
+    elf_files: list[tuple[Path, str, set[str]]] = []
     fixed_files = [
         (require_plain_file(install, "lib/libvlc.so"), "bin/libvlc.so.12", "LIBVLC"),
         (
@@ -424,7 +431,7 @@ def main() -> None:
         if role == "SUPPORT":
             entry.update(binary["runtimeSupportLibraries"][source.name])
         copied.append(entry)
-        elf_files.append((destination, role))
+        elf_files.append((destination, role, set()))
 
     plugin_root = install / "lib/vlc/plugins"
     plugin_destination = output / "lib/vlc/plugins"
@@ -445,7 +452,12 @@ def main() -> None:
                 "sourceComponents": binary["moduleComponents"].get(name, []),
             }
         )
-        elf_files.append((destination, "PLUGIN"))
+        required_support = {
+            filename
+            for filename, support in binary["runtimeSupportLibraries"].items()
+            if name in support["requiredByModules"]
+        }
+        elf_files.append((destination, "PLUGIN", required_support))
         selected_names.append(name)
 
     raw_plugins = [
@@ -457,7 +469,7 @@ def main() -> None:
         fail("The raw Linux source-build plugin count is outside its audit-candidate bound.")
 
     audits: dict[str, dict] = {}
-    for path, role in elf_files:
+    for path, role, required_private_dependencies in elf_files:
         relocate_elf(path, role, patchelf, strip)
         relative = path.relative_to(output).as_posix()
         audits[relative] = audit_elf(
@@ -465,6 +477,7 @@ def main() -> None:
             role,
             args.target,
             readelf,
+            required_private_dependencies,
             set(binary["allowedSystemDependencies"])
             | set(binary["allowedSystemDependenciesByTarget"][args.target]),
             binary["maximumSymbolVersions"],

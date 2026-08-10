@@ -36,7 +36,9 @@ The selected PulseAudio output also requires VideoLAN's
 `modules/audio_output/vlcpulse.c`. It is explicitly inventoried, staged next
 to the private core, relocated with its own SONAME and `$ORIGIN` RUNPATH, and
 audited under the same ELF closure and symbol ceilings. It is not treated as a
-system-library exception.
+system-library exception. The dependency is directional: the `pulse` plugin
+must have exactly one edge to this helper, and no unrelated plugin is allowed
+to acquire it.
 
 The pinned prerelease Meson graph installs libVLC as the unversioned
 `libvlc.so`. Staging deliberately renames that input to the application-private

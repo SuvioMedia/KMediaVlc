@@ -136,6 +136,18 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
                     "lib/vlc/plugins/libfloat_mixer_plugin.so"
                 ]["dependencies"],
             )
+            self.assertEqual(
+                ["libvlccore.so.9", "libvlc_pulse.so", "libc.so.6"],
+                evidence["elf"][
+                    "lib/vlc/plugins/libpulse_plugin.so"
+                ]["dependencies"],
+            )
+            self.assertEqual(
+                ["libvlc_pulse.so"],
+                evidence["elf"][
+                    "lib/vlc/plugins/libpulse_plugin.so"
+                ]["requiredPrivateDependencies"],
+            )
             self.assertTrue((output / "lib/vlc/plugins/plugins.dat").is_file())
 
     @staticmethod
@@ -175,6 +187,8 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
                 dependencies += " (NEEDED) Shared library: [libvlccore.so.9]\n"
             if role == "support":
                 dependencies += " (NEEDED) Shared library: [libpulse.so.0]\n"
+            if name == "libpulse_plugin.so":
+                dependencies += " (NEEDED) Shared library: [libvlc_pulse.so]\n"
             dependencies += " (NEEDED) Shared library: [libc.so.6]\n"
             runpath = "$ORIGIN/../../../bin" if role == "plugin" else "$ORIGIN"
             return (
