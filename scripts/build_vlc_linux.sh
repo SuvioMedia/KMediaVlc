@@ -190,6 +190,7 @@ meson_options=(
     -Dvlc=false
     -Dtests=disabled
     -Dnls=disabled
+    -Dlua=disabled
     -Dstream_outputs=false
     -Dvideolan_manager=false
     -Daddon_manager=false

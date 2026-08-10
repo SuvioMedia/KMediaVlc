@@ -1319,6 +1319,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "--prefer-static",
         "--wrap-mode=nodownload",
         "-Dauto_features=disabled",
+        "-Dlua=disabled",
         "-Dgles2=enabled",
         "-Dpulse=enabled",
         "--tags runtime",
