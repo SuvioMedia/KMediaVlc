@@ -74,6 +74,13 @@ candidate from the pinned revisions passed both the standalone and Gradle gates.
 silently change the existing legal manifest: the final release-bound archive must be retained and
 reviewed before its NDK component can be promoted to `corresponding-source-mapped`.
 
+Complete Android corresponding source is a separate, independently verified artifact. It contains
+the full tracked KMediaVlc, VLC, and libvlcjni trees, exactly the 55 contrib archives whose hashes
+are bound by the legal manifest, the verified NDK runtime source supplement, and both ABI link
+audits. Its manifest records every Git blob, file mode, SHA-256, source revision/tree, policy hash,
+release version, and tested KMediaVlc commit. Packaging this closure proves source retention and
+relink-input completeness; it does not approve the candidate SPDX sets or bypass device tests.
+
 The source builder stages those raw records as a separate hash-bound legal bundle only after the
 two ABI audit reports have identical component evidence. The AAR verifier rejects any missing,
 extra, symbolic, resized, or rehashed legal file and binds the bundle to the current static

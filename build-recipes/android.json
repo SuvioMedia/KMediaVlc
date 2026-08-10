@@ -62,6 +62,9 @@
   "requiresNdkRuntimeSourcePackage": true,
   "ndkSourcePackagePolicy": "compliance/policy/android-static-components.json",
   "requiresIndependentNdkSourceVerification": true,
+  "correspondingSourcePackagePolicy": "compliance/policy/android-corresponding-source.json",
+  "requiresCompleteCorrespondingSourcePackage": true,
+  "requiresIndependentCorrespondingSourceVerification": true,
   "requiresDeviceSurfaceLifecycleTest": true,
   "forbidsStockNightly": true,
   "candidateReleaseEligible": false

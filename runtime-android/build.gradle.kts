@@ -609,8 +609,24 @@ plugins {
 
 val nativePayload =
     providers.gradleProperty("kmediaVlcAndroidNativePayloadDirectory").map(rootProject::file)
-val correspondingSourceArchive =
-    rootProject.providers.gradleProperty("correspondingSourceArchive").map(rootProject::file)
+val androidCorrespondingSourceArchive =
+    rootProject.providers
+        .gradleProperty("kmediaVlcAndroidCorrespondingSourceArchive")
+        .map(rootProject::file)
+val androidVlcSourceDirectory =
+    rootProject.providers.gradleProperty("kmediaVlcAndroidVlcSourceDirectory").map(rootProject::file)
+val androidLibvlcjniSourceDirectory =
+    rootProject.providers
+        .gradleProperty("kmediaVlcAndroidLibvlcjniSourceDirectory")
+        .map(rootProject::file)
+val androidContribTarballsDirectory =
+    rootProject.providers
+        .gradleProperty("kmediaVlcAndroidContribTarballsDirectory")
+        .map(rootProject::file)
+val androidArm64LinkAudit =
+    rootProject.providers.gradleProperty("kmediaVlcAndroidArm64LinkAudit").map(rootProject::file)
+val androidArmv7LinkAudit =
+    rootProject.providers.gradleProperty("kmediaVlcAndroidArmv7LinkAudit").map(rootProject::file)
 val androidNdkSourceArchive =
     rootProject.providers.gradleProperty("kmediaVlcAndroidNdkSourceArchive").map(rootProject::file)
 val androidLlvmProjectSourceDirectory =
@@ -634,6 +650,29 @@ require(
     androidNdkSourceVerificationInputs.none { it } || androidNdkSourceVerificationConfigured,
 ) {
     "Android NDK source verification requires its archive, both exact Git checkouts, and recipeRevision together."
+}
+val androidCorrespondingSourceVerificationInputs =
+    listOf(
+        androidCorrespondingSourceArchive.isPresent,
+        androidVlcSourceDirectory.isPresent,
+        androidLibvlcjniSourceDirectory.isPresent,
+        androidContribTarballsDirectory.isPresent,
+        androidArm64LinkAudit.isPresent,
+        androidArmv7LinkAudit.isPresent,
+    )
+val androidCorrespondingSourceVerificationConfigured =
+    androidCorrespondingSourceVerificationInputs.all { it }
+require(
+    androidCorrespondingSourceVerificationInputs.none { it } ||
+        androidCorrespondingSourceVerificationConfigured,
+) {
+    "Android corresponding-source verification requires its archive, both source checkouts, contrib tarballs, and both ABI audits together."
+}
+require(
+    !androidCorrespondingSourceVerificationConfigured ||
+        (nativePayload.isPresent && androidNdkSourceVerificationConfigured),
+) {
+    "Android corresponding-source verification also requires the native payload and complete NDK source verification inputs."
 }
 val checkoutRevision =
     rootProject.providers.exec {
@@ -781,8 +820,62 @@ val verifyAndroidNdkSourceArchive =
         }
     }
 
+val verifyAndroidCorrespondingSourceArchive =
+    tasks.register<Exec>("verifyAndroidCorrespondingSourceArchive") {
+        group = "verification"
+        description =
+            "Verifies complete Android corresponding source against Git, contrib, NDK, and ABI evidence."
+        dependsOn(verifyNativePayload, verifyAndroidNdkSourceArchive)
+        onlyIf { androidCorrespondingSourceVerificationConfigured }
+        doNotTrackState(
+            "The verifier performs exact Git-object, archive, and SHA-256 checks on external inputs.",
+        )
+        doFirst {
+            require(androidCorrespondingSourceVerificationConfigured) {
+                "Android corresponding-source verification inputs are incomplete."
+            }
+            commandLine(
+                pythonExecutable.get(),
+                rootProject.file(
+                    "scripts/verify_android_corresponding_source_archive.py",
+                ).absolutePath,
+                "--root",
+                rootProject.projectDir.absolutePath,
+                "--archive",
+                androidCorrespondingSourceArchive.get().absolutePath,
+                "--vlc",
+                androidVlcSourceDirectory.get().absolutePath,
+                "--libvlcjni",
+                androidLibvlcjniSourceDirectory.get().absolutePath,
+                "--contrib-tarballs",
+                androidContribTarballsDirectory.get().absolutePath,
+                "--ndk-source-archive",
+                androidNdkSourceArchive.get().absolutePath,
+                "--llvm-project",
+                androidLlvmProjectSourceDirectory.get().absolutePath,
+                "--llvm-android",
+                androidLlvmAndroidSourceDirectory.get().absolutePath,
+                "--legal-manifest",
+                nativePayload.get().resolve("legal/android-static-legal.json").absolutePath,
+                "--arm64-audit",
+                androidArm64LinkAudit.get().absolutePath,
+                "--armv7-audit",
+                androidArmv7LinkAudit.get().absolutePath,
+                "--version",
+                publicationVersionValue,
+                "--tested-commit",
+                recipeRevision.get(),
+            )
+        }
+    }
+
 tasks.named("check") {
-    dependsOn(verifyNativePayload, verifyAndroidAar, verifyAndroidNdkSourceArchive)
+    dependsOn(
+        verifyNativePayload,
+        verifyAndroidAar,
+        verifyAndroidNdkSourceArchive,
+        verifyAndroidCorrespondingSourceArchive,
+    )
 }
 
 fun requirePublicationPayload() {
@@ -804,11 +897,11 @@ fun requirePublicationPayload() {
     require(legalBundle.ndkSourceStatus == "corresponding-source-mapped") {
         "Publishing requires the NDK runtime source package to match its recorded revisions."
     }
-    require(correspondingSourceArchive.isPresent) {
-        "Publishing requires -PcorrespondingSourceArchive."
-    }
     require(androidNdkSourceVerificationConfigured) {
         "Publishing requires the independently verified Android NDK source archive and exact Git checkouts."
+    }
+    require(androidCorrespondingSourceVerificationConfigured) {
+        "Publishing requires independently verified complete Android corresponding source."
     }
     require(recipeRevision.get().matches(Regex("[0-9a-f]{40}"))) {
         "recipeRevision must be an exact lowercase forty-character Git commit."
@@ -822,11 +915,21 @@ fun requirePublicationPayload() {
 }
 
 tasks.withType<PublishToMavenRepository>().configureEach {
-    dependsOn(verifyNativePayload, verifyAndroidAar, verifyAndroidNdkSourceArchive)
+    dependsOn(
+        verifyNativePayload,
+        verifyAndroidAar,
+        verifyAndroidNdkSourceArchive,
+        verifyAndroidCorrespondingSourceArchive,
+    )
     doFirst { requirePublicationPayload() }
 }
 tasks.withType<PublishToMavenLocal>().configureEach {
-    dependsOn(verifyNativePayload, verifyAndroidAar, verifyAndroidNdkSourceArchive)
+    dependsOn(
+        verifyNativePayload,
+        verifyAndroidAar,
+        verifyAndroidNdkSourceArchive,
+        verifyAndroidCorrespondingSourceArchive,
+    )
     doFirst { requirePublicationPayload() }
 }
 
@@ -836,7 +939,7 @@ afterEvaluate {
             create<MavenPublication>("release") {
                 from(components["release"])
                 artifact(androidJavadocJar)
-                correspondingSourceArchive.orNull?.let { archive ->
+                androidCorrespondingSourceArchive.orNull?.let { archive ->
                     artifact(archive) {
                         classifier = "corresponding-source"
                         extension = "tar.gz"

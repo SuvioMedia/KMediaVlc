@@ -45,6 +45,14 @@ that entered `libvlc.so`. Those reports must be reviewed together with the
 corresponding contrib sources and notices; they are not a substitute for the
 sources or for the full relinking instructions.
 
+`scripts/package_android_corresponding_source.py` now assembles those inputs into one deterministic
+archive: complete tracked KMediaVlc, VLC, and libvlcjni trees; all 55 source tarballs selected by
+the real legal manifest; the independently verified NDK source supplement; and both path-free ABI
+reports. The archive includes a generated `REBUILD.md` and checksum inventory.
+`scripts/verify_android_corresponding_source_archive.py` independently reconstructs the three Git
+trees, rehashes the original tarballs and reports, repeats NDK verification, and rejects a different
+commit, modified checkout, missing/extra member, link, special file, metadata drift, or changed byte.
+
 The candidate AAR carries a separate legal-evidence manifest and the exact raw
 notice inputs selected from those source archives. It binds both ABI report
 hashes and rejects any file mismatch, but publication still requires an
@@ -53,8 +61,8 @@ approved effective SPDX conclusion, an NDK status of
 
 The pinned recipe has been exercised successfully for ARM64 and ARMv7 and the
 resulting stripped payload has passed the real AAR inventory gate. Publication
-still requires turning the generated per-ABI archive graphs into reviewed,
-retained corresponding-source evidence.
+still requires the per-ABI archive graphs and candidate SPDX conclusions to be
+reviewed, and both source archives to be retained for the final tested commit.
 
 An application can replace the pair by substituting a rebuilt AAR (or its
 matching `jni/<abi>` entries) while retaining bridge ABI 1 and the exact VLC

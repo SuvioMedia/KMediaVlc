@@ -155,6 +155,55 @@ archive-to-source map. Maven publication runs the same verifier and requires
 The archive is attached with classifier `android-ndk-source`; it supplements, rather than replaces,
 the complete Android corresponding-source archive.
 
+### Complete corresponding source
+
+`scripts/package_android_corresponding_source.py` creates the complete Android source/relinking
+artifact directly from clean Git checkouts and the real hash-bound build evidence. It includes the
+full tracked KMediaVlc, VLC, and libvlcjni trees; exactly the 55 contrib tarballs selected by the
+legal manifest; the independently verified NDK runtime source archive; that legal manifest; both
+path-free ABI link audits; and generated rebuild/checksum instructions. The KMediaVlc tree and all
+generated metadata bind the final tested commit and its Unix timestamp.
+
+```text
+python3 scripts/package_android_corresponding_source.py \
+  --root . \
+  --vlc /path/to/vlc-b5536cde \
+  --libvlcjni /path/to/libvlcjni-a8d53a91 \
+  --contrib-tarballs /path/to/vlc-b5536cde/contrib/tarballs \
+  --ndk-source-archive kmedia-vlc-<version>-android-ndk-source.tar.gz \
+  --llvm-project /path/to/llvm-project-386af4a5 \
+  --llvm-android /path/to/llvm_android-1dab3288 \
+  --legal-manifest /path/to/payload/legal/android-static-legal.json \
+  --arm64-audit /path/to/android-arm64-v8a.json \
+  --armv7-audit /path/to/android-armeabi-v7a.json \
+  --tested-commit <exact-kmediavlc-commit> \
+  --version <immutable-version> \
+  --epoch <tested-commit-unix-time> \
+  --output kmedia-vlc-<version>-android-corresponding-source.tar.gz
+
+python3 scripts/verify_android_corresponding_source_archive.py \
+  --root . \
+  --archive kmedia-vlc-<version>-android-corresponding-source.tar.gz \
+  --vlc /path/to/vlc-b5536cde \
+  --libvlcjni /path/to/libvlcjni-a8d53a91 \
+  --contrib-tarballs /path/to/vlc-b5536cde/contrib/tarballs \
+  --ndk-source-archive kmedia-vlc-<version>-android-ndk-source.tar.gz \
+  --llvm-project /path/to/llvm-project-386af4a5 \
+  --llvm-android /path/to/llvm_android-1dab3288 \
+  --legal-manifest /path/to/payload/legal/android-static-legal.json \
+  --arm64-audit /path/to/android-arm64-v8a.json \
+  --armv7-audit /path/to/android-armeabi-v7a.json \
+  --version <immutable-version> \
+  --tested-commit <exact-kmediavlc-commit>
+```
+
+The verifier does not import the corresponding-source packager. It independently reconstructs all
+three Git inventories, compares every Git blob/mode and external SHA-256, repeats the nested NDK
+verification, validates deterministic gzip/tar metadata and exact member order, and rejects links,
+special files, missing/extra paths, modified checkouts, a different release identity, or tampering.
+Gradle runs it through `verifyAndroidCorrespondingSourceArchive` and attaches the result with
+classifier `corresponding-source` only when every source/evidence property is configured together.
+
 ### Verified source-build evidence
 
 On 2026-08-10 the exact pinned recipe completed on macOS with NDK `29.0.14206865` and CMake
@@ -182,23 +231,19 @@ external release inputs and are not committed to this repository.
 
 An audited payload can be supplied to Gradle with
 `-PkmediaVlcAndroidNativePayloadDirectory=/path/to/payload`. Publication additionally requires
-the manifest to say `releaseEligible=true`, the exact complete corresponding-source archive, the
-independently verified NDK archive, both exact NDK source checkouts, and the matching
-`recipeRevision`.
+the manifest to say `releaseEligible=true`, the exact complete corresponding-source archive and its
+VLC/libvlcjni/contrib/audit inputs, the independently verified NDK archive, both exact NDK source
+checkouts, and the matching `recipeRevision`.
 
 ## Publication gates still open
 
-- review and approve the exact module lists emitted by the completed fail-closed
-  compiled-license and linker-map audits;
-- review the linked members of every source-mapped contrib and toolchain archive, then bind the
-  approved SPDX expressions and complete notices to the already recorded source/archive hashes;
-- retain reviewed evidence for the real source-built `libvlc.so` DT_NEEDED/export surface for
-  both ABIs;
-- regenerate and retain the independently verifiable NDK runtime source package for the final
-  tested commit, then promote its legal-manifest source status to `corresponding-source-mapped`;
+- review and approve the exact module lists and linked members emitted by the fail-closed audits,
+  then bind approved SPDX expressions and complete notices to the recorded source/archive hashes;
+- promote the NDK component in the final legal manifest to `corresponding-source-mapped` only after
+  retaining the independently verified archive for that exact release commit;
 - run an Android device/emulator fixture through create/open/play, MediaCodec and software decode,
   video plus subtitle surfaces, repeated detach/reattach, seek, stop, and destruction;
-- publish complete corresponding source and reproducible relinking instructions.
+- regenerate, independently verify, and retain both source archives for the final tested commit.
 
-Until all six gates pass, the module is useful for API and ABI integration work but cannot be
+Until all four gates pass, the module is useful for API and ABI integration work but cannot be
 published as a bundled runtime.

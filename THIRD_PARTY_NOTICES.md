@@ -34,10 +34,15 @@ both packaged ABIs. The NDK map pins Clang `r563880c`, LLVM commit
 `386af4a5c64ab75eaee2448dc38f2e34a40bfed0`, and Android build/patch revision
 `1dab3288f660d43a6cb2479107e2b54b3ab0a2a1`. Deterministic packaging tooling
 now closes the selected source members to their exact Git blobs and rejects a
-different checkout or modified archive. Conservative
-candidate SPDX sets remain marked `pending-linked-member-review`. The runtime
-remains release-ineligible until that review, packaged notice completion, and a
-version-bound source package matching those revisions are approved.
+different checkout or modified archive. The complete Android corresponding-source
+packager additionally retains the exact KMediaVlc, VLC, and libvlcjni Git trees,
+all 55 audited contrib tarballs, the verified NDK source supplement, the legal
+manifest, and both path-free ABI reports in one version- and commit-bound archive.
+A separate verifier reconstructs that closure from the original Git objects and
+external evidence. Conservative candidate SPDX sets remain marked
+`pending-linked-member-review`. The runtime remains release-ineligible until that
+review, packaged notice completion, final release-bound archive retention, and
+device lifecycle evidence are approved.
 
 Candidate AARs include the exact selected evidence inputs under
 `assets/kmediavlc/legal/ANDROID_STATIC/` together with a manifest that binds both ABI audits and

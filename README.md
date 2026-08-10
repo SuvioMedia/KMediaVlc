@@ -58,10 +58,12 @@ calls Compose and never waits for a UI render.
   pinned source recipe now completes real ARM64 and ARMv7 builds and emits an
   exact static-link audit plus a hash-bound legal-evidence bundle inside the
   candidate AAR. Exact NDK r29/LLVM source revisions are recorded and a
-  deterministic Git-object-verified source packager is exercised, but the
-  candidate remains deliberately release-ineligible until its conservative
-  SPDX sets, final release-bound source package, and device surface-lifecycle
-  tests are reviewed and closed.
+  deterministic Git-object-verified NDK source packager is exercised. A separate
+  complete corresponding-source packager closes the exact KMediaVlc, VLC, and
+  libvlcjni trees, all 55 contrib tarballs, the NDK supplement, and both ABI
+  audits. The candidate remains deliberately release-ineligible until its
+  conservative SPDX sets, final release-bound artifacts, and device
+  surface-lifecycle tests are reviewed and closed.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 
@@ -86,7 +88,9 @@ an arbitrary directory cannot bypass the component/license inventory.
 
 Android publication additionally requires the deterministic NDK source archive, exact
 `llvm-project` and `llvm_android` checkouts, and the same `recipeRevision`; Gradle independently
-reconstructs and verifies every selected Git object before attaching that archive.
+reconstructs and verifies every selected Git object before attaching that archive. It also
+requires the independently verified Android corresponding-source archive, both upstream Git
+checkouts, all audited contrib tarballs, the real legal manifest, and both ABI link audits.
 
 The portable CPU-pull implementation and Android ANativeWindow API exist for
 controlled integration work, but the published native payload matrix remains

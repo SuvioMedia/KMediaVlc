@@ -376,6 +376,8 @@ def verify_android_contract(root: Path) -> None:
         "requiresApprovedLegalEvidenceForPublication",
         "ndkSourceStatus", "requiresNdkRuntimeSourcePackage", "ndkSourcePackagePolicy",
         "requiresIndependentNdkSourceVerification",
+        "correspondingSourcePackagePolicy", "requiresCompleteCorrespondingSourcePackage",
+        "requiresIndependentCorrespondingSourceVerification",
         "requiresDeviceSurfaceLifecycleTest", "forbidsStockNightly",
         "candidateReleaseEligible",
     }
@@ -420,6 +422,8 @@ def verify_android_contract(root: Path) -> None:
         "requiresLinkerMapAudit", "requiresIdenticalAbiComponentEvidence",
         "requiresApprovedLegalEvidenceForPublication", "requiresNdkRuntimeSourcePackage",
         "requiresIndependentNdkSourceVerification",
+        "requiresCompleteCorrespondingSourcePackage",
+        "requiresIndependentCorrespondingSourceVerification",
         "requiresDeviceSurfaceLifecycleTest",
         "forbidsStockNightly",
     ]
@@ -432,6 +436,11 @@ def verify_android_contract(root: Path) -> None:
         != "compliance/policy/android-static-components.json"
     ):
         fail("The Android NDK source package is not bound to the static policy.")
+    if (
+        recipe.get("correspondingSourcePackagePolicy")
+        != "compliance/policy/android-corresponding-source.json"
+    ):
+        fail("The Android corresponding-source package is not bound to its closed policy.")
     if (
         recipe.get("ndkSourceStatus")
         != "exact-source-revisions-recorded-source-package-pending"
@@ -720,6 +729,90 @@ def verify_android_contract(root: Path) -> None:
     ):
         fail("The Android NDK archive-to-source path map is not closed.")
 
+    corresponding_policy = load_json(
+        root / "compliance/policy/android-corresponding-source.json"
+    )
+    expected_corresponding_policy = {
+        "schemaVersion": 1,
+        "target": "android-arm",
+        "archiveRoot": "android-corresponding-source",
+        "format": "deterministic-tar-gzip-v1",
+        "verifiedClosureStatus": "complete-source-and-relink-inputs-packaged",
+        "sourceInputs": {
+            "kmediavlc": {
+                "repository": "https://github.com/SuvioMedia/KMediaVlc.git",
+                "revisionBinding": "tested-commit",
+                "scope": "complete-tree",
+                "requiredPaths": [
+                    "build-recipes/android.json",
+                    "compliance/policy/android-corresponding-source.json",
+                    "compliance/policy/android-static-components.json",
+                    "docs/ANDROID.md",
+                    "docs/RELINKING.md",
+                    "native/android/CMakeLists.txt",
+                    "native/android/kmediavlc_android_jni.cpp",
+                    "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch",
+                    "runtime-android/build.gradle.kts",
+                    "scripts/build_vlc_android.sh",
+                    "scripts/create_android_link_audit.py",
+                    "scripts/package_android_corresponding_source.py",
+                    "scripts/package_android_ndk_source.py",
+                    "scripts/verify_android_corresponding_source_archive.py",
+                    "scripts/verify_android_ndk_source_archive.py",
+                ],
+            },
+            "libvlcjni": {
+                "repository": "https://code.videolan.org/videolan/libvlcjni.git",
+                "revision": PINNED_LIBVLCJNI_REVISION,
+                "tree": "beed578662d1b9c4777bd68c628a3908ed1a1164",
+                "scope": "complete-tree",
+                "requiredPaths": [
+                    "LICENSE",
+                    "buildsystem/compile-libvlc.sh",
+                    "libvlc/jni/libvlc.mk",
+                    "libvlc/jni/libvlcjni.mk",
+                ],
+            },
+            "vlc": {
+                "repository": "https://code.videolan.org/videolan/vlc.git",
+                "revision": PINNED_REVISION,
+                "tree": "d796ecf4915b8e221bc973babcdbd3404ed3c957",
+                "scope": "complete-tree",
+                "requiredPaths": [
+                    "COPYING",
+                    "contrib/src",
+                    "include/vlc/libvlc.h",
+                    "lib/meson.build",
+                    "meson.build",
+                    "modules",
+                    "src/meson.build",
+                ],
+            },
+        },
+        "contribSourceArchives": {
+            "componentPolicy": "compliance/policy/android-static-components.json",
+            "archiveDirectory": "sources/vlc-contrib-tarballs",
+            "archiveCount": 55,
+        },
+        "ndkSourcePackage": {
+            "componentPolicy": "compliance/policy/android-static-components.json",
+            "archivePath": "source-packages/android-ndk-runtime-source.tar.gz",
+            "archiveRoot": "android-ndk-runtime-source",
+            "format": "deterministic-tar-gzip-v1",
+            "requiresIndependentVerification": True,
+        },
+        "buildEvidence": {
+            "legalManifestPath": "build-evidence/android-static-legal.json",
+            "linkAudits": {
+                "android-arm64-v8a": "build-evidence/link-audits/android-arm64-v8a.json",
+                "android-armeabi-v7a": "build-evidence/link-audits/android-armeabi-v7a.json",
+            },
+        },
+        "generatedFiles": ["REBUILD.md", "SOURCE-SHA256SUMS"],
+    }
+    if corresponding_policy != expected_corresponding_policy:
+        fail("The complete Android corresponding-source package policy is not closed.")
+
     bridge = (root / "native/android/kmediavlc_android_jni.cpp").read_text(encoding="utf-8")
     bridge_markers = [
         "libvlc_video_set_anw_callbacks",
@@ -789,6 +882,11 @@ def verify_android_contract(root: Path) -> None:
         "kmediaVlcAndroidNdkSourceArchive",
         "verify_android_ndk_source_archive.py",
         'classifier = "android-ndk-source"',
+        "kmediaVlcAndroidCorrespondingSourceArchive",
+        "verifyAndroidCorrespondingSourceArchive",
+        "verify_android_corresponding_source_archive.py",
+        "Publishing requires independently verified complete Android corresponding source.",
+        'classifier = "corresponding-source"',
     ]
     if not all(marker in android_build for marker in gradle_markers):
         fail("The Android AAR payload or publication gate is incomplete.")
@@ -889,6 +987,38 @@ def verify_android_contract(root: Path) -> None:
     ]
     if not all(marker in ndk_source_verifier for marker in verifier_markers):
         fail("The independent Android NDK source verifier is incomplete.")
+
+    corresponding_packager = (
+        root / "scripts/package_android_corresponding_source.py"
+    ).read_text(encoding="utf-8")
+    corresponding_verifier = (
+        root / "scripts/verify_android_corresponding_source_archive.py"
+    ).read_text(encoding="utf-8")
+    corresponding_packager_markers = [
+        "complete-source-and-relink-inputs-packaged",
+        "NDK_VERIFIER.verify",
+        '"ls-tree", "-r", "-z", "--full-tree", "HEAD"',
+        "Android source bytes differ from the pinned Git blob",
+        "VLC contrib source archive differs from the legal audit",
+        "SOURCE-SHA256SUMS",
+        "REBUILD.md",
+    ]
+    if not all(marker in corresponding_packager for marker in corresponding_packager_markers):
+        fail("The complete Android corresponding-source packager is incomplete.")
+    corresponding_verifier_markers = [
+        "complete-source-and-relink-inputs-packaged",
+        "NDK_VERIFIER.verify",
+        '"ls-tree", "-r", "-z", "--full-tree", "HEAD"',
+        "Android corresponding-source manifest differs from the exact source inputs.",
+        "Android corresponding-source member differs from its input",
+        "gzip header is not deterministic",
+        "SOURCE-SHA256SUMS",
+        "REBUILD.md",
+    ]
+    if not all(marker in corresponding_verifier for marker in corresponding_verifier_markers):
+        fail("The independent complete Android corresponding-source verifier is incomplete.")
+    if "package_android_corresponding_source" in corresponding_verifier:
+        fail("The Android corresponding-source verifier must not import its packager.")
 
     policy_patch = (
         root / "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"

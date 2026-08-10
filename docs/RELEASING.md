@@ -65,9 +65,36 @@ Android publication requires all four properties together:
 
 Gradle repeats the independent Git-tree/blob verification before publication and attaches the
 archive with classifier `android-ndk-source`. This artifact supplements the complete Android
-`correspondingSourceArchive`; it does not replace VLC, libvlcjni, contrib, KMediaVlc, and relinking
-sources. The legal manifest must still be explicitly approved and its NDK component promoted to
-`corresponding-source-mapped` for the exact release inputs.
+`kmediaVlcAndroidCorrespondingSourceArchive`; it does not replace VLC, libvlcjni, contrib,
+KMediaVlc, and relinking sources. The legal manifest must still be explicitly approved and its NDK
+component promoted to `corresponding-source-mapped` for the exact release inputs.
+
+## Android complete corresponding source
+
+After the NDK artifact is verified, run `scripts/package_android_corresponding_source.py` with the
+clean final KMediaVlc, VLC, and libvlcjni checkouts; VLC's contrib tarball directory; the real legal
+manifest; both ABI link-audit reports; and that NDK archive. Use the release version, final tested
+KMediaVlc commit, and its Unix timestamp. Then reopen the result with
+`scripts/verify_android_corresponding_source_archive.py` and the same original inputs.
+
+The resulting archive contains all three complete tracked Git trees, exactly 55 audited contrib
+source archives, the NDK source supplement, both ABI reports, the legal manifest, and deterministic
+rebuild/checksum metadata. The independent verifier reconstructs the closure from Git and the
+external source/evidence files; it does not trust the packager's manifest as an inventory oracle.
+
+Android Gradle verification requires these six properties together:
+
+- `kmediaVlcAndroidCorrespondingSourceArchive`;
+- `kmediaVlcAndroidVlcSourceDirectory`;
+- `kmediaVlcAndroidLibvlcjniSourceDirectory`;
+- `kmediaVlcAndroidContribTarballsDirectory`;
+- `kmediaVlcAndroidArm64LinkAudit`;
+- `kmediaVlcAndroidArmv7LinkAudit`.
+
+They additionally require the native payload, all four NDK-verification properties listed above,
+and the same `recipeRevision`. Gradle runs both independent verifiers before checks or publication
+and attaches the complete artifact with classifier `corresponding-source`. Source closure does not
+override the separate approved-SPDX, legal-manifest, release-eligibility, or device-test gates.
 
 ## Stage the Maven repository
 
