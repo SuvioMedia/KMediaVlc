@@ -9,8 +9,8 @@ separately to VideoLAN `libvlcjni` revision
 
 This milestone is **not a published native payload yet**. The Java API, JNI bridge, two-ABI
 payload contract, hermetic NDK ABI fixture, and real pinned source builds are implemented. A
-candidate remains `releaseEligible=false` until the generated contrib link graph, notices, and
-device playback evidence are reviewed and closed.
+candidate remains `releaseEligible=false` until the source-mapped contrib graph receives its
+linked-member SPDX/notice review and device playback evidence is closed.
 
 ## AAR contract
 
@@ -89,7 +89,12 @@ graph, not from assuming that unused metadata strings survive the final link. Pa
 reports, including the policy-patch hash, are written under `/path/to/audit-work/link-audits`;
 linker maps remain local build evidence and are not placed in the AAR. The report records VLC's
 declared LGPL license but deliberately leaves the final effective SPDX expression unset until
-every contributing static archive is reviewed.
+every contributing static archive is reviewed. The closed policy in
+`compliance/policy/android-static-components.json` maps every permitted contrib archive to its
+exact pinned source tarball and maps the four ABI-specific NDK runtime archives to the NDK
+distribution evidence. The audit rejects missing or extra entries, hashes all 55 contributing
+source tarballs plus the NDK notices/identity file, and embeds that path-free evidence once per
+source component.
 
 ### Verified source-build evidence
 
@@ -100,10 +105,13 @@ four, and three respectively. Both final libraries expose the required core/JNI 
 only the closed Android system `DT_NEEDED` set, and use 16 KiB `LOAD` alignment. The stripped
 two-ABI payload also passed the actual Gradle AAR inventory and lint/test gate.
 
-These counts document this candidate build; they are not an allowlist yet. The path-free reports
-remain `candidate-unreviewed-static-components` until every contrib archive is mapped to its
-source, license, notice, and corresponding-source material. Native binaries remain external
-release inputs and are not committed to this repository.
+These counts now match the exact source allowlist: 62 archive paths resolve to 54 contrib source
+components and 55 source tarballs (TagLib also consumes the header-only utfcpp source). The
+path-free reports are therefore promoted only to
+`candidate-source-mapped-license-review-pending`. This state proves archive-to-source closure,
+but not the linked-member SPDX conclusion, notice completeness, NDK corresponding-source map, or
+release eligibility. Native binaries remain external release inputs and are not committed to
+this repository.
 
 An audited payload can be supplied to Gradle with
 `-PkmediaVlcAndroidNativePayloadDirectory=/path/to/payload`. Publication additionally requires
@@ -113,7 +121,8 @@ the manifest to say `releaseEligible=true` and requires the exact corresponding-
 
 - review and approve the exact module lists emitted by the completed fail-closed
   compiled-license and linker-map audits;
-- bind each linked contrib and toolchain archive to source, license, notice, and hash evidence;
+- review the linked members of every source-mapped contrib and toolchain archive, then bind the
+  approved SPDX expressions and complete notices to the already recorded source/archive hashes;
 - retain reviewed evidence for the real source-built `libvlc.so` DT_NEEDED/export surface for
   both ABIs;
 - run an Android device/emulator fixture through create/open/play, MediaCodec and software decode,

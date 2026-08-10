@@ -53,7 +53,10 @@ and does not by itself make a candidate publishable.
 
 The completed pinned source build currently reports 62 actually linked contrib
 archives per Android ABI, plus four NDK runtime archives and the three VLC core
-archives. All selected VLC module archives passed the compiled marker check.
-Those observations validate the audit pipeline, but each of the 62 contrib
-entries still needs reviewed SPDX/source/notice metadata before the manifest can
-be promoted from `candidate-unreviewed-static-components`.
+archives. All selected VLC module archives passed the compiled marker check. A
+closed policy now maps those 62 paths to 54 contrib components and 55 exact
+source tarballs and rejects any missing or extra archive. The report hashes each
+source input and the NDK distribution notices, so it can be promoted to
+`candidate-source-mapped-license-review-pending`. Each linked member still needs
+reviewed SPDX and notice metadata, and the NDK inputs still need their complete
+corresponding-source map, before the manifest can advance further.

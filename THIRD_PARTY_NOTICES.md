@@ -26,8 +26,11 @@ Official source: https://code.videolan.org/videolan/libvlcjni
 
 The Android source-build candidate uses the upstream `a` license profile
 (LGPL-2.1-compatible contribs plus advertising-clause dependencies), static C++,
-and no prebuilt contribs or published AAR. It remains release-ineligible until
-the exact module and archive license inventory is approved for both packaged ABIs.
+and no prebuilt contribs or published AAR. Its exact 62-archive link graph is now
+closed to 54 contrib components and 55 pinned source tarballs; generated audits
+hash those source inputs and the NDK distribution notices for both packaged ABIs.
+It remains release-ineligible until linked-member SPDX/notice review and the NDK
+corresponding-source map are approved.
 
 ## Windows x86_64 playback dependency inventory
 

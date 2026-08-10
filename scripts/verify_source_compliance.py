@@ -423,6 +423,100 @@ def verify_android_contract(root: Path) -> None:
     ):
         fail("The unaudited Android candidate must remain release-ineligible and source-built.")
 
+    static_policy = load_json(
+        root / "compliance/policy/android-static-components.json"
+    )
+    expected_static_keys = {
+        "schemaVersion", "target", "vlcRevision", "ndkRevision", "reviewStatus",
+        "contribComponents", "contribArchives", "ndkComponents", "ndkArchiveTemplates",
+    }
+    if (
+        set(static_policy) != expected_static_keys
+        or static_policy.get("schemaVersion") != 1
+        or static_policy.get("target") != "android-arm"
+        or static_policy.get("vlcRevision") != PINNED_REVISION
+        or static_policy.get("ndkRevision") != "29.0.14206865"
+        or static_policy.get("reviewStatus")
+        != "source-mapped-license-and-notice-review-pending"
+    ):
+        fail("The Android static component policy identity or review state is invalid.")
+    contrib_components = static_policy.get("contribComponents")
+    if (
+        not isinstance(contrib_components, dict)
+        or list(contrib_components) != sorted(contrib_components)
+        or len(contrib_components) != 54
+    ):
+        fail("The Android static policy must contain exactly 54 sorted contrib components.")
+    source_archive_count = 0
+    for component_id, component_policy in contrib_components.items():
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]+", component_id):
+            fail(f"Unsafe Android contrib component identifier: {component_id!r}")
+        if not isinstance(component_policy, dict) or set(component_policy) != {
+            "version", "sourceArchives"
+        }:
+            fail(f"Android contrib component fields are not closed: {component_id}")
+        sources = component_policy["sourceArchives"]
+        if (
+            not isinstance(component_policy["version"], str)
+            or not component_policy["version"]
+            or not isinstance(sources, list)
+            or sources != sorted(set(sources))
+            or not sources
+            or any(
+                not isinstance(source, str)
+                or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.+_-]+\.tar\.(?:gz|xz|bz2)", source)
+                for source in sources
+            )
+        ):
+            fail(f"Android contrib source mapping is unsafe: {component_id}")
+        source_archive_count += len(sources)
+    if source_archive_count != 55:
+        fail("The Android contrib source closure must contain exactly 55 source archives.")
+
+    contrib_archives = static_policy.get("contribArchives")
+    if (
+        not isinstance(contrib_archives, dict)
+        or list(contrib_archives) != sorted(contrib_archives)
+        or len(contrib_archives) != 62
+        or set(contrib_archives.values()) != set(contrib_components)
+    ):
+        fail("The Android contrib link graph must be an exact sorted 62-archive map.")
+    for archive, component_id in contrib_archives.items():
+        if (
+            not re.fullmatch(r"vlc-contrib/lib/lib[A-Za-z0-9_+.-]+\.a", archive)
+            or component_id not in contrib_components
+        ):
+            fail(f"Unsafe Android contrib archive mapping: {archive!r}")
+
+    ndk_components = static_policy.get("ndkComponents")
+    expected_ndk_component = {
+        "android-ndk-llvm-runtime": {
+            "version": "29.0.14206865",
+            "evidenceFiles": ["NOTICE", "NOTICE.toolchain", "source.properties"],
+            "sourceStatus": "pending-corresponding-source-map",
+        }
+    }
+    if ndk_components != expected_ndk_component:
+        fail("The Android NDK static runtime component is not closed.")
+    expected_ndk_templates = {
+        "ndk/toolchains/llvm/prebuilt/{hostTag}/lib/clang/21/lib/linux/"
+        "libclang_rt.builtins-{builtinsArch}-android.a",
+        "ndk/toolchains/llvm/prebuilt/{hostTag}/lib/clang/21/lib/linux/"
+        "{runtimeArch}/libunwind.a",
+        "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/"
+        "libc++_static.a",
+        "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/"
+        "libc++abi.a",
+    }
+    ndk_templates = static_policy.get("ndkArchiveTemplates")
+    if (
+        not isinstance(ndk_templates, dict)
+        or list(ndk_templates) != sorted(ndk_templates)
+        or set(ndk_templates) != expected_ndk_templates
+        or set(ndk_templates.values()) != set(ndk_components)
+    ):
+        fail("The Android NDK link graph must contain the exact four runtime archives.")
+
     bridge = (root / "native/android/kmediavlc_android_jni.cpp").read_text(encoding="utf-8")
     bridge_markers = [
         "libvlc_video_set_anw_callbacks",
@@ -508,7 +602,7 @@ def verify_android_contract(root: Path) -> None:
         encoding="utf-8"
     )
     audit_markers = [
-        "candidate-unreviewed-static-components",
+        "candidate-source-mapped-license-review-pending",
         '"VLC_MODULE"',
         '"VLC_CORE"',
         '"CONTRIB"',
@@ -520,6 +614,9 @@ def verify_android_contract(root: Path) -> None:
         '"loadAlignment"',
         '"libvlcjniPatch"',
         '"effectiveLicenseSpdx"',
+        '"staticComponents"',
+        "android-static-components.json",
+        "staticComponentPolicy",
     ]
     if not all(marker in audit_generator for marker in audit_markers):
         fail("The Android exact-link audit generator is incomplete.")

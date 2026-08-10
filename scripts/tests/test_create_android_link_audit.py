@@ -29,17 +29,23 @@ class AndroidLinkAuditTest(unittest.TestCase):
         self.build = self.vlc / f"build-android-{self.tuple_name}"
         self.plugins = self.build / "install/lib/vlc/plugins"
         self.contrib = self.vlc / f"contrib/{self.tuple_name}/lib"
-        self.ndk_lib = self.ndk / "toolchains/llvm/prebuilt/test/sysroot/usr/lib/aarch64-linux-android"
+        self.ndk_prebuilt = self.ndk / "toolchains/llvm/prebuilt/linux-x86_64"
         for directory in (
             self.plugins,
             self.contrib,
-            self.ndk_lib,
+            self.ndk_prebuilt,
             self.build / "ndk",
             self.build / "lib/.libs",
             self.build / "src/.libs",
             self.build / "compat/.libs",
         ):
             directory.mkdir(parents=True, exist_ok=True)
+        self.policy = AUDIT.static_component_policy(ROOT)
+        for component in self.policy["contribComponents"].values():
+            for source in component["sourceArchives"]:
+                self.write(self.vlc / "contrib/tarballs" / source, source)
+        for evidence in ("NOTICE", "NOTICE.toolchain", "source.properties"):
+            self.write(self.ndk / evidence, evidence)
         self.modules = sorted(AUDIT.required_modules(ROOT))
         manifest = self.build / "ndk/libvlcjni-modules.c"
         with manifest.open("w", encoding="utf-8", newline="\n") as target:
@@ -55,10 +61,18 @@ class AndroidLinkAuditTest(unittest.TestCase):
                 self.write(self.build / "lib/.libs/libvlc.a", "libvlc"),
                 self.write(self.build / "src/.libs/libvlccore.a", "libvlccore"),
                 self.write(self.build / "compat/.libs/libcompat.a", "libcompat"),
-                self.write(self.contrib / "libexample.a", "contrib"),
-                self.write(self.ndk_lib / "libc++_static.a", "ndk"),
             ]
         )
+        for canonical in self.policy["contribArchives"]:
+            relative = canonical.removeprefix("vlc-contrib/")
+            self.archives.append(
+                self.write(self.vlc / f"contrib/{self.tuple_name}" / relative, canonical)
+            )
+        for canonical in AUDIT.expanded_ndk_archive_components(
+            self.ndk, "arm64-v8a", self.policy
+        ):
+            relative = canonical.removeprefix("ndk/")
+            self.archives.append(self.write(self.ndk / relative, canonical))
         self.libvlc = self.write(self.base / "libvlc.so", "elf")
         self.link_map = self.base / "libvlc.map"
         self.write_map(self.archives)
@@ -121,7 +135,9 @@ fi
 
     def test_creates_path_free_candidate_from_exact_link_inputs(self) -> None:
         result = self.create()
-        self.assertEqual("candidate-unreviewed-static-components", result["reviewStatus"])
+        self.assertEqual(
+            "candidate-source-mapped-license-review-pending", result["reviewStatus"]
+        )
         self.assertEqual(self.modules, [entry["name"] for entry in result["modules"]])
         self.assertEqual(
             {"CONTRIB", "NDK_TOOLCHAIN", "VLC_CORE", "VLC_MODULE"},
@@ -136,12 +152,40 @@ fi
             result["evidence"]["libvlcjniPatch"]["path"],
         )
         self.assertRegex(result["evidence"]["libvlcjniPatch"]["sha256"], r"^[0-9a-f]{64}$")
+        self.assertEqual(
+            "compliance/policy/android-static-components.json",
+            result["evidence"]["staticComponentPolicy"]["path"],
+        )
+        self.assertEqual(
+            set(self.policy["contribComponents"]) | set(self.policy["ndkComponents"]),
+            {entry["id"] for entry in result["staticComponents"]},
+        )
+        self.assertTrue(
+            all(entry.get("component") for entry in result["staticArchives"] if entry["kind"] in {"CONTRIB", "NDK_TOOLCHAIN"})
+        )
 
     def test_rejects_archive_outside_closed_build_roots(self) -> None:
         foreign = self.write(self.base / "foreign/libforeign.a", "foreign")
         self.archives.append(foreign)
         self.write_map(self.archives)
         with self.assertRaisesRegex(ValueError, "outside the closed roots"):
+            self.create()
+
+    def test_rejects_missing_source_mapped_contrib_archive(self) -> None:
+        removed = next(
+            archive
+            for archive in self.archives
+            if archive.name == "libFLAC.a"
+        )
+        self.archives.remove(removed)
+        self.write_map(self.archives)
+        with self.assertRaisesRegex(ValueError, "contrib link graph differs"):
+            self.create()
+
+    def test_rejects_missing_contrib_source_archive(self) -> None:
+        source = self.vlc / "contrib/tarballs/flac-1.5.0.tar.xz"
+        source.unlink()
+        with self.assertRaisesRegex(ValueError, "VLC contrib source archive"):
             self.create()
 
     def test_rejects_gpl_module_marker(self) -> None:
