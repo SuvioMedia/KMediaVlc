@@ -18,6 +18,7 @@ BRIDGE_ABI_VERSION = 2
 ALLOWED_TARGETS = {
     "windows-x86_64": {"D3D11"},
     "windows-aarch64": {"D3D11"},
+    "macos-aarch64": {"OPENGL"},
 }
 REQUIRED_ROLES = {"BRIDGE", "LIBVLC", "CORE", "PLUGIN"}
 COMMIT_REVISION = re.compile(r"[0-9a-f]{40}")
@@ -113,8 +114,8 @@ def validate_inventory(inventory: dict, policy: dict, target: str, staging: Path
     if modes != {"GPU_PUSH", "CPU_PULL"}:
         fail("Runtime must expose exactly GPU_PUSH and CPU_PULL.")
     engines = set(inventory.get("renderEngines", []))
-    if not ALLOWED_TARGETS[target].issubset(engines):
-        fail("Runtime does not expose the required platform render engine.")
+    if engines != ALLOWED_TARGETS[target]:
+        fail("Runtime render engines do not exactly match the platform policy.")
 
     files = inventory.get("files")
     if not isinstance(files, list) or not files:
@@ -269,11 +270,9 @@ def main() -> None:
         target = destination.joinpath(*relative.parts)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
-    (destination / "manifest.properties").write_text(
-        manifest_text(inventory, files, runtime_id, source_offer, recipe_revision),
-        encoding="iso-8859-1",
-        newline="\n",
-    )
+    manifest_path = destination / "manifest.properties"
+    with manifest_path.open("w", encoding="iso-8859-1", newline="\n") as handle:
+        handle.write(manifest_text(inventory, files, runtime_id, source_offer, recipe_revision))
     print(f"Packaged verified KMediaVlc runtime {runtime_id} for {args.target}")
 
 

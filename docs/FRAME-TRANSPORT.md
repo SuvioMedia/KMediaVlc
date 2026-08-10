@@ -28,3 +28,25 @@ This arrangement supports:
 - bounded memory regardless of decoder cadence;
 - generation-safe monitor/device changes;
 - guaranteed release of skipped frames.
+
+## macOS IOSurface hand-off
+
+The macOS producer owns four IOSurfaces. libVLC renders into a surface through
+its OpenGL output callbacks, the bridge flushes the producer context, and only
+then publishes that surface's global ID. The consumer imports the ID as a Metal
+texture after the notification and retains the acquired KMediaVlc frame until
+the Metal command buffer has completed. Releasing the frame returns that
+surface to the producer pool; there is no file-descriptor fence on macOS.
+
+SDR surfaces use `kCVPixelFormatType_32BGRA` storage and must be imported as an
+sRGB BGRA texture. HDR/HLG sources use `kCVPixelFormatType_64RGBAHalf` only when
+HDR output was requested; their values are linear-sRGB FP16. `fourcc` and
+`stride` are authoritative for the IOSurface storage layout, while
+`pixelFormat` describes the color interpretation exposed to KMediaPlayer.
+
+The opt-in native integration test uses a test-only library that implements the
+exact pinned libVLC ABI and drives the real callback sequence. It creates a CGL
+context and IOSurface and reopens the published ID through JNI. It proves ABI,
+ownership, and allocation behavior without making an unaudited VLC binary a
+release input. Real playback, Metal import, and hardware color acceptance are
+separate publication gates.

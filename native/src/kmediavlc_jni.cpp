@@ -18,6 +18,9 @@
 
 #if !defined(_WIN32)
 #  include <unistd.h>
+#  if defined(__APPLE__)
+#    include <IOSurface/IOSurface.h>
+#  endif
 #else
 #  include <windows.h>
 #  include <d3d11.h>
@@ -453,6 +456,32 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_inspectWindowsD3D11
     (void)env;
     (void)adapter_luid;
     (void)shared_handle;
+    return nullptr;
+#endif
+}
+
+JNIEXPORT jlongArray JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_inspectMacIosurfaceFrame(
+    JNIEnv* env, jclass, jlong surface_id) {
+#if defined(__APPLE__)
+    if (surface_id <= 0 || surface_id > std::numeric_limits<std::uint32_t>::max()) return nullptr;
+    IOSurfaceRef surface = IOSurfaceLookup(static_cast<IOSurfaceID>(surface_id));
+    if (surface == nullptr) return nullptr;
+    const jlong values[6]{
+        static_cast<jlong>(IOSurfaceGetWidth(surface)),
+        static_cast<jlong>(IOSurfaceGetHeight(surface)),
+        static_cast<jlong>(IOSurfaceGetBytesPerElement(surface)),
+        static_cast<jlong>(IOSurfaceGetBytesPerRow(surface)),
+        static_cast<jlong>(IOSurfaceGetAllocSize(surface)),
+        static_cast<jlong>(IOSurfaceGetPixelFormat(surface)),
+    };
+    CFRelease(surface);
+    jlongArray result = env->NewLongArray(6);
+    if (result != nullptr) env->SetLongArrayRegion(result, 0, 6, values);
+    return result;
+#else
+    (void)env;
+    (void)surface_id;
     return nullptr;
 #endif
 }

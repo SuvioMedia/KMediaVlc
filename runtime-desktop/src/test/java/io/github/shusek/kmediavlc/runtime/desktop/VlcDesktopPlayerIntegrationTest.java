@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Assumptions;
@@ -140,6 +141,110 @@ final class VlcDesktopPlayerIntegrationTest {
                 assertTrue(Float.isFinite(inspection[4]));
                 assertTrue(Float.isFinite(inspection[5]));
                 assertTrue(Float.isFinite(inspection[6]) && inspection[6] > 0.9f);
+            }
+        }
+    }
+
+    @Test
+    void fakeLibVlcPublishesRealSdrAndHdrMacIosurfaceFrames() throws Exception {
+        Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase().contains("mac"));
+        String bridge = System.getProperty("kmediavlc.test.nativeBridge");
+        String fakeLibVlc = System.getProperty("kmediavlc.test.fakeLibVlc");
+        Assumptions.assumeTrue(bridge != null && fakeLibVlc != null, "The native macOS fixture is opt-in.");
+        Path plugins = temporaryDirectory.resolve("fake-vlc-plugins").toAbsolutePath();
+        java.nio.file.Files.createDirectories(plugins);
+        var runtime = new VlcDesktopRuntimeResolution(
+                Path.of(bridge).toAbsolutePath(),
+                Path.of(fakeLibVlc).toAbsolutePath(),
+                plugins,
+                "fake-libvlc-macos-callback-test",
+                new VlcRuntimeCapabilities(
+                        4,
+                        2,
+                        "4.0.0-dev",
+                        "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+                        Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
+                        Set.of(VlcRenderEngine.OPENGL),
+                        false));
+        var signal = new Semaphore(0);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.GPU_PUSH,
+                true,
+                203f,
+                1_000f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        signal.release();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(runtime, config)) {
+            assertTrue(player.updateOutput(new VlcMacOutputTarget(
+                    31,
+                    96,
+                    54,
+                    false,
+                    203f,
+                    203f,
+                    1,
+                    1)));
+            assertTrue(player.open("test://macos-iosurface", Map.of(), true));
+            assertTrue(signal.tryAcquire(10, TimeUnit.SECONDS), () -> timeoutDiagnostics(
+                    player, "The fake libVLC callback sequence published no IOSurface."));
+            try (var frame = player.acquireLatestFrame().orElseThrow()) {
+                assertEquals(VlcNativeHandleType.IOSURFACE, frame.handleType());
+                assertEquals(VlcPixelFormat.RGBA8_SRGB, frame.pixelFormat());
+                assertEquals(VlcSourceDynamicRange.SDR, frame.sourceDynamicRange());
+                assertEquals(31, frame.generation());
+                assertEquals(96, frame.width());
+                assertEquals(54, frame.height());
+                assertTrue(frame.platformHandle() > 0);
+                assertTrue(frame.stride() >= 96 * 4);
+                assertEquals(0x42475241, frame.fourcc(), "kCVPixelFormatType_32BGRA");
+                long[] inspection = NativeBridge.inspectMacIosurfaceFrame(frame.platformHandle());
+                assertNotNull(inspection);
+                assertEquals(6, inspection.length);
+                assertEquals(96, inspection[0]);
+                assertEquals(54, inspection[1]);
+                assertEquals(4, inspection[2]);
+                assertEquals(frame.stride(), inspection[3]);
+                assertTrue(inspection[4] >= frame.stride() * 54L);
+                assertEquals(frame.fourcc(), inspection[5]);
+            }
+
+            assertTrue(player.updateOutput(new VlcMacOutputTarget(
+                    32,
+                    96,
+                    54,
+                    true,
+                    203f,
+                    1_000f,
+                    1,
+                    1)));
+            assertTrue(player.open("test://macos-iosurface-hdr", Map.of(), true));
+            assertTrue(signal.tryAcquire(10, TimeUnit.SECONDS), () -> timeoutDiagnostics(
+                    player, "The fake HDR10 callback sequence published no FP16 IOSurface."));
+            try (var frame = player.acquireLatestFrame().orElseThrow()) {
+                assertEquals(VlcNativeHandleType.IOSURFACE, frame.handleType());
+                assertEquals(VlcPixelFormat.RGBA16F_LINEAR_SRGB, frame.pixelFormat());
+                assertEquals(VlcSourceDynamicRange.HDR10, frame.sourceDynamicRange());
+                assertEquals(32, frame.generation());
+                assertEquals(96, frame.width());
+                assertEquals(54, frame.height());
+                assertTrue(frame.platformHandle() > 0);
+                assertTrue(frame.stride() >= 96 * 8);
+                assertEquals(0x52476841, frame.fourcc(), "kCVPixelFormatType_64RGBAHalf");
+                assertTrue(frame.contentPeakNits() >= 1_000f);
+                long[] inspection = NativeBridge.inspectMacIosurfaceFrame(frame.platformHandle());
+                assertNotNull(inspection);
+                assertEquals(6, inspection.length);
+                assertEquals(96, inspection[0]);
+                assertEquals(54, inspection[1]);
+                assertEquals(8, inspection[2]);
+                assertEquals(frame.stride(), inspection[3]);
+                assertTrue(inspection[4] >= frame.stride() * 54L);
+                assertEquals(frame.fourcc(), inspection[5]);
             }
         }
     }

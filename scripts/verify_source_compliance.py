@@ -335,6 +335,89 @@ def verify_pin_occurrences(root: Path) -> None:
         fail("Pinned VLC version is not enforced by the runtime parser.")
 
 
+def verify_macos_transport_contract(root: Path) -> None:
+    renderer = (root / "native/src/macos_iosurface_renderer.cpp").read_text(encoding="utf-8")
+    renderer_markers = [
+        "constexpr std::size_t kSurfaceCount = 4",
+        "libvlc_video_engine_opengl",
+        "CGLTexImageIOSurface2D",
+        "kCVPixelFormatType_32BGRA",
+        "kCVPixelFormatType_64RGBAHalf",
+        "glFlush();",
+        "frame->platform_owner = surface",
+        "KMEDIAVLC_IOSURFACE_ID",
+    ]
+    if not all(marker in renderer for marker in renderer_markers):
+        fail("The macOS OpenGL/IOSurface ownership contract is incomplete.")
+
+    cmake = (root / "native/CMakeLists.txt").read_text(encoding="utf-8")
+    cmake_markers = [
+        "elseif(APPLE)",
+        "src/macos_iosurface_renderer.cpp",
+        "CoreFoundation REQUIRED",
+        "CoreVideo REQUIRED",
+        "IOSurface REQUIRED",
+        "OpenGL REQUIRED",
+        "KMEDIAVLC_BUILD_TEST_FIXTURES",
+        "tests/fake_libvlc.cpp",
+    ]
+    if not all(marker in cmake for marker in cmake_markers):
+        fail("The macOS renderer or its hermetic native fixture is not wired into CMake.")
+
+    ci = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    ci_markers = [
+        "verify-macos-iosurface:",
+        "runs-on: macos-15",
+        "kmediaVlcBuildNativeTestFixtures=true",
+        "libkmediavlc_fake_libvlc.dylib",
+        "real SDR/HDR IOSurfaces",
+    ]
+    if not all(marker in ci for marker in ci_markers):
+        fail("CI must exercise the macOS bridge and real SDR/HDR IOSurface allocations.")
+
+    desktop_build = (root / "runtime-desktop/build.gradle.kts").read_text(encoding="utf-8")
+    if (
+        'inputs.file(bridgePath).withPropertyName("nativeBridgeTestBinary")' not in desktop_build
+        or "outputs.upToDateWhen { !nativeBridgeTestPath.isPresent }" not in desktop_build
+        or "Native bridge integration must execute on the current hardware" not in desktop_build
+    ):
+        fail("Native bridge integration results must never be reused from Gradle caches.")
+
+    fixture = (root / "native/tests/fake_libvlc.cpp").read_text(encoding="utf-8")
+    integration = (
+        root
+        / "runtime-desktop/src/test/java/io/github/shusek/kmediavlc/runtime/desktop/"
+        "VlcDesktopPlayerIntegrationTest.java"
+    ).read_text(encoding="utf-8")
+    if (
+        "libvlc_video_set_output_callbacks" not in fixture
+        or "libvlc_video_engine_opengl" not in fixture
+        or "fakeLibVlcPublishesRealSdrAndHdrMacIosurfaceFrames" not in integration
+        or "inspectMacIosurfaceFrame" not in integration
+    ):
+        fail("The pinned macOS callback ABI lacks its real IOSurface integration gate.")
+
+    parser = (
+        root
+        / "runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/"
+        "NativePayloadManifest.java"
+    ).read_text(encoding="utf-8")
+    runtime = (
+        root
+        / "runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/"
+        "VlcDesktopRuntime.java"
+    ).read_text(encoding="utf-8")
+    documentation = (root / "docs/MACOS.md").read_text(encoding="utf-8")
+    if (
+        'case "macos-aarch64"' not in parser
+        or "Set.of(VlcRenderEngine.OPENGL)" not in parser
+        or 'return "macos-aarch64"' not in runtime
+        or "not a published" not in documentation
+        or "Publication gates still open" not in documentation
+    ):
+        fail("The macOS target must remain exact-engine and publication-fail-closed.")
+
+
 def verify_legal_files(root: Path) -> None:
     binary = load_json(root / "compliance/policy/windows-x86_64-binary-components.json")
     components = binary.get("components")
@@ -378,6 +461,7 @@ def main() -> None:
     verify_no_native_payload(root)
     verify_policy(root)
     verify_pin_occurrences(root)
+    verify_macos_transport_contract(root)
     verify_legal_files(root)
     print("KMediaVlc source and licensing policy verified.")
 

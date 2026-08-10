@@ -204,9 +204,8 @@ def create(
         "runtimeFiles": runtime_entries,
     }
     audit_path = staging / AUDIT_NAME
-    audit_path.write_text(
-        json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n"
-    )
+    with audit_path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps(audit, indent=2, sort_keys=True) + "\n")
     files.append(
         {
             "path": AUDIT_NAME,
@@ -243,9 +242,8 @@ def create(
         "hdr10Metadata": True,
         "files": files,
     }
-    output.write_text(
-        json.dumps(inventory, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n"
-    )
+    with output.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps(inventory, indent=2, sort_keys=True) + "\n")
     return inventory
 
 

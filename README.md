@@ -45,11 +45,16 @@ calls Compose and never waits for a UI render.
 ## Runtime policy
 
 - ABI major is pinned to libVLC 4.
-- The first bundled release is Windows-only: VLC renders bounded BT.2020/PQ
+- The published bundled matrix remains Windows-only: VLC renders bounded BT.2020/PQ
   into a 16-bit D3D11 intermediate and the bridge converts it on-GPU to a
   shared `R16G16B16A16_FLOAT` linear-sRGB TextureView frame.
-- macOS and Linux GPU producers are deliberately release-ineligible until
-  IOSurface and DMA-BUF import, fences, and native integration tests exist.
+- The Apple-silicon macOS bridge now renders through libVLC 4 OpenGL callbacks
+  into a bounded four-buffer IOSurface pool. Its runtime target and packaging
+  contract are implemented, but publication remains fail-closed until a real
+  source-built VLC payload, closed Mach-O/license inventory, Metal-consumer
+  integration, and hardware SDR/HDR evidence are audited.
+- Linux remains release-ineligible until its DMA-BUF import, explicit-fence
+  ownership, and native integration tests exist.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 
@@ -72,9 +77,10 @@ embedded in the native manifest and must match the checked-out KMediaVlc
 commit. The Gradle publication consumes only the packager's verified output;
 an arbitrary directory cannot bypass the component/license inventory.
 
-The portable CPU-pull implementation exists for controlled tests, but the
-published native payload matrix remains Windows-only in this version.
+The portable CPU-pull implementation exists for controlled tests. The runtime
+recognizes `macos-aarch64`, but no macOS payload is published in this version;
+resolution therefore fails closed until an audited resource is added.
 
-See `docs/ARCHITECTURE.md`, `docs/FRAME-TRANSPORT.md`, and
+See `docs/ARCHITECTURE.md`, `docs/FRAME-TRANSPORT.md`, `docs/MACOS.md`, and
 `docs/LICENSING.md`. Release setup and the exact four GitHub secrets are
 documented in `docs/RELEASING.md` and `docs/MAVEN-CENTRAL.md`.

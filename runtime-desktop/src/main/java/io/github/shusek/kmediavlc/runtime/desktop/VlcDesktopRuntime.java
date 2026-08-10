@@ -109,8 +109,14 @@ public final class VlcDesktopRuntime {
     }
 
     static String currentTarget() {
-        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
-        String architecture = System.getProperty("os.arch", "").toLowerCase(Locale.ROOT);
+        return targetFor(
+                System.getProperty("os.name", ""),
+                System.getProperty("os.arch", ""));
+    }
+
+    static String targetFor(String osName, String architectureName) {
+        String os = osName.toLowerCase(Locale.ROOT);
+        String architecture = architectureName.toLowerCase(Locale.ROOT);
         String arch =
                 switch (architecture) {
                     case "amd64", "x86_64" -> "x86_64";
@@ -118,9 +124,10 @@ public final class VlcDesktopRuntime {
                     default -> throw new VlcRuntimeException(UNSUPPORTED_PLATFORM, "Unsupported desktop architecture.");
                 };
         if (os.contains("windows")) return "windows-" + arch;
+        if (os.contains("mac") && arch.equals("aarch64")) return "macos-aarch64";
         throw new VlcRuntimeException(
                 UNSUPPORTED_PLATFORM,
-                "Bundled KMediaVlc GPU payloads are currently available on Windows only.");
+                "A bundled KMediaVlc GPU payload is unavailable for this desktop target.");
     }
 
     private static NativePayloadManifest readManifest(String target) {

@@ -38,3 +38,44 @@ jobs:
           .\gradlew.bat check complianceCheck buildNativeBridge
           "-PkmediaVlcVlcSourceDir=$env:GITHUB_WORKSPACE\.vlc-source"
           --stacktrace --console=plain
+
+  verify-macos-iosurface:
+    runs-on: macos-15
+    steps:
+      - name: Check out KMediaVlc
+        uses: actions/checkout@v6
+
+      - name: Check out the exact VLC headers
+        uses: actions/checkout@v6
+        with:
+          repository: videolan/vlc
+          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          path: .vlc-source
+          sparse-checkout: include
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build the pinned-ABI bridge and hermetic libVLC fixture
+        shell: bash
+        run: |
+          test "$(uname -m)" = arm64
+          ./gradlew buildNativeBridge \
+            -PkmediaVlcVlcSourceDir="$GITHUB_WORKSPACE/.vlc-source" \
+            -PkmediaVlcBuildNativeTestFixtures=true \
+            --stacktrace --console=plain
+          otool -L build/native/macos-aarch64/libkmediavlc_bridge.dylib
+
+      - name: Verify JVM, licensing, and real SDR/HDR IOSurfaces
+        shell: bash
+        run: |
+          ./gradlew check complianceCheck \
+            -PkmediaVlcNativeBridgePath="$GITHUB_WORKSPACE/build/native/macos-aarch64/libkmediavlc_bridge.dylib" \
+            -PkmediaVlcTestFakeLibVlcPath="$GITHUB_WORKSPACE/build/native/macos-aarch64/libkmediavlc_fake_libvlc.dylib" \
+            --stacktrace --console=plain

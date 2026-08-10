@@ -28,18 +28,32 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
+val nativeBridgeTestPath = providers.gradleProperty("kmediaVlcNativeBridgePath")
+val libVlcTestPath = providers.gradleProperty("kmediaVlcTestLibVlcPath")
+val fakeLibVlcTestPath = providers.gradleProperty("kmediaVlcTestFakeLibVlcPath")
+val pluginTestDirectory = providers.gradleProperty("kmediaVlcTestPluginDirectory")
+val hdrTestMedia = providers.gradleProperty("kmediaVlcTestHdrMedia")
+
 tasks.test {
     useJUnitPlatform()
-    providers.gradleProperty("kmediaVlcNativeBridgePath").orNull?.let { bridgePath ->
+    nativeBridgeTestPath.orNull?.let { bridgePath ->
+        inputs.file(bridgePath).withPropertyName("nativeBridgeTestBinary")
         systemProperty("kmediavlc.test.nativeBridge", bridgePath)
     }
-    providers.gradleProperty("kmediaVlcTestLibVlcPath").orNull?.let { libVlcPath ->
+    libVlcTestPath.orNull?.let { libVlcPath ->
+        inputs.file(libVlcPath).withPropertyName("libVlcTestBinary")
         systemProperty("kmediavlc.test.libVlc", libVlcPath)
     }
-    providers.gradleProperty("kmediaVlcTestPluginDirectory").orNull?.let { pluginDirectory ->
+    fakeLibVlcTestPath.orNull?.let { libVlcPath ->
+        inputs.file(libVlcPath).withPropertyName("fakeLibVlcTestBinary")
+        systemProperty("kmediavlc.test.fakeLibVlc", libVlcPath)
+    }
+    pluginTestDirectory.orNull?.let { pluginDirectory ->
+        inputs.dir(pluginDirectory).withPropertyName("libVlcTestPluginDirectory")
         systemProperty("kmediavlc.test.plugins", pluginDirectory)
     }
-    providers.gradleProperty("kmediaVlcTestHdrMedia").orNull?.let { hdrMedia ->
+    hdrTestMedia.orNull?.let { hdrMedia ->
+        inputs.file(hdrMedia).withPropertyName("hdrTestMedia")
         systemProperty("kmediavlc.test.hdrMedia", hdrMedia)
     }
     providers.gradleProperty("kmediaVlcTestHttpsHdrMedia").orNull?.let { httpsHdrMedia ->
@@ -50,6 +64,10 @@ tasks.test {
     }
     if (providers.gradleProperty("kmediaVlcDebugCallbacks").orNull == "true") {
         environment("KMEDIAVLC_DEBUG_CALLBACKS", "1")
+    }
+    outputs.upToDateWhen { !nativeBridgeTestPath.isPresent }
+    outputs.doNotCacheIf("Native bridge integration must execute on the current hardware") {
+        nativeBridgeTestPath.isPresent
     }
 }
 

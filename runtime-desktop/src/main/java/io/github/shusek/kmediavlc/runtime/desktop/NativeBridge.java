@@ -54,6 +54,7 @@ final class NativeBridge {
     static native int bridgeAbiVersion();
     static native long defaultWindowsAdapterLuid();
     static native float[] inspectWindowsD3D11Frame(long adapterLuid, long sharedHandle);
+    static native long[] inspectMacIosurfaceFrame(long iosurfaceId);
     static native long createPlayer(
             String libVlcPath,
             String pluginDirectory,
