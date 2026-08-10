@@ -2110,6 +2110,8 @@ def verify_linux_runtime_contract(root: Path) -> None:
         encoding="utf-8"
     )
     workflow_markers = [
+        "codex/linux-bundled-runtime",
+        "codex/bundled-libvlc4-integration",
         "ubuntu-24.04-arm",
         "linux-x86_64",
         "linux-aarch64",

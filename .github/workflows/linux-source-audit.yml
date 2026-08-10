@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - codex/linux-bundled-runtime
+      - codex/bundled-libvlc4-integration
     paths:
       - .github/workflows/linux-source-audit.yml
       - build-recipes/linux.json
