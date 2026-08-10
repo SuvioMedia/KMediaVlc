@@ -209,6 +209,43 @@ special files, missing/extra paths, modified checkouts, a different release iden
 Gradle runs it through `verifyAndroidCorrespondingSourceArchive` and attaches the result with
 classifier `corresponding-source` only when every source/evidence property is configured together.
 
+### Physical-device acceptance harness
+
+The emulator evidence above is reproducible, but it is not physical-device
+acceptance. Run the checked-in harness against an unlocked, USB-debugging
+authorized ARM device using the exact candidate payload and KMediaVlc commit:
+
+```shell
+bash scripts/run_android_device_smoke.sh \
+  /absolute/android-native-payload \
+  /absolute/new-device-smoke-work \
+  /absolute/android-sdk/platform-tools/adb \
+  DEVICE_SERIAL \
+  TESTED_KMEDIAVLC_COMMIT
+```
+
+The runner requires a clean checkout at the supplied forty-character commit,
+binds every ADB command and Gradle instrumentation invocation to the exact
+serial, and accepts only API 28+ `arm64-v8a` or `armeabi-v7a`. It rejects QEMU,
+Ranchu, Goldfish, Cuttlefish, and VirtualBox hardware markers before installing
+anything. A pre-existing KMediaVlc test package also stops the run, so cleanup
+cannot remove an unrelated installation.
+
+Gradle independently verifies the complete payload and legal-evidence graph,
+then executes only `VlcAndroidPlaybackInstrumentedTest`. Both automatic
+MediaCodec and software-only cases must render moving video and subtitles,
+survive two Surface replacements, seek to a distinct frame, preserve EOS,
+stop, and release their decoder state. The result verifier rejects skipped,
+extra, emulator-labelled, failed, or errored cases and writes
+`acceptance.json`, binding the exact commit, upstream revisions, device build,
+four runtime-library hashes, complete payload-tree hash, and JUnit hash. Only
+that JSON and the JUnit XML are retained; full device logs are not copied. The
+temporary test package is removed after every outcome.
+
+Building the APK or passing on an emulator does not satisfy this gate. Keep the
+physical device awake and visible for the screenshot-based video/subtitle
+checks, and retain the generated evidence with the release review.
+
 ### Verified source-build evidence
 
 On 2026-08-10 the exact pinned recipe completed on macOS with NDK `29.0.14206865` and CMake
@@ -249,6 +286,8 @@ checkouts, and the matching `recipeRevision`.
 
 ## Publication gates still open
 
+- pass the fail-closed harness on representative physical ARM hardware and retain its hash-bound
+  `acceptance.json` with the final tested commit;
 - review and approve the exact module lists and linked members emitted by the fail-closed audits,
   then bind approved SPDX expressions and complete notices to the recorded source/archive hashes;
 - promote the NDK component in the final legal manifest to `corresponding-source-mapped` only after

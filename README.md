@@ -82,8 +82,8 @@ calls Compose and never waits for a UI render.
   audits. Real ARM64/API 35 instrumented tests cover MediaCodec and software
   decode, subtitle composition, repeated Surface replacement, seek, stop, and
   destruction. The candidate remains deliberately release-ineligible until its
-  conservative SPDX sets and final release-bound source artifacts are reviewed
-  and closed.
+  fail-closed physical-device harness passes and its conservative SPDX sets and
+  final release-bound source artifacts are reviewed and closed.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 

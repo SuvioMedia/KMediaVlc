@@ -910,6 +910,40 @@ def verify_android_contract(root: Path) -> None:
     ):
         fail("The Android bundled playback gate does not preserve end-of-stream state.")
 
+    device_smoke = (root / "scripts/run_android_device_smoke.sh").read_text(
+        encoding="utf-8"
+    )
+    device_results = (
+        root / "scripts/verify_android_device_smoke_results.py"
+    ).read_text(encoding="utf-8")
+    device_smoke_markers = [
+        "status --porcelain",
+        "ro.kernel.qemu",
+        "ro.boot.qemu",
+        "ro.hardware",
+        "ANDROID_SERIAL=",
+        ":runtime-android:connectedDebugAndroidTest",
+        "android.testInstrumentationRunnerArguments.class",
+        "VlcAndroidPlaybackInstrumentedTest",
+        "the KMediaVlc Android test package already exists",
+        "adb_device uninstall",
+        "verify_android_device_smoke_results.py",
+    ]
+    device_result_markers = [
+        "REQUIRED_LIBRARIES",
+        "payload_tree",
+        "physical-device result is not an exact two-test pass",
+        '"(avd)"',
+        '"qemuRejected": True',
+        '"treeSha256"',
+        '"testResultsSha256"',
+    ]
+    if (
+        not all(marker in device_smoke for marker in device_smoke_markers)
+        or not all(marker in device_results for marker in device_result_markers)
+    ):
+        fail("The physical Android playback acceptance gate is incomplete.")
+
     android_build = (root / "runtime-android/build.gradle.kts").read_text(encoding="utf-8")
     gradle_markers = [
         'setOf("arm64-v8a", "armeabi-v7a")',
@@ -1104,6 +1138,8 @@ def verify_android_contract(root: Path) -> None:
         "not a published native payload yet" not in documentation
         or "Publication gates still open" not in documentation
         or "does not change process-wide `HOME`" not in documentation
+        or "Physical-device acceptance harness" not in documentation
+        or "acceptance.json" not in documentation
     ):
         fail("Android documentation must remain explicit about its open release gates.")
 
