@@ -56,9 +56,10 @@ calls Compose and never waits for a UI render.
   IOSurface and DMA-BUF import, fences, and native integration tests exist.
 - Android has a two-ABI AAR and direct libVLC 4 ANativeWindow bridge. Its
   pinned source recipe now completes real ARM64 and ARMv7 builds and emits an
-  exact static-link audit. The candidate remains deliberately release-ineligible
-  until the emitted contrib/license graph and device surface-lifecycle tests are
-  reviewed and closed.
+  exact static-link audit plus a hash-bound legal-evidence bundle inside the
+  candidate AAR. The candidate remains deliberately release-ineligible until
+  its conservative SPDX sets, corresponding source, and device
+  surface-lifecycle tests are reviewed and closed.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 

@@ -23,6 +23,10 @@ jni/armeabi-v7a/libvlc.so
 jni/armeabi-v7a/libkmediavlc_android.so
 ```
 
+A source-built candidate also carries `legal/android-static-legal.json` plus exactly 83 contrib
+license/patent/source-notice files and three NDK evidence files. These are build evidence, not
+additional native libraries.
+
 The AAR has `minSdk=28`. Both libraries use 16 KiB ELF load alignment. C++ is linked
 statically, so neither `libc++_shared.so` nor VideoLAN's broad `libvlcjni.so` wrapper is packaged.
 The official `libvlcjni` repository is used only as the pinned source-build machinery that folds
@@ -97,6 +101,14 @@ source tarballs, 83 exact in-archive license/patent/source-notice records, and t
 notices/identity file. It also records a conservative candidate SPDX set for each component;
 those candidates remain explicitly pending linked-member review and are not an eligibility
 decision.
+
+After both ABI reports agree byte-for-byte on their component evidence,
+`scripts/stage_android_legal_evidence.py` copies the 86 hash-matched records into the candidate
+payload without extracting either source tree. Its path-free manifest binds both ABI report
+hashes, both `libvlc.so` hashes, the component-policy hash, every staged file hash, and the null
+effective-license field. Gradle rehashes the complete bundle and packages it under
+`assets/kmediavlc/legal/ANDROID_STATIC/`. Publication requires that manifest and every component
+to be explicitly promoted to `approved`; editing `releaseEligible=true` alone is insufficient.
 
 ### Verified source-build evidence
 

@@ -55,6 +55,9 @@
   "requiresModuleLicenseAudit": true,
   "requiresCompiledModuleLicenseAudit": true,
   "requiresLinkerMapAudit": true,
+  "legalEvidenceBundle": "legal/android-static-legal.json",
+  "requiresIdenticalAbiComponentEvidence": true,
+  "requiresApprovedLegalEvidenceForPublication": true,
   "requiresDeviceSurfaceLifecycleTest": true,
   "forbidsStockNightly": true,
   "candidateReleaseEligible": false

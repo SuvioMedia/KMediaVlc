@@ -144,6 +144,14 @@ for abi in arm64-v8a armeabi-v7a; do
     fi
 done
 
+python3 "$project_root/scripts/stage_android_legal_evidence.py" \
+    --root "$project_root" \
+    --vlc-source "$vlc_source" \
+    --ndk "$ndk_directory" \
+    --audit "$audit_directory/arm64-v8a.json" \
+    --audit "$audit_directory/armeabi-v7a.json" \
+    --output "$output_directory/legal"
+
 cat > "$output_directory/android-runtime.properties" <<EOF
 schemaVersion=1
 vlcRevision=$expected_vlc_revision
@@ -159,3 +167,4 @@ EOF
 
 echo "Android source-build candidate staged at $output_directory (releaseEligible=false)."
 echo "Path-free per-ABI link audits staged at $audit_directory."
+echo "Hash-bound Android legal evidence staged under $output_directory/legal."

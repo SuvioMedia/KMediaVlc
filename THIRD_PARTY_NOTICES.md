@@ -34,6 +34,11 @@ candidate SPDX sets remain marked `pending-linked-member-review`. The runtime
 remains release-ineligible until that review, packaged notice completion, and
 the NDK corresponding-source map are approved.
 
+Candidate AARs include the exact selected evidence inputs under
+`assets/kmediavlc/legal/ANDROID_STATIC/` together with a manifest that binds both ABI audits and
+all file hashes. Inclusion makes the raw evidence inspectable; it does not change the candidate
+SPDX sets into an approved aggregate license conclusion.
+
 ## Windows x86_64 playback dependency inventory
 
 The following closed inventory is derived from the pinned contrib inputs. Publication remains blocked until the matching native link audit changes both review states to `approved` for the exact commit.

@@ -63,3 +63,9 @@ promoted only to `candidate-source-mapped-license-review-pending`. Each linked
 member still needs reviewed SPDX and packaged notice metadata, and the NDK
 inputs still need their complete corresponding-source map, before the manifest
 can advance further.
+
+The source builder stages those raw records as a separate hash-bound legal bundle only after the
+two ABI audit reports have identical component evidence. The AAR verifier rejects any missing,
+extra, symbolic, resized, or rehashed legal file and binds the bundle to the current static
+component policy. Candidate builds package the evidence for review, but Maven publication also
+requires `reviewStatus=approved` and a non-null effective SPDX expression.

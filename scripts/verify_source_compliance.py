@@ -371,8 +371,11 @@ def verify_android_contract(root: Path) -> None:
         "usesPrebuiltContribs", "usesPublishedLibVlcAar",
         "requiresCoreJniOnLoadFirst", "requiresPerFileInventory",
         "requiresModuleLicenseAudit", "requiresCompiledModuleLicenseAudit",
-        "requiresLinkerMapAudit", "requiresDeviceSurfaceLifecycleTest",
-        "forbidsStockNightly", "candidateReleaseEligible",
+        "requiresLinkerMapAudit", "legalEvidenceBundle",
+        "requiresIdenticalAbiComponentEvidence",
+        "requiresApprovedLegalEvidenceForPublication",
+        "requiresDeviceSurfaceLifecycleTest", "forbidsStockNightly",
+        "candidateReleaseEligible",
     }
     if set(recipe) != expected_keys or recipe.get("schemaVersion") != 1:
         fail("The Android source-build recipe fields are not closed.")
@@ -412,10 +415,14 @@ def verify_android_contract(root: Path) -> None:
     required_true = [
         "requiresCoreJniOnLoadFirst", "requiresPerFileInventory",
         "requiresModuleLicenseAudit", "requiresCompiledModuleLicenseAudit",
-        "requiresLinkerMapAudit", "requiresDeviceSurfaceLifecycleTest", "forbidsStockNightly",
+        "requiresLinkerMapAudit", "requiresIdenticalAbiComponentEvidence",
+        "requiresApprovedLegalEvidenceForPublication", "requiresDeviceSurfaceLifecycleTest",
+        "forbidsStockNightly",
     ]
     if any(recipe.get(key) is not True for key in required_true):
         fail("The Android audit requirements were weakened.")
+    if recipe.get("legalEvidenceBundle") != "legal/android-static-legal.json":
+        fail("The Android hash-bound legal evidence path changed.")
     if (
         recipe.get("usesPrebuiltContribs") is not False
         or recipe.get("usesPublishedLibVlcAar") is not False
@@ -647,6 +654,10 @@ def verify_android_contract(root: Path) -> None:
         'minSdk = 28',
         'require(values == expectedManifest("true"))',
         "kmediaVlcAndroidNativePayloadDirectory",
+        "AndroidLegalEvidence.read",
+        "android-static-legal.json",
+        "assets/kmediavlc/legal/ANDROID_STATIC/",
+        "Publishing requires approved hash-bound Android legal evidence.",
     ]
     if not all(marker in android_build for marker in gradle_markers):
         fail("The Android AAR payload or publication gate is incomplete.")
@@ -658,12 +669,14 @@ def verify_android_contract(root: Path) -> None:
         "APP_LDFLAGS=",
         "ANDROID_NDK=",
         "create_android_link_audit.py",
+        "stage_android_legal_evidence.py",
         "libvlcjni-kmediavlc",
         "0001-kmediavlc-android-static-module-policy.patch",
         "upstream process-path line suppressed",
         "libkmediavlc_android.so",
         "releaseEligible=false",
         "0x4000",
+        '--output "$output_directory/legal"',
     ]
     if not all(marker in builder for marker in builder_markers):
         fail("The Android source builder does not produce a fail-closed candidate.")
@@ -692,6 +705,22 @@ def verify_android_contract(root: Path) -> None:
     ]
     if not all(marker in audit_generator for marker in audit_markers):
         fail("The Android exact-link audit generator is incomplete.")
+
+    legal_stager = (root / "scripts/stage_android_legal_evidence.py").read_text(
+        encoding="utf-8"
+    )
+    legal_stager_markers = [
+        "candidate-linked-member-review-pending",
+        "pending-linked-member-review",
+        "read_archive_member",
+        "Android ABI audits do not have identical static component evidence.",
+        '"effectiveLicenseSpdx": None',
+        '"candidateLicenseInventorySpdx"',
+        "Android legal evidence file count differs from the closed policy.",
+        "partial.rename(output)",
+    ]
+    if not all(marker in legal_stager for marker in legal_stager_markers):
+        fail("The Android hash-bound legal evidence stager is incomplete.")
 
     policy_patch = (
         root / "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"

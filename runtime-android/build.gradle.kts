@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
 
 import com.android.build.api.dsl.LibraryExtension
+import groovy.json.JsonSlurper
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.security.MessageDigest
 import java.util.zip.ZipFile
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
@@ -24,6 +26,259 @@ private val VLC_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
 private val LIBVLCJNI_REVISION = "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21"
 private val ANDROID_ABIS = setOf("arm64-v8a", "armeabi-v7a")
 private val ANDROID_LIBRARIES = setOf("libkmediavlc_android.so", "libvlc.so")
+private object AndroidLegalEvidence {
+private const val VLC_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+private val REVIEW_STATES =
+    setOf("candidate-linked-member-review-pending", "approved")
+private val CANDIDATE_LICENSES =
+    setOf(
+        "Apache-2.0",
+        "Apache-2.0 WITH LLVM-exception",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
+        "BSL-1.0",
+        "CC0-1.0",
+        "FTL",
+        "IJG",
+        "ISC",
+        "LGPL-2.0-or-later",
+        "LGPL-2.1-only",
+        "LGPL-2.1-or-later",
+        "Libpng-2.0",
+        "LicenseRef-Public-Domain",
+        "MIT",
+        "TU-Berlin-1.0",
+        "Unicode-DFS-2016",
+        "Zlib",
+    )
+
+data class Bundle(
+    val reviewStatus: String,
+    val effectiveLicenseSpdx: String?,
+    val files: Set<String>,
+)
+
+private fun sha256(file: File): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    file.inputStream().buffered().use { source ->
+        val buffer = ByteArray(1024 * 1024)
+        while (true) {
+            val count = source.read(buffer)
+            if (count < 0) break
+            digest.update(buffer, 0, count)
+        }
+    }
+    return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+}
+
+private fun safeLegalPath(value: Any?): String {
+    require(value is String && value == value.replace('\\', '/')) {
+        "Android legal evidence contains a non-canonical path."
+    }
+    val parts = value.split('/')
+    require(
+        parts.isNotEmpty() &&
+            parts.none { it.isEmpty() || it == "." || it == ".." } &&
+            parts.all { it.matches(Regex("[A-Za-z0-9][A-Za-z0-9._+-]*")) },
+    ) {
+        "Android legal evidence contains an unsafe path: $value"
+    }
+    return value
+}
+
+fun read(payloadRoot: File, staticPolicy: File): Bundle {
+    val legalRoot = payloadRoot.resolve("legal")
+    val manifestFile = legalRoot.resolve("android-static-legal.json")
+    require(
+        legalRoot.isDirectory &&
+            !Files.isSymbolicLink(legalRoot.toPath()) &&
+            manifestFile.isFile &&
+            !Files.isSymbolicLink(manifestFile.toPath()),
+    ) {
+        "Android native payload legal evidence is missing or symbolic."
+    }
+    legalRoot.walkTopDown().forEach { path ->
+        require(!Files.isSymbolicLink(path.toPath())) {
+            "Android native payload legal evidence contains a symbolic path."
+        }
+    }
+    val manifest = JsonSlurper().parse(manifestFile) as? Map<*, *>
+        ?: error("Android legal evidence manifest root must be an object.")
+    require((manifest["schemaVersion"] as? Number)?.toInt() == 1) {
+        "Android legal evidence schema is unsupported."
+    }
+    require(manifest["vlcRevision"] == VLC_REVISION && manifest["ndkRevision"] == "29.0.14206865") {
+        "Android legal evidence identity differs from the native runtime."
+    }
+    val reviewStatus = requireNotNull(manifest["reviewStatus"] as? String) {
+        "Android legal evidence review state is missing."
+    }
+    require(reviewStatus in REVIEW_STATES) {
+        "Android legal evidence review state is invalid."
+    }
+    val effectiveLicense = manifest["effectiveLicenseSpdx"] as? String
+    if (reviewStatus == "approved") {
+        require(!effectiveLicense.isNullOrBlank()) {
+            "Approved Android legal evidence requires an effective SPDX expression."
+        }
+    } else {
+        require(manifest["effectiveLicenseSpdx"] == null) {
+            "Candidate Android legal evidence must not declare an effective license."
+        }
+    }
+    val candidateLicenses = manifest["candidateLicenseInventorySpdx"] as? List<*>
+    require(
+        candidateLicenses != null &&
+            candidateLicenses == candidateLicenses.filterIsInstance<String>().distinct().sorted() &&
+            candidateLicenses.toSet() == CANDIDATE_LICENSES,
+    ) {
+        "Android legal evidence candidate SPDX inventory is incomplete."
+    }
+    val policy = manifest["staticComponentPolicy"] as? Map<*, *>
+    require(
+        policy?.get("path") == "compliance/policy/android-static-components.json" &&
+            policy["sha256"] == sha256(staticPolicy),
+    ) {
+        "Android legal evidence is not bound to the current static component policy."
+    }
+    val audits = manifest["abiAudits"] as? List<*>
+    require(audits?.size == 2) { "Android legal evidence must bind both ABI audits." }
+    val auditTargets =
+        audits.map { entry ->
+            val value = entry as? Map<*, *>
+                ?: error("Android legal evidence ABI audit entry is invalid.")
+            require(
+                (value["reportSha256"] as? String)?.matches(Regex("[0-9a-f]{64}")) == true &&
+                    (value["libvlcSha256"] as? String)?.matches(Regex("[0-9a-f]{64}")) == true,
+            ) {
+                "Android legal evidence ABI audit hashes are invalid."
+            }
+            value["target"] as? String
+        }.toSet()
+    require(auditTargets == setOf("android-arm64-v8a", "android-armeabi-v7a")) {
+        "Android legal evidence ABI audit targets are incomplete."
+    }
+
+    val topFiles = manifest["files"] as? List<*>
+    require(topFiles?.size == 86) { "Android legal evidence must contain exactly 86 files." }
+    val fileEntries = linkedMapOf<String, Map<*, *>>()
+    topFiles.forEach { raw ->
+        val entry = raw as? Map<*, *>
+            ?: error("Android legal evidence file entry is invalid.")
+        val path = safeLegalPath(entry["path"])
+        require(fileEntries.put(path, entry) == null) {
+            "Android legal evidence contains a duplicate file: $path"
+        }
+        val expectedHash = entry["sha256"] as? String
+        val expectedSize = (entry["size"] as? Number)?.toLong()
+        val file = legalRoot.resolve(path)
+        require(
+            file.isFile &&
+                !Files.isSymbolicLink(file.toPath()) &&
+                expectedHash?.matches(Regex("[0-9a-f]{64}")) == true &&
+                expectedSize != null && expectedSize > 0L &&
+                file.length() == expectedSize && sha256(file) == expectedHash,
+        ) {
+            "Android legal evidence file differs from its manifest: $path"
+        }
+    }
+    require(
+        fileEntries.keys.count { it.startsWith("contrib/") } == 83 &&
+            fileEntries.keys.count { it.startsWith("ndk/") } == 3,
+    ) {
+        "Android legal evidence contrib/NDK split is invalid."
+    }
+
+    val components = manifest["components"] as? List<*>
+    require(components?.size == 55) { "Android legal evidence component closure is incomplete." }
+    val componentIds = mutableListOf<String>()
+    val componentFiles = mutableSetOf<String>()
+    components.forEach { raw ->
+        val component = raw as? Map<*, *>
+            ?: error("Android legal evidence component entry is invalid.")
+        val id = component["id"] as? String
+        require(id?.matches(Regex("[a-z0-9][a-z0-9-]+")) == true) {
+            "Android legal evidence component identifier is unsafe."
+        }
+        val kind = component["kind"]
+        require(kind in setOf("VLC_CONTRIB", "NDK_TOOLCHAIN")) {
+            "Android legal evidence component kind is invalid: $id"
+        }
+        require((component["version"] as? String)?.isNotBlank() == true) {
+            "Android legal evidence component version is missing: $id"
+        }
+        val componentReview = component["licenseReviewStatus"]
+        require(
+            componentReview ==
+                if (reviewStatus == "approved") "approved" else "pending-linked-member-review",
+        ) {
+            "Android legal evidence component review state is invalid: $id"
+        }
+        val licenses = component["candidateLicenseSpdx"] as? List<*>
+        require(
+            licenses != null &&
+                licenses == licenses.filterIsInstance<String>().distinct().sorted() &&
+                licenses.all { it in CANDIDATE_LICENSES },
+        ) {
+            "Android legal evidence component candidate SPDX set is invalid: $id"
+        }
+        val sourceArchives = component["sourceArchives"] as? List<*>
+        val sourceStatus = component["sourceStatus"]
+        if (kind == "VLC_CONTRIB") {
+            require(
+                sourceStatus == "source-archive-hashes-recorded" &&
+                    !sourceArchives.isNullOrEmpty(),
+            ) {
+                "Android legal evidence contrib source hashes are incomplete: $id"
+            }
+            sourceArchives.forEach { source ->
+                val entry = source as? Map<*, *>
+                    ?: error("Android legal evidence source archive entry is invalid.")
+                require(
+                    (entry["path"] as? String)?.matches(
+                        Regex("vlc-contrib-tarballs/[A-Za-z0-9][A-Za-z0-9.+_-]+\\.tar\\.(gz|xz|bz2)"),
+                    ) == true &&
+                        (entry["sha256"] as? String)?.matches(Regex("[0-9a-f]{64}")) == true &&
+                        ((entry["size"] as? Number)?.toLong() ?: 0L) > 0L,
+                ) {
+                    "Android legal evidence source archive hash is invalid: $id"
+                }
+            }
+        } else {
+            require(
+                sourceArchives?.isEmpty() == true &&
+                    sourceStatus in
+                    setOf("pending-corresponding-source-map", "corresponding-source-mapped"),
+            ) {
+                "Android legal evidence NDK source state is invalid."
+            }
+        }
+        val files = component["files"] as? List<*>
+        require(!files.isNullOrEmpty()) { "Android legal evidence component has no files: $id" }
+        files.forEach { file ->
+            val entry = file as? Map<*, *>
+                ?: error("Android legal evidence component file entry is invalid.")
+            val path = safeLegalPath(entry["path"])
+            require(entry == fileEntries[path] && componentFiles.add(path)) {
+                "Android legal evidence component file map is inconsistent: $path"
+            }
+        }
+        componentIds.add(id)
+    }
+    require(componentIds == componentIds.distinct().sorted() && componentFiles == fileEntries.keys) {
+        "Android legal evidence component/file closure is not canonical."
+    }
+    val actualFiles =
+        legalRoot.walkTopDown()
+            .filter(File::isFile)
+            .map { it.relativeTo(legalRoot).invariantSeparatorsPath }
+            .toSet()
+    require(actualFiles == fileEntries.keys + "android-static-legal.json") {
+        "Android legal evidence directory contains missing or extra files."
+    }
+    return Bundle(reviewStatus, effectiveLicense, actualFiles)
+}
+}
 
 private fun readClosedProperties(file: File): Map<String, String> {
     require(file.isFile && !Files.isSymbolicLink(file.toPath())) {
@@ -64,6 +319,10 @@ abstract class VerifyVlcAndroidPayload : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val payload: DirectoryProperty
 
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val staticPolicy: RegularFileProperty
+
     @TaskAction
     fun verify() {
         if (!payload.isPresent) return
@@ -73,10 +332,13 @@ abstract class VerifyVlcAndroidPayload : DefaultTask() {
         require(root.isDirectory && !Files.isSymbolicLink(root.toPath())) {
             "Android native payload must be a real directory."
         }
+        val legalBundle = AndroidLegalEvidence.read(root, staticPolicy.get().asFile)
         val expectedFiles =
             abis.flatMap { abi ->
                 libraries.map { library -> "jni/$abi/$library" }
-            }.toSet() + "android-runtime.properties"
+            }.toSet() +
+                "android-runtime.properties" +
+                legalBundle.files.map { "legal/$it" }
         val actualFiles =
             root.walkTopDown()
                 .filter(File::isFile)
@@ -135,6 +397,15 @@ abstract class VerifyVlcAndroidAar : DefaultTask() {
     @get:Input
     abstract val expectNative: Property<Boolean>
 
+    @get:Optional
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val payload: DirectoryProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val staticPolicy: RegularFileProperty
+
     @TaskAction
     fun verify() {
         ZipFile(aar.get().asFile).use { archive ->
@@ -186,7 +457,15 @@ abstract class VerifyVlcAndroidAar : DefaultTask() {
                         "libvorbis-COPYING.txt",
                         "libxml2-Copyright.txt",
                         "zlib-LICENSE.txt",
-                    ).map { "assets/kmediavlc/legal/LICENSES/$it" }.toSet()
+                    ).map { "assets/kmediavlc/legal/LICENSES/$it" }.toSet() +
+                    if (expectNative.get()) {
+                        AndroidLegalEvidence.read(payload.get().asFile, staticPolicy.get().asFile)
+                            .files
+                            .map { "assets/kmediavlc/legal/ANDROID_STATIC/$it" }
+                            .toSet()
+                    } else {
+                        emptySet()
+                    }
             val actualLegal =
                 names.filter {
                     it.startsWith("assets/kmediavlc/legal/") && !it.endsWith('/')
@@ -259,12 +538,18 @@ val prepareAndroidAssets =
         from(rootProject.layout.projectDirectory.dir("LICENSES")) { into("legal/LICENSES") }
         nativePayload.orNull?.let {
             from(it.resolve("android-runtime.properties")) { into("runtime") }
+            from(it.resolve("legal")) { into("legal/ANDROID_STATIC") }
         }
     }
 
 val verifyNativePayload =
     tasks.register<VerifyVlcAndroidPayload>("verifyNativePayload") {
         payload.set(layout.dir(nativePayload))
+        staticPolicy.set(
+            rootProject.layout.projectDirectory.file(
+                "compliance/policy/android-static-components.json",
+            ),
+        )
     }
 
 tasks.named("preBuild") { dependsOn(prepareAndroidAssets, verifyNativePayload) }
@@ -274,6 +559,12 @@ val verifyAndroidAar =
         dependsOn("bundleReleaseAar")
         aar.set(layout.buildDirectory.file("outputs/aar/runtime-android-release.aar"))
         expectNative.set(nativePayload.isPresent)
+        payload.set(layout.dir(nativePayload))
+        staticPolicy.set(
+            rootProject.layout.projectDirectory.file(
+                "compliance/policy/android-static-components.json",
+            ),
+        )
     }
 
 val androidJavadocJar =
@@ -293,6 +584,14 @@ fun requirePublicationPayload() {
     val values = readClosedProperties(nativePayload.get().resolve("android-runtime.properties"))
     require(values == expectedManifest("true")) {
         "Publishing requires a release-eligible Android payload with the exact pinned manifest."
+    }
+    val legalBundle =
+        AndroidLegalEvidence.read(
+            nativePayload.get(),
+            rootProject.file("compliance/policy/android-static-components.json"),
+        )
+    require(legalBundle.reviewStatus == "approved" && !legalBundle.effectiveLicenseSpdx.isNullOrBlank()) {
+        "Publishing requires approved hash-bound Android legal evidence."
     }
     require(correspondingSourceArchive.isPresent) {
         "Publishing requires -PcorrespondingSourceArchive."
