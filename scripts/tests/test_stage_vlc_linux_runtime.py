@@ -71,9 +71,7 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             )
             for family, names in policy["modulesByFamily"].items():
                 for name in names:
-                    self.write_file(
-                        install / f"lib/vlc/plugins/{family}/lib{name}_plugin.so"
-                    )
+                    self.write_file(install / f"lib/vlc/plugins/lib{name}_plugin.so")
 
             cache_generator = install / "libexec/vlc/vlc-cache-gen"
             self.write_file(cache_generator)

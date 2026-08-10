@@ -26,6 +26,9 @@ The pinned prerelease Meson graph installs libVLC as the unversioned
 `libvlc.so`. Staging deliberately renames that input to the application-private
 `libvlc.so.12` contract and writes the matching SONAME and `$ORIGIN` RUNPATH;
 the source install is never mistaken for an already versioned upstream ABI.
+Meson likewise installs plugin binaries in one flat directory. The stager
+selects their globally unique filenames there, while retaining each logical
+module family in the inventory and audit report.
 
 ## GPU frame transport
 

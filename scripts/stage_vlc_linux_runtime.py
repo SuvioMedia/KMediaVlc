@@ -370,7 +370,7 @@ def main() -> None:
     selected_names: list[str] = []
     for family, name in modules:
         filename = f"lib{name}_plugin.so"
-        source = require_plain_file(plugin_root, f"{family}/{filename}")
+        source = require_plain_file(plugin_root, filename)
         relative = f"lib/vlc/plugins/{filename}"
         destination = plugin_destination / filename
         result = copy_file(source, destination)

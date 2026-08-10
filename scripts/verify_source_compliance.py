@@ -1361,6 +1361,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         '"--set-rpath"',
         'return "$ORIGIN/../../../bin" if role == "PLUGIN" else "$ORIGIN"',
         '(require_plain_file(install, "lib/libvlc.so"), "bin/libvlc.so.12", "LIBVLC")',
+        "source = require_plain_file(plugin_root, filename)",
         'dependency not in allowed_system_dependencies',
         '"GNU_STACK"',
         '"GNU_RELRO"',
