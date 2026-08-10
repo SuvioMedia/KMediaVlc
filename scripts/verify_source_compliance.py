@@ -1030,6 +1030,219 @@ def verify_ios_runtime_contract(root: Path) -> None:
 
 
 def verify_linux_runtime_contract(root: Path) -> None:
+    playback = load_json(root / "compliance/policy/linux-playback-modules.json")
+    expected_targets = ["linux-x86_64", "linux-aarch64"]
+    expected_families = {
+        "access",
+        "audio_filter",
+        "audio_mixer",
+        "audio_output",
+        "codec",
+        "demux",
+        "keystore",
+        "logger",
+        "misc",
+        "packetizer",
+        "stream_filter",
+        "text_renderer",
+        "video_chroma",
+        "video_output",
+    }
+    if (
+        playback.get("schemaVersion") != 1
+        or playback.get("targets") != expected_targets
+        or playback.get("vlcRevision") != PINNED_REVISION
+        or playback.get("reviewStatus")
+        not in {"pending-elf-source-license-and-dmabuf-audit", "approved"}
+        or playback.get("primaryLicenseSpdx") != "LGPL-2.1-or-later"
+    ):
+        fail("Linux playback module policy has an unsupported identity or review state.")
+    families = playback.get("modulesByFamily")
+    if not isinstance(families, dict) or set(families) != expected_families:
+        fail("Linux playback module families are incomplete or overbroad.")
+    modules: list[str] = []
+    for family, names in families.items():
+        if not isinstance(names, list) or names != sorted(names) or not names:
+            fail(f"Linux playback module family is not a closed sorted list: {family}")
+        modules.extend(names)
+    required_modules = {
+        "avcodec",
+        "dav1d",
+        "freetype",
+        "gles2",
+        "glinterop_sw",
+        "glsampler_builtin",
+        "gnutls",
+        "https",
+        "libass",
+        "mkv",
+        "mp4",
+        "pulse",
+        "vgl",
+        "vmem",
+    }
+    forbidden_platform_modules = {
+        "auhal",
+        "audiounit_ios",
+        "cvpx",
+        "glinterop_cvpx",
+        "securetransport",
+        "videotoolbox",
+    }
+    if (
+        len(modules) != 85
+        or len(set(modules)) != 85
+        or not required_modules.issubset(modules)
+        or forbidden_platform_modules.intersection(modules)
+        or any(
+            not isinstance(name, str) or not re.fullmatch(r"[a-z0-9_]+", name)
+            for name in modules
+        )
+    ):
+        fail("Linux playback allowlist must contain its 85 unique platform modules.")
+    expected_additional = {
+        "mkv": ["MIT"],
+        "opus": ["BSD-3-Clause"],
+        "ts": ["BSD-3-Clause"],
+    }
+    if playback.get("additionalDirectSourceLicenses") != expected_additional:
+        fail("Linux playback direct-source license exceptions changed without review.")
+
+    binary = load_json(root / "compliance/policy/linux-binary-components.json")
+    if (
+        binary.get("schemaVersion") != 1
+        or binary.get("targets") != expected_targets
+        or binary.get("vlcRevision") != PINNED_REVISION
+        or binary.get("reviewStatus")
+        not in {"pending-link-command-and-license-audit", "approved"}
+        or binary.get("buildOnlyContribPackages") != []
+    ):
+        fail("Linux binary component policy has an unsupported identity or review state.")
+    expected_components = {
+        "dav1d",
+        "ffmpeg",
+        "flac",
+        "freetype",
+        "fribidi",
+        "gmp",
+        "gnutls",
+        "gnutls-libtasn1",
+        "gnutls-libunistring",
+        "gsm",
+        "harfbuzz",
+        "libass",
+        "libdvbpsi",
+        "libebml",
+        "libjpeg-turbo",
+        "libmatroska",
+        "libogg",
+        "libpng",
+        "libvorbis",
+        "libvpx",
+        "libxml2",
+        "nettle",
+        "openjpeg",
+        "opus",
+        "soxr",
+        "zlib",
+    }
+    components = binary.get("components")
+    if (
+        not isinstance(components, dict)
+        or list(components) != sorted(components)
+        or set(components) != expected_components
+    ):
+        fail("Linux binary components must match the closed playback dependency map.")
+    for component_id, component_policy in components.items():
+        if not re.fullmatch(r"[a-z0-9-]+", component_id) or not isinstance(
+            component_policy, dict
+        ):
+            fail(f"Invalid Linux binary component: {component_id!r}")
+        if set(component_policy) != {"version", "licenseSpdx", "sourceArchive"}:
+            fail(f"Linux binary component fields are not closed: {component_id}")
+        licenses = component_policy["licenseSpdx"]
+        if (
+            not isinstance(licenses, list)
+            or licenses != sorted(set(licenses))
+            or not licenses
+            or any(license_id not in ALLOWED_LICENSES for license_id in licenses)
+        ):
+            fail(f"Linux binary component licenses are not canonical: {component_id}")
+        if not isinstance(component_policy["version"], str) or not component_policy["version"]:
+            fail(f"Linux binary component version is missing: {component_id}")
+        if not re.fullmatch(
+            r"[A-Za-z0-9.+_-]+\.tar\.(?:gz|xz|bz2)",
+            component_policy["sourceArchive"],
+        ):
+            fail(f"Linux binary component source archive is unsafe: {component_id}")
+    expected_component_modules = {
+        "avcodec",
+        "dav1d",
+        "flac",
+        "freetype",
+        "gnutls",
+        "inflate",
+        "jpeg",
+        "libass",
+        "mkv",
+        "mp4",
+        "ogg",
+        "opus",
+        "packetizer_avparser",
+        "png",
+        "soxr",
+        "swscale",
+        "ts",
+        "vorbis",
+        "vpx",
+        "xml",
+    }
+    module_components = binary.get("moduleComponents")
+    if (
+        not isinstance(module_components, dict)
+        or set(module_components) != expected_component_modules
+    ):
+        fail("Linux binary module/component closure changed without review.")
+    referenced_components: set[str] = set()
+    for module, component_ids in module_components.items():
+        if (
+            module not in modules
+            or component_ids != sorted(set(component_ids))
+            or not component_ids
+        ):
+            fail(f"Linux binary module components are not canonical: {module}")
+        if any(component_id not in components for component_id in component_ids):
+            fail(f"Linux binary module references an unknown component: {module}")
+        referenced_components.update(component_ids)
+    if binary.get("coreComponents") != []:
+        fail("Linux core component closure changed without review.")
+    if referenced_components != set(components):
+        fail("Linux binary component policy contains unused or missing components.")
+    if binary.get("moduleAdditionalLicenses") != expected_additional:
+        fail("Linux binary direct-source license exceptions changed without review.")
+    expected_system_dependencies = [
+        "libEGL.so.1",
+        "libGLESv2.so.2",
+        "libatomic.so.1",
+        "libc.so.6",
+        "libdl.so.2",
+        "libdrm.so.2",
+        "libfontconfig.so.1",
+        "libgbm.so.1",
+        "libgcc_s.so.1",
+        "libm.so.6",
+        "libpthread.so.0",
+        "libpulse.so.0",
+        "librt.so.1",
+        "libstdc++.so.6",
+    ]
+    if (
+        binary.get("allowedSystemDependencies") != expected_system_dependencies
+        or binary.get("maximumSymbolVersions")
+        != {"GLIBC": "2.39", "GLIBCXX": "3.4.33", "CXXABI": "1.3.15"}
+    ):
+        fail("Linux ELF dependency or symbol-version ceiling changed without review.")
+
     recipe = load_json(root / "build-recipes/linux.json")
     expected_contribs = [
         "ass",
@@ -1061,9 +1274,12 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "libdrm",
         "libpulse",
     ]
+    expected_resolved_contribs = sorted(
+        expected_contribs + ["gmp", "gsm", "nettle", "openjpeg"]
+    )
     if (
         recipe.get("schemaVersion") != 1
-        or recipe.get("targets") != ["linux-x86_64", "linux-aarch64"]
+        or recipe.get("targets") != expected_targets
         or recipe.get("vlcRevision") != PINNED_REVISION
         or recipe.get("buildSystem") != "meson"
         or recipe.get("mesonVersion") != "1.10.0"
@@ -1071,6 +1287,8 @@ def verify_linux_runtime_contract(root: Path) -> None:
         or recipe.get("buildMode") != "shared"
         or recipe.get("usesPrebuiltContribs") is not False
         or recipe.get("selectedContribPackages") != expected_contribs
+        or recipe.get("resolvedContribPackages") != expected_resolved_contribs
+        or recipe.get("generatedContribMetadataTarget") != "meson-machinefile"
         or recipe.get("systemBuildDependencies") != expected_system_packages
         or recipe.get("renderEngine") != "GLES2"
         or recipe.get("frameTransport") != "DMA_BUF"
@@ -1091,6 +1309,12 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "--disable-all",
         "--disable-gpl",
         "--enable-gnutls",
+        "--enable-gmp",
+        "--enable-gsm",
+        "--enable-nettle",
+        "--enable-openjpeg",
+        "make -j1 .zlib",
+        "make -j1 .meson-machinefile",
         "--default-library=shared",
         "--prefer-static",
         "--wrap-mode=nodownload",
@@ -1112,9 +1336,11 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "linux-aarch64",
         "persist-credentials: false",
         "bash scripts/build_vlc_linux.sh",
-        "Build the pinned-ABI bridge and play a real CPU frame",
+        "Stage the closed runtime and play a real CPU frame",
+        "python3 scripts/stage_vlc_linux_runtime.py",
+        "--allow-audit-candidate",
+        'LD_LIBRARY_PATH="$stage/bin"',
         "pinnedVideoLanFixturePublishesCpuPullFrame",
-        "LD_LIBRARY_PATH=",
         "without retaining binaries",
     ]
     if not all(marker in workflow for marker in workflow_markers):
@@ -1122,29 +1348,57 @@ def verify_linux_runtime_contract(root: Path) -> None:
     if "upload-artifact" in workflow or "contents: write" in workflow:
         fail("Linux candidate validation must not publish or retain native payloads.")
 
+    stager = (root / "scripts/stage_vlc_linux_runtime.py").read_text(encoding="utf-8")
+    stager_markers = [
+        "EXPECTED_SELECTED_PLUGIN_COUNT = 85",
+        '"linux-x86_64": "Advanced Micro Devices X86-64"',
+        '"linux-aarch64": "AArch64"',
+        '"--set-soname"',
+        '"--set-rpath"',
+        'return "$ORIGIN/../../../bin" if role == "PLUGIN" else "$ORIGIN"',
+        'dependency not in allowed_system_dependencies',
+        '"GNU_STACK"',
+        '"GNU_RELRO"',
+        '"Build ID:',
+        '"--version-info"',
+        '"LD_LIBRARY_PATH": str(install / "lib")',
+        '"gpuPushEvidence": "pending-render-node-and-explicit-fence-test"',
+        '"vrConsumerEvidence": "pending-kmediaplayer-projection-acceptance"',
+    ]
+    if not all(marker in stager for marker in stager_markers) or "os.environ" in stager:
+        fail("The Linux stager does not close relocation, ELF, or pending GPU evidence.")
+
 
 def verify_legal_files(root: Path) -> None:
     windows_binary = load_json(root / "compliance/policy/windows-x86_64-binary-components.json")
     macos_binary = load_json(root / "compliance/policy/macos-aarch64-binary-components.json")
     ios_binary = load_json(root / "compliance/policy/ios-binary-components.json")
+    linux_binary = load_json(root / "compliance/policy/linux-binary-components.json")
     windows_components = windows_binary.get("components")
     macos_components = macos_binary.get("components")
     ios_components = ios_binary.get("components")
+    linux_components = linux_binary.get("components")
     if (
         not isinstance(windows_components, dict)
         or not isinstance(macos_components, dict)
         or not isinstance(ios_components, dict)
+        or not isinstance(linux_components, dict)
     ):
         fail("Legal notice component inventories are invalid.")
-    policies = [windows_components, macos_components, ios_components]
+    policies = [windows_components, macos_components, ios_components, linux_components]
     all_component_ids = set().union(*(set(policy) for policy in policies))
     for component_id in all_component_ids:
         definitions = [policy[component_id] for policy in policies if component_id in policy]
         if any(definition != definitions[0] for definition in definitions[1:]):
             fail(f"Cross-platform component terms disagree: {component_id}")
-    components = {**windows_components, **macos_components, **ios_components}
+    components = {
+        **windows_components,
+        **macos_components,
+        **ios_components,
+        **linux_components,
+    }
     if set(components) != set(COMPONENT_NOTICE_FILES):
-        fail("Legal notice mapping must cover the Windows/macOS component union exactly.")
+        fail("Legal notice mapping must cover the cross-platform component union exactly.")
     required = [
         root / "LICENSE",
         root / "NOTICE",

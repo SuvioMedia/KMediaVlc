@@ -11,6 +11,8 @@ on:
       - build-recipes/linux.json
       - scripts/build_vlc_linux.sh
       - scripts/stage_vlc_linux_runtime.py
+      - scripts/tests/test_stage_vlc_linux_runtime.py
+      - scripts/verify_source_compliance.py
       - compliance/policy/linux-**
       - native/**
       - runtime-desktop/**
@@ -106,7 +108,7 @@ jobs:
             readelf -h "$binary" | grep -Fq "Machine:                           $expected_machine"
           done < <(find "$install" -type f \( -name '*.so' -o -name '*.so.*' \) -print0)
 
-      - name: Build the pinned-ABI bridge and play a real CPU frame
+      - name: Stage the closed runtime and play a real CPU frame
         shell: bash
         run: |
           set -euo pipefail
@@ -116,9 +118,21 @@ jobs:
             --no-daemon --stacktrace --console=plain
           bridge="$GITHUB_WORKSPACE/build/native/${{ matrix.target }}/libkmediavlc_bridge.so"
           test -f "$bridge"
-          LD_LIBRARY_PATH="$install/lib" bash ./gradlew :runtime-desktop:test \
-            -PkmediaVlcNativeBridgePath="$bridge" \
-            -PkmediaVlcTestLibVlcPath="$install/lib/libvlc.so.12" \
-            -PkmediaVlcTestPluginDirectory="$install/lib/vlc/plugins" \
+          stage="$RUNNER_TEMP/kmediavlc-${{ matrix.target }}-candidate"
+          report="$RUNNER_TEMP/kmediavlc-${{ matrix.target }}-candidate.json"
+          python3 scripts/stage_vlc_linux_runtime.py \
+            --root "$GITHUB_WORKSPACE" \
+            --install "$install" \
+            --bridge "$bridge" \
+            --target "${{ matrix.target }}" \
+            --output "$stage" \
+            --report "$report" \
+            --allow-audit-candidate
+          test "$(jq -r .selectedPluginCount "$report")" = 85
+          test "$(jq -r .auditCandidate "$report")" = true
+          LD_LIBRARY_PATH="$stage/bin" bash ./gradlew :runtime-desktop:test \
+            -PkmediaVlcNativeBridgePath="$stage/bin/libkmediavlc_bridge.so" \
+            -PkmediaVlcTestLibVlcPath="$stage/bin/libvlc.so.12" \
+            -PkmediaVlcTestPluginDirectory="$stage/lib/vlc/plugins" \
             --tests '*.VlcDesktopPlayerIntegrationTest.pinnedVideoLanFixturePublishesCpuPullFrame' \
             --no-daemon --stacktrace --console=plain

@@ -128,12 +128,16 @@ contrib_options=(
     --enable-flac
     --enable-freetype2
     --enable-fribidi
+    --enable-gmp
     --enable-gnutls
+    --enable-gsm
     --enable-harfbuzz
     --enable-jpeg
     --enable-libxml2
     --enable-matroska
+    --enable-nettle
     --enable-ogg
+    --enable-openjpeg
     --enable-opus
     --enable-png
     --enable-soxr
@@ -149,7 +153,15 @@ contrib_options=(
         "${contrib_options[@]}"
     make list > "$build_directory/contrib-plan.txt"
     make -j"$jobs" fetch
+    # The native bootstrap can classify the host zlib as distribution-provided
+    # even when zlib was selected explicitly. That makes libpng's generated
+    # dependency stamp independent from the source-built zlib stamp. Install
+    # the pinned zlib first so libpng can never race the system header.
+    make -j1 .zlib
     make -j"$jobs" -k || make -j1
+    # This generated target is metadata rather than a linked contrib. It is
+    # needed to point VLC's native Meson build at the closed static prefix.
+    make -j1 .meson-machinefile
     make list > "$build_directory/contrib-list.txt"
 )
 
