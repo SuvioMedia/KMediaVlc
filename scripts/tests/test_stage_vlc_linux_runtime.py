@@ -117,6 +117,12 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             self.assertTrue(evidence["auditCandidate"])
             self.assertEqual(89, len(evidence["files"]))
             self.assertEqual(88, len(evidence["elf"]))
+            self.assertEqual(
+                ["libc.so.6"],
+                evidence["elf"][
+                    "lib/vlc/plugins/libfloat_mixer_plugin.so"
+                ]["dependencies"],
+            )
             self.assertTrue((output / "lib/vlc/plugins/plugins.dat").is_file())
 
     @staticmethod
@@ -148,7 +154,9 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             )
         if "-dW" in arguments:
             dependencies = ""
-            if role in {"libvlc", "plugin"}:
+            if role == "libvlc" or (
+                role == "plugin" and name != "libfloat_mixer_plugin.so"
+            ):
                 dependencies += " (NEEDED) Shared library: [libvlccore.so.9]\n"
             dependencies += " (NEEDED) Shared library: [libc.so.6]\n"
             runpath = "$ORIGIN/../../../bin" if role == "plugin" else "$ORIGIN"

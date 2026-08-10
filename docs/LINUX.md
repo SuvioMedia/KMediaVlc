@@ -25,6 +25,12 @@ than being interposed. This also makes the pinned static FFmpeg data references
 valid in AArch64 VLC plugins; undefined plugin ABI symbols still resolve from
 `libvlccore` normally.
 
+The build also uses `--as-needed`. A self-contained plugin such as
+`float_mixer` can therefore have no direct `DT_NEEDED` edge to `libvlccore`.
+The ELF audit accepts zero or one exact private-core edge for a plugin, while
+still requiring exactly one for `libvlc`; every other dependency remains on
+the closed system allowlist.
+
 The pinned prerelease Meson graph installs libVLC as the unversioned
 `libvlc.so`. Staging deliberately renames that input to the application-private
 `libvlc.so.12` contract and writes the matching SONAME and `$ORIGIN` RUNPATH;

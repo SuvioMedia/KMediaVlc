@@ -284,8 +284,14 @@ def audit_elf(
     if any("/" in dependency for dependency in dependencies):
         fail(f"Linux runtime contains an absolute DT_NEEDED entry: {path.name}")
     core_count = dependencies.count("libvlccore.so.9")
-    if role in {"LIBVLC", "PLUGIN"}:
+    if role == "LIBVLC":
         if core_count != 1:
+            fail(f"Linux runtime core dependency is not closed: {path.name}")
+    elif role == "PLUGIN":
+        # --as-needed legitimately removes this edge from self-contained
+        # modules such as float_mixer. When present, it must still name the
+        # single application-private core accepted below.
+        if core_count > 1:
             fail(f"Linux runtime core dependency is not closed: {path.name}")
     elif core_count != 0:
         fail(f"Unexpected Linux runtime core dependency: {path.name}")
