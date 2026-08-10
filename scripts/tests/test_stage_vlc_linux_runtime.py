@@ -76,13 +76,9 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
                     )
 
             cache_generator = install / "libexec/vlc/vlc-cache-gen"
-            self.write_executable(
-                cache_generator,
-                "#!/bin/sh\nprintf cache > \"$1/plugins.dat\"\n",
-            )
-            for name in ("patchelf", "strip"):
-                self.write_executable(tools / name, "#!/bin/sh\nexit 0\n")
-            self.write_executable(tools / "readelf", self.fake_readelf())
+            self.write_file(cache_generator)
+            for name in ("patchelf", "readelf", "strip"):
+                self.write_file(tools / name)
 
             arguments = [
                 "stage_vlc_linux_runtime.py",
@@ -110,7 +106,13 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
                     STAGER.main()
 
             with mock.patch.object(sys, "argv", arguments + ["--allow-audit-candidate"]):
-                STAGER.main()
+                with mock.patch.object(STAGER, "run_tool", side_effect=self.fake_run_tool):
+                    with mock.patch.object(
+                        STAGER.subprocess,
+                        "run",
+                        side_effect=self.fake_cache_generator,
+                    ):
+                        STAGER.main()
             evidence = json.loads(report.read_text(encoding="utf-8"))
             self.assertEqual(85, evidence["selectedPluginCount"])
             self.assertEqual(85, evidence["rawPluginCount"])
@@ -124,50 +126,55 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(b"synthetic-elf")
 
-    @staticmethod
-    def write_executable(path: Path, text: str) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
-        path.chmod(0o755)
+    def fake_run_tool(self, command: list[str], timeout_seconds: int = 180) -> str:
+        self.assertEqual(180, timeout_seconds)
+        tool = Path(command[0]).name
+        if tool in {"patchelf", "strip"}:
+            return ""
+        self.assertEqual("readelf", tool)
+        arguments = command[1:]
+        name = Path(arguments[-1]).name
+        if name == "libkmediavlc_bridge.so":
+            role = "bridge"
+        elif name == "libvlc.so.12":
+            role = "libvlc"
+        elif name == "libvlccore.so.9":
+            role = "core"
+        else:
+            role = "plugin"
 
-    @staticmethod
-    def fake_readelf() -> str:
-        return f"""#!{sys.executable}
-import sys
-from pathlib import Path
+        if "-h" in arguments:
+            return (
+                "  Class:                             ELF64\n"
+                "  Machine:                           Advanced Micro Devices X86-64\n"
+            )
+        if "-dW" in arguments:
+            dependencies = ""
+            if role in {"libvlc", "plugin"}:
+                dependencies += " (NEEDED) Shared library: [libvlccore.so.9]\n"
+            dependencies += " (NEEDED) Shared library: [libc.so.6]\n"
+            runpath = "$ORIGIN/../../../bin" if role == "plugin" else "$ORIGIN"
+            return (
+                f" (SONAME) Library soname: [{name}]\n"
+                f"{dependencies}"
+                f" (RUNPATH) Library runpath: [{runpath}]\n"
+            )
+        if "-lW" in arguments:
+            return (
+                " GNU_STACK 0x000000 0x000000 0x000000 0x000000 0x000000 RW 0x10\n"
+                " GNU_RELRO 0x000000 0x000000 0x000000 0x000000 0x000000 R 0x1\n"
+            )
+        if "-nW" in arguments:
+            return " Build ID: 0123456789abcdef0123456789abcdef01234567\n"
+        if "--version-info" in arguments:
+            return " Name: GLIBC_2.39\n"
+        self.fail(f"Unexpected readelf arguments: {arguments}")
 
-arguments = sys.argv[1:]
-path = Path(arguments[-1])
-name = path.name
-if name == "libkmediavlc_bridge.so":
-    role = "bridge"
-elif name == "libvlc.so.12":
-    role = "libvlc"
-elif name == "libvlccore.so.9":
-    role = "core"
-else:
-    role = "plugin"
-
-if "-h" in arguments:
-    print("  Class:                             ELF64")
-    print("  Machine:                           Advanced Micro Devices X86-64")
-elif "-dW" in arguments:
-    print(f" (SONAME) Library soname: [{{name}}]")
-    if role in {{"libvlc", "plugin"}}:
-        print(" (NEEDED) Shared library: [libvlccore.so.9]")
-    print(" (NEEDED) Shared library: [libc.so.6]")
-    runpath = "$ORIGIN/../../../bin" if role == "plugin" else "$ORIGIN"
-    print(f" (RUNPATH) Library runpath: [{{runpath}}]")
-elif "-lW" in arguments:
-    print(" GNU_STACK 0x000000 0x000000 0x000000 0x000000 0x000000 RW 0x10")
-    print(" GNU_RELRO 0x000000 0x000000 0x000000 0x000000 0x000000 R 0x1")
-elif "-nW" in arguments:
-    print(" Build ID: 0123456789abcdef0123456789abcdef01234567")
-elif "--version-info" in arguments:
-    print(" Name: GLIBC_2.39")
-else:
-    raise SystemExit(2)
-"""
+    def fake_cache_generator(self, command: list[str], **_: object) -> mock.Mock:
+        self.assertEqual("vlc-cache-gen", Path(command[0]).name)
+        self.assertEqual(2, len(command))
+        (Path(command[1]) / "plugins.dat").write_bytes(b"cache")
+        return mock.Mock(returncode=0, stdout="", stderr="")
 
 
 if __name__ == "__main__":
