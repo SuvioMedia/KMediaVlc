@@ -428,7 +428,8 @@ def verify_android_contract(root: Path) -> None:
     )
     expected_static_keys = {
         "schemaVersion", "target", "vlcRevision", "ndkRevision", "reviewStatus",
-        "contribComponents", "contribArchives", "ndkComponents", "ndkArchiveTemplates",
+        "contribComponents", "candidateLicenseSpdx", "licenseEvidence", "contribArchives",
+        "ndkComponents", "ndkArchiveTemplates",
     }
     if (
         set(static_policy) != expected_static_keys
@@ -473,6 +474,74 @@ def verify_android_contract(root: Path) -> None:
     if source_archive_count != 55:
         fail("The Android contrib source closure must contain exactly 55 source archives.")
 
+    source_archives = {
+        source
+        for component_policy in contrib_components.values()
+        for source in component_policy["sourceArchives"]
+    }
+    candidate_licenses = static_policy.get("candidateLicenseSpdx")
+    if (
+        not isinstance(candidate_licenses, dict)
+        or list(candidate_licenses) != sorted(candidate_licenses)
+        or set(candidate_licenses) != set(contrib_components)
+    ):
+        fail("Android candidate SPDX mapping must cover all contrib components exactly.")
+    for component_id, licenses in candidate_licenses.items():
+        if (
+            not isinstance(licenses, list)
+            or licenses != sorted(set(licenses))
+            or not licenses
+            or any(
+                not isinstance(license_id, str)
+                or not re.fullmatch(
+                    r"[A-Za-z0-9][A-Za-z0-9.+-]*(?: WITH [A-Za-z0-9][A-Za-z0-9.+-]*)?",
+                    license_id,
+                )
+                or license_id.startswith(("GPL-", "AGPL-", "LicenseRef-NonFree", "unknown"))
+                for license_id in licenses
+            )
+        ):
+            fail(f"Android candidate SPDX mapping is unsafe: {component_id}")
+    expected_candidate_licenses = {
+        "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "BSL-1.0", "CC0-1.0", "FTL",
+        "IJG", "ISC", "LGPL-2.0-or-later", "LGPL-2.1-only", "LGPL-2.1-or-later",
+        "Libpng-2.0", "LicenseRef-Public-Domain", "MIT", "TU-Berlin-1.0",
+        "Unicode-DFS-2016", "Zlib",
+    }
+    if {license_id for licenses in candidate_licenses.values() for license_id in licenses} != (
+        expected_candidate_licenses
+    ):
+        fail("Android contrib candidate SPDX set changed without linked-member review.")
+    license_evidence = static_policy.get("licenseEvidence")
+    if (
+        not isinstance(license_evidence, dict)
+        or list(license_evidence) != sorted(license_evidence)
+        or set(license_evidence) != source_archives
+    ):
+        fail("Android license evidence must cover all 55 source archives exactly.")
+    license_evidence_count = 0
+    for source, paths in license_evidence.items():
+        if not isinstance(paths, list) or paths != sorted(set(paths)) or not paths:
+            fail(f"Android license evidence is not canonical: {source}")
+        for value in paths:
+            if not isinstance(value, str):
+                fail(f"Android license evidence path is unsafe: {source}")
+            parts = value.split("/")
+            if (
+                value.startswith("/")
+                or "//" in value
+                or any(
+                    not part
+                    or part in {".", ".."}
+                    or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*", part)
+                    for part in parts
+                )
+            ):
+                fail(f"Android license evidence path is unsafe: {source}!/{value}")
+        license_evidence_count += len(paths)
+    if license_evidence_count != 83:
+        fail("Android license evidence must contain the exact 83 selected source records.")
+
     contrib_archives = static_policy.get("contribArchives")
     if (
         not isinstance(contrib_archives, dict)
@@ -492,6 +561,7 @@ def verify_android_contract(root: Path) -> None:
     expected_ndk_component = {
         "android-ndk-llvm-runtime": {
             "version": "29.0.14206865",
+            "candidateLicenseSpdx": ["Apache-2.0 WITH LLVM-exception"],
             "evidenceFiles": ["NOTICE", "NOTICE.toolchain", "source.properties"],
             "sourceStatus": "pending-corresponding-source-map",
         }
@@ -615,6 +685,8 @@ def verify_android_contract(root: Path) -> None:
         '"libvlcjniPatch"',
         '"effectiveLicenseSpdx"',
         '"staticComponents"',
+        '"candidateLicenseSpdx"',
+        '"licenseEvidence"',
         "android-static-components.json",
         "staticComponentPolicy",
     ]

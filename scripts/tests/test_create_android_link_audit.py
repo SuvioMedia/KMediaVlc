@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import os
+import tarfile
 import tempfile
 import unittest
 from pathlib import Path
@@ -43,7 +45,10 @@ class AndroidLinkAuditTest(unittest.TestCase):
         self.policy = AUDIT.static_component_policy(ROOT)
         for component in self.policy["contribComponents"].values():
             for source in component["sourceArchives"]:
-                self.write(self.vlc / "contrib/tarballs" / source, source)
+                self.write_source_archive(
+                    self.vlc / "contrib/tarballs" / source,
+                    self.policy["licenseEvidence"][source],
+                )
         for evidence in ("NOTICE", "NOTICE.toolchain", "source.properties"):
             self.write(self.ndk / evidence, evidence)
         self.modules = sorted(AUDIT.required_modules(ROOT))
@@ -106,6 +111,23 @@ fi
         path.write_bytes(value.encode("ascii"))
         return path
 
+    @staticmethod
+    def write_source_archive(path: Path, evidence_paths: list[str]) -> Path:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.name.endswith(".tar.gz"):
+            mode = "w:gz"
+        elif path.name.endswith(".tar.bz2"):
+            mode = "w:bz2"
+        else:
+            mode = "w:xz"
+        with tarfile.open(path, mode=mode) as archive:
+            for evidence_path in evidence_paths:
+                data = f"license evidence for {evidence_path}\n".encode("ascii")
+                member = tarfile.TarInfo(f"source/{evidence_path}")
+                member.size = len(data)
+                archive.addfile(member, io.BytesIO(data))
+        return path
+
     def write_map(self, archives: list[Path]) -> None:
         with self.link_map.open("w", encoding="utf-8", newline="\n") as target:
             target.write(" VMA LMA Size Align Out In Symbol\n")
@@ -161,6 +183,21 @@ fi
             {entry["id"] for entry in result["staticComponents"]},
         )
         self.assertTrue(
+            all(
+                source["licenseEvidence"]
+                for entry in result["staticComponents"]
+                if entry["kind"] == "VLC_CONTRIB"
+                for source in entry["sourceArchives"]
+            )
+        )
+        self.assertTrue(
+            all(
+                entry["candidateLicenseSpdx"]
+                and entry["licenseReviewStatus"] == "pending-linked-member-review"
+                for entry in result["staticComponents"]
+            )
+        )
+        self.assertTrue(
             all(entry.get("component") for entry in result["staticArchives"] if entry["kind"] in {"CONTRIB", "NDK_TOOLCHAIN"})
         )
 
@@ -186,6 +223,12 @@ fi
         source = self.vlc / "contrib/tarballs/flac-1.5.0.tar.xz"
         source.unlink()
         with self.assertRaisesRegex(ValueError, "VLC contrib source archive"):
+            self.create()
+
+    def test_rejects_missing_license_evidence_member(self) -> None:
+        source = self.vlc / "contrib/tarballs/flac-1.5.0.tar.xz"
+        self.write_source_archive(source, ["WRONG-LICENSE"])
+        with self.assertRaisesRegex(ValueError, "license evidence is missing"):
             self.create()
 
     def test_rejects_gpl_module_marker(self) -> None:

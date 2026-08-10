@@ -28,9 +28,11 @@ The Android source-build candidate uses the upstream `a` license profile
 (LGPL-2.1-compatible contribs plus advertising-clause dependencies), static C++,
 and no prebuilt contribs or published AAR. Its exact 62-archive link graph is now
 closed to 54 contrib components and 55 pinned source tarballs; generated audits
-hash those source inputs and the NDK distribution notices for both packaged ABIs.
-It remains release-ineligible until linked-member SPDX/notice review and the NDK
-corresponding-source map are approved.
+hash those source inputs, 83 selected in-archive license/patent/source-notice
+records, and the NDK distribution notices for both packaged ABIs. Conservative
+candidate SPDX sets remain marked `pending-linked-member-review`. The runtime
+remains release-ineligible until that review, packaged notice completion, and
+the NDK corresponding-source map are approved.
 
 ## Windows x86_64 playback dependency inventory
 

@@ -93,8 +93,10 @@ every contributing static archive is reviewed. The closed policy in
 `compliance/policy/android-static-components.json` maps every permitted contrib archive to its
 exact pinned source tarball and maps the four ABI-specific NDK runtime archives to the NDK
 distribution evidence. The audit rejects missing or extra entries, hashes all 55 contributing
-source tarballs plus the NDK notices/identity file, and embeds that path-free evidence once per
-source component.
+source tarballs, 83 exact in-archive license/patent/source-notice records, and the NDK
+notices/identity file. It also records a conservative candidate SPDX set for each component;
+those candidates remain explicitly pending linked-member review and are not an eligibility
+decision.
 
 ### Verified source-build evidence
 
@@ -108,10 +110,10 @@ two-ABI payload also passed the actual Gradle AAR inventory and lint/test gate.
 These counts now match the exact source allowlist: 62 archive paths resolve to 54 contrib source
 components and 55 source tarballs (TagLib also consumes the header-only utfcpp source). The
 path-free reports are therefore promoted only to
-`candidate-source-mapped-license-review-pending`. This state proves archive-to-source closure,
-but not the linked-member SPDX conclusion, notice completeness, NDK corresponding-source map, or
-release eligibility. Native binaries remain external release inputs and are not committed to
-this repository.
+`candidate-source-mapped-license-review-pending`. This state proves archive-to-source and raw
+license-evidence closure, but not the final linked-member SPDX conclusion, packaged notice
+completeness, NDK corresponding-source map, or release eligibility. Native binaries remain
+external release inputs and are not committed to this repository.
 
 An audited payload can be supplied to Gradle with
 `-PkmediaVlcAndroidNativePayloadDirectory=/path/to/payload`. Publication additionally requires

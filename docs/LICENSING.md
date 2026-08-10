@@ -56,7 +56,10 @@ archives per Android ABI, plus four NDK runtime archives and the three VLC core
 archives. All selected VLC module archives passed the compiled marker check. A
 closed policy now maps those 62 paths to 54 contrib components and 55 exact
 source tarballs and rejects any missing or extra archive. The report hashes each
-source input and the NDK distribution notices, so it can be promoted to
-`candidate-source-mapped-license-review-pending`. Each linked member still needs
-reviewed SPDX and notice metadata, and the NDK inputs still need their complete
-corresponding-source map, before the manifest can advance further.
+source input, 83 selected in-archive license/patent/source-notice records, and
+the NDK distribution notices. It records conservative candidate SPDX sets but
+keeps every component at `pending-linked-member-review`, so the report can be
+promoted only to `candidate-source-mapped-license-review-pending`. Each linked
+member still needs reviewed SPDX and packaged notice metadata, and the NDK
+inputs still need their complete corresponding-source map, before the manifest
+can advance further.

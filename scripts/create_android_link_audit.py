@@ -8,6 +8,7 @@ import hashlib
 import json
 import re
 import subprocess
+import tarfile
 from pathlib import Path, PurePosixPath
 
 
@@ -56,6 +57,25 @@ EXPECTED_NDK_TEMPLATES = {
     "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/"
     "libc++abi.a",
 }
+EXPECTED_CONTRIB_CANDIDATE_LICENSES = {
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "CC0-1.0",
+    "FTL",
+    "IJG",
+    "ISC",
+    "LGPL-2.0-or-later",
+    "LGPL-2.1-only",
+    "LGPL-2.1-or-later",
+    "Libpng-2.0",
+    "LicenseRef-Public-Domain",
+    "MIT",
+    "TU-Berlin-1.0",
+    "Unicode-DFS-2016",
+    "Zlib",
+}
 REQUIRED_EXPORTS = {
     "JNI_OnLoad",
     "libvlc_get_changeset",
@@ -75,6 +95,13 @@ def sha256(path: Path) -> str:
     with path.open("rb") as source:
         for block in iter(lambda: source.read(1024 * 1024), b""):
             digest.update(block)
+    return digest.hexdigest()
+
+
+def sha256_stream(source) -> str:
+    digest = hashlib.sha256()
+    for block in iter(lambda: source.read(1024 * 1024), b""):
+        digest.update(block)
     return digest.hexdigest()
 
 
@@ -142,6 +169,8 @@ def static_component_policy(root: Path) -> dict:
         "ndkRevision",
         "reviewStatus",
         "contribComponents",
+        "candidateLicenseSpdx",
+        "licenseEvidence",
         "contribArchives",
         "ndkComponents",
         "ndkArchiveTemplates",
@@ -181,6 +210,68 @@ def static_component_policy(root: Path) -> dict:
         ):
             fail(f"Android contrib source archives are not canonical: {component_id}")
 
+    source_archives = {
+        source
+        for component in components.values()
+        for source in component["sourceArchives"]
+    }
+    candidate_licenses = policy.get("candidateLicenseSpdx")
+    if (
+        not isinstance(candidate_licenses, dict)
+        or list(candidate_licenses) != sorted(candidate_licenses)
+        or set(candidate_licenses) != set(components)
+    ):
+        fail("Android candidate SPDX mapping must cover every contrib component exactly.")
+    for component_id, licenses in candidate_licenses.items():
+        if (
+            not isinstance(licenses, list)
+            or licenses != sorted(set(licenses))
+            or not licenses
+            or any(
+                not isinstance(license_id, str)
+                or not re.fullmatch(
+                    r"[A-Za-z0-9][A-Za-z0-9.+-]*(?: WITH [A-Za-z0-9][A-Za-z0-9.+-]*)?",
+                    license_id,
+                )
+                or license_id.startswith(("GPL-", "AGPL-", "LicenseRef-NonFree", "unknown"))
+                for license_id in licenses
+            )
+        ):
+            fail(f"Android candidate SPDX mapping is unsafe: {component_id}")
+    if {
+        license_id for licenses in candidate_licenses.values() for license_id in licenses
+    } != EXPECTED_CONTRIB_CANDIDATE_LICENSES:
+        fail("Android contrib candidate SPDX set changed without linked-member review.")
+    license_evidence = policy.get("licenseEvidence")
+    if (
+        not isinstance(license_evidence, dict)
+        or list(license_evidence) != sorted(license_evidence)
+        or set(license_evidence) != source_archives
+    ):
+        fail("Android contrib license evidence must cover every source archive exactly.")
+    license_evidence_count = 0
+    for source, paths in license_evidence.items():
+        if not isinstance(paths, list) or paths != sorted(set(paths)) or not paths:
+            fail(f"Android contrib license evidence is not canonical: {source}")
+        for value in paths:
+            if not isinstance(value, str):
+                fail(f"Android contrib license evidence path is unsafe: {source}")
+            relative = PurePosixPath(value)
+            if (
+                relative.is_absolute()
+                or relative.as_posix() != value
+                or ".." in relative.parts
+                or not relative.parts
+                or any(
+                    not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*", part)
+                    for part in relative.parts
+                )
+            ):
+                fail(f"Android contrib license evidence path is unsafe: {source}!/{value}")
+        license_evidence_count += len(paths)
+    if license_evidence_count != 83:
+        fail("Android contrib license evidence must contain exactly 83 selected records.")
+
     contrib_archives = policy.get("contribArchives")
     if (
         not isinstance(contrib_archives, dict)
@@ -200,10 +291,14 @@ def static_component_policy(root: Path) -> dict:
     for component_id, component in ndk_components.items():
         if not SAFE_COMPONENT.fullmatch(component_id) or not isinstance(component, dict):
             fail(f"Android NDK component is unsafe: {component_id!r}")
-        if set(component) != {"version", "evidenceFiles", "sourceStatus"}:
+        if set(component) != {
+            "version", "candidateLicenseSpdx", "evidenceFiles", "sourceStatus"
+        }:
             fail(f"Android NDK component fields are not closed: {component_id}")
         if component["version"] != NDK_REVISION:
             fail(f"Android NDK component version is invalid: {component_id}")
+        if component["candidateLicenseSpdx"] != ["Apache-2.0 WITH LLVM-exception"]:
+            fail(f"Android NDK candidate SPDX mapping is invalid: {component_id}")
         if component["evidenceFiles"] != ["NOTICE", "NOTICE.toolchain", "source.properties"]:
             fail(f"Android NDK evidence files are incomplete: {component_id}")
         if component["sourceStatus"] != "pending-corresponding-source-map":
@@ -236,6 +331,48 @@ def expanded_ndk_archive_components(ndk_directory: Path, abi: str, policy: dict)
     }
 
 
+def source_archive_license_evidence(
+    source: Path, source_name: str, evidence_paths: list[str]
+) -> list[dict]:
+    try:
+        with tarfile.open(source, mode="r:*") as archive:
+            members = archive.getmembers()
+            entries = []
+            for evidence_path in evidence_paths:
+                relative = PurePosixPath(evidence_path)
+                matches = []
+                for member in members:
+                    parts = PurePosixPath(member.name).parts
+                    if len(parts) >= 2 and tuple(parts[1:]) == relative.parts:
+                        matches.append(member)
+                if len(matches) != 1:
+                    fail(
+                        "Android contrib license evidence is missing or ambiguous: "
+                        f"{source_name}!/{evidence_path}"
+                    )
+                member = matches[0]
+                if not member.isfile() or member.issym() or member.islnk() or not 0 < member.size <= 2_000_000:
+                    fail(
+                        "Android contrib license evidence must be a bounded regular file: "
+                        f"{source_name}!/{evidence_path}"
+                    )
+                extracted = archive.extractfile(member)
+                if extracted is None:
+                    fail(f"Android contrib license evidence is unreadable: {source_name}")
+                with extracted:
+                    evidence_sha256 = sha256_stream(extracted)
+                entries.append(
+                    {
+                        "path": f"vlc-contrib-tarballs/{source_name}!/{evidence_path}",
+                        "sha256": evidence_sha256,
+                        "size": member.size,
+                    }
+                )
+            return entries
+    except (OSError, tarfile.TarError) as error:
+        raise ValueError(f"VLC contrib source archive is unreadable: {source_name}") from error
+
+
 def static_component_evidence(
     vlc_source: Path,
     ndk_directory: Path,
@@ -257,6 +394,11 @@ def static_component_evidence(
                     "path": f"vlc-contrib-tarballs/{source_name}",
                     "sha256": sha256(source),
                     "size": source.stat().st_size,
+                    "licenseEvidence": source_archive_license_evidence(
+                        source,
+                        source_name,
+                        policy["licenseEvidence"][source_name],
+                    ),
                 }
             )
         entries.append(
@@ -264,6 +406,8 @@ def static_component_evidence(
                 "id": component_id,
                 "kind": "VLC_CONTRIB",
                 "version": component["version"],
+                "candidateLicenseSpdx": policy["candidateLicenseSpdx"][component_id],
+                "licenseReviewStatus": "pending-linked-member-review",
                 "sourceArchives": source_entries,
             }
         )
@@ -287,6 +431,8 @@ def static_component_evidence(
                 "id": component_id,
                 "kind": "NDK_TOOLCHAIN",
                 "version": component["version"],
+                "candidateLicenseSpdx": component["candidateLicenseSpdx"],
+                "licenseReviewStatus": "pending-linked-member-review",
                 "sourceStatus": component["sourceStatus"],
                 "evidenceFiles": evidence_files,
             }
