@@ -29,6 +29,7 @@ ALLOWED_LICENSES = {
     "Zlib",
 }
 COMPONENT_NOTICE_FILES = {
+    "dav1d": "Dav1d-COPYING.txt",
     "ffmpeg": "FFmpeg-LICENSE.txt",
     "flac": "FLAC-COPYING-XIPH.txt",
     "freetype": "FreeType-FTL.txt",
@@ -51,6 +52,7 @@ COMPONENT_NOTICE_FILES = {
     "libpng": "libpng-LICENSE.txt",
     "libssh2": "libssh2-COPYING.txt",
     "libvorbis": "libvorbis-COPYING.txt",
+    "libvpx": "libvpx-LICENSE.txt",
     "libxml2": "libxml2-Copyright.txt",
     "nettle": "LGPL-3.0.txt",
     "openjpeg": "OpenJPEG-LICENSE.txt",
@@ -336,6 +338,272 @@ def verify_pin_occurrences(root: Path) -> None:
 
 
 def verify_macos_transport_contract(root: Path) -> None:
+    playback = load_json(root / "compliance/policy/macos-aarch64-playback-modules.json")
+    if (
+        playback.get("schemaVersion") != 1
+        or playback.get("target") != "macos-aarch64"
+        or playback.get("vlcRevision") != PINNED_REVISION
+    ):
+        fail("macOS playback module policy has an unsupported identity.")
+    if playback.get("reviewStatus") not in {
+        "pending-mach-o-and-source-license-audit",
+        "approved",
+    }:
+        fail("macOS playback module policy has an invalid review state.")
+    if playback.get("primaryLicenseSpdx") != "LGPL-2.1-or-later":
+        fail("macOS playback modules lost their reviewed primary license.")
+    macos_families = playback.get("modulesByFamily")
+    expected_macos_families = {
+        "access",
+        "audio_filter",
+        "audio_mixer",
+        "audio_output",
+        "codec",
+        "demux",
+        "keystore",
+        "logger",
+        "misc",
+        "packetizer",
+        "stream_filter",
+        "text_renderer",
+        "video_chroma",
+        "video_output",
+    }
+    if not isinstance(macos_families, dict) or set(macos_families) != expected_macos_families:
+        fail("macOS playback module families are incomplete or overbroad.")
+    macos_modules: list[str] = []
+    for family, names in macos_families.items():
+        if not isinstance(names, list) or names != sorted(names) or not names:
+            fail(f"macOS playback module family is not a closed sorted list: {family}")
+        macos_modules.extend(names)
+    required_macos_modules = {
+        "auhal",
+        "avcodec",
+        "cvpx",
+        "gl",
+        "glinterop_cvpx",
+        "glinterop_sw",
+        "glsampler_builtin",
+        "https",
+        "libass",
+        "mkv",
+        "mp4",
+        "securetransport",
+        "videotoolbox",
+        "vgl",
+        "vmem",
+    }
+    if (
+        len(macos_modules) != 89
+        or len(set(macos_modules)) != 89
+        or not required_macos_modules.issubset(macos_modules)
+        or any(not isinstance(name, str) or not re.fullmatch(r"[a-z0-9_]+", name) for name in macos_modules)
+    ):
+        fail("macOS playback allowlist must contain its 89 unique transport modules.")
+    expected_additional = {
+        "mkv": ["MIT"],
+        "opus": ["BSD-3-Clause"],
+        "ts": ["BSD-3-Clause"],
+    }
+    if playback.get("additionalDirectSourceLicenses") != expected_additional:
+        fail("macOS playback direct-source license exceptions changed without review.")
+
+    binary = load_json(root / "compliance/policy/macos-aarch64-binary-components.json")
+    if (
+        binary.get("schemaVersion") != 1
+        or binary.get("target") != "macos-aarch64"
+        or binary.get("vlcRevision") != PINNED_REVISION
+    ):
+        fail("macOS binary component policy has an unsupported identity.")
+    expected_toolchain = {
+        "xcodeVersion": "26.6",
+        "xcodeBuild": "17F113",
+        "sdkVersion": "26.5",
+        "minimumMacos": "14.0",
+        "architecture": "arm64",
+    }
+    if binary.get("toolchain") != expected_toolchain:
+        fail("macOS binary component policy targets a different toolchain.")
+    if binary.get("reviewStatus") not in {
+        "pending-link-command-and-license-audit",
+        "approved",
+    }:
+        fail("macOS binary component policy has an invalid review state.")
+    if binary.get("buildOnlyContribPackages") != []:
+        fail("macOS playback contrib closure contains unreviewed build-only packages.")
+    expected_macos_components = {
+        "dav1d", "ffmpeg", "flac", "freetype", "fribidi", "gsm", "harfbuzz",
+        "libass", "libdvbpsi", "libebml", "libiconv", "libjpeg-turbo",
+        "libmatroska", "libogg", "libpng", "libvorbis", "libvpx", "libxml2",
+        "openjpeg", "opus", "soxr", "zlib",
+    }
+    macos_components = binary.get("components")
+    if (
+        not isinstance(macos_components, dict)
+        or list(macos_components) != sorted(macos_components)
+        or set(macos_components) != expected_macos_components
+    ):
+        fail("macOS binary components must match the closed playback dependency map.")
+    for component_id, component_policy in macos_components.items():
+        if not re.fullmatch(r"[a-z0-9-]+", component_id) or not isinstance(component_policy, dict):
+            fail(f"Invalid macOS binary component: {component_id!r}")
+        if set(component_policy) != {"version", "licenseSpdx", "sourceArchive"}:
+            fail(f"macOS binary component fields are not closed: {component_id}")
+        licenses = component_policy["licenseSpdx"]
+        if not isinstance(licenses, list) or licenses != sorted(set(licenses)) or not licenses:
+            fail(f"macOS binary component licenses are not canonical: {component_id}")
+        if any(license_id not in ALLOWED_LICENSES for license_id in licenses):
+            fail(f"macOS binary component has an unapproved license: {component_id}")
+        if not isinstance(component_policy["version"], str) or not component_policy["version"]:
+            fail(f"macOS binary component version is missing: {component_id}")
+        if not re.fullmatch(
+            r"[A-Za-z0-9.+_-]+\.tar\.(?:gz|xz|bz2)",
+            component_policy["sourceArchive"],
+        ):
+            fail(f"macOS binary component source archive is unsafe: {component_id}")
+    macos_module_components = binary.get("moduleComponents")
+    expected_macos_component_modules = {
+        "avcodec", "dav1d", "flac", "freetype", "inflate", "jpeg", "libass",
+        "mkv", "mp4", "ogg", "opus", "packetizer_avparser", "png", "soxr",
+        "swscale", "ts", "vorbis", "vpx", "xml",
+    }
+    if (
+        not isinstance(macos_module_components, dict)
+        or set(macos_module_components) != expected_macos_component_modules
+    ):
+        fail("macOS binary module/component closure changed without review.")
+    referenced_macos_components: set[str] = set()
+    for module, component_ids in macos_module_components.items():
+        if module not in macos_modules or component_ids != sorted(set(component_ids)) or not component_ids:
+            fail(f"macOS binary module components are not canonical: {module}")
+        if any(component_id not in macos_components for component_id in component_ids):
+            fail(f"macOS binary module references an unknown component: {module}")
+        referenced_macos_components.update(component_ids)
+    macos_core_components = binary.get("coreComponents")
+    if macos_core_components != ["libiconv"]:
+        fail("macOS core component closure changed without review.")
+    referenced_macos_components.update(macos_core_components)
+    if referenced_macos_components != set(macos_components):
+        fail("macOS binary component policy contains unused or missing components.")
+    if binary.get("moduleAdditionalLicenses") != expected_additional:
+        fail("macOS binary direct-source license exceptions changed without review.")
+
+    selected_contribs = [
+        "ass", "dav1d", "dvbpsi", "ebml", "ffmpeg", "flac", "freetype2",
+        "fribidi", "harfbuzz", "jpeg", "libxml2", "matroska", "ogg", "opus",
+        "png", "soxr", "vorbis", "vpx", "zlib",
+    ]
+    resolved_contribs = sorted(selected_contribs + ["gsm", "iconv", "openjpeg"])
+    recipe = load_json(root / "build-recipes/macos.json")
+    expected_build_arguments = [
+        "--arch=arm64",
+        "--sdk=macosx",
+        "--enable-shared",
+        "--disable-debug",
+        "--config=build-recipes/vlc-apple.conf",
+    ]
+    if (
+        recipe.get("target") != "macos-aarch64"
+        or recipe.get("vlcRevision") != PINNED_REVISION
+        or recipe.get("minimumOs") != "14.0"
+        or recipe.get("buildMode") != "shared"
+        or recipe.get("libVlcBuildArguments") != expected_build_arguments
+        or recipe.get("libVlcDylibMajor") != 12
+        or recipe.get("libVlcCoreDylibMajor") != 9
+        or recipe.get("usesPrebuiltContribs") is not False
+        or recipe.get("selectedContribPackages") != selected_contribs
+        or recipe.get("resolvedContribPackages") != resolved_contribs
+        or recipe.get("renderEngine") != "OPENGL"
+        or recipe.get("frameTransport") != "IOSURFACE"
+        or recipe.get("stagedPluginCount") != 89
+        or recipe.get("rawSourceBuildPluginCount") != 285
+        or recipe.get("pluginCacheGeneratedAfterRelocation") is not True
+        or recipe.get("relocationSignature") != "adhoc-replaced-by-consuming-app-signature"
+        or recipe.get("requiresConsumerCodeSigning") is not True
+        or recipe.get("candidateReleaseEligible") is not False
+        or recipe.get("reviewStatus") != "candidate-source-build-and-link-audit-pending"
+    ):
+        fail("The pinned macOS source-build recipe is incomplete or release-open.")
+
+    profile = (root / "build-recipes/vlc-apple.conf").read_text(encoding="utf-8")
+    contrib_match = re.search(
+        r"export VLC_CONTRIB_OPTIONS_BASE=\(\n(?P<body>.*?)\n\)", profile, re.DOTALL
+    )
+    if contrib_match is None:
+        fail("The pinned Apple contrib profile is missing.")
+    actual_contrib_options = {
+        line.strip()
+        for line in contrib_match.group("body").splitlines()
+        if line.strip()
+    }
+    expected_contrib_options = {
+        "--disable-all",
+        "--disable-gpl",
+        "--disable-gnuv3",
+        "--disable-sout",
+        "--enable-ad-clauses",
+        *(f"--enable-{package}" for package in selected_contribs),
+    }
+    if actual_contrib_options != expected_contrib_options:
+        fail("The Apple contrib profile differs from its closed package graph.")
+    configure_markers = [
+        "--disable-addonmanagermodules",
+        "--disable-libplacebo",
+        "--disable-macosx",
+        "--disable-nfs",
+        "--disable-opencv4",
+        "--disable-qt",
+        "--disable-rav1e",
+        "--disable-smb2",
+        "--disable-sout",
+        "--disable-vulkan",
+        "--enable-avformat",
+        "--enable-libass",
+        "--enable-matroska",
+    ]
+    if not all(marker in profile for marker in configure_markers):
+        fail("The Apple VLC profile does not exclude its broad non-playback graph.")
+
+    builder = (root / "scripts/build_vlc_macos.sh").read_text(encoding="utf-8")
+    builder_markers = [
+        'readonly PINNED_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"',
+        "--arch=arm64",
+        "--sdk=macosx",
+        "--enable-shared",
+        "--disable-debug",
+        'git -C "$source_directory" status --porcelain --untracked-files=no',
+        'make -C "$contrib_directory" list',
+        "vlc-macosx-arm64",
+    ]
+    if not all(marker in builder for marker in builder_markers):
+        fail("The macOS VLC build wrapper does not preserve the pinned upstream recipe.")
+
+    stager = (root / "scripts/stage_vlc_macos_runtime.py").read_text(encoding="utf-8")
+    stager_markers = [
+        '"@loader_path/libvlccore.9.dylib"',
+        '"@loader_path/../../../bin/libvlccore.9.dylib"',
+        '"DYLD_LIBRARY_PATH": str(install / "lib")',
+        '"LC_ALL": "C"',
+        '"TMPDIR": "/tmp"',
+        '"cmd LC_RPATH"',
+        'EXPECTED_MINIMUM_MACOS = "14.0"',
+        'architectures != ["arm64"]',
+        'timeout_seconds=180',
+        'raw_plugins = list(plugin_root.rglob("lib*_plugin.dylib"))',
+        'recipe.get("rawSourceBuildPluginCount")',
+    ]
+    if not all(marker in stager for marker in stager_markers) or "os.environ" in stager:
+        fail("The macOS staging recipe does not close relocation, cache, and tool inputs.")
+
+    gradle_build = (root / "build.gradle.kts").read_text(encoding="utf-8")
+    bridge_build_markers = [
+        'nativeTargetName.get() == "macos-aarch64"',
+        '"-DCMAKE_OSX_ARCHITECTURES=arm64"',
+        '"-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0"',
+    ]
+    if not all(marker in gradle_build for marker in bridge_build_markers):
+        fail("The macOS bridge build does not pin architecture and deployment target.")
+
     renderer = (root / "native/src/macos_iosurface_renderer.cpp").read_text(encoding="utf-8")
     renderer_markers = [
         "constexpr std::size_t kSurfaceCount = 4",
@@ -345,6 +613,8 @@ def verify_macos_transport_contract(root: Path) -> None:
         "kCVPixelFormatType_64RGBAHalf",
         "glFlush();",
         "frame->platform_owner = surface",
+        "surface->output_generation",
+        "Keep this callback",
         "KMEDIAVLC_IOSURFACE_ID",
     ]
     if not all(marker in renderer for marker in renderer_markers):
@@ -393,6 +663,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         "libvlc_video_set_output_callbacks" not in fixture
         or "libvlc_video_engine_opengl" not in fixture
         or "fakeLibVlcPublishesRealSdrAndHdrMacIosurfaceFrames" not in integration
+        or "pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames" not in integration
         or "inspectMacIosurfaceFrame" not in integration
     ):
         fail("The pinned macOS callback ABI lacks its real IOSurface integration gate.")
@@ -419,10 +690,18 @@ def verify_macos_transport_contract(root: Path) -> None:
 
 
 def verify_legal_files(root: Path) -> None:
-    binary = load_json(root / "compliance/policy/windows-x86_64-binary-components.json")
-    components = binary.get("components")
-    if not isinstance(components, dict) or set(components) != set(COMPONENT_NOTICE_FILES):
-        fail("Legal notice mapping must cover the closed Windows component inventory exactly.")
+    windows_binary = load_json(root / "compliance/policy/windows-x86_64-binary-components.json")
+    macos_binary = load_json(root / "compliance/policy/macos-aarch64-binary-components.json")
+    windows_components = windows_binary.get("components")
+    macos_components = macos_binary.get("components")
+    if not isinstance(windows_components, dict) or not isinstance(macos_components, dict):
+        fail("Legal notice component inventories are invalid.")
+    for component_id in set(windows_components).intersection(macos_components):
+        if windows_components[component_id] != macos_components[component_id]:
+            fail(f"Cross-platform component terms disagree: {component_id}")
+    components = {**windows_components, **macos_components}
+    if set(components) != set(COMPONENT_NOTICE_FILES):
+        fail("Legal notice mapping must cover the Windows/macOS component union exactly.")
     required = [
         root / "LICENSE",
         root / "NOTICE",
@@ -438,8 +717,15 @@ def verify_legal_files(root: Path) -> None:
         fail("Missing or truncated legal files: " + ", ".join(missing))
 
     notices = (root / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
-    if binary.get("toolchainImage") not in notices:
+    if windows_binary.get("toolchainImage") not in notices:
         fail("Third-party notices omit the pinned Windows toolchain.")
+    macos_toolchain = macos_binary.get("toolchain", {})
+    macos_toolchain_notice = (
+        f"Xcode {macos_toolchain.get('xcodeVersion')} "
+        f"({macos_toolchain.get('xcodeBuild')})"
+    )
+    if macos_toolchain_notice not in notices:
+        fail("Third-party notices omit the pinned macOS toolchain.")
     for component_id, component in components.items():
         licenses = " AND ".join(component["licenseSpdx"])
         row = f"| {component_id} | {component['version']} | {licenses} |"

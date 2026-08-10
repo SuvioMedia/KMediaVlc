@@ -184,6 +184,11 @@ public:
     bool floating_point = false;
     std::uint32_t fourcc = 0;
     std::uint32_t stride = 0;
+    std::uint64_t output_generation = 0;
+    float sdr_white_nits = 203.0F;
+    float display_peak_nits = 203.0F;
+    kmediavlc_source_dynamic_range source_dynamic_range = KMEDIAVLC_SOURCE_DYNAMIC_RANGE_UNKNOWN;
+    bool source_extended = false;
 };
 
 kmediavlc_source_dynamic_range source_dynamic_range(
@@ -249,8 +254,10 @@ public:
             this);
         installed_ = false;
         media_player_ = nullptr;
-        release_resources();
-        context_.reset();
+        // libvlc_media_player_switch_vout() may finish tearing down the old GL
+        // display while libvlc_media_player_release() runs. Keep this callback
+        // object and its CGL context alive until the bridge releases the media
+        // player; the renderer destructor performs the final resource cleanup.
     }
 
     bool output_target_changed(const OutputTargetSnapshot& target, std::string& error) override {
@@ -465,6 +472,19 @@ private:
             }
         }
         if (!current_surface_) return false;
+        const auto target = copy_output_target(player_);
+        const bool floating_point = target.request_hdr && source_extended_;
+        if (target.type != KMEDIAVLC_OUTPUT_MACOS_IOSURFACE || target.generation == 0 ||
+            target.width != current_surface_->width || target.height != current_surface_->height ||
+            floating_point != current_surface_->floating_point) {
+            current_surface_.reset();
+            return false;
+        }
+        current_surface_->output_generation = target.generation;
+        current_surface_->sdr_white_nits = target.sdr_white_nits;
+        current_surface_->display_peak_nits = target.display_peak_nits;
+        current_surface_->source_dynamic_range = source_dynamic_range_;
+        current_surface_->source_extended = source_extended_;
         glBindFramebuffer(GL_FRAMEBUFFER, current_surface_->framebuffer);
         glViewport(
             0,
@@ -512,27 +532,26 @@ private:
             surface = std::move(current_surface_);
         }
         if (!surface) return;
-        const auto target = copy_output_target(player_);
-        if (target.type != KMEDIAVLC_OUTPUT_MACOS_IOSURFACE || target.generation == 0) return;
+        if (surface->output_generation == 0) return;
         auto frame = std::make_unique<kmediavlc_frame>();
         frame->platform_owner = surface;
-        frame->info.output_generation = target.generation;
+        frame->info.output_generation = surface->output_generation;
         frame->info.pts_microseconds = current_position_microseconds(player_);
         frame->info.width = surface->width;
         frame->info.height = surface->height;
         frame->info.pixel_format = surface->floating_point
             ? KMEDIAVLC_RGBA16F_LINEAR_SRGB
             : KMEDIAVLC_RGBA8_SRGB;
-        frame->info.source_dynamic_range = source_dynamic_range_;
+        frame->info.source_dynamic_range = surface->source_dynamic_range;
         frame->info.handle_type = KMEDIAVLC_IOSURFACE_ID;
         frame->info.platform_handle = IOSurfaceGetID(surface->surface);
         frame->info.acquire_fence = -1;
         frame->info.stride = surface->stride;
         frame->info.fourcc = surface->fourcc;
-        frame->info.sdr_white_nits = target.sdr_white_nits;
-        frame->info.content_peak_nits = source_extended_
-            ? target.display_peak_nits
-            : target.sdr_white_nits;
+        frame->info.sdr_white_nits = surface->sdr_white_nits;
+        frame->info.content_peak_nits = surface->source_extended
+            ? surface->display_peak_nits
+            : surface->sdr_white_nits;
         frame->info.premultiplied_alpha = true;
         publish_frame(player_, std::move(frame));
     }

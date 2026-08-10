@@ -6,7 +6,7 @@ KMediaVlc is an optional client and distribution boundary for libVLC 4. Project-
 
 ## VideoLAN VLC / libVLC
 
-The Windows runtime is built from VideoLAN VLC revision `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`. VLC/libVLC and the selected playback modules are distributed under LGPL-2.1-or-later except for the additional direct-source terms recorded in the closed module policy. The LGPL-2.1 text is included as `LICENSES/LGPL-2.1.txt`.
+The Windows runtime and macOS audit candidate are built from VideoLAN VLC revision `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`. VLC/libVLC and the selected playback modules are distributed under LGPL-2.1-or-later except for the additional direct-source terms recorded in each closed module policy. The LGPL-2.1 text is included as `LICENSES/LGPL-2.1.txt`.
 
 Official source: https://code.videolan.org/videolan/vlc
 
@@ -49,6 +49,23 @@ The following closed inventory is derived from the pinned contrib inputs. Public
 | soxr | 0.1.3 | LGPL-2.1-or-later | `soxr-0.1.3-Source.tar.xz` | `LICENSES/SoXR-LICENCE.txt` |
 | speexdsp | 1.2.1 | BSD-3-Clause | `speexdsp-1.2.1.tar.gz` | `LICENSES/SpeexDSP-COPYING.txt` |
 | zlib | 1.3.2 | Zlib | `zlib-1.3.2.tar.xz` | `LICENSES/zlib-LICENSE.txt` |
+
+## macOS arm64 playback dependency inventory
+
+The macOS audit candidate reuses the reviewed rows above for FFmpeg, FLAC,
+FreeType, FriBidi, GSM, HarfBuzz, libass, libdvbpsi, libebml, libiconv,
+libjpeg-turbo, libmatroska, libogg, libpng, libvorbis, libxml2, OpenJPEG,
+Opus, SoXR, and zlib. Its two additional decoder dependencies are:
+
+| Component | Version | SPDX license | Reviewed source input | Included notice/terms |
+| --- | --- | --- | --- | --- |
+| dav1d | 1.5.4 | BSD-2-Clause | `dav1d-1.5.4.tar.xz` | `LICENSES/Dav1d-COPYING.txt` |
+| libvpx | 1.16.0 | BSD-3-Clause | `libvpx-1.16.0.tar.gz` | `LICENSES/libvpx-LICENSE.txt` |
+
+The macOS candidate is built with Xcode 26.6 (17F113), the macOS 26.5 SDK,
+an arm64-only target, and a minimum deployment version of macOS 14.0. Its
+component and module review states remain pending; this inventory does not make
+the candidate release-eligible.
 
 ## Toolchain runtime inputs
 

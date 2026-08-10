@@ -89,6 +89,90 @@ final class VlcDesktopPlayerIntegrationTest {
     }
 
     @Test
+    void pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames() throws Exception {
+        Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase().contains("mac"));
+        var fixture = fixture();
+        var signal = new Semaphore(0);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.GPU_PUSH,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        signal.release();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
+            assertTrue(player.updateOutput(new VlcMacOutputTarget(
+                    41,
+                    128,
+                    72,
+                    false,
+                    203f,
+                    203f,
+                    1,
+                    1)));
+            assertTrue(player.open(fixture.image().toUri().toString(), Map.of(), true));
+            assertTrue(
+                    signal.tryAcquire(20, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "Real libVLC published no macOS IOSurface."));
+            try (var frame = player.acquireLatestFrame().orElseThrow()) {
+                assertEquals(VlcNativeHandleType.IOSURFACE, frame.handleType());
+                assertEquals(VlcPixelFormat.RGBA8_SRGB, frame.pixelFormat());
+                assertEquals(VlcSourceDynamicRange.SDR, frame.sourceDynamicRange());
+                assertEquals(41, frame.generation());
+                assertEquals(128, frame.width());
+                assertEquals(72, frame.height());
+                assertTrue(frame.platformHandle() > 0);
+                assertTrue(frame.stride() >= 128 * 4);
+                assertEquals(0x42475241, frame.fourcc(), "kCVPixelFormatType_32BGRA");
+                long[] inspection = NativeBridge.inspectMacIosurfaceFrame(frame.platformHandle());
+                assertNotNull(inspection);
+                assertEquals(128, inspection[0]);
+                assertEquals(72, inspection[1]);
+                assertEquals(4, inspection[2]);
+                assertEquals(frame.stride(), inspection[3]);
+                assertTrue(inspection[4] >= frame.stride() * 72L);
+                assertEquals(frame.fourcc(), inspection[5]);
+            }
+
+            signal.drainPermits();
+            assertTrue(player.updateOutput(new VlcMacOutputTarget(
+                    42,
+                    96,
+                    54,
+                    false,
+                    203f,
+                    203f,
+                    1,
+                    1)));
+            assertTrue(player.open(fixture.image().toUri().toString(), Map.of(), true));
+            try (var frame = awaitFrame(
+                    player,
+                    signal,
+                    42,
+                    96,
+                    54,
+                    "Real libVLC did not replace its IOSurface output.")) {
+                assertEquals(VlcNativeHandleType.IOSURFACE, frame.handleType());
+                assertEquals(VlcPixelFormat.RGBA8_SRGB, frame.pixelFormat());
+                assertEquals(42, frame.generation());
+                assertEquals(96, frame.width());
+                assertEquals(54, frame.height());
+                long[] inspection = NativeBridge.inspectMacIosurfaceFrame(frame.platformHandle());
+                assertNotNull(inspection);
+                assertEquals(96, inspection[0]);
+                assertEquals(54, inspection[1]);
+                assertEquals(frame.stride(), inspection[3]);
+            }
+            assertTrue(player.stop());
+        }
+    }
+
+    @Test
     void pinnedVideoLanFixtureKeepsSdrD3D11FrameSrgbOnHdrHost() throws Exception {
         Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase().contains("windows"));
         var fixture = fixture();
@@ -350,6 +434,10 @@ final class VlcDesktopPlayerIntegrationTest {
                 bridge != null && libVlc != null && plugins != null,
                 "The exact-commit VideoLAN fixture is opt-in and never a release payload.");
         Path image = createImage();
+        Set<VlcRenderEngine> renderEngines =
+                System.getProperty("os.name", "").toLowerCase().contains("mac")
+                        ? Set.of(VlcRenderEngine.OPENGL)
+                        : Set.of(VlcRenderEngine.D3D11);
         var runtime = new VlcDesktopRuntimeResolution(
                 Path.of(bridge).toAbsolutePath(),
                 Path.of(libVlc).toAbsolutePath(),
@@ -361,7 +449,7 @@ final class VlcDesktopPlayerIntegrationTest {
                         "4.0.0-dev",
                         "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
                         Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
-                        Set.of(VlcRenderEngine.D3D11),
+                        renderEngines,
                         true));
         return new Fixture(runtime, image);
     }
@@ -378,6 +466,29 @@ final class VlcDesktopPlayerIntegrationTest {
         }
         assertTrue(ImageIO.write(pixels, "png", image.toFile()));
         return image;
+    }
+
+    private static VlcDesktopFrame awaitFrame(
+            VlcDesktopPlayer player,
+            Semaphore signal,
+            long generation,
+            int width,
+            int height,
+            String fallback) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+        while (true) {
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0 || !signal.tryAcquire(remaining, TimeUnit.NANOSECONDS)) {
+                throw new AssertionError(timeoutDiagnostics(player, fallback));
+            }
+            var candidate = player.acquireLatestFrame();
+            if (candidate.isEmpty()) continue;
+            var frame = candidate.orElseThrow();
+            if (frame.generation() == generation && frame.width() == width && frame.height() == height) {
+                return frame;
+            }
+            frame.close();
+        }
     }
 
     private static String timeoutDiagnostics(VlcDesktopPlayer player, String fallback) {

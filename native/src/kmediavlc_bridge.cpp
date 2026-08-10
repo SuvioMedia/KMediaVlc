@@ -749,6 +749,17 @@ bool kmediavlc_player_update_output(kmediavlc_player* player, const kmediavlc_ou
             return false;
         }
     }
+    if (next.width != 0 && next.height != 0 &&
+        (next.width != previous.width || next.height != previous.height)) {
+        libvlc_video_output_resize_cb report = nullptr;
+        void* report_opaque = nullptr;
+        {
+            std::lock_guard lock(player->output_mutex);
+            report = player->report_resize;
+            report_opaque = player->report_resize_opaque;
+        }
+        if (report != nullptr) report(report_opaque, next.width, next.height);
+    }
     return true;
 }
 

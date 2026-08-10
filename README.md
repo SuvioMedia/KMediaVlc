@@ -50,9 +50,9 @@ calls Compose and never waits for a UI render.
   shared `R16G16B16A16_FLOAT` linear-sRGB TextureView frame.
 - The Apple-silicon macOS bridge now renders through libVLC 4 OpenGL callbacks
   into a bounded four-buffer IOSurface pool. Its runtime target and packaging
-  contract are implemented, but publication remains fail-closed until a real
-  source-built VLC payload, closed Mach-O/license inventory, Metal-consumer
-  integration, and hardware SDR/HDR evidence are audited.
+  contract plus a relocatable source-built VLC candidate are implemented, but
+  publication remains fail-closed until the static component/license inventory,
+  Metal-consumer integration, and hardware SDR/HDR evidence are audited.
 - Linux remains release-ineligible until its DMA-BUF import, explicit-fence
   ownership, and native integration tests exist.
 - CPU pull is available for controlled SDR and diagnostics.

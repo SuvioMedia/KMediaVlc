@@ -88,6 +88,15 @@ val configureNativeBridge =
                     "-A",
                     if (nativeTargetName.get().endsWith("aarch64")) "ARM64" else "x64",
                 )
+            } else if (operatingSystem.contains("mac")) {
+                require(nativeTargetName.get() == "macos-aarch64") {
+                    "The bundled macOS runtime currently targets Apple Silicon exactly."
+                }
+                arguments += listOf(
+                    "-DCMAKE_BUILD_TYPE=${nativeBuildType.get()}",
+                    "-DCMAKE_OSX_ARCHITECTURES=arm64",
+                    "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0",
+                )
             } else {
                 arguments += "-DCMAKE_BUILD_TYPE=${nativeBuildType.get()}"
             }
