@@ -101,7 +101,7 @@ jobs:
         run: |
           set -euo pipefail
           install="$RUNNER_TEMP/vlc-linux-build/vlc-${{ matrix.target }}"
-          test -f "$install/lib/libvlc.so.12"
+          test -f "$install/lib/libvlc.so"
           test -f "$install/lib/libvlccore.so.9"
           plugin_count="$(find "$install/lib/vlc/plugins" -type f -name 'lib*_plugin.so' | wc -l)"
           file_count="$(find "$install" -type f | wc -l)"

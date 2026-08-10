@@ -249,7 +249,7 @@ meson install \
     --tags runtime \
     --strip
 
-readonly libvlc="$install_directory/lib/libvlc.so.12"
+readonly libvlc="$install_directory/lib/libvlc.so"
 readonly core="$install_directory/lib/libvlccore.so.9"
 readonly plugin_directory="$install_directory/lib/vlc/plugins"
 if [[ ! -f "$libvlc" || ! -f "$core" ]] ||

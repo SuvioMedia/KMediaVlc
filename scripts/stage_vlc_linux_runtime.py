@@ -352,7 +352,7 @@ def main() -> None:
     copied: list[dict] = []
     elf_files: list[tuple[Path, str]] = []
     fixed_files = [
-        (require_plain_file(install, "lib/libvlc.so.12"), "bin/libvlc.so.12", "LIBVLC"),
+        (require_plain_file(install, "lib/libvlc.so"), "bin/libvlc.so.12", "LIBVLC"),
         (require_plain_file(install, "lib/libvlccore.so.9"), "bin/libvlccore.so.9", "CORE"),
         (bridge, "bin/libkmediavlc_bridge.so", "BRIDGE"),
     ]

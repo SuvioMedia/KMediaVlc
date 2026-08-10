@@ -20,6 +20,11 @@ than being interposed. This also makes the pinned static FFmpeg data references
 valid in AArch64 VLC plugins; undefined plugin ABI symbols still resolve from
 `libvlccore` normally.
 
+The pinned prerelease Meson graph installs libVLC as the unversioned
+`libvlc.so`. Staging deliberately renames that input to the application-private
+`libvlc.so.12` contract and writes the matching SONAME and `$ORIGIN` RUNPATH;
+the source install is never mistaken for an already versioned upstream ABI.
+
 ## GPU frame transport
 
 `GPU_PUSH` uses libVLC 4's GLES2 output callbacks and a private EGL context on
