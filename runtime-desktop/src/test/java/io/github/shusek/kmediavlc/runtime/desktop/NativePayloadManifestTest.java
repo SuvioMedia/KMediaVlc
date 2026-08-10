@@ -45,6 +45,28 @@ class NativePayloadManifestTest {
                 revision.getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64"));
     }
 
+    @Test
+    void acceptsOnlyCanonicalAllowedLicenseConjunctions() {
+        String conjunction = validManifest().replace(
+                "file.3.licenseSpdx=LGPL-2.1-or-later",
+                "file.3.licenseSpdx=BSD-3-Clause AND LGPL-2.1-or-later");
+        NativePayloadManifest.parse(
+                conjunction.getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64");
+
+        for (String invalid : new String[] {
+            "LGPL-2.1-or-later AND BSD-3-Clause",
+            "BSD-3-Clause AND BSD-3-Clause",
+            "BSD-3-Clause OR LGPL-2.1-or-later",
+            "GPL-2.0-or-later"
+        }) {
+            String manifest = validManifest().replace(
+                    "file.3.licenseSpdx=LGPL-2.1-or-later",
+                    "file.3.licenseSpdx=" + invalid);
+            assertThrows(VlcRuntimeException.class, () -> NativePayloadManifest.parse(
+                    manifest.getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64"));
+        }
+    }
+
     private static String validManifest() {
         String hash = "a".repeat(64);
         return """

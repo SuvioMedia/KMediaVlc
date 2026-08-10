@@ -47,13 +47,17 @@ record NativePayloadManifest(
                     "Apache-2.0",
                     "BSD-2-Clause",
                     "BSD-3-Clause",
+                    "FTL",
+                    "IJG",
                     "ISC",
                     "LicenseRef-KMediaVlc-Proprietary",
                     "LGPL-2.0-or-later",
                     "LGPL-2.1-or-later",
                     "LGPL-3.0-or-later",
+                    "Libpng-2.0",
                     "MIT",
                     "MPL-2.0",
+                    "TU-Berlin-1.0",
                     "Zlib");
 
     static NativePayloadManifest parse(byte[] bytes, String expectedTarget) {
@@ -132,7 +136,7 @@ record NativePayloadManifest(
                 return reject("Native manifest contains an invalid component identifier.");
             }
             String licenseSpdx = required(properties, prefix + "licenseSpdx");
-            if (!ALLOWED_LICENSES.contains(licenseSpdx)) {
+            if (!isAllowedLicenseExpression(licenseSpdx)) {
                 return reject("Native manifest contains a forbidden or unknown license.");
             }
             FileRole role = parseEnum(required(properties, prefix + "role"), FileRole.class, "file role");
@@ -174,6 +178,18 @@ record NativePayloadManifest(
                 pluginDirectory,
                 new VlcRuntimeCapabilities(4, 2, VLC_VERSION, VLC_REVISION, modes, engines, hdr10Metadata),
                 List.copyOf(files));
+    }
+
+    private static boolean isAllowedLicenseExpression(String expression) {
+        String previous = null;
+        for (String identifier : expression.split(" AND ", -1)) {
+            if (!ALLOWED_LICENSES.contains(identifier)
+                    || (previous != null && previous.compareTo(identifier) >= 0)) {
+                return false;
+            }
+            previous = identifier;
+        }
+        return previous != null;
     }
 
     private static void validateEngines(String target, Set<VlcRenderEngine> engines) {

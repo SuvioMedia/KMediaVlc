@@ -227,9 +227,21 @@ val verifyRuntimeJar =
                         "META-INF/LICENSE",
                         "META-INF/NOTICE",
                         "META-INF/THIRD_PARTY_NOTICES.md",
-                        "META-INF/LICENSES/LGPL-2.1.txt",
                     )
                 require(names.containsAll(required)) { "Runtime JAR is missing mandatory legal files." }
+                val expectedLicenses =
+                    rootProject.layout.projectDirectory
+                        .dir("LICENSES")
+                        .asFile
+                        .listFiles { file -> file.isFile && file.extension == "txt" }
+                        .orEmpty()
+                        .map { "META-INF/LICENSES/${it.name}" }
+                        .toSet()
+                val packagedLicenses =
+                    names.filter { it.startsWith("META-INF/LICENSES/") && !it.endsWith("/") }.toSet()
+                require(packagedLicenses == expectedLicenses) {
+                    "Runtime JAR legal inventory differs from the repository LICENSES directory."
+                }
                 val containsNative = names.any { it.startsWith("META-INF/kmediavlc/native/") }
                 require(containsNative == nativePackagingConfigured) {
                     "Runtime JAR native resources do not match the explicit payload input."

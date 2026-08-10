@@ -28,6 +28,37 @@ ALLOWED_LICENSES = {
     "TU-Berlin-1.0",
     "Zlib",
 }
+COMPONENT_NOTICE_FILES = {
+    "ffmpeg": "FFmpeg-LICENSE.txt",
+    "flac": "FLAC-COPYING-XIPH.txt",
+    "freetype": "FreeType-FTL.txt",
+    "fribidi": "LGPL-2.1.txt",
+    "gmp": "LGPL-3.0.txt",
+    "gnutls": "LGPL-2.1.txt",
+    "gnutls-libtasn1": "LGPL-2.1.txt",
+    "gnutls-libunistring": "LGPL-3.0.txt",
+    "gsm": "GSM-COPYRIGHT.txt",
+    "harfbuzz": "HarfBuzz-COPYING.txt",
+    "libass": "libass-COPYING.txt",
+    "libdvbpsi": "LGPL-2.1.txt",
+    "libebml": "LGPL-2.1.txt",
+    "libgcrypt": "LGPL-2.1.txt",
+    "libgpg-error": "LGPL-2.1.txt",
+    "libiconv": "LGPL-2.1.txt",
+    "libjpeg-turbo": "libjpeg-turbo-LICENSE.txt",
+    "libmatroska": "LGPL-2.1.txt",
+    "libogg": "libogg-COPYING.txt",
+    "libpng": "libpng-LICENSE.txt",
+    "libssh2": "libssh2-COPYING.txt",
+    "libvorbis": "libvorbis-COPYING.txt",
+    "libxml2": "libxml2-Copyright.txt",
+    "nettle": "LGPL-3.0.txt",
+    "openjpeg": "OpenJPEG-LICENSE.txt",
+    "opus": "Opus-COPYING.txt",
+    "soxr": "SoXR-LICENCE.txt",
+    "speexdsp": "SpeexDSP-COPYING.txt",
+    "zlib": "zlib-LICENSE.txt",
+}
 FORBIDDEN_BINARY_SUFFIXES = {
     ".a",
     ".dll",
@@ -305,17 +336,37 @@ def verify_pin_occurrences(root: Path) -> None:
 
 
 def verify_legal_files(root: Path) -> None:
+    binary = load_json(root / "compliance/policy/windows-x86_64-binary-components.json")
+    components = binary.get("components")
+    if not isinstance(components, dict) or set(components) != set(COMPONENT_NOTICE_FILES):
+        fail("Legal notice mapping must cover the closed Windows component inventory exactly.")
     required = [
         root / "LICENSE",
         root / "NOTICE",
         root / "THIRD_PARTY_NOTICES.md",
         root / "LICENSES/LGPL-2.1.txt",
+        root / "LICENSES/LGPL-3.0.txt",
         root / "LICENSES/ISC-kmediavlc-client-api.txt",
         root / "gradle/wrapper/LICENSE",
     ]
+    required.extend(root / "LICENSES" / name for name in set(COMPONENT_NOTICE_FILES.values()))
     missing = [str(path.relative_to(root)) for path in required if not path.is_file() or path.stat().st_size < 100]
     if missing:
         fail("Missing or truncated legal files: " + ", ".join(missing))
+
+    notices = (root / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+    if binary.get("toolchainImage") not in notices:
+        fail("Third-party notices omit the pinned Windows toolchain.")
+    for component_id, component in components.items():
+        licenses = " AND ".join(component["licenseSpdx"])
+        row = f"| {component_id} | {component['version']} | {licenses} |"
+        expected = (
+            row,
+            f"`{component['sourceArchive']}`",
+            f"`LICENSES/{COMPONENT_NOTICE_FILES[component_id]}`",
+        )
+        if any(value not in notices for value in expected):
+            fail(f"Third-party notices omit the reviewed component terms: {component_id}")
 
 
 def main() -> None:
