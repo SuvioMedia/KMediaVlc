@@ -434,9 +434,11 @@ final class VlcDesktopPlayerIntegrationTest {
                 bridge != null && libVlc != null && plugins != null,
                 "The exact-commit VideoLAN fixture is opt-in and never a release payload.");
         Path image = createImage();
-        Set<VlcRenderEngine> renderEngines =
-                System.getProperty("os.name", "").toLowerCase().contains("mac")
-                        ? Set.of(VlcRenderEngine.OPENGL)
+        String osName = System.getProperty("os.name", "").toLowerCase();
+        Set<VlcRenderEngine> renderEngines = osName.contains("mac")
+                ? Set.of(VlcRenderEngine.OPENGL)
+                : osName.contains("linux")
+                        ? Set.of(VlcRenderEngine.GLES2)
                         : Set.of(VlcRenderEngine.D3D11);
         var runtime = new VlcDesktopRuntimeResolution(
                 Path.of(bridge).toAbsolutePath(),
