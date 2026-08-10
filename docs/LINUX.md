@@ -120,16 +120,18 @@ Linux candidate.
 
 ## Hosted candidate evidence
 
-At KMediaVlc commit `b0c46b472c46edcbac3438999e2d1185b16f8047`,
-[Linux source validation run 31390854298](https://github.com/SuvioMedia/KMediaVlc/actions/runs/31390854298)
+At KMediaVlc commit `dcf8784b1728180dc7a46d3d2687f1bdc2019f51`,
+[Linux source validation run 31394164852](https://github.com/SuvioMedia/KMediaVlc/actions/runs/31394164852)
 completed successfully on 2026-08-10. Its native
-[x86-64](https://github.com/SuvioMedia/KMediaVlc/actions/runs/31390854298/job/93461988833)
+[x86-64](https://github.com/SuvioMedia/KMediaVlc/actions/runs/31394164852/job/93473081464)
 and
-[AArch64](https://github.com/SuvioMedia/KMediaVlc/actions/runs/31390854298/job/93461988696)
+[AArch64](https://github.com/SuvioMedia/KMediaVlc/actions/runs/31394164852/job/93473081599)
 jobs each built the pinned libVLC graph from source, validated the bounded
 install, staged and audited the 85 plugins plus the private support graph,
 generated `plugins.dat`, and decoded a real CPU frame against that staged
-runtime. CI retained no native payload.
+runtime. Both jobs also compiled the independent DMA-BUF/fence inspector, but
+did not execute its opt-in physical-render-node test. CI retained no native
+payload.
 
 This closes only the hosted source-build, ELF/cache, and CPU-playback gate. It
 does not provide physical render-node, DMA-BUF import, explicit-fence, VR
