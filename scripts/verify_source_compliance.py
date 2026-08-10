@@ -1454,6 +1454,29 @@ def verify_linux_runtime_contract(root: Path) -> None:
     if not all(marker in desktop_build for marker in desktop_build_markers):
         fail("The Linux hardware probe render node is not forwarded to the test JVM.")
 
+    hardware_workflow = (root / ".github/workflows/linux-hardware-probe.yml").read_text(
+        encoding="utf-8"
+    )
+    hardware_workflow_markers = [
+        "workflow_dispatch:",
+        "tested_commit:",
+        "options: [x64, ARM64]",
+        'github.ref == \'refs/heads/codex/libvlc4-backend\'',
+        'runs-on: [self-hosted, linux, "${{ inputs.architecture }}", kmediavlc-linux-gpu]',
+        "pinnedVideoLanFixtureImportsLinuxDmaBufsAndReturnsExplicitFences",
+        "Remove the unpublished candidate from the self-hosted runner",
+    ]
+    if not all(marker in hardware_workflow for marker in hardware_workflow_markers):
+        fail("The manual Linux physical-probe workflow is incomplete or not fail-closed.")
+    forbidden_hardware_workflow_markers = [
+        "pull_request:",
+        "push:",
+        "upload-artifact",
+        "${{ secrets.",
+    ]
+    if any(marker in hardware_workflow for marker in forbidden_hardware_workflow_markers):
+        fail("The Linux physical probe must remain manual, secret-free, and artifact-free.")
+
     cmake = (root / "native/CMakeLists.txt").read_text(encoding="utf-8")
     cmake_markers = [
         'CMAKE_SYSTEM_NAME STREQUAL "Linux"',

@@ -90,6 +90,14 @@ then require four more successful frames, covering fail-closed retirement and
 replacement. Hosted runners compile this probe but do not run it or claim
 hardware evidence.
 
+After this workflow is present on the default branch, the manually dispatched
+`Linux DMA-BUF hardware probe` accepts only an exact KMediaVlc commit, an
+x64/ARM64 choice, and a `/dev/dri/renderD*` node. It targets a dedicated
+self-hosted runner carrying all of the `self-hosted`, `linux`, architecture,
+and `kmediavlc-linux-gpu` labels. The runner must be pre-provisioned with the
+same Linux build dependencies as source validation. The job uploads no binary
+and removes its unpublished candidate after every outcome.
+
 The current Linux transport is SDR RGBA8/sRGB. PQ and HLG source identity is
 still reported in frame metadata, but libVLC tone-maps those sources to the
 BT.709/sRGB output. `requestHdr=true` therefore does not claim a native Linux
