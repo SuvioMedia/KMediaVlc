@@ -185,6 +185,7 @@ def load_policy(
     module_components = binary.get("moduleComponents")
     core_components = binary.get("coreComponents")
     allowed_system = binary.get("allowedSystemDependencies")
+    allowed_system_by_target = binary.get("allowedSystemDependenciesByTarget")
     ceilings = binary.get("maximumSymbolVersions")
     if (
         not isinstance(components, dict)
@@ -192,6 +193,14 @@ def load_policy(
         or not isinstance(core_components, list)
         or not isinstance(allowed_system, list)
         or allowed_system != sorted(set(allowed_system))
+        or not isinstance(allowed_system_by_target, dict)
+        or set(allowed_system_by_target) != set(TARGET_MACHINES)
+        or any(
+            not isinstance(dependencies, list)
+            or dependencies != sorted(set(dependencies))
+            or set(dependencies) & set(allowed_system)
+            for dependencies in allowed_system_by_target.values()
+        )
         or not isinstance(ceilings, dict)
         or set(ceilings) != {"GLIBC", "GLIBCXX", "CXXABI"}
         or not set(module_components).issubset(seen)
@@ -408,7 +417,8 @@ def main() -> None:
             role,
             args.target,
             readelf,
-            set(binary["allowedSystemDependencies"]),
+            set(binary["allowedSystemDependencies"])
+            | set(binary["allowedSystemDependenciesByTarget"][args.target]),
             binary["maximumSymbolVersions"],
         )
     if not any(

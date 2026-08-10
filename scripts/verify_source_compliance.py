@@ -1236,8 +1236,14 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "librt.so.1",
         "libstdc++.so.6",
     ]
+    expected_target_system_dependencies = {
+        "linux-x86_64": ["ld-linux-x86-64.so.2"],
+        "linux-aarch64": ["ld-linux-aarch64.so.1"],
+    }
     if (
         binary.get("allowedSystemDependencies") != expected_system_dependencies
+        or binary.get("allowedSystemDependenciesByTarget")
+        != expected_target_system_dependencies
         or binary.get("maximumSymbolVersions")
         != {"GLIBC": "2.39", "GLIBCXX": "3.4.33", "CXXABI": "1.3.15"}
     ):
@@ -1367,6 +1373,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         'require_plain_file(install, "lib/libvlccore.so.9.0.0")',
         "source = require_plain_file(plugin_root, filename)",
         'dependency not in allowed_system_dependencies',
+        'binary["allowedSystemDependenciesByTarget"][args.target]',
         '"GNU_STACK"',
         '"GNU_RELRO"',
         '"Build ID:',

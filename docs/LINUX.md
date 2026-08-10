@@ -13,6 +13,9 @@ build dependencies are EGL, GLES2, GBM, libdrm, fontconfig, and PulseAudio;
 the stager independently closes all resulting ELF dependencies and symbol
 version ceilings. Every other selected codec, demuxer, text renderer, and TLS
 dependency comes from the pinned VLC contrib source graph.
+The glibc dynamic loader is admitted only under its target-specific SONAME:
+`ld-linux-x86-64.so.2` or `ld-linux-aarch64.so.1`; it is not a cross-target
+wildcard.
 The WebVTT CSS engine is enabled explicitly because the global Meson auto
 feature policy is disabled; its Flex/Bison outputs add no runtime dependency.
 

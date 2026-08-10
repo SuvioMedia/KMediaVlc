@@ -183,6 +183,14 @@
     "librt.so.1",
     "libstdc++.so.6"
   ],
+  "allowedSystemDependenciesByTarget": {
+    "linux-x86_64": [
+      "ld-linux-x86-64.so.2"
+    ],
+    "linux-aarch64": [
+      "ld-linux-aarch64.so.1"
+    ]
+  },
   "maximumSymbolVersions": {
     "GLIBC": "2.39",
     "GLIBCXX": "3.4.33",
