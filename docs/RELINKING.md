@@ -25,6 +25,20 @@ bridge. VLC's Android build folds its selected modules and contribs into
 and libvlcjni checkouts, every contrib source input, the exact module list,
 and the NDK 29 build/relink recipe.
 
+The relink recipe also includes KMediaVlc's committed `libvlcjni` policy patch.
+For the Android profile that patch disables Blu-ray/BD-J and records the
+limitation in the closed build recipe.
+Each build creates a linker map and a path-free audit that binds the patch and
+generated module-array hashes to the exact static archives and object members
+that entered `libvlc.so`. Those reports must be reviewed together with the
+corresponding contrib sources and notices; they are not a substitute for the
+sources or for the full relinking instructions.
+
+The pinned recipe has been exercised successfully for ARM64 and ARMv7 and the
+resulting stripped payload has passed the real AAR inventory gate. Publication
+still requires turning the generated per-ABI archive graphs into reviewed,
+retained corresponding-source evidence.
+
 An application can replace the pair by substituting a rebuilt AAR (or its
 matching `jni/<abi>` entries) while retaining bridge ABI 1 and the exact VLC
 4 callback ABI. This remains documentation for an audit candidate, not a

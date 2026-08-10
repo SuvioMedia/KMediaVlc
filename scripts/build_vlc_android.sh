@@ -48,26 +48,66 @@ actual_ndk_revision="$(sed -n 's/^Pkg.Revision = //p' "$ndk_directory/source.pro
     fail "Android NDK differs from $expected_ndk_revision"
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+patch_file="$project_root/patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"
+[[ -s "$patch_file" && ! -L "$patch_file" ]] || fail "KMediaVlc libvlcjni patch is missing"
+patched_libvlcjni="$work_directory/libvlcjni-kmediavlc"
+audit_directory="$work_directory/link-audits"
+[[ ! -e "$patched_libvlcjni" && ! -e "$audit_directory" ]] ||
+    fail "work directory already contains Android source-build state"
+mkdir -p "$patched_libvlcjni" "$audit_directory"
+if [[ -n "$(find "$libvlcjni_source/buildsystem" "$libvlcjni_source/libvlc" -type l -print -quit)" ]]; then
+    fail "libvlcjni build inputs must not contain symbolic links"
+fi
+cp -R "$libvlcjni_source/buildsystem" "$patched_libvlcjni/buildsystem"
+cp -R "$libvlcjni_source/libvlc" "$patched_libvlcjni/libvlc"
+patch --batch --forward --strip=1 --directory="$patched_libvlcjni" < "$patch_file"
+
 readelf_executable="$ndk_directory/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-readelf"
 strip_executable="$ndk_directory/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-strip"
+nm_executable="$ndk_directory/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-nm"
+strings_executable="$ndk_directory/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-strings"
 if [[ "$(uname -s)" == Linux ]]; then
     readelf_executable="$ndk_directory/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
     strip_executable="$ndk_directory/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+    nm_executable="$ndk_directory/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm"
+    strings_executable="$ndk_directory/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strings"
 fi
-[[ -x "$readelf_executable" && -x "$strip_executable" ]] ||
+[[ -x "$readelf_executable" && -x "$strip_executable" && -x "$nm_executable" &&
+   -x "$strings_executable" ]] ||
     fail "NDK ELF tools are missing for this host"
 
 for abi in arm64-v8a armeabi-v7a; do
+    link_map="$audit_directory/libvlc-$abi.map"
     (
         cd "$vlc_source"
-        ANDROID_NDK="$ndk_directory" \
-            "$libvlcjni_source/buildsystem/compile-libvlc.sh" \
+        APP_LDFLAGS="-Wl,-Map=$link_map" \
+            ANDROID_NDK="$ndk_directory" \
+            "$patched_libvlcjni/buildsystem/compile-libvlc.sh" \
             -a "$abi" --release --static-cpp --license a --no-jni
-    )
+    ) 2>&1 | while IFS= read -r line || [[ -n "$line" ]]; do
+        case "$line" in
+            PATH:*|*PATH=*) printf '%s\n' "[upstream process-path line suppressed]" ;;
+            *) printf '%s\n' "$line" ;;
+        esac
+    done
 
-    libvlc_library="$libvlcjni_source/libvlc/jni/libs/$abi/libvlc.so"
+    libvlc_library="$patched_libvlcjni/libvlc/jni/libs/$abi/libvlc.so"
     [[ -s "$libvlc_library" && ! -L "$libvlc_library" ]] ||
         fail "source build did not produce libvlc.so for $abi"
+    [[ -s "$link_map" && ! -L "$link_map" ]] ||
+        fail "source build did not produce a libvlc linker map for $abi"
+
+    python3 "$project_root/scripts/create_android_link_audit.py" \
+        --root "$project_root" \
+        --vlc-source "$vlc_source" \
+        --ndk "$ndk_directory" \
+        --abi "$abi" \
+        --libvlc "$libvlc_library" \
+        --link-map "$link_map" \
+        --readelf "$readelf_executable" \
+        --nm "$nm_executable" \
+        --strings "$strings_executable" \
+        --output "$audit_directory/$abi.json"
 
     bridge_build="$work_directory/bridge-$abi"
     "$cmake_executable" \
@@ -118,3 +158,4 @@ releaseEligible=false
 EOF
 
 echo "Android source-build candidate staged at $output_directory (releaseEligible=false)."
+echo "Path-free per-ABI link audits staged at $audit_directory."

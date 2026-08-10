@@ -36,3 +36,24 @@ therefore the upstream `--license a` switch is only a starting filter, not
 proof of eligibility. Publication stays disabled until the generated module
 symbols and every linked archive are mapped to allowed licenses and complete
 corresponding source.
+
+The source builder applies a committed patch to a transient copy of the exact
+pinned `libvlcjni` checkout. It deterministically sorts the module input and
+excludes the known VLC modules that declare GPL-2.0-or-later. It also keeps the
+Android-only Blu-ray/BD-J feature outside this runtime profile. The per-ABI
+audit then uses the final linker map, not the filesystem alone: it records every
+archive member that actually contributes to `libvlc.so`, verifies each selected
+module archive carries VLC's exact LGPL marker, rejects a GPL marker in every
+module and the final library, and binds the report to the patch, generated
+module array, and link map hashes. The final link may garbage-collect unused
+LGPL metadata strings, so eligibility derives from the exact archive/object
+graph rather than from a retained string alone. This is release evidence
+tooling; its unreviewed output leaves the final effective SPDX expression unset
+and does not by itself make a candidate publishable.
+
+The completed pinned source build currently reports 62 actually linked contrib
+archives per Android ABI, plus four NDK runtime archives and the three VLC core
+archives. All selected VLC module archives passed the compiled marker check.
+Those observations validate the audit pipeline, but each of the 62 contrib
+entries still needs reviewed SPDX/source/notice metadata before the manifest can
+be promoted from `candidate-unreviewed-static-components`.

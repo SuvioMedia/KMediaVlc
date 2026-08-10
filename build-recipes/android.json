@@ -28,11 +28,33 @@
     "libc++_shared.so",
     "libvlcjni.so"
   ],
+  "requiredPlaybackModules": [
+    "adaptive",
+    "android_aaudio",
+    "android_audiodevice",
+    "android_audiotrack",
+    "android_display",
+    "android_window",
+    "avcodec",
+    "egl_android",
+    "filesystem",
+    "http",
+    "mediacodec",
+    "mkv",
+    "mp4",
+    "opensles_android"
+  ],
+  "libvlcjniPatch": "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch",
+  "disabledVlcFeatures": [
+    "bluray"
+  ],
   "usesPrebuiltContribs": false,
   "usesPublishedLibVlcAar": false,
   "requiresCoreJniOnLoadFirst": true,
   "requiresPerFileInventory": true,
   "requiresModuleLicenseAudit": true,
+  "requiresCompiledModuleLicenseAudit": true,
+  "requiresLinkerMapAudit": true,
   "requiresDeviceSurfaceLifecycleTest": true,
   "forbidsStockNightly": true,
   "candidateReleaseEligible": false

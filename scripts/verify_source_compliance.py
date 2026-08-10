@@ -367,9 +367,11 @@ def verify_android_contract(root: Path) -> None:
         "libvlcjniSource", "publicationTargets", "ndkVersion", "vlcAndroidApi",
         "clientMinSdk", "libvlcBuildArguments", "contribLicenseProfile",
         "renderEngine", "packagedLibraries", "excludedLibraries",
+        "requiredPlaybackModules", "libvlcjniPatch", "disabledVlcFeatures",
         "usesPrebuiltContribs", "usesPublishedLibVlcAar",
         "requiresCoreJniOnLoadFirst", "requiresPerFileInventory",
-        "requiresModuleLicenseAudit", "requiresDeviceSurfaceLifecycleTest",
+        "requiresModuleLicenseAudit", "requiresCompiledModuleLicenseAudit",
+        "requiresLinkerMapAudit", "requiresDeviceSurfaceLifecycleTest",
         "forbidsStockNightly", "candidateReleaseEligible",
     }
     if set(recipe) != expected_keys or recipe.get("schemaVersion") != 1:
@@ -395,10 +397,22 @@ def verify_android_contract(root: Path) -> None:
         or recipe.get("excludedLibraries") != ["libc++_shared.so", "libvlcjni.so"]
     ):
         fail("The Android rendering or native library inventory changed.")
+    expected_playback_modules = [
+        "adaptive", "android_aaudio", "android_audiodevice", "android_audiotrack",
+        "android_display", "android_window", "avcodec", "egl_android", "filesystem",
+        "http", "mediacodec", "mkv", "mp4", "opensles_android",
+    ]
+    if (
+        recipe.get("requiredPlaybackModules") != expected_playback_modules
+        or recipe.get("libvlcjniPatch")
+        != "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"
+        or recipe.get("disabledVlcFeatures") != ["bluray"]
+    ):
+        fail("The Android playback module, disabled feature, or libvlcjni patch policy changed.")
     required_true = [
         "requiresCoreJniOnLoadFirst", "requiresPerFileInventory",
-        "requiresModuleLicenseAudit", "requiresDeviceSurfaceLifecycleTest",
-        "forbidsStockNightly",
+        "requiresModuleLicenseAudit", "requiresCompiledModuleLicenseAudit",
+        "requiresLinkerMapAudit", "requiresDeviceSurfaceLifecycleTest", "forbidsStockNightly",
     ]
     if any(recipe.get(key) is not True for key in required_true):
         fail("The Android audit requirements were weakened.")
@@ -477,13 +491,59 @@ def verify_android_contract(root: Path) -> None:
     builder_markers = [
         "compile-libvlc.sh",
         "--release --static-cpp --license a --no-jni",
+        "APP_LDFLAGS=",
         "ANDROID_NDK=",
+        "create_android_link_audit.py",
+        "libvlcjni-kmediavlc",
+        "0001-kmediavlc-android-static-module-policy.patch",
+        "upstream process-path line suppressed",
         "libkmediavlc_android.so",
         "releaseEligible=false",
         "0x4000",
     ]
     if not all(marker in builder for marker in builder_markers):
         fail("The Android source builder does not produce a fail-closed candidate.")
+
+    audit_generator = (root / "scripts/create_android_link_audit.py").read_text(
+        encoding="utf-8"
+    )
+    audit_markers = [
+        "candidate-unreviewed-static-components",
+        '"VLC_MODULE"',
+        '"VLC_CORE"',
+        '"CONTRIB"',
+        '"NDK_TOOLCHAIN"',
+        "LGPL_TEXT",
+        "GPL_TEXT",
+        "libvlc_video_set_output_callbacks",
+        "FORBIDDEN_NEEDED",
+        '"loadAlignment"',
+        '"libvlcjniPatch"',
+        '"effectiveLicenseSpdx"',
+    ]
+    if not all(marker in audit_generator for marker in audit_markers):
+        fail("The Android exact-link audit generator is incomplete.")
+
+    policy_patch = (
+        root / "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"
+    ).read_text(encoding="utf-8")
+    patch_markers = [
+        "LC_ALL=C sort",
+        "    --disable-bluray",
+        "sed -i.bak",
+        'rm -f "$pcfile.bak"',
+        'find "$1" -name "$2"',
+        "PKG_CONFIG_IGNORE_CONFLICTS=1",
+        'APP_LDFLAGS="${APP_LDFLAGS}"',
+        "    dummy",
+        "    file_logger",
+        "    lua",
+        "    rc",
+        "    rotate",
+        "    stream_out_(cycle|rtp)",
+    ]
+    if not all(marker in policy_patch for marker in patch_markers):
+        fail("The Android static module policy patch is incomplete.")
 
     ci = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
     ci_markers = [
