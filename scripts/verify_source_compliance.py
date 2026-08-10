@@ -1029,6 +1029,100 @@ def verify_ios_runtime_contract(root: Path) -> None:
         fail("The iOS runtime documentation must remain exact and publication-fail-closed.")
 
 
+def verify_linux_runtime_contract(root: Path) -> None:
+    recipe = load_json(root / "build-recipes/linux.json")
+    expected_contribs = [
+        "ass",
+        "dav1d",
+        "dvbpsi",
+        "ebml",
+        "ffmpeg",
+        "flac",
+        "freetype2",
+        "fribidi",
+        "gnutls",
+        "harfbuzz",
+        "jpeg",
+        "libxml2",
+        "matroska",
+        "ogg",
+        "opus",
+        "png",
+        "soxr",
+        "vorbis",
+        "vpx",
+        "zlib",
+    ]
+    expected_system_packages = [
+        "egl",
+        "fontconfig",
+        "gbm",
+        "glesv2",
+        "libdrm",
+        "libpulse",
+    ]
+    if (
+        recipe.get("schemaVersion") != 1
+        or recipe.get("targets") != ["linux-x86_64", "linux-aarch64"]
+        or recipe.get("vlcRevision") != PINNED_REVISION
+        or recipe.get("buildSystem") != "meson"
+        or recipe.get("mesonVersion") != "1.10.0"
+        or recipe.get("minimumGlibc") != "2.39"
+        or recipe.get("buildMode") != "shared"
+        or recipe.get("usesPrebuiltContribs") is not False
+        or recipe.get("selectedContribPackages") != expected_contribs
+        or recipe.get("systemBuildDependencies") != expected_system_packages
+        or recipe.get("renderEngine") != "GLES2"
+        or recipe.get("frameTransport") != "DMA_BUF"
+        or recipe.get("requiredFrameDeliveryModes") != ["CPU_PULL", "GPU_PUSH"]
+        or recipe.get("requiresClosedElfGraph") is not True
+        or recipe.get("requiresRenderNodeDmaBufTest") is not True
+        or recipe.get("requiresAcquireFenceTest") is not True
+        or recipe.get("requiresReleaseFenceTest") is not True
+        or recipe.get("requiresVrConsumerAcceptance") is not True
+        or recipe.get("candidateReleaseEligible") is not False
+    ):
+        fail("The Linux source-build recipe is incomplete or release-open.")
+
+    builder = (root / "scripts/build_vlc_linux.sh").read_text(encoding="utf-8")
+    builder_markers = [
+        'readonly PINNED_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"',
+        'readonly PINNED_MESON_VERSION="1.10.0"',
+        "--disable-all",
+        "--disable-gpl",
+        "--enable-gnutls",
+        "--default-library=shared",
+        "--prefer-static",
+        "--wrap-mode=nodownload",
+        "-Dauto_features=disabled",
+        "-Dgles2=enabled",
+        "-Dpulse=enabled",
+        "--tags runtime",
+        "raw-plugin-files.txt",
+    ]
+    if not all(marker in builder for marker in builder_markers):
+        fail("The Linux build wrapper does not preserve the closed source recipe.")
+
+    workflow = (root / ".github/workflows/linux-source-audit.yml").read_text(
+        encoding="utf-8"
+    )
+    workflow_markers = [
+        "ubuntu-24.04-arm",
+        "linux-x86_64",
+        "linux-aarch64",
+        "persist-credentials: false",
+        "bash scripts/build_vlc_linux.sh",
+        "Build the pinned-ABI bridge and play a real CPU frame",
+        "pinnedVideoLanFixturePublishesCpuPullFrame",
+        "LD_LIBRARY_PATH=",
+        "without retaining binaries",
+    ]
+    if not all(marker in workflow for marker in workflow_markers):
+        fail("Linux validation does not cover both native architectures and real CPU playback.")
+    if "upload-artifact" in workflow or "contents: write" in workflow:
+        fail("Linux candidate validation must not publish or retain native payloads.")
+
+
 def verify_legal_files(root: Path) -> None:
     windows_binary = load_json(root / "compliance/policy/windows-x86_64-binary-components.json")
     macos_binary = load_json(root / "compliance/policy/macos-aarch64-binary-components.json")
@@ -1105,6 +1199,7 @@ def main() -> None:
     verify_pin_occurrences(root)
     verify_macos_transport_contract(root)
     verify_ios_runtime_contract(root)
+    verify_linux_runtime_contract(root)
     verify_legal_files(root)
     print("KMediaVlc source and licensing policy verified.")
 

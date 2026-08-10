@@ -1,0 +1,124 @@
+# SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+
+name: Linux libVLC source validation
+
+on:
+  push:
+    branches:
+      - codex/linux-bundled-runtime
+    paths:
+      - .github/workflows/linux-source-audit.yml
+      - build-recipes/linux.json
+      - scripts/build_vlc_linux.sh
+      - scripts/stage_vlc_linux_runtime.py
+      - compliance/policy/linux-**
+      - native/**
+      - runtime-desktop/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kmediavlc-linux-source-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-build:
+    name: Source build and CPU playback (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x86_64
+            runner: ubuntu-24.04
+            machine: x86_64
+          - target: linux-aarch64
+            runner: ubuntu-24.04-arm
+            machine: aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    steps:
+      - name: Check out KMediaVlc
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check out the exact VLC source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          repository: videolan/vlc
+          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          path: .vlc-source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Install the explicit Linux build prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            autoconf automake autopoint bison build-essential bzip2 ca-certificates \
+            cmake curl file flex fontconfig gettext git gperf help2man jq \
+            libdrm-dev libegl1-mesa-dev libfontconfig1-dev libgbm-dev \
+            libgles2-mesa-dev libpulse-dev libtool-bin make nasm ninja-build \
+            patch patchelf pkg-config python3 python3-venv ragel tar unzip \
+            xz-utils yasm zstd
+
+      - name: Set up Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      - name: Build the pinned shared libVLC graph from source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "${{ matrix.machine }}"
+          bash scripts/build_vlc_linux.sh \
+            "$GITHUB_WORKSPACE/.vlc-source" \
+            "$RUNNER_TEMP/vlc-linux-build" \
+            4
+
+      - name: Validate the bounded ELF install without retaining binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          install="$RUNNER_TEMP/vlc-linux-build/vlc-${{ matrix.target }}"
+          test -f "$install/lib/libvlc.so.12"
+          test -f "$install/lib/libvlccore.so.9"
+          plugin_count="$(find "$install/lib/vlc/plugins" -type f -name 'lib*_plugin.so' | wc -l)"
+          file_count="$(find "$install" -type f | wc -l)"
+          test "$plugin_count" -ge 80
+          test "$plugin_count" -le 350
+          test "$file_count" -gt "$plugin_count"
+          expected_machine='Advanced Micro Devices X86-64'
+          if [[ "${{ matrix.target }}" == linux-aarch64 ]]; then
+            expected_machine='AArch64'
+          fi
+          while IFS= read -r -d '' binary; do
+            readelf -h "$binary" | grep -Fq 'Class:                             ELF64'
+            readelf -h "$binary" | grep -Fq "Machine:                           $expected_machine"
+          done < <(find "$install" -type f \( -name '*.so' -o -name '*.so.*' \) -print0)
+
+      - name: Build the pinned-ABI bridge and play a real CPU frame
+        shell: bash
+        run: |
+          set -euo pipefail
+          install="$RUNNER_TEMP/vlc-linux-build/vlc-${{ matrix.target }}"
+          bash ./gradlew buildNativeBridge \
+            -PkmediaVlcVlcSourceDir="$GITHUB_WORKSPACE/.vlc-source" \
+            --no-daemon --stacktrace --console=plain
+          bridge="$GITHUB_WORKSPACE/build/native/${{ matrix.target }}/libkmediavlc_bridge.so"
+          test -f "$bridge"
+          LD_LIBRARY_PATH="$install/lib" bash ./gradlew :runtime-desktop:test \
+            -PkmediaVlcNativeBridgePath="$bridge" \
+            -PkmediaVlcTestLibVlcPath="$install/lib/libvlc.so.12" \
+            -PkmediaVlcTestPluginDirectory="$install/lib/vlc/plugins" \
+            --tests '*.VlcDesktopPlayerIntegrationTest.pinnedVideoLanFixturePublishesCpuPullFrame' \
+            --no-daemon --stacktrace --console=plain
