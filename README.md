@@ -13,6 +13,10 @@ dependencies {
 }
 ```
 
+The Android coordinate is reserved as
+`io.github.shusek:kmedia-vlc-runtime-android`; it is not published until the
+Android gates below are complete.
+
 The runtime artifact contains a pinned libVLC 4 build, its allowlisted
 plugins and dependencies, and a stable KMediaVlc bridge. It never downloads
 native code at runtime. Native payloads are release inputs and are never
@@ -68,6 +72,18 @@ calls Compose and never waits for a UI render.
   real CPU-frame playback, but remain release-ineligible until physical
   render-node, fence, normal consumer, and VR-projection acceptance plus the
   binary/license audit pass.
+- Android has a two-ABI AAR and direct libVLC 4 ANativeWindow bridge. Its
+  pinned source recipe now completes real ARM64 and ARMv7 builds and emits an
+  exact static-link audit plus a hash-bound legal-evidence bundle inside the
+  candidate AAR. Exact NDK r29/LLVM source revisions are recorded and a
+  deterministic Git-object-verified NDK source packager is exercised. A separate
+  complete corresponding-source packager closes the exact KMediaVlc, VLC, and
+  libvlcjni trees, all 55 contrib tarballs, the NDK supplement, and both ABI
+  audits. Real ARM64/API 35 instrumented tests cover MediaCodec and software
+  decode, subtitle composition, repeated Surface replacement, seek, stop, and
+  destruction. The candidate remains deliberately release-ineligible until its
+  conservative SPDX sets and final release-bound source artifacts are reviewed
+  and closed.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 
@@ -78,7 +94,7 @@ KMediaVlc allowlisted graph.
 ## Checks
 
 ```shell
-./gradlew check complianceCheck
+bash gradlew check complianceCheck
 python scripts/verify_source_compliance.py --root .
 ```
 
@@ -90,10 +106,17 @@ embedded in the native manifest and must match the checked-out KMediaVlc
 commit. The Gradle publication consumes only the packager's verified output;
 an arbitrary directory cannot bypass the component/license inventory.
 
-The portable CPU-pull implementation exists for controlled tests. The runtime
-recognizes `macos-aarch64`, but no macOS payload is published in this version;
-resolution therefore fails closed until an audited resource is added.
+Android publication additionally requires the deterministic NDK source archive, exact
+`llvm-project` and `llvm_android` checkouts, and the same `recipeRevision`; Gradle independently
+reconstructs and verifies every selected Git object before attaching that archive. It also
+requires the independently verified Android corresponding-source archive, both upstream Git
+checkouts, all audited contrib tarballs, the real legal manifest, and both ABI link audits.
 
-See `docs/ARCHITECTURE.md`, `docs/FRAME-TRANSPORT.md`, `docs/MACOS.md`,
-`docs/IOS.md`, `docs/LINUX.md`, and `docs/LICENSING.md`. Release setup and the exact four GitHub secrets are
+The portable CPU-pull implementation and Android ANativeWindow API exist for
+controlled integration work, but the published native payload matrix remains
+Windows-only until each platform-specific publication gate is complete.
+
+See `docs/ARCHITECTURE.md`, `docs/ANDROID.md`, `docs/FRAME-TRANSPORT.md`,
+`docs/MACOS.md`, `docs/IOS.md`, `docs/LINUX.md`, and `docs/LICENSING.md`.
+Release setup and the exact four GitHub secrets are
 documented in `docs/RELEASING.md` and `docs/MAVEN-CENTRAL.md`.

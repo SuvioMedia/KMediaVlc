@@ -1,0 +1,66 @@
+From: KMediaVlc build policy <noreply@localhost>
+Subject: [PATCH] Make the Android static module set deterministic and LGPL-only
+
+The upstream Android build is also used by GPL applications and its broad
+blacklist does not exclude every VLC module that declares GPL-2.0-or-later.
+KMediaVlc links the modules into a library used by a proprietary bridge, so
+reject those modules before the final libvlc.so link and sort the input list.
+
+The Android runtime does not expose optical Blu-ray disc playback. Disable its
+contrib and VLC module instead of building the host-only BD-J Java payload.
+Use a portable in-place sed invocation so the same source recipe works on GNU
+and BSD hosts. Fix the literal archive-name lookup and allow pkg-config to
+return both upstream protobuf variants when generating the static link line.
+
+---
+ buildsystem/build-libvlc.sh | 37 ++++++++++++++++++++++++++++++++-----
+ 1 file changed, 32 insertions(+), 5 deletions(-)
+
+diff --git a/buildsystem/build-libvlc.sh b/buildsystem/build-libvlc.sh
+--- a/buildsystem/build-libvlc.sh
++++ b/buildsystem/build-libvlc.sh
+@@ -230 +230 @@
+-    echo "$(find $1 -name 'lib*plugin.a' | grep -vE "lib(${blacklist_regexp})_plugin.a" | tr '\n' ' ')"
++    echo "$(find $1 -name 'lib*plugin.a' | grep -vE "lib(${blacklist_regexp})_plugin.a" | LC_ALL=C sort | tr '\n' ' ')"
+@@ -277,0 +278 @@
++    --disable-bluray \
+@@ -355 +356 @@
+-    --enable-bluray \
++    --disable-bluray \
+@@ -387,0 +389,24 @@
++    avahi
++    dbus
++    dummy
++    file_logger
++    lirc
++    lua
++    macosx
++    mtp
++    ncurses
++    notify
++    ntservice
++    osx_notifications
++    qt
++    rc
++    rotate
++    skins2
++    stream_out_(cycle|rtp)
++    syslog
++    win_hotkeys
++    win_msg
++    x264
++    x26410b
++    x265
++    xcb_hotkeys
+@@ -558 +583,2 @@
+-    sed -i 's/ -lc++//' $pcfile
++    sed -i.bak 's/ -lc++//' "$pcfile"
++    rm -f "$pcfile.bak"
+@@ -643 +669 @@
+-    find $1 -name '$2'
++    find "$1" -name "$2"
+@@ -714 +740 @@
+-VLC_CONTRIB_LDFLAGS=$(cd $VLC_CONTRIB/lib/pkgconfig; avlc_pkgconfig --libs $(ls *.pc  | sed -e 's/\.pc$//' | xargs))
++VLC_CONTRIB_LDFLAGS=$(cd $VLC_CONTRIB/lib/pkgconfig; PKG_CONFIG_IGNORE_CONFLICTS=1 avlc_pkgconfig --libs $(ls *.pc  | sed -e 's/\.pc$//' | xargs))
+@@ -726,0 +753 @@
++    APP_LDFLAGS="${APP_LDFLAGS}" \

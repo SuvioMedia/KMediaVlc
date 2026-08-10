@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+  "libvlcjniRevision": "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21",
+  "vlcSource": "https://code.videolan.org/videolan/vlc.git",
+  "libvlcjniSource": "https://code.videolan.org/videolan/libvlcjni.git",
+  "publicationTargets": [
+    "android-arm64-v8a",
+    "android-armeabi-v7a"
+  ],
+  "ndkVersion": "29.0.14206865",
+  "vlcAndroidApi": 21,
+  "clientMinSdk": 28,
+  "libvlcBuildArguments": [
+    "--release",
+    "--static-cpp",
+    "--license",
+    "a",
+    "--no-jni"
+  ],
+  "contribLicenseProfile": "LGPL-2.1-plus-ad-clauses",
+  "renderEngine": "ANATIVEWINDOW",
+  "packagedLibraries": [
+    "libkmediavlc_android.so",
+    "libvlc.so"
+  ],
+  "excludedLibraries": [
+    "libc++_shared.so",
+    "libvlcjni.so"
+  ],
+  "requiredPlaybackModules": [
+    "adaptive",
+    "android_aaudio",
+    "android_audiodevice",
+    "android_audiotrack",
+    "android_display",
+    "android_window",
+    "avcodec",
+    "egl_android",
+    "filesystem",
+    "http",
+    "mediacodec",
+    "mkv",
+    "mp4",
+    "opensles_android"
+  ],
+  "libvlcjniPatch": "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch",
+  "disabledVlcFeatures": [
+    "bluray"
+  ],
+  "usesPrebuiltContribs": false,
+  "usesPublishedLibVlcAar": false,
+  "requiresCoreJniOnLoadFirst": true,
+  "requiresPerFileInventory": true,
+  "requiresModuleLicenseAudit": true,
+  "requiresCompiledModuleLicenseAudit": true,
+  "requiresLinkerMapAudit": true,
+  "legalEvidenceBundle": "legal/android-static-legal.json",
+  "requiresIdenticalAbiComponentEvidence": true,
+  "requiresApprovedLegalEvidenceForPublication": true,
+  "ndkSourceStatus": "exact-source-revisions-recorded-source-package-pending",
+  "requiresNdkRuntimeSourcePackage": true,
+  "ndkSourcePackagePolicy": "compliance/policy/android-static-components.json",
+  "requiresIndependentNdkSourceVerification": true,
+  "correspondingSourcePackagePolicy": "compliance/policy/android-corresponding-source.json",
+  "requiresCompleteCorrespondingSourcePackage": true,
+  "requiresIndependentCorrespondingSourceVerification": true,
+  "requiresDeviceSurfaceLifecycleTest": true,
+  "forbidsStockNightly": true,
+  "candidateReleaseEligible": false
+}

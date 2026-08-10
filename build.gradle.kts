@@ -4,6 +4,7 @@ import org.gradle.api.tasks.Exec
 
 plugins {
     base
+    alias(libs.plugins.android.library) apply false
 }
 
 val publicationVersion = providers.gradleProperty("publicationVersion").orElse("0.1.0-SNAPSHOT")
@@ -159,6 +160,9 @@ val testPackagingPolicy =
 
 tasks.named("check") {
     dependsOn(":runtime-desktop:check")
+    if (findProject(":runtime-android") != null) {
+        dependsOn(":runtime-android:check")
+    }
     dependsOn(verifySourceCompliance)
     dependsOn(testPackagingPolicy)
 }
@@ -167,6 +171,9 @@ tasks.register("complianceCheck") {
     group = "verification"
     description = "Runs JVM tests and every repository-level licensing gate."
     dependsOn(":runtime-desktop:check")
+    if (findProject(":runtime-android") != null) {
+        dependsOn(":runtime-android:check")
+    }
     dependsOn(verifySourceCompliance)
     dependsOn(testPackagingPolicy)
 }

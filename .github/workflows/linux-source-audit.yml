@@ -82,6 +82,7 @@ jobs:
         run: |
           set -euo pipefail
           bash ./gradlew buildNativeBridge \
+            -PkmediaVlcDesktopOnly=true \
             -PkmediaVlcVlcSourceDir="$GITHUB_WORKSPACE/.vlc-source" \
             --no-daemon --stacktrace --console=plain
           test -f "$GITHUB_WORKSPACE/build/native/${{ matrix.target }}/libkmediavlc_bridge.so"
@@ -139,6 +140,7 @@ jobs:
           test "$(jq -r .selectedPluginCount "$report")" = 85
           test "$(jq -r .auditCandidate "$report")" = true
           LD_LIBRARY_PATH="$stage/bin" bash ./gradlew :runtime-desktop:test \
+            -PkmediaVlcDesktopOnly=true \
             -PkmediaVlcNativeBridgePath="$stage/bin/libkmediavlc_bridge.so" \
             -PkmediaVlcTestLibVlcPath="$stage/bin/libvlc.so.12" \
             -PkmediaVlcTestPluginDirectory="$stage/lib/vlc/plugins" \

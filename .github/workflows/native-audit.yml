@@ -450,6 +450,7 @@ jobs:
         shell: pwsh
         run: |
           .\gradlew.bat check complianceCheck buildNativeBridge `
+            -PkmediaVlcDesktopOnly=true `
             "-PkmediaVlcVlcSourceDir=$env:GITHUB_WORKSPACE\.vlc-source" `
             -PkmediaVlcNativeBuildType=Release `
             --no-daemon --stacktrace --console=plain
@@ -516,6 +517,7 @@ jobs:
             throw 'The MSVC bridge binary is missing.'
           }
           .\gradlew.bat :runtime-desktop:test --rerun-tasks `
+            -PkmediaVlcDesktopOnly=true `
             "-PkmediaVlcNativeBridgePath=$bridge" `
             "-PkmediaVlcTestLibVlcPath=$env:KMEDIAVLC_TEST_LIBVLC" `
             "-PkmediaVlcTestPluginDirectory=$env:KMEDIAVLC_TEST_PLUGINS" `
@@ -649,6 +651,7 @@ jobs:
             --allow-audit-candidate
           if ($LASTEXITCODE -ne 0) { throw 'Candidate component inventory generation failed.' }
           .\gradlew.bat :runtime-desktop:verifyRuntimeJar :runtime-desktop:test `
+            -PkmediaVlcDesktopOnly=true `
             "-PpublicationVersion=$env:CANDIDATE_VERSION" `
             "-PkmediaVlcNativeStagingDirectory=$env:KMEDIAVLC_CANDIDATE" `
             "-PkmediaVlcNativeInventory=$inventory" `

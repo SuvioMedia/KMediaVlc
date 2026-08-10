@@ -14,6 +14,41 @@ A release contains no stock VLC nightly. It is eligible only after the exact Mes
 
 Each release publishes a version-bound complete corresponding-source archive alongside the binary and Maven artifacts. The native manifest identifies that immutable source asset and the exact KMediaVlc and VLC revisions used to build it.
 
+## VideoLAN libvlcjni build system
+
+The Android candidate uses the build machinery from VideoLAN `libvlcjni` revision
+`a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21`, under LGPL-2.1-or-later. Neither its
+Java wrapper classes nor `libvlcjni.so` are distributed by KMediaVlc. The pinned
+scripts and makefiles are corresponding-source build inputs used to combine the
+selected VLC modules into `libvlc.so`.
+
+Official source: https://code.videolan.org/videolan/libvlcjni
+
+The Android source-build candidate uses the upstream `a` license profile
+(LGPL-2.1-compatible contribs plus advertising-clause dependencies), static C++,
+and no prebuilt contribs or published AAR. Its exact 62-archive link graph is now
+closed to 54 contrib components and 55 pinned source tarballs; generated audits
+hash those source inputs, 83 selected in-archive license/patent/source-notice
+records, the NDK distribution notices, and its Clang source-provenance files for
+both packaged ABIs. The NDK map pins Clang `r563880c`, LLVM commit
+`386af4a5c64ab75eaee2448dc38f2e34a40bfed0`, and Android build/patch revision
+`1dab3288f660d43a6cb2479107e2b54b3ab0a2a1`. Deterministic packaging tooling
+now closes the selected source members to their exact Git blobs and rejects a
+different checkout or modified archive. The complete Android corresponding-source
+packager additionally retains the exact KMediaVlc, VLC, and libvlcjni Git trees,
+all 55 audited contrib tarballs, the verified NDK source supplement, the legal
+manifest, and both path-free ABI reports in one version- and commit-bound archive.
+A separate verifier reconstructs that closure from the original Git objects and
+external evidence. Conservative candidate SPDX sets remain marked
+`pending-linked-member-review`. The runtime remains release-ineligible until that
+review, packaged notice completion, final release-bound archive retention, and
+device lifecycle evidence are approved.
+
+Candidate AARs include the exact selected evidence inputs under
+`assets/kmediavlc/legal/ANDROID_STATIC/` together with a manifest that binds both ABI audits and
+all file hashes. Inclusion makes the raw evidence inspectable; it does not change the candidate
+SPDX sets into an approved aggregate license conclusion.
+
 ## Windows x86_64 playback dependency inventory
 
 The following closed inventory is derived from the pinned contrib inputs. Publication remains blocked until the matching native link audit changes both review states to `approved` for the exact commit.

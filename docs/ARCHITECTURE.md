@@ -7,8 +7,8 @@ The dependency graph is intentionally one-way:
 ```text
 Suvio
   -> composemediaplayer-libvlc
-       -> kmedia-vlc-runtime-desktop
-            -> audited libVLC 4 + plugins + bridge
+       -> kmedia-vlc-runtime-desktop -> audited libVLC 4 + plugins + GPU bridge
+       -> kmedia-vlc-runtime-android -> source-built libvlc.so + ANativeWindow bridge
 ```
 
 Neither `composemediaplayer` nor `mediaplayer-core` depends on KMediaVlc.
@@ -53,6 +53,14 @@ tone-mapped into the declared SDR sRGB transport. The source build, renderer,
 and fail-closed stager are implemented; physical GPU/fence evidence,
 KMediaPlayer normal and VR-projection acceptance, and legal review remain
 publication gates.
+
+Android is a distinct AAR boundary rather than an extraction variant of the
+desktop JAR. It explicitly loads the source-built `libvlc.so` first so the VLC
+core Android `JNI_OnLoad` records the JVM, then loads a narrow client bridge.
+The bridge owns Surface-to-ANativeWindow reference transitions and gives each
+VLC vout setup an independent binding. Android publication remains fail-closed
+until the source-built static module graph and real device lifecycle evidence
+are approved.
 
 Supporting libVLC 3 remains an adapter concern. A process selects exactly one
 major runtime and never loads libVLC 3 and 4 plugin graphs together.
