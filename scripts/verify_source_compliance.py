@@ -1325,6 +1325,8 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "-Dgles2=enabled",
         "-Dpulse=enabled",
         "--tags runtime",
+        '"$source_directory/bin/cachegen.c"',
+        "-Wl,-rpath,'$ORIGIN/../../lib'",
         "raw-plugin-files.txt",
     ]
     if not all(marker in builder for marker in builder_markers) or "--prefer-static" in builder:

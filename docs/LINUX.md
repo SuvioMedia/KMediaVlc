@@ -30,6 +30,12 @@ Meson likewise installs plugin binaries in one flat directory. The stager
 selects their globally unique filenames there, while retaining each logical
 module family in the inventory and audit report.
 
+In this prerelease tree, Meson defines `vlc-cache-gen` only when the full VLC
+application is enabled. The build wrapper compiles the exact upstream
+`bin/cachegen.c` against the installed candidate solely to create
+`plugins.dat`. That GPL build helper is not copied into the staged runtime;
+the packaged graph remains the closed playback library and plugin set.
+
 ## GPU frame transport
 
 `GPU_PUSH` uses libVLC 4's GLES2 output callbacks and a private EGL context on

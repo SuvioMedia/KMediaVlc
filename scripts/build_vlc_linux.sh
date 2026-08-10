@@ -250,6 +250,36 @@ meson install \
     --tags runtime \
     --strip
 
+# The pinned Meson graph defines vlc-cache-gen only together with the full VLC
+# executable. Build the exact upstream helper source against the just-installed
+# libVLC instead; it is used only to generate plugins.dat and is never staged.
+readonly cache_generator="$install_directory/libexec/vlc/vlc-cache-gen"
+mkdir -p "$(dirname "$cache_generator")"
+cc \
+    "$source_directory/bin/cachegen.c" \
+    -o "$cache_generator" \
+    -DHAVE_CONFIG_H \
+    -I"$meson_build_directory" \
+    -I"$source_directory/include" \
+    -O2 \
+    -fPIC \
+    -fstack-protector-strong \
+    -D_FORTIFY_SOURCE=3 \
+    "-ffile-prefix-map=$source_directory=/usr/src/vlc" \
+    "-ffile-prefix-map=$build_directory=/usr/src/kmediavlc-build" \
+    -Wl,-z,relro,-z,now,--as-needed \
+    -Wl,--build-id=sha1 \
+    -Wl,-Bsymbolic \
+    -Wl,-z,noexecstack \
+    -Wl,-rpath-link,"$install_directory/lib" \
+    -Wl,-rpath,'$ORIGIN/../../lib' \
+    -L"$install_directory/lib" \
+    -lvlc
+if [[ ! -x "$cache_generator" || -L "$cache_generator" ]]; then
+    echo "VLC source build did not produce the private cache generator" >&2
+    exit 1
+fi
+
 readonly libvlc="$install_directory/lib/libvlc.so"
 readonly core="$install_directory/lib/libvlccore.so.9"
 readonly plugin_directory="$install_directory/lib/vlc/plugins"
