@@ -197,6 +197,7 @@ meson_options=(
     -Dtests=disabled
     -Dnls=disabled
     -Dlua=disabled
+    -Dcss_engine=enabled
     -Dstream_outputs=false
     -Dvideolan_manager=false
     -Daddon_manager=false

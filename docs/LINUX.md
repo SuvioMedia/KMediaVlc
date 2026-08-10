@@ -13,6 +13,8 @@ build dependencies are EGL, GLES2, GBM, libdrm, fontconfig, and PulseAudio;
 the stager independently closes all resulting ELF dependencies and symbol
 version ceilings. Every other selected codec, demuxer, text renderer, and TLS
 dependency comes from the pinned VLC contrib source graph.
+The WebVTT CSS engine is enabled explicitly because the global Meson auto
+feature policy is disabled; its Flex/Bison outputs add no runtime dependency.
 
 Every staged shared object is private to the application runtime and links
 with `-Bsymbolic`. Definitions inside each object therefore bind locally rather

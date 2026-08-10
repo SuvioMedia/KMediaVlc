@@ -1321,6 +1321,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         'readonly libvlc="$install_directory/lib/libvlc.so"',
         "-Dauto_features=disabled",
         "-Dlua=disabled",
+        "-Dcss_engine=enabled",
         "-Dgles2=enabled",
         "-Dpulse=enabled",
         "--tags runtime",
