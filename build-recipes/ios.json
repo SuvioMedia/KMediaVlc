@@ -118,6 +118,6 @@
   "frameworkCountPerSlice": 87,
   "pluginDiscovery": "runtime-scan-of-flattened-plugin-frameworks",
   "forbidsStockNightly": true,
-  "reviewStatus": "device-and-simulator-source-build-and-simulator-playback-evidence-complete-xcframework-device-playback-and-license-audit-pending",
+  "reviewStatus": "device-and-simulator-source-build-xcframework-and-simulator-playback-evidence-complete-device-playback-and-license-audit-pending",
   "candidateReleaseEligible": false
 }

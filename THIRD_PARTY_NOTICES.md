@@ -80,8 +80,10 @@ dependency compiled into libEBML's Matroska path:
 
 Both iOS slices are built with Xcode 26.6 (17F113), the iOS 26.5 SDK, arm64,
 and a minimum deployment version of iOS 16.2. The 84 selected VLC plugins,
-their application-private framework graph, and real simulator playback remain
-candidate gates; this inventory does not make the iOS payload release-eligible.
+their application-private XCFramework graph, and real simulator playback have
+candidate evidence. Device playback plus the source, link-command, and license
+reviews remain open; this inventory does not make the iOS payload
+release-eligible.
 
 ## Toolchain runtime inputs
 

@@ -59,8 +59,8 @@ calls Compose and never waits for a UI render.
   frameworks per slice. Both source-built slices pass relocation audit, and the
   repository now contains deterministic XCFramework/CocoaPods assembly plus an
   independent archive verifier. Real simulator playback through the packaged
-  graph passes; iOS remains unpublished until the paired archive is reproduced,
-  device playback passes, and the full binary and license audits close.
+  graph and paired archive verification pass; iOS remains unpublished until
+  device playback passes and the full binary and license audits close.
 - Linux remains release-ineligible until its DMA-BUF import, explicit-fence
   ownership, and native integration tests exist.
 - CPU pull is available for controlled SDR and diagnostics.

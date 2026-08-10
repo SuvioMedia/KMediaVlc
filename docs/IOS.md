@@ -38,8 +38,10 @@ checkout of VLC `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`. All 87 staged
 frameworks in each slice passed the closed Mach-O relocation audit. A real
 Apple-silicon simulator then loaded the packaged simulator frameworks through
 the application bundle and produced a 64-by-36 RGBA8 CPU-pull frame (`9216`
-bytes). This is simulator evidence only; it does not make the payload
-release-eligible.
+bytes). The two audited slices were also paired as 87 XCFrameworks, archived
+deterministically, and reopened by the independent archive verifier. The normal
+release gate correctly rejects that archive while its source/license policies
+remain pending. This evidence does not make the payload release-eligible.
 
 ## Reproducing one slice
 
@@ -102,7 +104,6 @@ all of the following are checked for both slices:
 
 - clean source-build evidence and exact contrib/archive hashes;
 - closed per-framework Mach-O and source/license inventories;
-- device and simulator XCFramework assembly plus archive verification;
 - real device playback and AudioUnit acceptance;
 - corresponding-source and downstream LGPL relinking material;
 - KMediaPlayer CocoaPods integration using the signed application bundle.
