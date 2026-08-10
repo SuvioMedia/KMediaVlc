@@ -66,8 +66,13 @@ struct SurfaceBinding final {
 struct AndroidPlayer final {
     libvlc_instance_t* instance = nullptr;
     libvlc_media_player_t* media_player = nullptr;
+    libvlc_media_t* current_media = nullptr;
     libvlc_media_player_cbs callbacks{};
     int decode_mode = 0;
+    bool output_callbacks_installed = false;
+    int volume_percent = 100;
+    float playback_rate = 1.0F;
+    bool volume_pending = false;
 
     std::mutex surface_mutex;
     ANativeWindow* video_surface = nullptr;
@@ -321,6 +326,24 @@ bool install_anw_callbacks(AndroidPlayer* player) {
             player);
 }
 
+bool create_media_player(AndroidPlayer* player) {
+    if (player == nullptr || player->instance == nullptr || player->media_player != nullptr) {
+        return false;
+    }
+    player->media_player = libvlc_media_player_new(
+        player->instance,
+        &player->callbacks,
+        player);
+    if (player->media_player == nullptr) return false;
+    if (install_anw_callbacks(player)) {
+        player->output_callbacks_installed = true;
+        return true;
+    }
+    libvlc_media_player_release(player->media_player);
+    player->media_player = nullptr;
+    return false;
+}
+
 void disable_output_callbacks(AndroidPlayer* player) {
     if (player == nullptr || player->media_player == nullptr) return;
     (void)libvlc_video_set_output_callbacks(
@@ -336,6 +359,56 @@ void disable_output_callbacks(AndroidPlayer* player) {
         nullptr,
         nullptr,
         nullptr);
+}
+
+bool recreate_media_player(AndroidPlayer* player) {
+    if (player == nullptr || player->media_player == nullptr || player->current_media == nullptr) {
+        return false;
+    }
+
+    const auto state = player->state.load(std::memory_order_acquire);
+    const auto state_before_buffering =
+        player->state_before_buffering.load(std::memory_order_acquire);
+    const bool resume_playback =
+        state == kStateOpening || state == kStateBuffering || state == kStatePlaying ||
+        state == kStatePaused;
+    const bool resume_paused = state == kStatePaused ||
+        (state == kStateBuffering && state_before_buffering == kStatePaused);
+    const libvlc_time_t reported_time = libvlc_media_player_get_time(player->media_player);
+    const libvlc_time_t resume_time = reported_time >= 0
+        ? reported_time
+        : player->position_microseconds.load(std::memory_order_acquire);
+
+    libvlc_media_player_t* previous = std::exchange(player->media_player, nullptr);
+    player->output_callbacks_installed = false;
+    libvlc_media_player_release(previous);
+
+    if (!create_media_player(player)) {
+        player->state.store(kStateError, std::memory_order_release);
+        set_error(player, "libVLC could not recreate Android video output for a new Surface.");
+        return false;
+    }
+
+    libvlc_media_player_set_media(player->media_player, player->current_media);
+    (void)libvlc_media_player_set_rate(player->media_player, player->playback_rate);
+    player->volume_pending = true;
+    if (!resume_playback) {
+        player->state.store(kStateIdle, std::memory_order_release);
+        return true;
+    }
+    if (libvlc_media_player_play(player->media_player) != 0) {
+        player->state.store(kStateError, std::memory_order_release);
+        set_error(player, "libVLC could not resume playback after replacing Android surfaces.");
+        return false;
+    }
+    if (resume_time > 0) {
+        (void)libvlc_media_player_set_time(player->media_player, resume_time, false);
+    }
+    if (resume_paused) libvlc_media_player_set_pause(player->media_player, 1);
+    if (libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {
+        player->volume_pending = false;
+    }
+    return true;
 }
 
 bool replace_surfaces(
@@ -363,6 +436,17 @@ bool replace_surfaces(
         return false;
     }
 
+    {
+        std::lock_guard lock(player->surface_mutex);
+        if (player->video_surface == next_video &&
+            player->subtitle_surface == next_subtitles &&
+            player->surface_width == width && player->surface_height == height) {
+            if (next_subtitles != nullptr) ANativeWindow_release(next_subtitles);
+            if (next_video != nullptr) ANativeWindow_release(next_video);
+            return true;
+        }
+    }
+
     ANativeWindow* previous_video = nullptr;
     ANativeWindow* previous_subtitles = nullptr;
     int previous_width = 0;
@@ -376,9 +460,15 @@ bool replace_surfaces(
         player->surface_width = width;
         player->surface_height = height;
     }
+    player->video_width.store(0, std::memory_order_release);
+    player->video_height.store(0, std::memory_order_release);
 
-    const bool installed = install_anw_callbacks(player);
+    const bool recreating = next_video != nullptr && player->current_media != nullptr;
+    const bool installed = recreating
+        ? recreate_media_player(player)
+        : player->output_callbacks_installed || install_anw_callbacks(player);
     if (installed) {
+        player->output_callbacks_installed = true;
         if (previous_subtitles != nullptr) ANativeWindow_release(previous_subtitles);
         if (previous_video != nullptr) ANativeWindow_release(previous_video);
         return true;
@@ -395,7 +485,9 @@ bool replace_surfaces(
     }
     if (rejected_subtitles != nullptr) ANativeWindow_release(rejected_subtitles);
     if (rejected_video != nullptr) ANativeWindow_release(rejected_video);
-    set_error(player, "The pinned libVLC runtime rejected ANativeWindow callbacks.");
+    if (!recreating) {
+        set_error(player, "The pinned libVLC runtime rejected ANativeWindow callbacks.");
+    }
     return false;
 }
 
@@ -434,19 +526,8 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_create(
     player->callbacks.on_buffering_changed = on_buffering_changed;
     player->callbacks.on_position_changed = on_position_changed;
     player->callbacks.on_length_changed = on_length_changed;
-    player->media_player = libvlc_media_player_new(
-        player->instance,
-        &player->callbacks,
-        player.get());
-    if (player->media_player == nullptr) {
+    if (!create_media_player(player.get())) {
         libvlc_release(player->instance);
-        player->instance = nullptr;
-        return 0;
-    }
-    if (!install_anw_callbacks(player.get())) {
-        libvlc_media_player_release(player->media_player);
-        libvlc_release(player->instance);
-        player->media_player = nullptr;
         player->instance = nullptr;
         return 0;
     }
@@ -471,9 +552,14 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_destroy(
         player->surface_height = 0;
     }
     disable_output_callbacks(player.get());
+    player->output_callbacks_installed = false;
     if (player->media_player != nullptr) {
         libvlc_media_player_release(player->media_player);
         player->media_player = nullptr;
+    }
+    if (player->current_media != nullptr) {
+        libvlc_media_release(player->current_media);
+        player->current_media = nullptr;
     }
     if (subtitles != nullptr) ANativeWindow_release(subtitles);
     if (video != nullptr) ANativeWindow_release(video);
@@ -547,7 +633,8 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_open(
     }
 
     libvlc_media_player_set_media(player->media_player, media);
-    libvlc_media_release(media);
+    libvlc_media_t* previous_media = std::exchange(player->current_media, media);
+    if (previous_media != nullptr) libvlc_media_release(previous_media);
     player->media_generation.fetch_add(1, std::memory_order_acq_rel);
     player->position_microseconds.store(0, std::memory_order_release);
     player->duration_microseconds.store(0, std::memory_order_release);
@@ -566,7 +653,13 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_play(
     JNIEnv*, jclass, jlong handle) {
     auto* player = player_from(handle);
     if (!valid_player(player)) return JNI_FALSE;
-    if (libvlc_media_player_play(player->media_player) == 0) return JNI_TRUE;
+    if (libvlc_media_player_play(player->media_player) == 0) {
+        if (player->volume_pending &&
+            libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {
+            player->volume_pending = false;
+        }
+        return JNI_TRUE;
+    }
     set_error(player, "libVLC rejected play.");
     return JNI_FALSE;
 }
@@ -611,7 +704,11 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_setVolume(
     auto* player = player_from(handle);
     if (!valid_player(player) || !std::isfinite(volume)) return JNI_FALSE;
     const int percent = static_cast<int>(std::lround(std::clamp(volume, 0.0F, 1.0F) * 100.0F));
-    if (libvlc_audio_set_volume(player->media_player, percent) == 0) return JNI_TRUE;
+    if (libvlc_audio_set_volume(player->media_player, percent) == 0) {
+        player->volume_percent = percent;
+        player->volume_pending = false;
+        return JNI_TRUE;
+    }
     set_error(player, "libVLC rejected volume.");
     return JNI_FALSE;
 }
@@ -621,7 +718,10 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_setRate(
     JNIEnv*, jclass, jlong handle, jfloat rate) {
     auto* player = player_from(handle);
     if (!valid_player(player) || !std::isfinite(rate) || rate <= 0.0F) return JNI_FALSE;
-    if (libvlc_media_player_set_rate(player->media_player, rate) == 0) return JNI_TRUE;
+    if (libvlc_media_player_set_rate(player->media_player, rate) == 0) {
+        player->playback_rate = rate;
+        return JNI_TRUE;
+    }
     set_error(player, "libVLC rejected playback rate.");
     return JNI_FALSE;
 }
@@ -640,6 +740,10 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_snapshot(
     JNIEnv* environment, jclass, jlong handle) {
     auto* player = player_from(handle);
     if (!valid_player(player)) return nullptr;
+    if (player->volume_pending &&
+        libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {
+        player->volume_pending = false;
+    }
     const auto position = libvlc_media_player_get_time(player->media_player);
     const auto duration = libvlc_media_player_get_length(player->media_player);
     if (position >= 0) player->position_microseconds.store(position, std::memory_order_release);

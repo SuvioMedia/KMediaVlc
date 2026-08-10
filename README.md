@@ -61,9 +61,11 @@ calls Compose and never waits for a UI render.
   deterministic Git-object-verified NDK source packager is exercised. A separate
   complete corresponding-source packager closes the exact KMediaVlc, VLC, and
   libvlcjni trees, all 55 contrib tarballs, the NDK supplement, and both ABI
-  audits. The candidate remains deliberately release-ineligible until its
-  conservative SPDX sets, final release-bound artifacts, and device
-  surface-lifecycle tests are reviewed and closed.
+  audits. Real ARM64/API 35 instrumented tests cover MediaCodec and software
+  decode, subtitle composition, repeated Surface replacement, seek, stop, and
+  destruction. The candidate remains deliberately release-ineligible until its
+  conservative SPDX sets and final release-bound source artifacts are reviewed
+  and closed.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 

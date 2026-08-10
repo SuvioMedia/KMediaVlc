@@ -8,9 +8,10 @@ separately to VideoLAN `libvlcjni` revision
 `a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21`.
 
 This milestone is **not a published native payload yet**. The Java API, JNI bridge, two-ABI
-payload contract, hermetic NDK ABI fixture, and real pinned source builds are implemented. A
-candidate remains `releaseEligible=false` until the source-mapped contrib graph receives its
-linked-member SPDX/notice review and device playback evidence is closed.
+payload contract, hermetic NDK ABI fixture, real pinned source builds, and ARM64 emulator playback
+evidence are implemented. A candidate remains `releaseEligible=false` until the source-mapped
+contrib graph receives its linked-member SPDX/notice review and final release-bound source
+artifacts are retained.
 
 ## AAR contract
 
@@ -47,8 +48,12 @@ The bridge selects libVLC 4's `libvlc_video_engine_anw` callback API. It does no
 3. The update callback returns those stable video/subtitle windows to VLC. VLC acquires its own
    references in `AWindowHandler_newFromANWs`.
 4. VLC's cleanup callback destroys the binding and releases its references.
-5. Attach, replace, and detach reinstall the ANativeWindow callbacks, forcing only the vout to be
-   recreated; audio playback can continue through a Surface lifecycle transition.
+5. Detach drops the player's Surface references while the active VLC binding keeps its own stable
+   references until VLC tears it down.
+6. Attaching different Surfaces while media is open recreates `libvlc_media_player_t`, reuses the
+   bridge-owned media, restores position/rate/volume and playing/paused state, and installs the
+   ANativeWindow callbacks exactly once on the new player. Playback can continue during the
+   detached interval; reattachment incurs a brief native-player restart.
 
 The optional second Surface is the transparent subtitle plane required when MediaCodec renders
 opaque video directly into the first Surface. Software-only decoding is an explicit closed mode
@@ -213,6 +218,13 @@ four, and three respectively. Both final libraries expose the required core/JNI 
 only the closed Android system `DT_NEEDED` set, and use 16 KiB `LOAD` alignment. The stripped
 two-ABI payload also passed the actual Gradle AAR inventory and lint/test gate.
 
+On 2026-08-10 the real stripped ARM64 payload also passed two instrumented playback cases on an
+Android API 35 ARM64 emulator. The automatic case observed VLC's MediaCodec decoder thread; the
+software-only case verified that thread remained absent. Both cases rendered moving video and the
+separate subtitle plane into real `SurfaceView`/ANativeWindow outputs, preserved playback position
+across two detach/replace/reattach cycles, sought to a distinct frame, stopped, closed, and left no
+MediaCodec decoder thread behind. The fixture is deterministic and hash-checked in the test APK.
+
 The NDK source packager and independent verifier were also exercised against those exact upstream
 Git identities. The deterministic candidate contained 19,839 tracked files: the complete 195-file
 `llvm_android` tree plus 19,644 selected LLVM files (135,808,087 uncompressed source bytes). The
@@ -241,9 +253,7 @@ checkouts, and the matching `recipeRevision`.
   then bind approved SPDX expressions and complete notices to the recorded source/archive hashes;
 - promote the NDK component in the final legal manifest to `corresponding-source-mapped` only after
   retaining the independently verified archive for that exact release commit;
-- run an Android device/emulator fixture through create/open/play, MediaCodec and software decode,
-  video plus subtitle surfaces, repeated detach/reattach, seek, stop, and destruction;
 - regenerate, independently verify, and retain both source archives for the final tested commit.
 
-Until all four gates pass, the module is useful for API and ABI integration work but cannot be
+Until all three gates pass, the module is useful for API and ABI integration work but cannot be
 published as a bundled runtime.

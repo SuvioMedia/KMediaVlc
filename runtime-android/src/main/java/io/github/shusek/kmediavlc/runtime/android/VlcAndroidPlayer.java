@@ -75,7 +75,11 @@ public final class VlcAndroidPlayer implements AutoCloseable {
                 "libVLC rejected the Android surfaces.");
     }
 
-    /** Detaches output without stopping audio playback. A later attach recreates the VLC vout. */
+    /**
+     * Detaches surface output without immediately stopping playback. Attaching new surfaces while
+     * media is open recreates the native media player, restores its position and controls, and
+     * resumes its prior playing or paused state.
+     */
     public synchronized void detachSurfaces() {
         requireOpen();
         requireNative(

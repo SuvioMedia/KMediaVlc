@@ -1,0 +1,15 @@
+1
+00:00:00,400 --> 00:00:03,100
+KMediaVlc subtitle plane A
+
+2
+00:00:03,100 --> 00:00:06,100
+KMediaVlc subtitle plane B
+
+3
+00:00:06,100 --> 00:00:09,100
+KMediaVlc subtitle plane C
+
+4
+00:00:09,100 --> 00:00:11,800
+KMediaVlc subtitle plane D
