@@ -73,6 +73,47 @@ deployment flags that upstream GSM otherwise replaces. It installs the
 already-pinned `utfcpp 3.2.5` archive as a local contrib; libEBML is never
 allowed to fetch an undeclared dependency through CMake.
 
+## Physical-device acceptance harness
+
+The same fail-closed smoke application used by the simulator can be compiled
+for a physical arm64 device. The first command validates all 87 framework
+install names, architectures, platform load commands, and the pinned playback
+fixture before producing an unsigned application bundle:
+
+```shell
+bash scripts/build_ios_smoke_app.sh \
+  /absolute/ios-device-frameworks \
+  /absolute/new-device-smoke-build \
+  iphoneos \
+  TESTED_KMEDIAVLC_COMMIT \
+  /absolute/clean-pinned-vlc-source
+```
+
+Provision and sign the resulting `KMediaVlcSmoke.app` and every embedded
+framework outside Codex with the normal Xcode signing workflow. Signing
+identities, profiles, and credentials must not be copied into this repository
+or passed to an agent. The physical runner accepts only a non-ad-hoc, deeply
+valid signature with an embedded provisioning profile:
+
+```shell
+bash scripts/run_ios_device_smoke.sh \
+  /absolute/signed/KMediaVlcSmoke.app \
+  /absolute/new-device-smoke-run \
+  DEVICE_IDENTIFIER \
+  TESTED_KMEDIAVLC_COMMIT
+```
+
+The device build requires a clean checkout whose `HEAD` equals the supplied
+forty-character commit and an unmodified checkout of the pinned VLC revision.
+It rebuilds and installs the bridge from those sources, then embeds both source
+identities into the signed bundle. The runner uses `devicectl` to install and
+foreground the exact smoke bundle, waits on its console, requires one
+structured `PASS` result, and uninstalls the test application afterward. The
+application exercises the pinned 12-second video, distinct CPU-pull frames,
+seek, end-of-stream preservation, and a muted two-second PCM audio lifecycle.
+Merely building or signing the bundle is not device evidence; the command must
+pass on the intended physical device.
+
 ## Assembling the CocoaPod payload
 
 After both slice reports pass and the repository is at a clean, immutable

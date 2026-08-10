@@ -6,6 +6,7 @@
 #import <KMediaVlc/kmediavlc_client.h>
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -43,6 +44,11 @@ static void finish_smoke(NSString *result, int status) {
     g_finished = YES;
     NSError *error = nil;
     NSString *line = [result stringByAppendingString:@"\n"];
+    const char *console_result = result.UTF8String;
+    if (console_result != NULL) {
+        fprintf(stdout, "KMEDIAVLC_SMOKE %s\n", console_result);
+        fflush(stdout);
+    }
     [line writeToURL:result_url()
           atomically:YES
             encoding:NSUTF8StringEncoding

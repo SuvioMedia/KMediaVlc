@@ -1763,17 +1763,52 @@ def verify_ios_runtime_contract(root: Path) -> None:
     ]
     if not all(marker in cmake for marker in cmake_markers):
         fail("The iOS bridge must exclude JNI and the macOS renderer.")
-    smoke_script = (root / "scripts/run_ios_simulator_smoke.sh").read_text(encoding="utf-8")
+    smoke_builder = (root / "scripts/build_ios_smoke_app.sh").read_text(encoding="utf-8")
+    simulator_smoke = (root / "scripts/run_ios_simulator_smoke.sh").read_text(
+        encoding="utf-8"
+    )
+    device_smoke = (root / "scripts/run_ios_device_smoke.sh").read_text(encoding="utf-8")
     smoke_source = (root / "scripts/ios-smoke/KMediaVlcSmoke.m").read_text(encoding="utf-8")
-    smoke_markers = [
+    builder_markers = [
         '!= "87"',
         "PLAYBACK_FIXTURE_SHA256",
         "libaudiounit_ios_plugin",
         "kmediavlc-playback.mkv",
+        "iphoneos)",
+        "iphonesimulator)",
+        'expected_platform="IOS"',
+        'expected_platform="IOSSIMULATOR"',
+        "build_kmediavlc_ios_bridge.sh",
+        "status --porcelain --untracked-files=no",
+        "KMediaVlcTestedCommit",
+        "KMediaVlcVlcRevision",
+        "install_name_tool -id",
+        "vtool -show-build",
+        "otool -D",
+        "-Wl,-rpath,@executable_path/Frameworks",
+    ]
+    simulator_markers = [
+        "build_ios_smoke_app.sh",
+        "iphonesimulator",
         "simctl install",
         "simctl launch --terminate-running-process",
-        "-target arm64-apple-ios16.2-simulator",
-        "-Wl,-rpath,@executable_path/Frameworks",
+        "codesign --force --sign -",
+    ]
+    device_markers = [
+        "embedded.mobileprovision",
+        "PLAYBACK_FIXTURE_SHA256",
+        "KMediaVlcTestedCommit",
+        "KMediaVlcVlcRevision",
+        "codesign --verify --deep --strict",
+        "Signature=adhoc",
+        "devicectl device install app",
+        "devicectl device process launch",
+        "devicectl device uninstall app",
+        "--console",
+        "vtool -show-build",
+        "otool -D",
+        "KMEDIAVLC_SMOKE PASS ",
+        "KMEDIAVLC_SMOKE FAIL ",
     ]
     source_markers = [
         "KMEDIAVLC_CPU_PULL",
@@ -1785,12 +1820,15 @@ def verify_ios_runtime_contract(root: Path) -> None:
         "KMEDIAVLC_STATE_ENDED",
         "create_audio_fixture",
         "audioDurationUs",
+        "KMEDIAVLC_SMOKE %s",
     ]
     if (
-        not all(marker in smoke_script for marker in smoke_markers)
+        not all(marker in smoke_builder for marker in builder_markers)
+        or not all(marker in simulator_smoke for marker in simulator_markers)
+        or not all(marker in device_smoke for marker in device_markers)
         or not all(marker in smoke_source for marker in source_markers)
     ):
-        fail("The packaged iOS simulator CPU-pull playback gate is incomplete.")
+        fail("The packaged iOS simulator or physical-device playback gate is incomplete.")
     documentation = (root / "docs/IOS.md").read_text(encoding="utf-8")
     documentation_markers = [
         "iOS 16.2",
