@@ -28,6 +28,10 @@ private val ANDROID_ABIS = setOf("arm64-v8a", "armeabi-v7a")
 private val ANDROID_LIBRARIES = setOf("libkmediavlc_android.so", "libvlc.so")
 private object AndroidLegalEvidence {
 private const val VLC_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+private const val LLVM_PROJECT_REVISION = "386af4a5c64ab75eaee2448dc38f2e34a40bfed0"
+private const val LLVM_ANDROID_REVISION = "1dab3288f660d43a6cb2479107e2b54b3ab0a2a1"
+private const val NDK_SOURCE_CANDIDATE_STATUS =
+    "exact-source-revisions-recorded-source-package-pending"
 private val REVIEW_STATES =
     setOf("candidate-linked-member-review-pending", "approved")
 private val CANDIDATE_LICENSES =
@@ -55,6 +59,7 @@ private val CANDIDATE_LICENSES =
 data class Bundle(
     val reviewStatus: String,
     val effectiveLicenseSpdx: String?,
+    val ndkSourceStatus: String,
     val files: Set<String>,
 )
 
@@ -143,24 +148,37 @@ fun read(payloadRoot: File, staticPolicy: File): Bundle {
     }
     val audits = manifest["abiAudits"] as? List<*>
     require(audits?.size == 2) { "Android legal evidence must bind both ABI audits." }
+    val targetAbis =
+        mapOf(
+            "android-arm64-v8a" to "arm64-v8a",
+            "android-armeabi-v7a" to "armeabi-v7a",
+        )
     val auditTargets =
         audits.map { entry ->
             val value = entry as? Map<*, *>
                 ?: error("Android legal evidence ABI audit entry is invalid.")
+            val target = value["target"] as? String
+            val abi = targetAbis[target]
+            val libvlcHash = value["libvlcSha256"] as? String
+            val packagedLibvlc = payloadRoot.resolve("jni/$abi/libvlc.so")
             require(
                 (value["reportSha256"] as? String)?.matches(Regex("[0-9a-f]{64}")) == true &&
-                    (value["libvlcSha256"] as? String)?.matches(Regex("[0-9a-f]{64}")) == true,
+                    libvlcHash?.matches(Regex("[0-9a-f]{64}")) == true &&
+                    abi != null &&
+                    packagedLibvlc.isFile &&
+                    !Files.isSymbolicLink(packagedLibvlc.toPath()) &&
+                    sha256(packagedLibvlc) == libvlcHash,
             ) {
-                "Android legal evidence ABI audit hashes are invalid."
+                "Android legal evidence ABI audit does not bind the packaged libvlc.so."
             }
-            value["target"] as? String
+            target
         }.toSet()
-    require(auditTargets == setOf("android-arm64-v8a", "android-armeabi-v7a")) {
+    require(auditTargets == targetAbis.keys) {
         "Android legal evidence ABI audit targets are incomplete."
     }
 
     val topFiles = manifest["files"] as? List<*>
-    require(topFiles?.size == 86) { "Android legal evidence must contain exactly 86 files." }
+    require(topFiles?.size == 88) { "Android legal evidence must contain exactly 88 files." }
     val fileEntries = linkedMapOf<String, Map<*, *>>()
     topFiles.forEach { raw ->
         val entry = raw as? Map<*, *>
@@ -184,7 +202,7 @@ fun read(payloadRoot: File, staticPolicy: File): Bundle {
     }
     require(
         fileEntries.keys.count { it.startsWith("contrib/") } == 83 &&
-            fileEntries.keys.count { it.startsWith("ndk/") } == 3,
+            fileEntries.keys.count { it.startsWith("ndk/") } == 5,
     ) {
         "Android legal evidence contrib/NDK split is invalid."
     }
@@ -193,6 +211,7 @@ fun read(payloadRoot: File, staticPolicy: File): Bundle {
     require(components?.size == 55) { "Android legal evidence component closure is incomplete." }
     val componentIds = mutableListOf<String>()
     val componentFiles = mutableSetOf<String>()
+    val ndkSourceStatuses = mutableListOf<String>()
     components.forEach { raw ->
         val component = raw as? Map<*, *>
             ?: error("Android legal evidence component entry is invalid.")
@@ -223,11 +242,14 @@ fun read(payloadRoot: File, staticPolicy: File): Bundle {
             "Android legal evidence component candidate SPDX set is invalid: $id"
         }
         val sourceArchives = component["sourceArchives"] as? List<*>
+        val sourceInputs = component["sourceInputs"] as? List<*>
         val sourceStatus = component["sourceStatus"]
         if (kind == "VLC_CONTRIB") {
             require(
                 sourceStatus == "source-archive-hashes-recorded" &&
-                    !sourceArchives.isNullOrEmpty(),
+                    !sourceArchives.isNullOrEmpty() &&
+                    sourceInputs?.isEmpty() == true &&
+                    component["binaryProvenance"] == null,
             ) {
                 "Android legal evidence contrib source hashes are incomplete: $id"
             }
@@ -246,12 +268,106 @@ fun read(payloadRoot: File, staticPolicy: File): Bundle {
             }
         } else {
             require(
+                id == "android-ndk-llvm-runtime" &&
                 sourceArchives?.isEmpty() == true &&
                     sourceStatus in
-                    setOf("pending-corresponding-source-map", "corresponding-source-mapped"),
+                    setOf(NDK_SOURCE_CANDIDATE_STATUS, "corresponding-source-mapped") &&
+                    sourceInputs?.size == 2,
             ) {
                 "Android legal evidence NDK source state is invalid."
             }
+            val bySourceId =
+                sourceInputs.associate { rawSource ->
+                    val source = rawSource as? Map<*, *>
+                        ?: error("Android NDK source input entry is invalid.")
+                    val sourceId = source["id"] as? String
+                        ?: error("Android NDK source input identifier is missing.")
+                    sourceId to source
+                }
+            require(bySourceId.keys == setOf("llvm-android-build", "llvm-project")) {
+                "Android NDK source input closure is incomplete."
+            }
+            val llvmAndroid = bySourceId.getValue("llvm-android-build")
+            require(
+                llvmAndroid["repository"] ==
+                    "https://android.googlesource.com/toolchain/llvm_android" &&
+                    llvmAndroid["revision"] == LLVM_ANDROID_REVISION &&
+                    llvmAndroid["tree"] == "9cf89bb8f12fb9e993e81d2ee2d43f2bc8819d53" &&
+                    llvmAndroid["role"] == "android-runtime-build-and-patch-set" &&
+                    llvmAndroid["requiredPaths"] ==
+                    listOf(
+                        "do_build.py",
+                        "patches",
+                        "src/llvm_android/android_version.py",
+                        "src/llvm_android/builders.py",
+                    ),
+            ) {
+                "Android NDK llvm_android source identity differs from r29."
+            }
+            val llvmProject = bySourceId.getValue("llvm-project")
+            require(
+                llvmProject["repository"] ==
+                    "https://android.googlesource.com/toolchain/llvm-project" &&
+                    llvmProject["revision"] == LLVM_PROJECT_REVISION &&
+                    llvmProject["tree"] == "a49e40b73bcc972355bbf00df0d85d00312a625f" &&
+                    llvmProject["role"] == "linked-runtime-source" &&
+                    llvmProject["requiredPaths"] ==
+                    listOf(
+                        "compiler-rt/lib/builtins",
+                        "libcxx",
+                        "libcxxabi",
+                        "libunwind",
+                        "runtimes",
+                    ),
+            ) {
+                "Android NDK LLVM source identity differs from r29."
+            }
+            val provenance = component["binaryProvenance"] as? Map<*, *>
+                ?: error("Android NDK binary provenance is missing.")
+            val prebuilt = provenance["prebuilt"] as? Map<*, *>
+                ?: error("Android NDK host prebuilt provenance is missing.")
+            val hostTag = prebuilt["hostTag"] as? String
+            val expectedPrebuilt =
+                when (hostTag) {
+                    "darwin-x86_64" ->
+                        listOf(
+                            "https://android.googlesource.com/platform/prebuilts/clang/host/darwin-x86",
+                            "c547cdbfbec71e85920c1f0976e18defc01a0b5b",
+                            "2ede290b28d234595fcc23207c633961690c57ba",
+                        )
+                    "linux-x86_64" ->
+                        listOf(
+                            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86",
+                            "be61f23178d3459a558b45dd0df4304b0fda6b26",
+                            "568b941cf0c249b9c2a1f853e94a29f0e6291c59",
+                        )
+                    else -> emptyList()
+                }
+            require(
+                provenance["releaseName"] == "r29" &&
+                    provenance["clangVersion"] == "21.0.0" &&
+                    provenance["clangRevision"] == "r563880c" &&
+                    provenance["ndkRepository"] ==
+                    "https://android.googlesource.com/platform/ndk" &&
+                    provenance["ndkTag"] == "ndk-r29" &&
+                    provenance["ndkTagObject"] ==
+                    "5199c56421d79df5099aad8e32e32c101ff85cca" &&
+                    provenance["ndkCommit"] ==
+                    "196e0661200bad5361340700fea67be12e1f1684" &&
+                    provenance["manifestRepository"] ==
+                    "https://android.googlesource.com/platform/manifest" &&
+                    provenance["manifestTagObject"] ==
+                    "5d4df6d77b33dc6d31576a66a8ff283c8825493f" &&
+                    provenance["manifestCommit"] ==
+                    "82eb8adcaafe02dce4e462db2379fad3ea0b54d8" &&
+                    expectedPrebuilt.size == 3 &&
+                    prebuilt["repository"] == expectedPrebuilt[0] &&
+                    prebuilt["tagObject"] == expectedPrebuilt[1] &&
+                    prebuilt["commit"] == expectedPrebuilt[2],
+            ) {
+                "Android NDK release/prebuilt provenance differs from r29."
+            }
+            ndkSourceStatuses.add(sourceStatus as String)
         }
         val files = component["files"] as? List<*>
         require(!files.isNullOrEmpty()) { "Android legal evidence component has no files: $id" }
@@ -265,7 +381,11 @@ fun read(payloadRoot: File, staticPolicy: File): Bundle {
         }
         componentIds.add(id)
     }
-    require(componentIds == componentIds.distinct().sorted() && componentFiles == fileEntries.keys) {
+    require(
+        componentIds == componentIds.distinct().sorted() &&
+            componentFiles == fileEntries.keys &&
+            ndkSourceStatuses.size == 1,
+    ) {
         "Android legal evidence component/file closure is not canonical."
     }
     val actualFiles =
@@ -276,7 +396,7 @@ fun read(payloadRoot: File, staticPolicy: File): Bundle {
     require(actualFiles == fileEntries.keys + "android-static-legal.json") {
         "Android legal evidence directory contains missing or extra files."
     }
-    return Bundle(reviewStatus, effectiveLicense, actualFiles)
+    return Bundle(reviewStatus, effectiveLicense, ndkSourceStatuses.single(), actualFiles)
 }
 }
 
@@ -592,6 +712,9 @@ fun requirePublicationPayload() {
         )
     require(legalBundle.reviewStatus == "approved" && !legalBundle.effectiveLicenseSpdx.isNullOrBlank()) {
         "Publishing requires approved hash-bound Android legal evidence."
+    }
+    require(legalBundle.ndkSourceStatus == "corresponding-source-mapped") {
+        "Publishing requires the NDK runtime source package to match its recorded revisions."
     }
     require(correspondingSourceArchive.isPresent) {
         "Publishing requires -PcorrespondingSourceArchive."

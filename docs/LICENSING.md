@@ -57,15 +57,18 @@ archives. All selected VLC module archives passed the compiled marker check. A
 closed policy now maps those 62 paths to 54 contrib components and 55 exact
 source tarballs and rejects any missing or extra archive. The report hashes each
 source input, 83 selected in-archive license/patent/source-notice records, and
-the NDK distribution notices. It records conservative candidate SPDX sets but
+the NDK distribution notices and Clang provenance files. The four NDK runtime
+archives now map to exact `llvm-project` and Android build/patch commits and to
+their source subtrees. It records conservative candidate SPDX sets but
 keeps every component at `pending-linked-member-review`, so the report can be
 promoted only to `candidate-source-mapped-license-review-pending`. Each linked
-member still needs reviewed SPDX and packaged notice metadata, and the NDK
-inputs still need their complete corresponding-source map, before the manifest
-can advance further.
+member still needs reviewed SPDX and packaged notice metadata, and the recorded
+NDK revisions still need to become a verified version-bound source package,
+before the manifest can advance further.
 
 The source builder stages those raw records as a separate hash-bound legal bundle only after the
 two ABI audit reports have identical component evidence. The AAR verifier rejects any missing,
 extra, symbolic, resized, or rehashed legal file and binds the bundle to the current static
 component policy. Candidate builds package the evidence for review, but Maven publication also
-requires `reviewStatus=approved` and a non-null effective SPDX expression.
+requires `reviewStatus=approved`, a non-null effective SPDX expression, and
+`sourceStatus=corresponding-source-mapped` for the NDK runtime component.

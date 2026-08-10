@@ -24,7 +24,7 @@ jni/armeabi-v7a/libkmediavlc_android.so
 ```
 
 A source-built candidate also carries `legal/android-static-legal.json` plus exactly 83 contrib
-license/patent/source-notice files and three NDK evidence files. These are build evidence, not
+license/patent/source-notice files and five NDK evidence/provenance files. These are build evidence, not
 additional native libraries.
 
 The AAR has `minSdk=28`. Both libraries use 16 KiB ELF load alignment. C++ is linked
@@ -96,19 +96,26 @@ declared LGPL license but deliberately leaves the final effective SPDX expressio
 every contributing static archive is reviewed. The closed policy in
 `compliance/policy/android-static-components.json` maps every permitted contrib archive to its
 exact pinned source tarball and maps the four ABI-specific NDK runtime archives to the NDK
-distribution evidence. The audit rejects missing or extra entries, hashes all 55 contributing
+distribution plus exact upstream source revisions. `libclang_rt.builtins` maps to `compiler-rt`,
+`libunwind.a` to `libunwind`, `libc++_static.a` to `libcxx`, and `libc++abi.a` to `libcxxabi`.
+All four use LLVM commit `386af4a5c64ab75eaee2448dc38f2e34a40bfed0` with Android build and
+patch revision `1dab3288f660d43a6cb2479107e2b54b3ab0a2a1`. The audit rejects missing or
+extra entries, hashes all 55 contributing
 source tarballs, 83 exact in-archive license/patent/source-notice records, and the NDK
-notices/identity file. It also records a conservative candidate SPDX set for each component;
+notices, identity, `AndroidVersion.txt`, and `clang_source_info.md`. It also records a
+conservative candidate SPDX set for each component;
 those candidates remain explicitly pending linked-member review and are not an eligibility
 decision.
 
 After both ABI reports agree byte-for-byte on their component evidence,
-`scripts/stage_android_legal_evidence.py` copies the 86 hash-matched records into the candidate
+`scripts/stage_android_legal_evidence.py` copies the 88 hash-matched records into the candidate
 payload without extracting either source tree. Its path-free manifest binds both ABI report
-hashes, both `libvlc.so` hashes, the component-policy hash, every staged file hash, and the null
-effective-license field. Gradle rehashes the complete bundle and packages it under
+hashes, both `libvlc.so` hashes, the component-policy hash, every staged file hash, both exact
+source Git trees, the selected host-prebuilt tag/commit, and the null effective-license field.
+Gradle rehashes the complete bundle and packages it under
 `assets/kmediavlc/legal/ANDROID_STATIC/`. Publication requires that manifest and every component
-to be explicitly promoted to `approved`; editing `releaseEligible=true` alone is insufficient.
+to be explicitly promoted to `approved`, and separately requires the NDK source status to become
+`corresponding-source-mapped`; editing `releaseEligible=true` alone is insufficient.
 
 ### Verified source-build evidence
 
@@ -124,7 +131,8 @@ components and 55 source tarballs (TagLib also consumes the header-only utfcpp s
 path-free reports are therefore promoted only to
 `candidate-source-mapped-license-review-pending`. This state proves archive-to-source and raw
 license-evidence closure, but not the final linked-member SPDX conclusion, packaged notice
-completeness, NDK corresponding-source map, or release eligibility. Native binaries remain
+completeness, a verified version-bound source package from the recorded NDK/LLVM revisions, or
+release eligibility. Native binaries remain
 external release inputs and are not committed to this repository.
 
 An audited payload can be supplied to Gradle with
@@ -139,9 +147,11 @@ the manifest to say `releaseEligible=true` and requires the exact corresponding-
   approved SPDX expressions and complete notices to the already recorded source/archive hashes;
 - retain reviewed evidence for the real source-built `libvlc.so` DT_NEEDED/export surface for
   both ABIs;
+- assemble and independently verify the NDK runtime source package from the recorded LLVM and
+  `llvm_android` commits, then promote its source status to `corresponding-source-mapped`;
 - run an Android device/emulator fixture through create/open/play, MediaCodec and software decode,
   video plus subtitle surfaces, repeated detach/reattach, seek, stop, and destruction;
 - publish complete corresponding source and reproducible relinking instructions.
 
-Until all five gates pass, the module is useful for API and ABI integration work but cannot be
+Until all six gates pass, the module is useful for API and ABI integration work but cannot be
 published as a bundled runtime.

@@ -29,10 +29,13 @@ The Android source-build candidate uses the upstream `a` license profile
 and no prebuilt contribs or published AAR. Its exact 62-archive link graph is now
 closed to 54 contrib components and 55 pinned source tarballs; generated audits
 hash those source inputs, 83 selected in-archive license/patent/source-notice
-records, and the NDK distribution notices for both packaged ABIs. Conservative
+records, the NDK distribution notices, and its Clang source-provenance files for
+both packaged ABIs. The NDK map pins Clang `r563880c`, LLVM commit
+`386af4a5c64ab75eaee2448dc38f2e34a40bfed0`, and Android build/patch revision
+`1dab3288f660d43a6cb2479107e2b54b3ab0a2a1`. Conservative
 candidate SPDX sets remain marked `pending-linked-member-review`. The runtime
-remains release-ineligible until that review, packaged notice completion, and
-the NDK corresponding-source map are approved.
+remains release-ineligible until that review, packaged notice completion, and a
+version-bound source package matching those revisions are approved.
 
 Candidate AARs include the exact selected evidence inputs under
 `assets/kmediavlc/legal/ANDROID_STATIC/` together with a manifest that binds both ABI audits and

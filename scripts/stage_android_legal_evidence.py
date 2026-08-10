@@ -13,6 +13,9 @@ from pathlib import Path, PurePosixPath
 
 VLC_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
 NDK_REVISION = "29.0.14206865"
+NDK_SOURCE_STATUS = "exact-source-revisions-recorded-source-package-pending"
+LLVM_PROJECT_REVISION = "386af4a5c64ab75eaee2448dc38f2e34a40bfed0"
+LLVM_ANDROID_REVISION = "1dab3288f660d43a6cb2479107e2b54b3ab0a2a1"
 REVIEW_STATUS = "candidate-source-mapped-license-review-pending"
 COMPONENT_REVIEW_STATUS = "pending-linked-member-review"
 LEGAL_REVIEW_STATUS = "candidate-linked-member-review-pending"
@@ -47,6 +50,20 @@ def real_directory(path: Path, description: str) -> Path:
     if path.is_symlink() or not path.is_dir():
         fail(f"{description} must be a real directory.")
     return path.resolve(strict=True)
+
+
+def ndk_host_prebuilt(ndk_directory: Path) -> tuple[str, Path]:
+    prebuilt = real_directory(
+        ndk_directory / "toolchains/llvm/prebuilt", "Android NDK host toolchain directory"
+    )
+    hosts = sorted(
+        path.name for path in prebuilt.iterdir() if path.is_dir() and not path.is_symlink()
+    )
+    if len(hosts) != 1 or not re.fullmatch(r"(?:darwin|linux)-x86_64", hosts[0]):
+        fail("Android NDK must contain exactly one supported host toolchain.")
+    return hosts[0], real_directory(
+        prebuilt / hosts[0], "Android NDK selected host toolchain directory"
+    )
 
 
 def read_json(path: Path, description: str) -> dict:
@@ -193,6 +210,34 @@ def stage(
     ndk_components = policy.get("ndkComponents")
     if not isinstance(contrib_components, dict) or not isinstance(ndk_components, dict):
         fail("Android static component policy has no closed component maps.")
+    if set(ndk_components) != {"android-ndk-llvm-runtime"}:
+        fail("Android NDK component policy is not closed.")
+    ndk_component_policy = ndk_components["android-ndk-llvm-runtime"]
+    ndk_source_inputs = policy.get("ndkSourceInputs")
+    ndk_release = policy.get("ndkReleaseProvenance")
+    if (
+        not isinstance(ndk_source_inputs, dict)
+        or list(ndk_source_inputs) != ["llvm-android-build", "llvm-project"]
+        or ndk_source_inputs["llvm-android-build"].get("revision")
+        != LLVM_ANDROID_REVISION
+        or ndk_source_inputs["llvm-project"].get("revision")
+        != LLVM_PROJECT_REVISION
+        or ndk_component_policy.get("sourceInputs") != list(ndk_source_inputs)
+        or ndk_component_policy.get("evidenceFiles")
+        != ["NOTICE", "NOTICE.toolchain", "source.properties"]
+        or ndk_component_policy.get("toolchainEvidenceFiles")
+        != ["AndroidVersion.txt", "clang_source_info.md"]
+        or ndk_component_policy.get("sourceStatus") != NDK_SOURCE_STATUS
+        or not isinstance(ndk_release, dict)
+        or ndk_release.get("releaseName") != "r29"
+        or ndk_release.get("clangVersion") != "21.0.0"
+        or ndk_release.get("clangRevision") != "r563880c"
+    ):
+        fail("Android NDK source provenance is incomplete.")
+    ndk_host_tag, ndk_host_directory = ndk_host_prebuilt(ndk_directory)
+    prebuilt_tags = ndk_release.get("prebuiltTags")
+    if not isinstance(prebuilt_tags, dict) or ndk_host_tag not in prebuilt_tags:
+        fail("Android NDK host prebuilt is absent from release provenance.")
     expected_component_count = len(contrib_components) + len(ndk_components)
 
     reports = []
@@ -221,6 +266,8 @@ def stage(
         component_id = component["id"]
         component_files = []
         component_sources = []
+        component_source_inputs = []
+        component_binary_provenance = None
         component_source_status = "source-archive-hashes-recorded"
         if component["kind"] == "VLC_CONTRIB":
             sources = component.get("sourceArchives")
@@ -271,18 +318,49 @@ def stage(
                     staged_files.append(staged)
         elif component["kind"] == "NDK_TOOLCHAIN":
             component_source_status = component.get("sourceStatus")
-            if component_source_status != "pending-corresponding-source-map":
+            if component_source_status != NDK_SOURCE_STATUS:
                 fail("Android NDK corresponding-source status is invalid.")
+            expected_source_inputs = [
+                {"id": source_id, **ndk_source_inputs[source_id]}
+                for source_id in ndk_component_policy["sourceInputs"]
+            ]
+            component_source_inputs = component.get("sourceInputs")
+            if component_source_inputs != expected_source_inputs:
+                fail("Android NDK source inputs differ from the closed policy.")
+            expected_binary_provenance = {
+                key: value for key, value in ndk_release.items() if key != "prebuiltTags"
+            }
+            expected_binary_provenance["prebuilt"] = {
+                "hostTag": ndk_host_tag,
+                **prebuilt_tags[ndk_host_tag],
+            }
+            component_binary_provenance = component.get("binaryProvenance")
+            if component_binary_provenance != expected_binary_provenance:
+                fail("Android NDK binary provenance differs from the selected r29 host prebuilt.")
             evidence_entries = component.get("evidenceFiles")
-            if not isinstance(evidence_entries, list) or len(evidence_entries) != 3:
+            expected_root_evidence = set(ndk_component_policy["evidenceFiles"])
+            expected_toolchain_evidence = set(
+                ndk_component_policy["toolchainEvidenceFiles"]
+            )
+            expected_evidence_paths = {
+                f"ndk/{name}" for name in expected_root_evidence | expected_toolchain_evidence
+            }
+            if not isinstance(evidence_entries, list) or len(evidence_entries) != len(
+                expected_evidence_paths
+            ):
                 fail("Android NDK legal evidence is incomplete.")
             for audited in evidence_entries:
                 source_path = audited.get("path")
-                if source_path not in {"ndk/NOTICE", "ndk/NOTICE.toolchain", "ndk/source.properties"}:
+                if source_path not in expected_evidence_paths:
                     fail("Android NDK legal evidence path is invalid.")
                 source_name = source_path[len("ndk/") :]
-                source = real_file(ndk_directory / source_name, "Android NDK legal evidence")
-                if source.parent != ndk_directory:
+                source_root = (
+                    ndk_directory
+                    if source_name in expected_root_evidence
+                    else ndk_host_directory
+                )
+                source = real_file(source_root / source_name, "Android NDK legal evidence")
+                if source.parent != source_root:
                     fail("Android NDK legal evidence escaped its closed root.")
                 value = source.read_bytes()
                 staged = write_file(partial, source_path, value)
@@ -300,14 +378,19 @@ def stage(
                 "candidateLicenseSpdx": component["candidateLicenseSpdx"],
                 "licenseReviewStatus": component["licenseReviewStatus"],
                 "sourceArchives": component_sources,
+                "sourceInputs": component_source_inputs,
                 "sourceStatus": component_source_status,
+                "binaryProvenance": component_binary_provenance,
                 "files": component_files,
             }
         )
 
     expected_file_count = sum(
         len(paths) for paths in policy.get("licenseEvidence", {}).values()
-    ) + sum(len(component["evidenceFiles"]) for component in ndk_components.values())
+    ) + sum(
+        len(component["evidenceFiles"]) + len(component["toolchainEvidenceFiles"])
+        for component in ndk_components.values()
+    )
     if (
         len(staged_files) != expected_file_count
         or len({entry["path"] for entry in staged_files}) != expected_file_count

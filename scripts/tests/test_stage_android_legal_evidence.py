@@ -28,12 +28,46 @@ class AndroidLegalEvidenceTest(unittest.TestCase):
         self.root = self.base / "root"
         self.vlc = self.base / "vlc"
         self.ndk = self.base / "ndk"
+        self.ndk_host = self.ndk / "toolchains/llvm/prebuilt/linux-x86_64"
         self.output = self.base / "output"
         self.policy_path = self.root / "compliance/policy/android-static-components.json"
         self.source = self.vlc / "contrib/tarballs/demo-1.0.tar.xz"
         self.write_archive(self.source, {"LICENSE": b"demo license\n"})
         for name in ("NOTICE", "NOTICE.toolchain", "source.properties"):
             self.write(self.ndk / name, f"ndk {name}\n".encode("ascii"))
+        for name in ("AndroidVersion.txt", "clang_source_info.md"):
+            self.write(self.ndk_host / name, f"ndk {name}\n".encode("ascii"))
+        self.ndk_source_inputs = {
+            "llvm-android-build": {
+                "repository": "https://android.googlesource.com/toolchain/llvm_android",
+                "revision": LEGAL.LLVM_ANDROID_REVISION,
+                "tree": "1" * 40,
+                "role": "android-runtime-build-and-patch-set",
+                "requiredPaths": ["do_build.py"],
+            },
+            "llvm-project": {
+                "repository": "https://android.googlesource.com/toolchain/llvm-project",
+                "revision": LEGAL.LLVM_PROJECT_REVISION,
+                "tree": "2" * 40,
+                "role": "linked-runtime-source",
+                "requiredPaths": ["compiler-rt/lib/builtins"],
+            },
+        }
+        self.ndk_release = {
+            "releaseName": "r29",
+            "clangVersion": "21.0.0",
+            "clangRevision": "r563880c",
+            "ndkRepository": "https://android.googlesource.com/platform/ndk",
+            "prebuiltTags": {
+                "linux-x86_64": {
+                    "repository": (
+                        "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86"
+                    ),
+                    "tagObject": "3" * 40,
+                    "commit": "4" * 40,
+                }
+            },
+        }
         self.policy = {
             "schemaVersion": 1,
             "target": "android-arm",
@@ -51,10 +85,18 @@ class AndroidLegalEvidenceTest(unittest.TestCase):
                     "version": LEGAL.NDK_REVISION,
                     "candidateLicenseSpdx": ["Apache-2.0 WITH LLVM-exception"],
                     "evidenceFiles": ["NOTICE", "NOTICE.toolchain", "source.properties"],
-                    "sourceStatus": "pending-corresponding-source-map",
+                    "toolchainEvidenceFiles": [
+                        "AndroidVersion.txt",
+                        "clang_source_info.md",
+                    ],
+                    "sourceInputs": ["llvm-android-build", "llvm-project"],
+                    "sourceStatus": LEGAL.NDK_SOURCE_STATUS,
                 }
             },
+            "ndkSourceInputs": self.ndk_source_inputs,
+            "ndkReleaseProvenance": self.ndk_release,
             "ndkArchiveTemplates": {},
+            "ndkArchiveSourcePaths": {},
         }
         self.write_json(self.policy_path, self.policy)
         policy_sha256 = self.file_sha256(self.policy_path)
@@ -86,14 +128,41 @@ class AndroidLegalEvidenceTest(unittest.TestCase):
             "version": LEGAL.NDK_REVISION,
             "candidateLicenseSpdx": ["Apache-2.0 WITH LLVM-exception"],
             "licenseReviewStatus": LEGAL.COMPONENT_REVIEW_STATUS,
-            "sourceStatus": "pending-corresponding-source-map",
+            "sourceStatus": LEGAL.NDK_SOURCE_STATUS,
+            "sourceInputs": [
+                {"id": source_id, **value}
+                for source_id, value in self.ndk_source_inputs.items()
+            ],
+            "binaryProvenance": {
+                **{
+                    key: value
+                    for key, value in self.ndk_release.items()
+                    if key != "prebuiltTags"
+                },
+                "prebuilt": {
+                    "hostTag": "linux-x86_64",
+                    **self.ndk_release["prebuiltTags"]["linux-x86_64"],
+                },
+            },
             "evidenceFiles": [
                 {
                     "path": f"ndk/{name}",
-                    "sha256": self.file_sha256(self.ndk / name),
-                    "size": (self.ndk / name).stat().st_size,
+                    "sha256": self.file_sha256(
+                        (self.ndk if name in {"NOTICE", "NOTICE.toolchain", "source.properties"} else self.ndk_host)
+                        / name
+                    ),
+                    "size": (
+                        (self.ndk if name in {"NOTICE", "NOTICE.toolchain", "source.properties"} else self.ndk_host)
+                        / name
+                    ).stat().st_size,
                 }
-                for name in ("NOTICE", "NOTICE.toolchain", "source.properties")
+                for name in (
+                    "NOTICE",
+                    "NOTICE.toolchain",
+                    "source.properties",
+                    "AndroidVersion.txt",
+                    "clang_source_info.md",
+                )
             ],
         }
         self.components = [ndk_component, source_component]
@@ -163,7 +232,7 @@ class AndroidLegalEvidenceTest(unittest.TestCase):
         manifest = self.stage()
         self.assertEqual(LEGAL.LEGAL_REVIEW_STATUS, manifest["reviewStatus"])
         self.assertIsNone(manifest["effectiveLicenseSpdx"])
-        self.assertEqual(4, len(manifest["files"]))
+        self.assertEqual(6, len(manifest["files"]))
         components = {component["id"]: component for component in manifest["components"]}
         self.assertEqual(
             "source-archive-hashes-recorded",
@@ -180,11 +249,24 @@ class AndroidLegalEvidenceTest(unittest.TestCase):
             components["demo"]["sourceArchives"],
         )
         self.assertEqual(
-            "pending-corresponding-source-map",
+            LEGAL.NDK_SOURCE_STATUS,
             components["android-ndk-llvm-runtime"]["sourceStatus"],
         )
         self.assertEqual(
             [], components["android-ndk-llvm-runtime"]["sourceArchives"]
+        )
+        self.assertEqual(
+            ["llvm-android-build", "llvm-project"],
+            [
+                entry["id"]
+                for entry in components["android-ndk-llvm-runtime"]["sourceInputs"]
+            ],
+        )
+        self.assertEqual(
+            "linux-x86_64",
+            components["android-ndk-llvm-runtime"]["binaryProvenance"]["prebuilt"][
+                "hostTag"
+            ],
         )
         self.assertEqual(
             b"demo license\n",

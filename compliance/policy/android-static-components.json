@@ -242,7 +242,60 @@
       "version": "29.0.14206865",
       "candidateLicenseSpdx": ["Apache-2.0 WITH LLVM-exception"],
       "evidenceFiles": ["NOTICE", "NOTICE.toolchain", "source.properties"],
-      "sourceStatus": "pending-corresponding-source-map"
+      "toolchainEvidenceFiles": ["AndroidVersion.txt", "clang_source_info.md"],
+      "sourceInputs": ["llvm-android-build", "llvm-project"],
+      "sourceStatus": "exact-source-revisions-recorded-source-package-pending"
+    }
+  },
+  "ndkSourceInputs": {
+    "llvm-android-build": {
+      "repository": "https://android.googlesource.com/toolchain/llvm_android",
+      "revision": "1dab3288f660d43a6cb2479107e2b54b3ab0a2a1",
+      "tree": "9cf89bb8f12fb9e993e81d2ee2d43f2bc8819d53",
+      "role": "android-runtime-build-and-patch-set",
+      "requiredPaths": [
+        "do_build.py",
+        "patches",
+        "src/llvm_android/android_version.py",
+        "src/llvm_android/builders.py"
+      ]
+    },
+    "llvm-project": {
+      "repository": "https://android.googlesource.com/toolchain/llvm-project",
+      "revision": "386af4a5c64ab75eaee2448dc38f2e34a40bfed0",
+      "tree": "a49e40b73bcc972355bbf00df0d85d00312a625f",
+      "role": "linked-runtime-source",
+      "requiredPaths": [
+        "compiler-rt/lib/builtins",
+        "libcxx",
+        "libcxxabi",
+        "libunwind",
+        "runtimes"
+      ]
+    }
+  },
+  "ndkReleaseProvenance": {
+    "releaseName": "r29",
+    "clangVersion": "21.0.0",
+    "clangRevision": "r563880c",
+    "ndkRepository": "https://android.googlesource.com/platform/ndk",
+    "ndkTag": "ndk-r29",
+    "ndkTagObject": "5199c56421d79df5099aad8e32e32c101ff85cca",
+    "ndkCommit": "196e0661200bad5361340700fea67be12e1f1684",
+    "manifestRepository": "https://android.googlesource.com/platform/manifest",
+    "manifestTagObject": "5d4df6d77b33dc6d31576a66a8ff283c8825493f",
+    "manifestCommit": "82eb8adcaafe02dce4e462db2379fad3ea0b54d8",
+    "prebuiltTags": {
+      "darwin-x86_64": {
+        "repository": "https://android.googlesource.com/platform/prebuilts/clang/host/darwin-x86",
+        "tagObject": "c547cdbfbec71e85920c1f0976e18defc01a0b5b",
+        "commit": "2ede290b28d234595fcc23207c633961690c57ba"
+      },
+      "linux-x86_64": {
+        "repository": "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86",
+        "tagObject": "be61f23178d3459a558b45dd0df4304b0fda6b26",
+        "commit": "568b941cf0c249b9c2a1f853e94a29f0e6291c59"
+      }
     }
   },
   "ndkArchiveTemplates": {
@@ -250,5 +303,22 @@
     "ndk/toolchains/llvm/prebuilt/{hostTag}/lib/clang/21/lib/linux/{runtimeArch}/libunwind.a": "android-ndk-llvm-runtime",
     "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/libc++_static.a": "android-ndk-llvm-runtime",
     "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/libc++abi.a": "android-ndk-llvm-runtime"
+  },
+  "ndkArchiveSourcePaths": {
+    "ndk/toolchains/llvm/prebuilt/{hostTag}/lib/clang/21/lib/linux/libclang_rt.builtins-{builtinsArch}-android.a": [
+      "llvm-project/compiler-rt/lib/builtins"
+    ],
+    "ndk/toolchains/llvm/prebuilt/{hostTag}/lib/clang/21/lib/linux/{runtimeArch}/libunwind.a": [
+      "llvm-project/libunwind",
+      "llvm-project/runtimes"
+    ],
+    "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/libc++_static.a": [
+      "llvm-project/libcxx",
+      "llvm-project/runtimes"
+    ],
+    "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/libc++abi.a": [
+      "llvm-project/libcxxabi",
+      "llvm-project/runtimes"
+    ]
   }
 }

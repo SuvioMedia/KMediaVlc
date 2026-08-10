@@ -97,18 +97,6 @@ for abi in arm64-v8a armeabi-v7a; do
     [[ -s "$link_map" && ! -L "$link_map" ]] ||
         fail "source build did not produce a libvlc linker map for $abi"
 
-    python3 "$project_root/scripts/create_android_link_audit.py" \
-        --root "$project_root" \
-        --vlc-source "$vlc_source" \
-        --ndk "$ndk_directory" \
-        --abi "$abi" \
-        --libvlc "$libvlc_library" \
-        --link-map "$link_map" \
-        --readelf "$readelf_executable" \
-        --nm "$nm_executable" \
-        --strings "$strings_executable" \
-        --output "$audit_directory/$abi.json"
-
     bridge_build="$work_directory/bridge-$abi"
     "$cmake_executable" \
         -S "$project_root/native/android" \
@@ -142,6 +130,18 @@ for abi in arm64-v8a armeabi-v7a; do
         grep -E '^  LOAD' | grep -v '0x4000$' >/dev/null; then
         fail "Android payload is not aligned for 16 KiB pages"
     fi
+
+    python3 "$project_root/scripts/create_android_link_audit.py" \
+        --root "$project_root" \
+        --vlc-source "$vlc_source" \
+        --ndk "$ndk_directory" \
+        --abi "$abi" \
+        --libvlc "$destination/libvlc.so" \
+        --link-map "$link_map" \
+        --readelf "$readelf_executable" \
+        --nm "$nm_executable" \
+        --strings "$strings_executable" \
+        --output "$audit_directory/$abi.json"
 done
 
 python3 "$project_root/scripts/stage_android_legal_evidence.py" \

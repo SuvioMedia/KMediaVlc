@@ -374,6 +374,7 @@ def verify_android_contract(root: Path) -> None:
         "requiresLinkerMapAudit", "legalEvidenceBundle",
         "requiresIdenticalAbiComponentEvidence",
         "requiresApprovedLegalEvidenceForPublication",
+        "ndkSourceStatus", "requiresNdkRuntimeSourcePackage",
         "requiresDeviceSurfaceLifecycleTest", "forbidsStockNightly",
         "candidateReleaseEligible",
     }
@@ -416,13 +417,19 @@ def verify_android_contract(root: Path) -> None:
         "requiresCoreJniOnLoadFirst", "requiresPerFileInventory",
         "requiresModuleLicenseAudit", "requiresCompiledModuleLicenseAudit",
         "requiresLinkerMapAudit", "requiresIdenticalAbiComponentEvidence",
-        "requiresApprovedLegalEvidenceForPublication", "requiresDeviceSurfaceLifecycleTest",
+        "requiresApprovedLegalEvidenceForPublication", "requiresNdkRuntimeSourcePackage",
+        "requiresDeviceSurfaceLifecycleTest",
         "forbidsStockNightly",
     ]
     if any(recipe.get(key) is not True for key in required_true):
         fail("The Android audit requirements were weakened.")
     if recipe.get("legalEvidenceBundle") != "legal/android-static-legal.json":
         fail("The Android hash-bound legal evidence path changed.")
+    if (
+        recipe.get("ndkSourceStatus")
+        != "exact-source-revisions-recorded-source-package-pending"
+    ):
+        fail("The Android NDK source-package gate changed without verification.")
     if (
         recipe.get("usesPrebuiltContribs") is not False
         or recipe.get("usesPublishedLibVlcAar") is not False
@@ -436,7 +443,8 @@ def verify_android_contract(root: Path) -> None:
     expected_static_keys = {
         "schemaVersion", "target", "vlcRevision", "ndkRevision", "reviewStatus",
         "contribComponents", "candidateLicenseSpdx", "licenseEvidence", "contribArchives",
-        "ndkComponents", "ndkArchiveTemplates",
+        "ndkComponents", "ndkSourceInputs", "ndkReleaseProvenance",
+        "ndkArchiveTemplates", "ndkArchiveSourcePaths",
     }
     if (
         set(static_policy) != expected_static_keys
@@ -570,11 +578,72 @@ def verify_android_contract(root: Path) -> None:
             "version": "29.0.14206865",
             "candidateLicenseSpdx": ["Apache-2.0 WITH LLVM-exception"],
             "evidenceFiles": ["NOTICE", "NOTICE.toolchain", "source.properties"],
-            "sourceStatus": "pending-corresponding-source-map",
+            "toolchainEvidenceFiles": ["AndroidVersion.txt", "clang_source_info.md"],
+            "sourceInputs": ["llvm-android-build", "llvm-project"],
+            "sourceStatus": "exact-source-revisions-recorded-source-package-pending",
         }
     }
     if ndk_components != expected_ndk_component:
         fail("The Android NDK static runtime component is not closed.")
+    expected_ndk_source_inputs = {
+        "llvm-android-build": {
+            "repository": "https://android.googlesource.com/toolchain/llvm_android",
+            "revision": "1dab3288f660d43a6cb2479107e2b54b3ab0a2a1",
+            "tree": "9cf89bb8f12fb9e993e81d2ee2d43f2bc8819d53",
+            "role": "android-runtime-build-and-patch-set",
+            "requiredPaths": [
+                "do_build.py",
+                "patches",
+                "src/llvm_android/android_version.py",
+                "src/llvm_android/builders.py",
+            ],
+        },
+        "llvm-project": {
+            "repository": "https://android.googlesource.com/toolchain/llvm-project",
+            "revision": "386af4a5c64ab75eaee2448dc38f2e34a40bfed0",
+            "tree": "a49e40b73bcc972355bbf00df0d85d00312a625f",
+            "role": "linked-runtime-source",
+            "requiredPaths": [
+                "compiler-rt/lib/builtins",
+                "libcxx",
+                "libcxxabi",
+                "libunwind",
+                "runtimes",
+            ],
+        },
+    }
+    if static_policy.get("ndkSourceInputs") != expected_ndk_source_inputs:
+        fail("The Android NDK source revisions and trees are not closed.")
+    expected_ndk_release = {
+        "releaseName": "r29",
+        "clangVersion": "21.0.0",
+        "clangRevision": "r563880c",
+        "ndkRepository": "https://android.googlesource.com/platform/ndk",
+        "ndkTag": "ndk-r29",
+        "ndkTagObject": "5199c56421d79df5099aad8e32e32c101ff85cca",
+        "ndkCommit": "196e0661200bad5361340700fea67be12e1f1684",
+        "manifestRepository": "https://android.googlesource.com/platform/manifest",
+        "manifestTagObject": "5d4df6d77b33dc6d31576a66a8ff283c8825493f",
+        "manifestCommit": "82eb8adcaafe02dce4e462db2379fad3ea0b54d8",
+        "prebuiltTags": {
+            "darwin-x86_64": {
+                "repository": (
+                    "https://android.googlesource.com/platform/prebuilts/clang/host/darwin-x86"
+                ),
+                "tagObject": "c547cdbfbec71e85920c1f0976e18defc01a0b5b",
+                "commit": "2ede290b28d234595fcc23207c633961690c57ba",
+            },
+            "linux-x86_64": {
+                "repository": (
+                    "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86"
+                ),
+                "tagObject": "be61f23178d3459a558b45dd0df4304b0fda6b26",
+                "commit": "568b941cf0c249b9c2a1f853e94a29f0e6291c59",
+            },
+        },
+    }
+    if static_policy.get("ndkReleaseProvenance") != expected_ndk_release:
+        fail("The Android NDK r29 release/prebuilt provenance is not closed.")
     expected_ndk_templates = {
         "ndk/toolchains/llvm/prebuilt/{hostTag}/lib/clang/21/lib/linux/"
         "libclang_rt.builtins-{builtinsArch}-android.a",
@@ -593,6 +662,29 @@ def verify_android_contract(root: Path) -> None:
         or set(ndk_templates.values()) != set(ndk_components)
     ):
         fail("The Android NDK link graph must contain the exact four runtime archives.")
+    expected_ndk_source_paths = {
+        "ndk/toolchains/llvm/prebuilt/{hostTag}/lib/clang/21/lib/linux/"
+        "libclang_rt.builtins-{builtinsArch}-android.a": [
+            "llvm-project/compiler-rt/lib/builtins"
+        ],
+        "ndk/toolchains/llvm/prebuilt/{hostTag}/lib/clang/21/lib/linux/"
+        "{runtimeArch}/libunwind.a": [
+            "llvm-project/libunwind",
+            "llvm-project/runtimes",
+        ],
+        "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/"
+        "libc++_static.a": ["llvm-project/libcxx", "llvm-project/runtimes"],
+        "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/"
+        "libc++abi.a": ["llvm-project/libcxxabi", "llvm-project/runtimes"],
+    }
+    ndk_source_paths = static_policy.get("ndkArchiveSourcePaths")
+    if (
+        not isinstance(ndk_source_paths, dict)
+        or list(ndk_source_paths) != sorted(ndk_source_paths)
+        or ndk_source_paths != expected_ndk_source_paths
+        or set(ndk_source_paths) != set(ndk_templates)
+    ):
+        fail("The Android NDK archive-to-source path map is not closed.")
 
     bridge = (root / "native/android/kmediavlc_android_jni.cpp").read_text(encoding="utf-8")
     bridge_markers = [
@@ -657,7 +749,9 @@ def verify_android_contract(root: Path) -> None:
         "AndroidLegalEvidence.read",
         "android-static-legal.json",
         "assets/kmediavlc/legal/ANDROID_STATIC/",
+        "does not bind the packaged libvlc.so",
         "Publishing requires approved hash-bound Android legal evidence.",
+        "Publishing requires the NDK runtime source package to match its recorded revisions.",
     ]
     if not all(marker in android_build for marker in gradle_markers):
         fail("The Android AAR payload or publication gate is incomplete.")
@@ -676,10 +770,15 @@ def verify_android_contract(root: Path) -> None:
         "libkmediavlc_android.so",
         "releaseEligible=false",
         "0x4000",
+        '--libvlc "$destination/libvlc.so"',
         '--output "$output_directory/legal"',
     ]
     if not all(marker in builder for marker in builder_markers):
         fail("The Android source builder does not produce a fail-closed candidate.")
+    if builder.find('"$strip_executable" --strip-unneeded "$destination/libvlc.so"') >= builder.find(
+        '--libvlc "$destination/libvlc.so"'
+    ):
+        fail("The Android link audit must hash the final stripped payload library.")
 
     audit_generator = (root / "scripts/create_android_link_audit.py").read_text(
         encoding="utf-8"
@@ -716,6 +815,9 @@ def verify_android_contract(root: Path) -> None:
         "Android ABI audits do not have identical static component evidence.",
         '"effectiveLicenseSpdx": None',
         '"candidateLicenseInventorySpdx"',
+        '"sourceInputs"',
+        "exact-source-revisions-recorded-source-package-pending",
+        "clang_source_info.md",
         "Android legal evidence file count differs from the closed policy.",
         "partial.rename(output)",
     ]

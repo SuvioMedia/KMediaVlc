@@ -25,6 +25,13 @@ bridge. VLC's Android build folds its selected modules and contribs into
 and libvlcjni checkouts, every contrib source input, the exact module list,
 and the NDK 29 build/relink recipe.
 
+The NDK part of that recipe is now source-mapped to Clang `r563880c`, LLVM
+commit `386af4a5c64ab75eaee2448dc38f2e34a40bfed0`, and Android
+`llvm_android` build/patch commit `1dab3288f660d43a6cb2479107e2b54b3ab0a2a1`.
+The audit records the exact source subtrees used by each of the four linked
+runtime archives and binds the r29 manifest plus macOS/Linux prebuilt tags.
+This records provenance; it is not a substitute for packaging those sources.
+
 The relink recipe also includes KMediaVlc's committed `libvlcjni` policy patch.
 For the Android profile that patch disables Blu-ray/BD-J and records the
 limitation in the closed build recipe.
@@ -37,7 +44,8 @@ sources or for the full relinking instructions.
 The candidate AAR carries a separate legal-evidence manifest and the exact raw
 notice inputs selected from those source archives. It binds both ABI report
 hashes and rejects any file mismatch, but publication still requires an
-approved effective SPDX conclusion and the complete source/relinking bundle.
+approved effective SPDX conclusion, an NDK status of
+`corresponding-source-mapped`, and the complete source/relinking bundle.
 
 The pinned recipe has been exercised successfully for ARM64 and ARMv7 and the
 resulting stripped payload has passed the real AAR inventory gate. Publication

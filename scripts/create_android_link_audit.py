@@ -15,6 +15,11 @@ from pathlib import Path, PurePosixPath
 VLC_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
 LIBVLCJNI_REVISION = "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21"
 NDK_REVISION = "29.0.14206865"
+NDK_SOURCE_STATUS = "exact-source-revisions-recorded-source-package-pending"
+NDK_ROOT_EVIDENCE = ["NOTICE", "NOTICE.toolchain", "source.properties"]
+NDK_TOOLCHAIN_EVIDENCE = ["AndroidVersion.txt", "clang_source_info.md"]
+LLVM_PROJECT_REVISION = "386af4a5c64ab75eaee2448dc38f2e34a40bfed0"
+LLVM_ANDROID_REVISION = "1dab3288f660d43a6cb2479107e2b54b3ab0a2a1"
 SUPPORTED_TARGETS = {
     "arm64-v8a": "aarch64-linux-android",
     "armeabi-v7a": "arm-linux-androideabi",
@@ -56,6 +61,73 @@ EXPECTED_NDK_TEMPLATES = {
     "libc++_static.a",
     "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/"
     "libc++abi.a",
+}
+EXPECTED_NDK_SOURCE_PATHS = {
+    "ndk/toolchains/llvm/prebuilt/{hostTag}/lib/clang/21/lib/linux/"
+    "libclang_rt.builtins-{builtinsArch}-android.a": [
+        "llvm-project/compiler-rt/lib/builtins"
+    ],
+    "ndk/toolchains/llvm/prebuilt/{hostTag}/lib/clang/21/lib/linux/"
+    "{runtimeArch}/libunwind.a": ["llvm-project/libunwind", "llvm-project/runtimes"],
+    "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/"
+    "libc++_static.a": ["llvm-project/libcxx", "llvm-project/runtimes"],
+    "ndk/toolchains/llvm/prebuilt/{hostTag}/sysroot/usr/lib/{targetTuple}/"
+    "libc++abi.a": ["llvm-project/libcxxabi", "llvm-project/runtimes"],
+}
+EXPECTED_NDK_SOURCE_INPUTS = {
+    "llvm-android-build": {
+        "repository": "https://android.googlesource.com/toolchain/llvm_android",
+        "revision": LLVM_ANDROID_REVISION,
+        "tree": "9cf89bb8f12fb9e993e81d2ee2d43f2bc8819d53",
+        "role": "android-runtime-build-and-patch-set",
+        "requiredPaths": [
+            "do_build.py",
+            "patches",
+            "src/llvm_android/android_version.py",
+            "src/llvm_android/builders.py",
+        ],
+    },
+    "llvm-project": {
+        "repository": "https://android.googlesource.com/toolchain/llvm-project",
+        "revision": LLVM_PROJECT_REVISION,
+        "tree": "a49e40b73bcc972355bbf00df0d85d00312a625f",
+        "role": "linked-runtime-source",
+        "requiredPaths": [
+            "compiler-rt/lib/builtins",
+            "libcxx",
+            "libcxxabi",
+            "libunwind",
+            "runtimes",
+        ],
+    },
+}
+EXPECTED_NDK_RELEASE_PROVENANCE = {
+    "releaseName": "r29",
+    "clangVersion": "21.0.0",
+    "clangRevision": "r563880c",
+    "ndkRepository": "https://android.googlesource.com/platform/ndk",
+    "ndkTag": "ndk-r29",
+    "ndkTagObject": "5199c56421d79df5099aad8e32e32c101ff85cca",
+    "ndkCommit": "196e0661200bad5361340700fea67be12e1f1684",
+    "manifestRepository": "https://android.googlesource.com/platform/manifest",
+    "manifestTagObject": "5d4df6d77b33dc6d31576a66a8ff283c8825493f",
+    "manifestCommit": "82eb8adcaafe02dce4e462db2379fad3ea0b54d8",
+    "prebuiltTags": {
+        "darwin-x86_64": {
+            "repository": (
+                "https://android.googlesource.com/platform/prebuilts/clang/host/darwin-x86"
+            ),
+            "tagObject": "c547cdbfbec71e85920c1f0976e18defc01a0b5b",
+            "commit": "2ede290b28d234595fcc23207c633961690c57ba",
+        },
+        "linux-x86_64": {
+            "repository": (
+                "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86"
+            ),
+            "tagObject": "be61f23178d3459a558b45dd0df4304b0fda6b26",
+            "commit": "568b941cf0c249b9c2a1f853e94a29f0e6291c59",
+        },
+    },
 }
 EXPECTED_CONTRIB_CANDIDATE_LICENSES = {
     "Apache-2.0",
@@ -173,7 +245,10 @@ def static_component_policy(root: Path) -> dict:
         "licenseEvidence",
         "contribArchives",
         "ndkComponents",
+        "ndkSourceInputs",
+        "ndkReleaseProvenance",
         "ndkArchiveTemplates",
+        "ndkArchiveSourcePaths",
     }
     if set(policy) != expected_keys or policy.get("schemaVersion") != 1:
         fail("Android static component policy fields are not closed.")
@@ -292,17 +367,31 @@ def static_component_policy(root: Path) -> dict:
         if not SAFE_COMPONENT.fullmatch(component_id) or not isinstance(component, dict):
             fail(f"Android NDK component is unsafe: {component_id!r}")
         if set(component) != {
-            "version", "candidateLicenseSpdx", "evidenceFiles", "sourceStatus"
+            "version",
+            "candidateLicenseSpdx",
+            "evidenceFiles",
+            "toolchainEvidenceFiles",
+            "sourceInputs",
+            "sourceStatus",
         }:
             fail(f"Android NDK component fields are not closed: {component_id}")
         if component["version"] != NDK_REVISION:
             fail(f"Android NDK component version is invalid: {component_id}")
         if component["candidateLicenseSpdx"] != ["Apache-2.0 WITH LLVM-exception"]:
             fail(f"Android NDK candidate SPDX mapping is invalid: {component_id}")
-        if component["evidenceFiles"] != ["NOTICE", "NOTICE.toolchain", "source.properties"]:
+        if component["evidenceFiles"] != NDK_ROOT_EVIDENCE:
             fail(f"Android NDK evidence files are incomplete: {component_id}")
-        if component["sourceStatus"] != "pending-corresponding-source-map":
+        if component["toolchainEvidenceFiles"] != NDK_TOOLCHAIN_EVIDENCE:
+            fail(f"Android NDK toolchain provenance files are incomplete: {component_id}")
+        if component["sourceInputs"] != sorted(EXPECTED_NDK_SOURCE_INPUTS):
+            fail(f"Android NDK source input references are incomplete: {component_id}")
+        if component["sourceStatus"] != NDK_SOURCE_STATUS:
             fail(f"Android NDK source review state is invalid: {component_id}")
+
+    if policy.get("ndkSourceInputs") != EXPECTED_NDK_SOURCE_INPUTS:
+        fail("Android NDK source revisions or trees differ from the closed map.")
+    if policy.get("ndkReleaseProvenance") != EXPECTED_NDK_RELEASE_PROVENANCE:
+        fail("Android NDK release/prebuilt provenance differs from r29.")
 
     ndk_templates = policy.get("ndkArchiveTemplates")
     if (
@@ -312,10 +401,18 @@ def static_component_policy(root: Path) -> dict:
         or set(ndk_templates.values()) != set(ndk_components)
     ):
         fail("Android NDK archive templates are not the exact closed runtime graph.")
+    ndk_source_paths = policy.get("ndkArchiveSourcePaths")
+    if (
+        not isinstance(ndk_source_paths, dict)
+        or list(ndk_source_paths) != sorted(ndk_source_paths)
+        or ndk_source_paths != EXPECTED_NDK_SOURCE_PATHS
+        or set(ndk_source_paths) != set(ndk_templates)
+    ):
+        fail("Android NDK archive-to-source map is not the exact closed runtime graph.")
     return policy
 
 
-def expanded_ndk_archive_components(ndk_directory: Path, abi: str, policy: dict) -> dict[str, str]:
+def ndk_host_prebuilt(ndk_directory: Path) -> tuple[str, Path]:
     prebuilt = real_directory(
         ndk_directory / "toolchains/llvm/prebuilt", "Android NDK host toolchain directory"
     )
@@ -324,10 +421,61 @@ def expanded_ndk_archive_components(ndk_directory: Path, abi: str, policy: dict)
     )
     if len(host_tags) != 1 or not SAFE_HOST_TAG.fullmatch(host_tags[0]):
         fail("Android NDK must contain exactly one supported host toolchain.")
-    values = {"hostTag": host_tags[0], **ABI_TOOLCHAIN_NAMES[abi]}
+    return host_tags[0], real_directory(
+        prebuilt / host_tags[0], "Android NDK selected host toolchain directory"
+    )
+
+
+def validate_ndk_toolchain_provenance(ndk_directory: Path, policy: dict) -> tuple[str, Path]:
+    host_tag, host_prebuilt = ndk_host_prebuilt(ndk_directory)
+    version_file = real_file(
+        host_prebuilt / "AndroidVersion.txt", "Android NDK Clang version evidence"
+    )
+    source_info_file = real_file(
+        host_prebuilt / "clang_source_info.md", "Android NDK Clang source evidence"
+    )
+    release = policy["ndkReleaseProvenance"]
+    expected_version = (
+        f"{release['clangVersion']}\n"
+        f"based on {release['clangRevision']}\n"
+        "for additional information on LLVM revision and cherry-picks, "
+        "see clang_source_info.md\n"
+    )
+    if version_file.read_text(encoding="utf-8") != expected_version:
+        fail("Android NDK Clang version evidence differs from the closed r29 identity.")
+    source_info = source_info_file.read_text(encoding="utf-8")
+    if not source_info.startswith(
+        f"Base revision: [{LLVM_PROJECT_REVISION}]"
+        f"(https://github.com/llvm/llvm-project/commits/{LLVM_PROJECT_REVISION})\n"
+    ):
+        fail("Android NDK Clang source evidence has a different LLVM base revision.")
+    patch_revisions = set(
+        re.findall(r"toolchain/llvm_android/\+/([0-9a-f]{40})/patches/", source_info)
+    )
+    if patch_revisions != {LLVM_ANDROID_REVISION}:
+        fail("Android NDK Clang source evidence has a different Android patch revision.")
+    if host_tag not in release["prebuiltTags"]:
+        fail("Android NDK host prebuilt is absent from the closed r29 provenance map.")
+    return host_tag, host_prebuilt
+
+
+def expanded_ndk_archive_components(ndk_directory: Path, abi: str, policy: dict) -> dict[str, str]:
+    host_tag, _ = ndk_host_prebuilt(ndk_directory)
+    values = {"hostTag": host_tag, **ABI_TOOLCHAIN_NAMES[abi]}
     return {
         template.format_map(values): component
         for template, component in policy["ndkArchiveTemplates"].items()
+    }
+
+
+def expanded_ndk_archive_source_paths(
+    ndk_directory: Path, abi: str, policy: dict
+) -> dict[str, list[str]]:
+    host_tag, _ = ndk_host_prebuilt(ndk_directory)
+    values = {"hostTag": host_tag, **ABI_TOOLCHAIN_NAMES[abi]}
+    return {
+        template.format_map(values): source_paths
+        for template, source_paths in policy["ndkArchiveSourcePaths"].items()
     }
 
 
@@ -412,7 +560,14 @@ def static_component_evidence(
             }
         )
 
+    ndk_host_tag = None
+    ndk_host_prebuilt = None
+    if ndk_component_ids:
+        ndk_host_tag, ndk_host_prebuilt = validate_ndk_toolchain_provenance(
+            ndk_directory, policy
+        )
     for component_id in sorted(ndk_component_ids):
+        assert ndk_host_tag is not None and ndk_host_prebuilt is not None
         component = policy["ndkComponents"][component_id]
         evidence_files = []
         for relative in component["evidenceFiles"]:
@@ -426,6 +581,32 @@ def static_component_evidence(
                     "size": evidence.stat().st_size,
                 }
             )
+        for relative in component["toolchainEvidenceFiles"]:
+            evidence = real_file(
+                ndk_host_prebuilt / relative,
+                f"Android NDK toolchain evidence file {relative}",
+            )
+            if evidence.parent != ndk_host_prebuilt:
+                fail("Android NDK toolchain evidence file escaped its closed root.")
+            evidence_files.append(
+                {
+                    "path": f"ndk/{relative}",
+                    "sha256": sha256(evidence),
+                    "size": evidence.stat().st_size,
+                }
+            )
+        source_inputs = [
+            {"id": source_id, **policy["ndkSourceInputs"][source_id]}
+            for source_id in component["sourceInputs"]
+        ]
+        release = policy["ndkReleaseProvenance"]
+        binary_provenance = {
+            key: value for key, value in release.items() if key != "prebuiltTags"
+        }
+        binary_provenance["prebuilt"] = {
+            "hostTag": ndk_host_tag,
+            **release["prebuiltTags"][ndk_host_tag],
+        }
         entries.append(
             {
                 "id": component_id,
@@ -434,6 +615,8 @@ def static_component_evidence(
                 "candidateLicenseSpdx": component["candidateLicenseSpdx"],
                 "licenseReviewStatus": "pending-linked-member-review",
                 "sourceStatus": component["sourceStatus"],
+                "sourceInputs": source_inputs,
+                "binaryProvenance": binary_provenance,
                 "evidenceFiles": evidence_files,
             }
         )
@@ -637,6 +820,11 @@ def create(
     expected_ndk_archives = expanded_ndk_archive_components(
         ndk_directory, abi, component_policy
     )
+    expected_ndk_sources = expanded_ndk_archive_source_paths(
+        ndk_directory, abi, component_policy
+    )
+    if set(expected_ndk_sources) != set(expected_ndk_archives):
+        fail("Android NDK expanded archive/source maps differ.")
     if not required.issubset(modules):
         fail(f"Android libvlc omits required playback modules: {sorted(required - set(modules))}")
 
@@ -698,6 +886,7 @@ def create(
             if component_id is None:
                 fail(f"Unmapped Android NDK archive entered libvlc.so: {canonical_path}")
             entry["component"] = component_id
+            entry["sourcePaths"] = expected_ndk_sources[canonical_path]
             linked_ndk_archives.add(canonical_path)
             ndk_component_ids.add(component_id)
         archive_entries.append(entry)

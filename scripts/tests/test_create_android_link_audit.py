@@ -51,6 +51,21 @@ class AndroidLinkAuditTest(unittest.TestCase):
                 )
         for evidence in ("NOTICE", "NOTICE.toolchain", "source.properties"):
             self.write(self.ndk / evidence, evidence)
+        self.write(
+            self.ndk_prebuilt / "AndroidVersion.txt",
+            "21.0.0\nbased on r563880c\n"
+            "for additional information on LLVM revision and cherry-picks, "
+            "see clang_source_info.md\n",
+        )
+        self.write(
+            self.ndk_prebuilt / "clang_source_info.md",
+            "Base revision: "
+            f"[{AUDIT.LLVM_PROJECT_REVISION}]"
+            "(https://github.com/llvm/llvm-project/commits/"
+            f"{AUDIT.LLVM_PROJECT_REVISION})\n\n"
+            "- [patch](https://android.googlesource.com/toolchain/llvm_android/+/"
+            f"{AUDIT.LLVM_ANDROID_REVISION}/patches/runtime.patch)\n",
+        )
         self.modules = sorted(AUDIT.required_modules(ROOT))
         manifest = self.build / "ndk/libvlcjni-modules.c"
         with manifest.open("w", encoding="utf-8", newline="\n") as target:
@@ -200,6 +215,33 @@ fi
         self.assertTrue(
             all(entry.get("component") for entry in result["staticArchives"] if entry["kind"] in {"CONTRIB", "NDK_TOOLCHAIN"})
         )
+        ndk_component = next(
+            entry for entry in result["staticComponents"] if entry["kind"] == "NDK_TOOLCHAIN"
+        )
+        self.assertEqual(AUDIT.NDK_SOURCE_STATUS, ndk_component["sourceStatus"])
+        self.assertEqual(5, len(ndk_component["evidenceFiles"]))
+        self.assertEqual(
+            sorted(AUDIT.EXPECTED_NDK_SOURCE_INPUTS),
+            [entry["id"] for entry in ndk_component["sourceInputs"]],
+        )
+        self.assertEqual("linux-x86_64", ndk_component["binaryProvenance"]["prebuilt"]["hostTag"])
+        self.assertTrue(
+            all(
+                entry["sourcePaths"]
+                for entry in result["staticArchives"]
+                if entry["kind"] == "NDK_TOOLCHAIN"
+            )
+        )
+
+    def test_rejects_changed_clang_source_revision(self) -> None:
+        self.write(
+            self.ndk_prebuilt / "clang_source_info.md",
+            "Base revision: [0000000000000000000000000000000000000000]"
+            "(https://github.com/llvm/llvm-project/commits/"
+            "0000000000000000000000000000000000000000)\n",
+        )
+        with self.assertRaisesRegex(ValueError, "different LLVM base revision"):
+            self.create()
 
     def test_rejects_archive_outside_closed_build_roots(self) -> None:
         foreign = self.write(self.base / "foreign/libforeign.a", "foreign")
