@@ -1316,7 +1316,6 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "make -j1 .zlib",
         "make -j1 .meson-machinefile",
         "--default-library=shared",
-        "--prefer-static",
         "--wrap-mode=nodownload",
         "-Dauto_features=disabled",
         "-Dlua=disabled",
@@ -1325,7 +1324,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "--tags runtime",
         "raw-plugin-files.txt",
     ]
-    if not all(marker in builder for marker in builder_markers):
+    if not all(marker in builder for marker in builder_markers) or "--prefer-static" in builder:
         fail("The Linux build wrapper does not preserve the closed source recipe.")
 
     workflow = (root / ".github/workflows/linux-source-audit.yml").read_text(
@@ -1336,6 +1335,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "linux-x86_64",
         "linux-aarch64",
         "persist-credentials: false",
+        "Compile the Linux GBM EGL DMA-BUF bridge",
         "bash scripts/build_vlc_linux.sh",
         "Stage the closed runtime and play a real CPU frame",
         "python3 scripts/stage_vlc_linux_runtime.py",
@@ -1368,6 +1368,39 @@ def verify_linux_runtime_contract(root: Path) -> None:
     ]
     if not all(marker in stager for marker in stager_markers) or "os.environ" in stager:
         fail("The Linux stager does not close relocation, ELF, or pending GPU evidence.")
+
+    renderer = (root / "native/src/linux_dmabuf_renderer.cpp").read_text(encoding="utf-8")
+    renderer_markers = [
+        "libvlc_video_engine_gles2",
+        "EGL_PLATFORM_GBM_KHR",
+        "DRM_FORMAT_ABGR8888",
+        "gbm_bo_create_with_modifiers2",
+        "eglQueryDmaBufFormatsEXT",
+        "eglQueryDmaBufModifiersEXT",
+        "EGL_EXT_image_dma_buf_import_modifiers",
+        "EGL_SYNC_NATIVE_FENCE_FD_ANDROID",
+        "eglDupNativeFenceFDANDROID",
+        "release_surface_callback",
+        "surface->retired = true",
+        "KMEDIAVLC_DMABUF",
+        "libvlc_video_transfer_func_SRGB",
+    ]
+    if not all(marker in renderer for marker in renderer_markers):
+        fail("The Linux GBM/EGL DMA-BUF and explicit-fence ownership contract is incomplete.")
+
+    cmake = (root / "native/CMakeLists.txt").read_text(encoding="utf-8")
+    cmake_markers = [
+        'CMAKE_SYSTEM_NAME STREQUAL "Linux"',
+        "src/linux_dmabuf_renderer.cpp",
+        "PkgConfig::KMEDIAVLC_LINUX_GRAPHICS",
+        "egl",
+        "glesv2",
+        "gbm",
+        "libdrm",
+        "-Wl,-z,noexecstack",
+    ]
+    if not all(marker in cmake for marker in cmake_markers):
+        fail("The Linux renderer is not linked to its bounded hardened graphics graph.")
 
 
 def verify_legal_files(root: Path) -> None:

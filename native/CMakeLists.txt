@@ -48,6 +48,8 @@ elseif(WIN32)
     list(APPEND KMEDIAVLC_SOURCES src/windows_d3d11_renderer.cpp)
 elseif(APPLE)
     list(APPEND KMEDIAVLC_SOURCES src/macos_iosurface_renderer.cpp)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    list(APPEND KMEDIAVLC_SOURCES src/linux_dmabuf_renderer.cpp)
 else()
     list(APPEND KMEDIAVLC_SOURCES src/platform_renderer_stub.cpp)
 endif()
@@ -94,6 +96,26 @@ elseif(APPLE)
         ${KMEDIAVLC_CORE_VIDEO}
         ${KMEDIAVLC_IO_SURFACE}
         ${KMEDIAVLC_OPEN_GL}
+        ${CMAKE_DL_LIBS}
+    )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(KMEDIAVLC_LINUX_GRAPHICS REQUIRED IMPORTED_TARGET
+        egl
+        glesv2
+        gbm
+        libdrm
+    )
+    target_compile_definitions(kmediavlc_bridge PRIVATE _FILE_OFFSET_BITS=64)
+    target_compile_options(kmediavlc_bridge PRIVATE -Wall -Wextra -Wpedantic -Wconversion)
+    target_link_options(kmediavlc_bridge PRIVATE
+        -Wl,-z,relro
+        -Wl,-z,now
+        -Wl,-z,noexecstack
+        -Wl,--build-id=sha1
+    )
+    target_link_libraries(kmediavlc_bridge PRIVATE
+        PkgConfig::KMEDIAVLC_LINUX_GRAPHICS
         ${CMAKE_DL_LIBS}
     )
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

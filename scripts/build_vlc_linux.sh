@@ -173,12 +173,14 @@ fi
 
 readonly common_c_flags="-O2 -fPIC -fstack-protector-strong -D_FORTIFY_SOURCE=3 -ffile-prefix-map=$source_directory=/usr/src/vlc -ffile-prefix-map=$build_directory=/usr/src/kmediavlc-build"
 readonly common_link_flags="-Wl,-z,relro,-z,now,--as-needed -Wl,--build-id=sha1"
+# The contrib native file points at source-built static archives. Do not set
+# Meson's global --prefer-static: the six reviewed system dependencies must use
+# their distribution shared objects rather than non-PIC development archives.
 meson_options=(
     --prefix=/
     --libdir=lib
     --buildtype=release
     --default-library=shared
-    --prefer-static
     --wrap-mode=nodownload
     -Dauto_features=disabled
     -Db_lto=false

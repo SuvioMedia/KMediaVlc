@@ -77,6 +77,15 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
 
+      - name: Compile the Linux GBM EGL DMA-BUF bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash ./gradlew buildNativeBridge \
+            -PkmediaVlcVlcSourceDir="$GITHUB_WORKSPACE/.vlc-source" \
+            --no-daemon --stacktrace --console=plain
+          test -f "$GITHUB_WORKSPACE/build/native/${{ matrix.target }}/libkmediavlc_bridge.so"
+
       - name: Build the pinned shared libVLC graph from source
         shell: bash
         run: |
@@ -113,9 +122,6 @@ jobs:
         run: |
           set -euo pipefail
           install="$RUNNER_TEMP/vlc-linux-build/vlc-${{ matrix.target }}"
-          bash ./gradlew buildNativeBridge \
-            -PkmediaVlcVlcSourceDir="$GITHUB_WORKSPACE/.vlc-source" \
-            --no-daemon --stacktrace --console=plain
           bridge="$GITHUB_WORKSPACE/build/native/${{ matrix.target }}/libkmediavlc_bridge.so"
           test -f "$bridge"
           stage="$RUNNER_TEMP/kmediavlc-${{ matrix.target }}-candidate"
