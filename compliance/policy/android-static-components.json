@@ -274,6 +274,34 @@
       ]
     }
   },
+  "ndkSourcePackage": {
+    "archiveRoot": "android-ndk-runtime-source",
+    "format": "deterministic-tar-gzip-v1",
+    "verifiedSourceStatus": "corresponding-source-mapped",
+    "sources": {
+      "llvm-android-build": {
+        "scope": "complete-tree",
+        "paths": []
+      },
+      "llvm-project": {
+        "scope": "selected-subtrees",
+        "paths": [
+          "LICENSE.TXT",
+          "README.md",
+          "cmake",
+          "compiler-rt",
+          "libcxx",
+          "libcxxabi",
+          "libunwind",
+          "llvm/cmake",
+          "llvm/include",
+          "llvm/utils/lit",
+          "runtimes",
+          "third-party"
+        ]
+      }
+    }
+  },
   "ndkReleaseProvenance": {
     "releaseName": "r29",
     "clangVersion": "21.0.0",

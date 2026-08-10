@@ -16,6 +16,31 @@ NDK_REVISION = "29.0.14206865"
 NDK_SOURCE_STATUS = "exact-source-revisions-recorded-source-package-pending"
 LLVM_PROJECT_REVISION = "386af4a5c64ab75eaee2448dc38f2e34a40bfed0"
 LLVM_ANDROID_REVISION = "1dab3288f660d43a6cb2479107e2b54b3ab0a2a1"
+NDK_SOURCE_PACKAGE = {
+    "archiveRoot": "android-ndk-runtime-source",
+    "format": "deterministic-tar-gzip-v1",
+    "verifiedSourceStatus": "corresponding-source-mapped",
+    "sources": {
+        "llvm-android-build": {"scope": "complete-tree", "paths": []},
+        "llvm-project": {
+            "scope": "selected-subtrees",
+            "paths": [
+                "LICENSE.TXT",
+                "README.md",
+                "cmake",
+                "compiler-rt",
+                "libcxx",
+                "libcxxabi",
+                "libunwind",
+                "llvm/cmake",
+                "llvm/include",
+                "llvm/utils/lit",
+                "runtimes",
+                "third-party",
+            ],
+        },
+    },
+}
 REVIEW_STATUS = "candidate-source-mapped-license-review-pending"
 COMPONENT_REVIEW_STATUS = "pending-linked-member-review"
 LEGAL_REVIEW_STATUS = "candidate-linked-member-review-pending"
@@ -214,6 +239,7 @@ def stage(
         fail("Android NDK component policy is not closed.")
     ndk_component_policy = ndk_components["android-ndk-llvm-runtime"]
     ndk_source_inputs = policy.get("ndkSourceInputs")
+    ndk_source_package = policy.get("ndkSourcePackage")
     ndk_release = policy.get("ndkReleaseProvenance")
     if (
         not isinstance(ndk_source_inputs, dict)
@@ -222,6 +248,7 @@ def stage(
         != LLVM_ANDROID_REVISION
         or ndk_source_inputs["llvm-project"].get("revision")
         != LLVM_PROJECT_REVISION
+        or ndk_source_package != NDK_SOURCE_PACKAGE
         or ndk_component_policy.get("sourceInputs") != list(ndk_source_inputs)
         or ndk_component_policy.get("evidenceFiles")
         != ["NOTICE", "NOTICE.toolchain", "source.properties"]

@@ -30,7 +30,11 @@ commit `386af4a5c64ab75eaee2448dc38f2e34a40bfed0`, and Android
 `llvm_android` build/patch commit `1dab3288f660d43a6cb2479107e2b54b3ab0a2a1`.
 The audit records the exact source subtrees used by each of the four linked
 runtime archives and binds the r29 manifest plus macOS/Linux prebuilt tags.
-This records provenance; it is not a substitute for packaging those sources.
+`scripts/package_android_ndk_source.py` turns that map into a deterministic archive containing the
+complete pinned `llvm_android` tree and the closed LLVM runtime source/build closure.
+`scripts/verify_android_ndk_source_archive.py` independently compares every member with both exact
+Git trees and blobs. The final release still has to retain the archive generated for its exact
+tested KMediaVlc commit; a provenance record or an archive from another commit is insufficient.
 
 The relink recipe also includes KMediaVlc's committed `libvlcjni` policy patch.
 For the Android profile that patch disables Blu-ray/BD-J and records the

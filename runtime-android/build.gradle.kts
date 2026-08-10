@@ -13,6 +13,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.PublishToMavenLocal
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputDirectory
@@ -610,6 +611,46 @@ val nativePayload =
     providers.gradleProperty("kmediaVlcAndroidNativePayloadDirectory").map(rootProject::file)
 val correspondingSourceArchive =
     rootProject.providers.gradleProperty("correspondingSourceArchive").map(rootProject::file)
+val androidNdkSourceArchive =
+    rootProject.providers.gradleProperty("kmediaVlcAndroidNdkSourceArchive").map(rootProject::file)
+val androidLlvmProjectSourceDirectory =
+    rootProject.providers
+        .gradleProperty("kmediaVlcAndroidLlvmProjectSourceDirectory")
+        .map(rootProject::file)
+val androidLlvmAndroidSourceDirectory =
+    rootProject.providers
+        .gradleProperty("kmediaVlcAndroidLlvmAndroidSourceDirectory")
+        .map(rootProject::file)
+val recipeRevision = rootProject.providers.gradleProperty("recipeRevision")
+val androidNdkSourceVerificationInputs =
+    listOf(
+        androidNdkSourceArchive.isPresent,
+        androidLlvmProjectSourceDirectory.isPresent,
+        androidLlvmAndroidSourceDirectory.isPresent,
+        recipeRevision.isPresent,
+    )
+val androidNdkSourceVerificationConfigured = androidNdkSourceVerificationInputs.all { it }
+require(
+    androidNdkSourceVerificationInputs.none { it } || androidNdkSourceVerificationConfigured,
+) {
+    "Android NDK source verification requires its archive, both exact Git checkouts, and recipeRevision together."
+}
+val checkoutRevision =
+    rootProject.providers.exec {
+        workingDir(rootProject.layout.projectDirectory)
+        commandLine(
+            "git",
+            "-c",
+            "safe.directory=${rootProject.layout.projectDirectory.asFile.absolutePath.replace('\\', '/')}",
+            "rev-parse",
+            "HEAD",
+        )
+        isIgnoreExitValue = false
+    }.standardOutput.asText.map(String::trim)
+val pythonExecutable =
+    rootProject.providers
+        .gradleProperty("kmediaVlcPythonExecutable")
+        .orElse(if (System.getProperty("os.name").startsWith("Windows")) "python" else "python3")
 val generatedAssets = layout.buildDirectory.dir("generated/androidRuntimeAssets")
 val publicationVersionValue = project.version.toString()
 
@@ -695,7 +736,54 @@ val androidJavadocJar =
         from(layout.projectDirectory.dir("src/javadoc"))
     }
 
-tasks.named("check") { dependsOn(verifyNativePayload, verifyAndroidAar) }
+val verifyAndroidNdkSourceArchive =
+    tasks.register<Exec>("verifyAndroidNdkSourceArchive") {
+        group = "verification"
+        description = "Verifies the Android NDK runtime source archive against both exact Git trees."
+        onlyIf { androidNdkSourceVerificationConfigured }
+        if (androidNdkSourceVerificationConfigured) {
+            inputs.file(androidNdkSourceArchive)
+            inputs.dir(androidLlvmProjectSourceDirectory)
+            inputs.dir(androidLlvmAndroidSourceDirectory)
+            inputs.file(
+                rootProject.layout.projectDirectory.file(
+                    "compliance/policy/android-static-components.json",
+                ),
+            )
+            inputs.file(
+                rootProject.layout.projectDirectory.file(
+                    "scripts/verify_android_ndk_source_archive.py",
+                ),
+            )
+            inputs.property("publicationVersion", publicationVersionValue)
+            inputs.property("recipeRevision", recipeRevision)
+        }
+        doFirst {
+            require(androidNdkSourceVerificationConfigured) {
+                "Android NDK source verification inputs are incomplete."
+            }
+            commandLine(
+                pythonExecutable.get(),
+                rootProject.file("scripts/verify_android_ndk_source_archive.py").absolutePath,
+                "--root",
+                rootProject.projectDir.absolutePath,
+                "--archive",
+                androidNdkSourceArchive.get().absolutePath,
+                "--llvm-project",
+                androidLlvmProjectSourceDirectory.get().absolutePath,
+                "--llvm-android",
+                androidLlvmAndroidSourceDirectory.get().absolutePath,
+                "--version",
+                publicationVersionValue,
+                "--tested-commit",
+                recipeRevision.get(),
+            )
+        }
+    }
+
+tasks.named("check") {
+    dependsOn(verifyNativePayload, verifyAndroidAar, verifyAndroidNdkSourceArchive)
+}
 
 fun requirePublicationPayload() {
     require(nativePayload.isPresent) {
@@ -719,17 +807,26 @@ fun requirePublicationPayload() {
     require(correspondingSourceArchive.isPresent) {
         "Publishing requires -PcorrespondingSourceArchive."
     }
+    require(androidNdkSourceVerificationConfigured) {
+        "Publishing requires the independently verified Android NDK source archive and exact Git checkouts."
+    }
+    require(recipeRevision.get().matches(Regex("[0-9a-f]{40}"))) {
+        "recipeRevision must be an exact lowercase forty-character Git commit."
+    }
+    require(recipeRevision.get() == checkoutRevision.get()) {
+        "recipeRevision must match the checked-out KMediaVlc commit."
+    }
     require(!publicationVersionValue.contains("SNAPSHOT", ignoreCase = true)) {
         "Publishing requires an immutable non-SNAPSHOT version."
     }
 }
 
 tasks.withType<PublishToMavenRepository>().configureEach {
-    dependsOn(verifyNativePayload, verifyAndroidAar)
+    dependsOn(verifyNativePayload, verifyAndroidAar, verifyAndroidNdkSourceArchive)
     doFirst { requirePublicationPayload() }
 }
 tasks.withType<PublishToMavenLocal>().configureEach {
-    dependsOn(verifyNativePayload, verifyAndroidAar)
+    dependsOn(verifyNativePayload, verifyAndroidAar, verifyAndroidNdkSourceArchive)
     doFirst { requirePublicationPayload() }
 }
 
@@ -742,6 +839,12 @@ afterEvaluate {
                 correspondingSourceArchive.orNull?.let { archive ->
                     artifact(archive) {
                         classifier = "corresponding-source"
+                        extension = "tar.gz"
+                    }
+                }
+                androidNdkSourceArchive.orNull?.let { archive ->
+                    artifact(archive) {
+                        classifier = "android-ndk-source"
                         extension = "tar.gz"
                     }
                 }

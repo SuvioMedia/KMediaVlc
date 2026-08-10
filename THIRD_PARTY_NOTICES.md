@@ -32,7 +32,9 @@ hash those source inputs, 83 selected in-archive license/patent/source-notice
 records, the NDK distribution notices, and its Clang source-provenance files for
 both packaged ABIs. The NDK map pins Clang `r563880c`, LLVM commit
 `386af4a5c64ab75eaee2448dc38f2e34a40bfed0`, and Android build/patch revision
-`1dab3288f660d43a6cb2479107e2b54b3ab0a2a1`. Conservative
+`1dab3288f660d43a6cb2479107e2b54b3ab0a2a1`. Deterministic packaging tooling
+now closes the selected source members to their exact Git blobs and rejects a
+different checkout or modified archive. Conservative
 candidate SPDX sets remain marked `pending-linked-member-review`. The runtime
 remains release-ineligible until that review, packaged notice completion, and a
 version-bound source package matching those revisions are approved.

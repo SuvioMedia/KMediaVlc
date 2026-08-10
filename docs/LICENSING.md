@@ -63,8 +63,16 @@ their source subtrees. It records conservative candidate SPDX sets but
 keeps every component at `pending-linked-member-review`, so the report can be
 promoted only to `candidate-source-mapped-license-review-pending`. Each linked
 member still needs reviewed SPDX and packaged notice metadata, and the recorded
-NDK revisions still need to become a verified version-bound source package,
-before the manifest can advance further.
+NDK revisions still need a retained package for the final tested release commit
+and explicit promotion in the legal manifest before that manifest can advance.
+
+The repository now has a deterministic Android NDK source packager and a separate verifier. The
+packager includes the complete pinned `llvm_android` Git tree and the closed LLVM runtime source
+and build-support subtrees. The verifier reconstructs the expected inventory from both exact Git
+trees and compares every packaged member to its Git blob as well as its recorded SHA-256. A real
+candidate from the pinned revisions passed both the standalone and Gradle gates. This does not
+silently change the existing legal manifest: the final release-bound archive must be retained and
+reviewed before its NDK component can be promoted to `corresponding-source-mapped`.
 
 The source builder stages those raw records as a separate hash-bound legal bundle only after the
 two ABI audit reports have identical component evidence. The AAR verifier rejects any missing,

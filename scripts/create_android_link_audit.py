@@ -101,6 +101,31 @@ EXPECTED_NDK_SOURCE_INPUTS = {
         ],
     },
 }
+EXPECTED_NDK_SOURCE_PACKAGE = {
+    "archiveRoot": "android-ndk-runtime-source",
+    "format": "deterministic-tar-gzip-v1",
+    "verifiedSourceStatus": "corresponding-source-mapped",
+    "sources": {
+        "llvm-android-build": {"scope": "complete-tree", "paths": []},
+        "llvm-project": {
+            "scope": "selected-subtrees",
+            "paths": [
+                "LICENSE.TXT",
+                "README.md",
+                "cmake",
+                "compiler-rt",
+                "libcxx",
+                "libcxxabi",
+                "libunwind",
+                "llvm/cmake",
+                "llvm/include",
+                "llvm/utils/lit",
+                "runtimes",
+                "third-party",
+            ],
+        },
+    },
+}
 EXPECTED_NDK_RELEASE_PROVENANCE = {
     "releaseName": "r29",
     "clangVersion": "21.0.0",
@@ -246,6 +271,7 @@ def static_component_policy(root: Path) -> dict:
         "contribArchives",
         "ndkComponents",
         "ndkSourceInputs",
+        "ndkSourcePackage",
         "ndkReleaseProvenance",
         "ndkArchiveTemplates",
         "ndkArchiveSourcePaths",
@@ -390,6 +416,8 @@ def static_component_policy(root: Path) -> dict:
 
     if policy.get("ndkSourceInputs") != EXPECTED_NDK_SOURCE_INPUTS:
         fail("Android NDK source revisions or trees differ from the closed map.")
+    if policy.get("ndkSourcePackage") != EXPECTED_NDK_SOURCE_PACKAGE:
+        fail("Android NDK source package selection differs from the closed map.")
     if policy.get("ndkReleaseProvenance") != EXPECTED_NDK_RELEASE_PROVENANCE:
         fail("Android NDK release/prebuilt provenance differs from r29.")
 

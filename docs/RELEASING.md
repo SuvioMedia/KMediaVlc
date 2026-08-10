@@ -46,6 +46,29 @@ HDR evidence remains mandatory.
 Review its complete DLL/plugin inventory and upstream licenses before using
 any of those bytes as release inputs.
 
+## Android NDK source closure
+
+The Android candidate has an additional immutable source artifact for the four statically linked
+NDK runtime archives. Generate it with `scripts/package_android_ndk_source.py` from the exact
+`llvm-project` and `llvm_android` commits recorded in
+`compliance/policy/android-static-components.json`, then reopen it with
+`scripts/verify_android_ndk_source_archive.py`. The final invocation must use the release version,
+the final tested KMediaVlc commit, and that commit's Unix timestamp; an earlier audit candidate is
+not a release input.
+
+Android publication requires all four properties together:
+
+- `kmediaVlcAndroidNdkSourceArchive`;
+- `kmediaVlcAndroidLlvmProjectSourceDirectory`;
+- `kmediaVlcAndroidLlvmAndroidSourceDirectory`;
+- `recipeRevision`.
+
+Gradle repeats the independent Git-tree/blob verification before publication and attaches the
+archive with classifier `android-ndk-source`. This artifact supplements the complete Android
+`correspondingSourceArchive`; it does not replace VLC, libvlcjni, contrib, KMediaVlc, and relinking
+sources. The legal manifest must still be explicitly approved and its NDK component promoted to
+`corresponding-source-mapped` for the exact release inputs.
+
 ## Stage the Maven repository
 
 With the audited paths available, publish into a new empty directory. The

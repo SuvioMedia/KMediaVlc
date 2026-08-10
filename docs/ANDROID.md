@@ -117,6 +117,44 @@ Gradle rehashes the complete bundle and packages it under
 to be explicitly promoted to `approved`, and separately requires the NDK source status to become
 `corresponding-source-mapped`; editing `releaseEligible=true` alone is insufficient.
 
+### NDK runtime source package
+
+`scripts/package_android_ndk_source.py` creates a deterministic, version-bound archive directly
+from the two exact Git checkouts recorded by the static-component policy. It packages the complete
+tracked `llvm_android` build/patch tree and a closed LLVM source/build closure containing `cmake`,
+`compiler-rt`, `libcxx`, `libcxxabi`, `libunwind`, the required LLVM CMake/include/lit support,
+`runtimes`, and `third-party`. Untracked files are ignored; tracked modifications, a different
+commit/tree, symlinks, special files, missing required paths, and bytes that do not hash to the
+recorded Git blob are rejected.
+
+```text
+python3 scripts/package_android_ndk_source.py \
+  --root . \
+  --llvm-project /path/to/llvm-project-386af4a5 \
+  --llvm-android /path/to/llvm_android-1dab3288 \
+  --tested-commit <exact-kmediavlc-commit> \
+  --version <immutable-version> \
+  --epoch <tested-commit-unix-time> \
+  --output kmedia-vlc-<version>-android-ndk-source.tar.gz
+
+python3 scripts/verify_android_ndk_source_archive.py \
+  --root . \
+  --archive kmedia-vlc-<version>-android-ndk-source.tar.gz \
+  --llvm-project /path/to/llvm-project-386af4a5 \
+  --llvm-android /path/to/llvm_android-1dab3288 \
+  --version <immutable-version> \
+  --tested-commit <exact-kmediavlc-commit>
+```
+
+The verifier independently reconstructs the expected file inventory from both exact Git trees and
+compares every archive member's Git blob ID, SHA-256, mode, size, path, and deterministic metadata.
+The archive manifest also binds the current component-policy hash, NDK release provenance, and
+archive-to-source map. Maven publication runs the same verifier and requires
+`kmediaVlcAndroidNdkSourceArchive`, `kmediaVlcAndroidLlvmProjectSourceDirectory`,
+`kmediaVlcAndroidLlvmAndroidSourceDirectory`, and `recipeRevision` together.
+The archive is attached with classifier `android-ndk-source`; it supplements, rather than replaces,
+the complete Android corresponding-source archive.
+
 ### Verified source-build evidence
 
 On 2026-08-10 the exact pinned recipe completed on macOS with NDK `29.0.14206865` and CMake
@@ -126,18 +164,27 @@ four, and three respectively. Both final libraries expose the required core/JNI 
 only the closed Android system `DT_NEEDED` set, and use 16 KiB `LOAD` alignment. The stripped
 two-ABI payload also passed the actual Gradle AAR inventory and lint/test gate.
 
+The NDK source packager and independent verifier were also exercised against those exact upstream
+Git identities. The deterministic candidate contained 19,839 tracked files: the complete 195-file
+`llvm_android` tree plus 19,644 selected LLVM files (135,808,087 uncompressed source bytes). The
+resulting gzip was about 20 MiB and its standalone and Gradle verifiers agreed on one SHA-256. This
+candidate is retained outside Git as build evidence; the final release archive must be regenerated
+for the final tested KMediaVlc commit.
+
 These counts now match the exact source allowlist: 62 archive paths resolve to 54 contrib source
 components and 55 source tarballs (TagLib also consumes the header-only utfcpp source). The
 path-free reports are therefore promoted only to
 `candidate-source-mapped-license-review-pending`. This state proves archive-to-source and raw
 license-evidence closure, but not the final linked-member SPDX conclusion, packaged notice
-completeness, a verified version-bound source package from the recorded NDK/LLVM revisions, or
-release eligibility. Native binaries remain
+completeness, promotion of the final release-bound NDK package to the legal manifest, or release
+eligibility. Native binaries remain
 external release inputs and are not committed to this repository.
 
 An audited payload can be supplied to Gradle with
 `-PkmediaVlcAndroidNativePayloadDirectory=/path/to/payload`. Publication additionally requires
-the manifest to say `releaseEligible=true` and requires the exact corresponding-source archive.
+the manifest to say `releaseEligible=true`, the exact complete corresponding-source archive, the
+independently verified NDK archive, both exact NDK source checkouts, and the matching
+`recipeRevision`.
 
 ## Publication gates still open
 
@@ -147,8 +194,8 @@ the manifest to say `releaseEligible=true` and requires the exact corresponding-
   approved SPDX expressions and complete notices to the already recorded source/archive hashes;
 - retain reviewed evidence for the real source-built `libvlc.so` DT_NEEDED/export surface for
   both ABIs;
-- assemble and independently verify the NDK runtime source package from the recorded LLVM and
-  `llvm_android` commits, then promote its source status to `corresponding-source-mapped`;
+- regenerate and retain the independently verifiable NDK runtime source package for the final
+  tested commit, then promote its legal-manifest source status to `corresponding-source-mapped`;
 - run an Android device/emulator fixture through create/open/play, MediaCodec and software decode,
   video plus subtitle surfaces, repeated detach/reattach, seek, stop, and destruction;
 - publish complete corresponding source and reproducible relinking instructions.

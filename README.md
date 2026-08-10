@@ -57,10 +57,11 @@ calls Compose and never waits for a UI render.
 - Android has a two-ABI AAR and direct libVLC 4 ANativeWindow bridge. Its
   pinned source recipe now completes real ARM64 and ARMv7 builds and emits an
   exact static-link audit plus a hash-bound legal-evidence bundle inside the
-  candidate AAR. Exact NDK r29/LLVM source revisions are recorded, but the
+  candidate AAR. Exact NDK r29/LLVM source revisions are recorded and a
+  deterministic Git-object-verified source packager is exercised, but the
   candidate remains deliberately release-ineligible until its conservative
-  SPDX sets, version-bound source package, and device surface-lifecycle tests
-  are reviewed and closed.
+  SPDX sets, final release-bound source package, and device surface-lifecycle
+  tests are reviewed and closed.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 
@@ -82,6 +83,10 @@ Publishing additionally requires all of
 embedded in the native manifest and must match the checked-out KMediaVlc
 commit. The Gradle publication consumes only the packager's verified output;
 an arbitrary directory cannot bypass the component/license inventory.
+
+Android publication additionally requires the deterministic NDK source archive, exact
+`llvm-project` and `llvm_android` checkouts, and the same `recipeRevision`; Gradle independently
+reconstructs and verifies every selected Git object before attaching that archive.
 
 The portable CPU-pull implementation and Android ANativeWindow API exist for
 controlled integration work, but the published native payload matrix remains

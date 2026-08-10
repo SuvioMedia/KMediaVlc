@@ -60,6 +60,8 @@
   "requiresApprovedLegalEvidenceForPublication": true,
   "ndkSourceStatus": "exact-source-revisions-recorded-source-package-pending",
   "requiresNdkRuntimeSourcePackage": true,
+  "ndkSourcePackagePolicy": "compliance/policy/android-static-components.json",
+  "requiresIndependentNdkSourceVerification": true,
   "requiresDeviceSurfaceLifecycleTest": true,
   "forbidsStockNightly": true,
   "candidateReleaseEligible": false

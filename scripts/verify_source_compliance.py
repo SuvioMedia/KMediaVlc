@@ -374,7 +374,8 @@ def verify_android_contract(root: Path) -> None:
         "requiresLinkerMapAudit", "legalEvidenceBundle",
         "requiresIdenticalAbiComponentEvidence",
         "requiresApprovedLegalEvidenceForPublication",
-        "ndkSourceStatus", "requiresNdkRuntimeSourcePackage",
+        "ndkSourceStatus", "requiresNdkRuntimeSourcePackage", "ndkSourcePackagePolicy",
+        "requiresIndependentNdkSourceVerification",
         "requiresDeviceSurfaceLifecycleTest", "forbidsStockNightly",
         "candidateReleaseEligible",
     }
@@ -418,6 +419,7 @@ def verify_android_contract(root: Path) -> None:
         "requiresModuleLicenseAudit", "requiresCompiledModuleLicenseAudit",
         "requiresLinkerMapAudit", "requiresIdenticalAbiComponentEvidence",
         "requiresApprovedLegalEvidenceForPublication", "requiresNdkRuntimeSourcePackage",
+        "requiresIndependentNdkSourceVerification",
         "requiresDeviceSurfaceLifecycleTest",
         "forbidsStockNightly",
     ]
@@ -425,6 +427,11 @@ def verify_android_contract(root: Path) -> None:
         fail("The Android audit requirements were weakened.")
     if recipe.get("legalEvidenceBundle") != "legal/android-static-legal.json":
         fail("The Android hash-bound legal evidence path changed.")
+    if (
+        recipe.get("ndkSourcePackagePolicy")
+        != "compliance/policy/android-static-components.json"
+    ):
+        fail("The Android NDK source package is not bound to the static policy.")
     if (
         recipe.get("ndkSourceStatus")
         != "exact-source-revisions-recorded-source-package-pending"
@@ -443,7 +450,7 @@ def verify_android_contract(root: Path) -> None:
     expected_static_keys = {
         "schemaVersion", "target", "vlcRevision", "ndkRevision", "reviewStatus",
         "contribComponents", "candidateLicenseSpdx", "licenseEvidence", "contribArchives",
-        "ndkComponents", "ndkSourceInputs", "ndkReleaseProvenance",
+        "ndkComponents", "ndkSourceInputs", "ndkSourcePackage", "ndkReleaseProvenance",
         "ndkArchiveTemplates", "ndkArchiveSourcePaths",
     }
     if (
@@ -614,6 +621,33 @@ def verify_android_contract(root: Path) -> None:
     }
     if static_policy.get("ndkSourceInputs") != expected_ndk_source_inputs:
         fail("The Android NDK source revisions and trees are not closed.")
+    expected_ndk_source_package = {
+        "archiveRoot": "android-ndk-runtime-source",
+        "format": "deterministic-tar-gzip-v1",
+        "verifiedSourceStatus": "corresponding-source-mapped",
+        "sources": {
+            "llvm-android-build": {"scope": "complete-tree", "paths": []},
+            "llvm-project": {
+                "scope": "selected-subtrees",
+                "paths": [
+                    "LICENSE.TXT",
+                    "README.md",
+                    "cmake",
+                    "compiler-rt",
+                    "libcxx",
+                    "libcxxabi",
+                    "libunwind",
+                    "llvm/cmake",
+                    "llvm/include",
+                    "llvm/utils/lit",
+                    "runtimes",
+                    "third-party",
+                ],
+            },
+        },
+    }
+    if static_policy.get("ndkSourcePackage") != expected_ndk_source_package:
+        fail("The Android NDK source package selection is not closed.")
     expected_ndk_release = {
         "releaseName": "r29",
         "clangVersion": "21.0.0",
@@ -752,6 +786,9 @@ def verify_android_contract(root: Path) -> None:
         "does not bind the packaged libvlc.so",
         "Publishing requires approved hash-bound Android legal evidence.",
         "Publishing requires the NDK runtime source package to match its recorded revisions.",
+        "kmediaVlcAndroidNdkSourceArchive",
+        "verify_android_ndk_source_archive.py",
+        'classifier = "android-ndk-source"',
     ]
     if not all(marker in android_build for marker in gradle_markers):
         fail("The Android AAR payload or publication gate is incomplete.")
@@ -801,6 +838,7 @@ def verify_android_contract(root: Path) -> None:
         '"licenseEvidence"',
         "android-static-components.json",
         "staticComponentPolicy",
+        "EXPECTED_NDK_SOURCE_PACKAGE",
     ]
     if not all(marker in audit_generator for marker in audit_markers):
         fail("The Android exact-link audit generator is incomplete.")
@@ -816,6 +854,7 @@ def verify_android_contract(root: Path) -> None:
         '"effectiveLicenseSpdx": None',
         '"candidateLicenseInventorySpdx"',
         '"sourceInputs"',
+        "NDK_SOURCE_PACKAGE",
         "exact-source-revisions-recorded-source-package-pending",
         "clang_source_info.md",
         "Android legal evidence file count differs from the closed policy.",
@@ -823,6 +862,33 @@ def verify_android_contract(root: Path) -> None:
     ]
     if not all(marker in legal_stager for marker in legal_stager_markers):
         fail("The Android hash-bound legal evidence stager is incomplete.")
+
+    ndk_source_packager = (root / "scripts/package_android_ndk_source.py").read_text(
+        encoding="utf-8"
+    )
+    ndk_source_verifier = (
+        root / "scripts/verify_android_ndk_source_archive.py"
+    ).read_text(encoding="utf-8")
+    ndk_source_markers = [
+        "deterministic-tar-gzip-v1",
+        "corresponding-source-mapped",
+        '"ls-tree", "-r", "-z", "--full-tree", "HEAD"',
+        "Android NDK source bytes differ from the pinned Git blob",
+        "android-ndk-r29-runtime-source",
+        "SOURCE-MANIFEST.json",
+    ]
+    if not all(marker in ndk_source_packager for marker in ndk_source_markers):
+        fail("The Android NDK source packager is incomplete.")
+    verifier_markers = [
+        "deterministic-tar-gzip-v1",
+        "corresponding-source-mapped",
+        '"ls-tree", "-r", "-z", "--full-tree", "HEAD"',
+        "Android NDK source manifest differs from the exact Git objects.",
+        "Android NDK source member differs from its Git object",
+        "SOURCE-MANIFEST.json",
+    ]
+    if not all(marker in ndk_source_verifier for marker in verifier_markers):
+        fail("The independent Android NDK source verifier is incomplete.")
 
     policy_patch = (
         root / "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"

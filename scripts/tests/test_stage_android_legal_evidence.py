@@ -94,6 +94,7 @@ class AndroidLegalEvidenceTest(unittest.TestCase):
                 }
             },
             "ndkSourceInputs": self.ndk_source_inputs,
+            "ndkSourcePackage": LEGAL.NDK_SOURCE_PACKAGE,
             "ndkReleaseProvenance": self.ndk_release,
             "ndkArchiveTemplates": {},
             "ndkArchiveSourcePaths": {},
