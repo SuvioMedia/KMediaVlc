@@ -52,7 +52,7 @@ NDK_VERIFIER = load_ndk_verifier()
 class GitSourceFile(NamedTuple):
     source_id: str
     source_path: str
-    checkout_path: Path
+    checkout: Path
     git_mode: str
     git_blob: str
 
@@ -355,16 +355,8 @@ def inspect_checkout(
             or source_path in seen
         ):
             fail(f"Android source Git tree entry is unsupported: {source_id}")
-        relative = safe_path(source_path, "Android tracked source path")
-        source_file = real_file(
-            checkout.joinpath(*relative.parts),
-            f"Android tracked source {source_id}/{source_path}",
-        )
-        try:
-            source_file.relative_to(checkout)
-        except ValueError:
-            fail(f"Android tracked source escaped its checkout: {source_id}/{source_path}")
-        entries.append(GitSourceFile(source_id, source_path, source_file, mode, git_blob))
+        safe_path(source_path, "Android tracked source path")
+        entries.append(GitSourceFile(source_id, source_path, checkout, mode, git_blob))
         seen.add(source_path)
     if not entries or entries != sorted(entries, key=lambda entry: entry.source_path):
         fail(f"Android source checkout inventory is empty or non-canonical: {source_id}")
@@ -388,13 +380,63 @@ def inspect_checkout(
     return entries, identity
 
 
-def git_record(root_name: str, entry: GitSourceFile) -> tuple[dict, bytes]:
-    size = entry.checkout_path.stat().st_size
-    if size < 0 or size > MAX_GIT_FILE_SIZE:
+def git_blob_values(checkout: Path, entries: list[GitSourceFile]) -> list[tuple[GitSourceFile, bytes]]:
+    try:
+        process = subprocess.Popen(
+            ["git", "-C", str(checkout), "cat-file", "--batch"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError as error:
+        raise ValueError("Git could not read Android corresponding-source objects.") from error
+    if process.stdin is None or process.stdout is None:
+        process.kill()
+        process.wait()
+        fail("Git did not expose its batch object streams.")
+    values: list[tuple[GitSourceFile, bytes]] = []
+    try:
+        for entry in entries:
+            process.stdin.write((entry.git_blob + "\n").encode("ascii"))
+            process.stdin.flush()
+            header = process.stdout.readline()
+            try:
+                object_id, object_type, encoded_size = header.decode("ascii").strip().split(" ")
+                size = int(encoded_size)
+            except (UnicodeDecodeError, ValueError) as error:
+                raise ValueError("Git returned malformed Android source object metadata.") from error
+            if (
+                object_id != entry.git_blob
+                or object_type != "blob"
+                or size < 0
+                or size > MAX_GIT_FILE_SIZE
+            ):
+                fail(f"Git returned an unsupported Android source object: {entry.source_id}")
+            value = process.stdout.read(size)
+            separator = process.stdout.read(1)
+            if len(value) != size or separator != b"\n":
+                fail(f"Git returned a truncated Android source object: {entry.source_id}")
+            values.append((entry, value))
+        process.stdin.close()
+        return_code = process.wait()
+        process.stdout.close()
+        if return_code != 0:
+            fail("Git failed while reading Android source objects.")
+    except BaseException:
+        if not process.stdin.closed:
+            process.stdin.close()
+        if not process.stdout.closed:
+            process.stdout.close()
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+        raise
+    return values
+
+
+def git_record(root_name: str, entry: GitSourceFile, value: bytes) -> dict:
+    if len(value) > MAX_GIT_FILE_SIZE:
         fail(f"Android Git source file is oversized: {entry.source_id}/{entry.source_path}")
-    value = entry.checkout_path.read_bytes()
-    if len(value) != size:
-        fail(f"Android Git source changed while reading: {entry.source_id}/{entry.source_path}")
     git_digest = hashlib.sha1(f"blob {len(value)}\0".encode("ascii"))
     git_digest.update(value)
     if git_digest.hexdigest() != entry.git_blob:
@@ -415,7 +457,7 @@ def git_record(root_name: str, entry: GitSourceFile) -> tuple[dict, bytes]:
         "sha256": hashlib.sha256(value).hexdigest(),
         "size": len(value),
     }
-    return record, value
+    return record
 
 
 def external_record(root_name: str, relative: str, kind: str, source: Path) -> dict:
@@ -674,13 +716,13 @@ def package(
         fail("Android corresponding source epoch must equal the tested commit timestamp.")
 
     checkouts = {"kmediavlc": root, "libvlcjni": libvlcjni, "vlc": vlc}
-    git_entries: list[GitSourceFile] = []
+    git_entries: dict[str, list[GitSourceFile]] = {}
     source_identities: list[dict] = []
     for source_id in SOURCE_IDS:
         entries, identity = inspect_checkout(
             source_id, checkouts[source_id], policy["sourceInputs"][source_id], tested_commit
         )
-        git_entries.extend(entries)
+        git_entries[source_id] = entries
         source_identities.append(identity)
 
     legal_manifest, legal, legal_sources, legal_audits = load_legal_manifest(
@@ -717,13 +759,14 @@ def package(
 
     file_records: list[dict] = []
     git_data: dict[PurePosixPath, tuple[GitSourceFile, dict, bytes]] = {}
-    for entry in git_entries:
-        record, value = git_record(root_name, entry)
-        path = PurePosixPath(record["path"])
-        if path in git_data:
-            fail(f"Duplicate Android corresponding-source path: {path}")
-        git_data[path] = (entry, record, value)
-        file_records.append(record)
+    for source_id in SOURCE_IDS:
+        for entry, value in git_blob_values(checkouts[source_id], git_entries[source_id]):
+            record = git_record(root_name, entry, value)
+            path = PurePosixPath(record["path"])
+            if path in git_data:
+                fail(f"Duplicate Android corresponding-source path: {path}")
+            git_data[path] = (entry, record, value)
+            file_records.append(record)
 
     contrib_tarballs = real_directory(contrib_tarballs, "VLC contrib tarball directory")
     external_files: dict[PurePosixPath, tuple[Path, dict]] = {}
@@ -880,10 +923,9 @@ def package(
                                 io.BytesIO(value),
                             )
                         elif path in git_data:
-                            entry, expected, previous = git_data[path]
-                            actual, value = git_record(root_name, entry)
-                            if actual != expected or value != previous:
-                                fail(f"Android Git source changed during packaging: {path}")
+                            entry, expected, value = git_data[path]
+                            if git_record(root_name, entry, value) != expected:
+                                fail(f"Android Git source object changed during packaging: {path}")
                             archive.addfile(
                                 tar_info(
                                     path,
@@ -906,6 +948,19 @@ def package(
                                 or verified.digest.hexdigest() != expected["sha256"]
                             ):
                                 fail(f"Android source input changed during packaging: {path}")
+        for identity in source_identities:
+            checkout = checkouts[identity["id"]]
+            try:
+                revision = git_output(checkout, "rev-parse", "HEAD").decode("ascii").strip()
+                tree = git_output(checkout, "rev-parse", "HEAD^{tree}").decode("ascii").strip()
+            except UnicodeDecodeError as error:
+                raise ValueError("Android source Git identity changed during packaging.") from error
+            if (
+                revision != identity["revision"]
+                or tree != identity["tree"]
+                or git_output(checkout, "status", "--porcelain", "--untracked-files=no")
+            ):
+                fail(f"Android source checkout changed during packaging: {identity['id']}")
         partial.rename(output)
     except BaseException:
         if partial.exists() and not partial.is_symlink():

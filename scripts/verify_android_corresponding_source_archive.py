@@ -287,21 +287,64 @@ def commit_epoch(root: Path) -> int:
     return max(epoch, MIN_EPOCH)
 
 
-def hash_git_file(path: Path, expected_size: int, expected_blob: str) -> tuple[str, int]:
-    sha256 = hashlib.sha256()
-    git_blob = hashlib.sha1(f"blob {expected_size}\0".encode("ascii"))
-    size = 0
-    with path.open("rb") as source:
-        while True:
-            block = source.read(1024 * 1024)
-            if not block:
-                break
-            size += len(block)
-            sha256.update(block)
-            git_blob.update(block)
-    if size != expected_size or git_blob.hexdigest() != expected_blob:
-        fail(f"Android worktree file differs from its Git object: {path.name}")
-    return sha256.hexdigest(), size
+def git_object_values(
+    checkout: Path, entries: list[tuple[str, str, str]]
+) -> list[tuple[str, str, str, bytes]]:
+    try:
+        process = subprocess.Popen(
+            ["git", "-C", str(checkout), "cat-file", "--batch"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError as error:
+        raise ValueError("Git could not read Android corresponding-source objects.") from error
+    if process.stdin is None or process.stdout is None:
+        process.kill()
+        process.wait()
+        fail("Git did not expose its batch object streams.")
+    values: list[tuple[str, str, str, bytes]] = []
+    try:
+        for source_path, mode, expected_blob in entries:
+            process.stdin.write((expected_blob + "\n").encode("ascii"))
+            process.stdin.flush()
+            header = process.stdout.readline()
+            try:
+                object_id, object_type, encoded_size = header.decode("ascii").strip().split(" ")
+                size = int(encoded_size)
+            except (UnicodeDecodeError, ValueError) as error:
+                raise ValueError("Git returned malformed Android source object metadata.") from error
+            if (
+                object_id != expected_blob
+                or object_type != "blob"
+                or size < 0
+                or size > MAX_GIT_FILE_SIZE
+            ):
+                fail("Git returned an unsupported Android source object.")
+            value = process.stdout.read(size)
+            separator = process.stdout.read(1)
+            if len(value) != size or separator != b"\n":
+                fail("Git returned a truncated Android source object.")
+            git_blob = hashlib.sha1(f"blob {len(value)}\0".encode("ascii"))
+            git_blob.update(value)
+            if git_blob.hexdigest() != expected_blob:
+                fail("Git returned bytes that differ from the requested Android source object.")
+            values.append((source_path, mode, expected_blob, value))
+        process.stdin.close()
+        return_code = process.wait()
+        process.stdout.close()
+        if return_code != 0:
+            fail("Git failed while reading Android source objects.")
+    except BaseException:
+        if not process.stdin.closed:
+            process.stdin.close()
+        if not process.stdout.closed:
+            process.stdout.close()
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+        raise
+    return values
 
 
 def expected_git_records(
@@ -319,7 +362,7 @@ def expected_git_records(
     if git_bytes(checkout, "status", "--porcelain", "--untracked-files=no"):
         fail(f"Android source checkout has tracked modifications: {source_id}")
     raw = git_bytes(checkout, "ls-tree", "-r", "-z", "--full-tree", "HEAD")
-    records: list[dict] = []
+    tree_entries: list[tuple[str, str, str]] = []
     source_paths: list[str] = []
     for raw_entry in raw.split(b"\0"):
         if not raw_entry:
@@ -337,19 +380,13 @@ def expected_git_records(
             or source_path in source_paths
         ):
             fail(f"Android source Git object is unsupported: {source_id}")
-        relative = safe_relative(source_path, "Android tracked source path")
-        worktree = real_file(
-            checkout.joinpath(*relative.parts),
-            f"Android tracked source {source_id}/{source_path}",
-        )
-        try:
-            worktree.relative_to(checkout)
-        except ValueError:
-            fail(f"Android tracked source escaped its checkout: {source_id}/{source_path}")
-        size = worktree.stat().st_size
-        if size < 0 or size > MAX_GIT_FILE_SIZE:
-            fail(f"Android tracked source file is oversized: {source_id}/{source_path}")
-        sha256, actual_size = hash_git_file(worktree, size, git_blob)
+        safe_relative(source_path, "Android tracked source path")
+        tree_entries.append((source_path, mode, git_blob))
+        source_paths.append(source_path)
+    if not tree_entries or source_paths != sorted(source_paths):
+        fail(f"Android source Git tree is empty or non-canonical: {source_id}")
+    records: list[dict] = []
+    for source_path, mode, git_blob, value in git_object_values(checkout, tree_entries):
         records.append(
             {
                 "kind": "git-source",
@@ -360,13 +397,10 @@ def expected_git_records(
                 "sourcePath": source_path,
                 "gitMode": mode,
                 "gitBlob": git_blob,
-                "sha256": sha256,
-                "size": actual_size,
+                "sha256": hashlib.sha256(value).hexdigest(),
+                "size": len(value),
             }
         )
-        source_paths.append(source_path)
-    if not records or source_paths != sorted(source_paths):
-        fail(f"Android source Git tree is empty or non-canonical: {source_id}")
     for required in policy["requiredPaths"]:
         required_path = PurePosixPath(required)
         if not any(
