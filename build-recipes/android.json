@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+  "libvlcjniRevision": "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21",
+  "vlcSource": "https://code.videolan.org/videolan/vlc.git",
+  "libvlcjniSource": "https://code.videolan.org/videolan/libvlcjni.git",
+  "publicationTargets": [
+    "android-arm64-v8a",
+    "android-armeabi-v7a"
+  ],
+  "ndkVersion": "29.0.14206865",
+  "vlcAndroidApi": 21,
+  "clientMinSdk": 28,
+  "libvlcBuildArguments": [
+    "--release",
+    "--static-cpp",
+    "--license",
+    "a",
+    "--no-jni"
+  ],
+  "contribLicenseProfile": "LGPL-2.1-plus-ad-clauses",
+  "renderEngine": "ANATIVEWINDOW",
+  "packagedLibraries": [
+    "libkmediavlc_android.so",
+    "libvlc.so"
+  ],
+  "excludedLibraries": [
+    "libc++_shared.so",
+    "libvlcjni.so"
+  ],
+  "usesPrebuiltContribs": false,
+  "usesPublishedLibVlcAar": false,
+  "requiresCoreJniOnLoadFirst": true,
+  "requiresPerFileInventory": true,
+  "requiresModuleLicenseAudit": true,
+  "requiresDeviceSurfaceLifecycleTest": true,
+  "forbidsStockNightly": true,
+  "candidateReleaseEligible": false
+}

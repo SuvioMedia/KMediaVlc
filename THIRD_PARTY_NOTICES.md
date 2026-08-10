@@ -14,6 +14,21 @@ A release contains no stock VLC nightly. It is eligible only after the exact Mes
 
 Each release publishes a version-bound complete corresponding-source archive alongside the binary and Maven artifacts. The native manifest identifies that immutable source asset and the exact KMediaVlc and VLC revisions used to build it.
 
+## VideoLAN libvlcjni build system
+
+The Android candidate uses the build machinery from VideoLAN `libvlcjni` revision
+`a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21`, under LGPL-2.1-or-later. Neither its
+Java wrapper classes nor `libvlcjni.so` are distributed by KMediaVlc. The pinned
+scripts and makefiles are corresponding-source build inputs used to combine the
+selected VLC modules into `libvlc.so`.
+
+Official source: https://code.videolan.org/videolan/libvlcjni
+
+The Android source-build candidate uses the upstream `a` license profile
+(LGPL-2.1-compatible contribs plus advertising-clause dependencies), static C++,
+and no prebuilt contribs or published AAR. It remains release-ineligible until
+the exact module and archive license inventory is approved for both packaged ABIs.
+
 ## Windows x86_64 playback dependency inventory
 
 The following closed inventory is derived from the pinned contrib inputs. Publication remains blocked until the matching native link audit changes both review states to `approved` for the exact commit.

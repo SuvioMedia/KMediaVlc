@@ -104,9 +104,9 @@ def checksums(arguments: argparse.Namespace) -> None:
     staging = arguments.staging.absolute()
     for path in base_files(staging, arguments.version):
         for algorithm in ("md5", "sha1"):
-            path.with_name(f"{path.name}.{algorithm}").write_text(
-                digest(path, algorithm) + "\n", encoding="ascii", newline="\n"
-            )
+            sidecar = path.with_name(f"{path.name}.{algorithm}")
+            with sidecar.open("w", encoding="ascii", newline="\n") as handle:
+                handle.write(digest(path, algorithm) + "\n")
 
 
 def package(arguments: argparse.Namespace) -> None:

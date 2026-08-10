@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "videolan-libvlcjni-buildsystem",
+  "version": "4.0.0-eap29-build-input",
+  "revision": "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21",
+  "source": "https://code.videolan.org/videolan/libvlcjni.git",
+  "projectLicenseSpdx": "LGPL-2.1-or-later",
+  "distributedJavaWrapper": false,
+  "distributedJniWrapper": false,
+  "usedForSourceBuild": true
+}

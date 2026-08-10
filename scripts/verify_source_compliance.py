@@ -10,6 +10,7 @@ from pathlib import Path
 
 PINNED_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
 PINNED_VERSION = "4.0.0-dev"
+PINNED_LIBVLCJNI_REVISION = "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21"
 ALLOWED_LICENSES = {
     "0BSD",
     "Apache-2.0",
@@ -329,10 +330,180 @@ def verify_pin_occurrences(root: Path) -> None:
         / "runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifest.java"
     ).read_text(encoding="utf-8")
     notices = (root / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+    android_runtime = (
+        root
+        / "runtime-android/src/main/java/io/github/shusek/kmediavlc/runtime/android/"
+        "VlcAndroidRuntime.java"
+    ).read_text(encoding="utf-8")
     if PINNED_REVISION not in parser or PINNED_REVISION not in notices:
         fail("Pinned VLC revision is not consistent across runtime code and notices.")
     if PINNED_VERSION not in parser:
         fail("Pinned VLC version is not enforced by the runtime parser.")
+    if PINNED_REVISION not in android_runtime or PINNED_VERSION not in android_runtime:
+        fail("Android runtime identity differs from the pinned VLC source.")
+    if PINNED_LIBVLCJNI_REVISION not in android_runtime or PINNED_LIBVLCJNI_REVISION not in notices:
+        fail("Android source-build tooling pin is inconsistent.")
+
+
+def verify_android_contract(root: Path) -> None:
+    component = load_json(root / "compliance/components/libvlcjni.json")
+    expected_component = {
+        "schemaVersion": 1,
+        "id": "videolan-libvlcjni-buildsystem",
+        "version": "4.0.0-eap29-build-input",
+        "revision": PINNED_LIBVLCJNI_REVISION,
+        "source": "https://code.videolan.org/videolan/libvlcjni.git",
+        "projectLicenseSpdx": "LGPL-2.1-or-later",
+        "distributedJavaWrapper": False,
+        "distributedJniWrapper": False,
+        "usedForSourceBuild": True,
+    }
+    if component != expected_component:
+        fail("The Android libvlcjni build-input component is not closed.")
+
+    recipe = load_json(root / "build-recipes/android.json")
+    expected_keys = {
+        "schemaVersion", "vlcRevision", "libvlcjniRevision", "vlcSource",
+        "libvlcjniSource", "publicationTargets", "ndkVersion", "vlcAndroidApi",
+        "clientMinSdk", "libvlcBuildArguments", "contribLicenseProfile",
+        "renderEngine", "packagedLibraries", "excludedLibraries",
+        "usesPrebuiltContribs", "usesPublishedLibVlcAar",
+        "requiresCoreJniOnLoadFirst", "requiresPerFileInventory",
+        "requiresModuleLicenseAudit", "requiresDeviceSurfaceLifecycleTest",
+        "forbidsStockNightly", "candidateReleaseEligible",
+    }
+    if set(recipe) != expected_keys or recipe.get("schemaVersion") != 1:
+        fail("The Android source-build recipe fields are not closed.")
+    if (
+        recipe.get("vlcRevision") != PINNED_REVISION
+        or recipe.get("libvlcjniRevision") != PINNED_LIBVLCJNI_REVISION
+        or recipe.get("ndkVersion") != "29.0.14206865"
+        or recipe.get("vlcAndroidApi") != 21
+        or recipe.get("clientMinSdk") != 28
+    ):
+        fail("The Android source-build recipe identity or toolchain changed.")
+    if recipe.get("publicationTargets") != ["android-arm64-v8a", "android-armeabi-v7a"]:
+        fail("The Android ABI set must remain closed to ARM64 and ARMv7.")
+    if recipe.get("libvlcBuildArguments") != [
+        "--release", "--static-cpp", "--license", "a", "--no-jni"
+    ]:
+        fail("The Android build lost its source/LGPL/static-C++ contract.")
+    if (
+        recipe.get("contribLicenseProfile") != "LGPL-2.1-plus-ad-clauses"
+        or recipe.get("renderEngine") != "ANATIVEWINDOW"
+        or recipe.get("packagedLibraries") != ["libkmediavlc_android.so", "libvlc.so"]
+        or recipe.get("excludedLibraries") != ["libc++_shared.so", "libvlcjni.so"]
+    ):
+        fail("The Android rendering or native library inventory changed.")
+    required_true = [
+        "requiresCoreJniOnLoadFirst", "requiresPerFileInventory",
+        "requiresModuleLicenseAudit", "requiresDeviceSurfaceLifecycleTest",
+        "forbidsStockNightly",
+    ]
+    if any(recipe.get(key) is not True for key in required_true):
+        fail("The Android audit requirements were weakened.")
+    if (
+        recipe.get("usesPrebuiltContribs") is not False
+        or recipe.get("usesPublishedLibVlcAar") is not False
+        or recipe.get("candidateReleaseEligible") is not False
+    ):
+        fail("The unaudited Android candidate must remain release-ineligible and source-built.")
+
+    bridge = (root / "native/android/kmediavlc_android_jni.cpp").read_text(encoding="utf-8")
+    bridge_markers = [
+        "libvlc_video_set_anw_callbacks",
+        "ANativeWindow_fromSurface",
+        "ANativeWindow_acquire",
+        "ANativeWindow_release",
+        "SurfaceBinding",
+        '"--keystore=memory"',
+        'libvlc_video_engine_disable',
+        'libvlc_media_add_option(media, ":no-hw-dec")',
+        "JNI_OnLoad",
+    ]
+    if not all(marker in bridge for marker in bridge_markers):
+        fail("The Android ANativeWindow ownership or playback bridge is incomplete.")
+    if any(marker in bridge for marker in ["setenv(", "getenv(", "putenv("]):
+        fail("The Android bridge must not read or mutate process environment variables.")
+
+    cmake = (root / "native/android/CMakeLists.txt").read_text(encoding="utf-8")
+    cmake_markers = [
+        'ANDROID_STL STREQUAL "c++_static"',
+        "KMEDIAVLC_ANDROID_FAKE_LIBVLC",
+        "tests/fake_libvlc.cpp",
+        "-Wl,-z,max-page-size=16384",
+        "KMEDIAVLC_VLC_SOURCE_DIR",
+    ]
+    if not all(marker in cmake for marker in cmake_markers):
+        fail("The Android NDK build does not close its ABI, STL, and page-size policy.")
+
+    fixture = (root / "native/android/tests/fake_libvlc.cpp").read_text(encoding="utf-8")
+    if (
+        "libvlc_video_set_output_callbacks" not in fixture
+        or "libvlc_video_engine_anw" not in fixture
+        or "JNI_OnLoad" not in fixture
+    ):
+        fail("The Android pinned-header fixture does not exercise the required core ABI.")
+
+    runtime = (
+        root
+        / "runtime-android/src/main/java/io/github/shusek/kmediavlc/runtime/android/"
+        "VlcAndroidRuntime.java"
+    ).read_text(encoding="utf-8")
+    player_api = (
+        root
+        / "runtime-android/src/main/java/io/github/shusek/kmediavlc/runtime/android/"
+        "VlcAndroidPlayer.java"
+    ).read_text(encoding="utf-8")
+    vlc_load = runtime.find('System.loadLibrary("vlc")')
+    bridge_load = runtime.find('System.loadLibrary("kmediavlc_android")')
+    if vlc_load < 0 or bridge_load <= vlc_load or 'System.loadLibrary("vlcjni")' in runtime:
+        fail("Android must invoke the VLC core JNI_OnLoad before loading its narrow bridge.")
+    if "Map.of(" in player_api or ".isBlank()" in player_api:
+        fail("The minSdk 28 API must not call Java library methods introduced in API 30+.")
+
+    android_build = (root / "runtime-android/build.gradle.kts").read_text(encoding="utf-8")
+    gradle_markers = [
+        'setOf("arm64-v8a", "armeabi-v7a")',
+        'setOf("libkmediavlc_android.so", "libvlc.so")',
+        'minSdk = 28',
+        'require(values == expectedManifest("true"))',
+        "kmediaVlcAndroidNativePayloadDirectory",
+    ]
+    if not all(marker in android_build for marker in gradle_markers):
+        fail("The Android AAR payload or publication gate is incomplete.")
+
+    builder = (root / "scripts/build_vlc_android.sh").read_text(encoding="utf-8")
+    builder_markers = [
+        "compile-libvlc.sh",
+        "--release --static-cpp --license a --no-jni",
+        "ANDROID_NDK=",
+        "libkmediavlc_android.so",
+        "releaseEligible=false",
+        "0x4000",
+    ]
+    if not all(marker in builder for marker in builder_markers):
+        fail("The Android source builder does not produce a fail-closed candidate.")
+
+    ci = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    ci_markers = [
+        "verify-android-anw:",
+        "ndk;29.0.14206865",
+        "cmake;4.1.2",
+        ":runtime-android:check",
+        "test_android_native_bridge.sh",
+        "bash gradlew",
+    ]
+    if not all(marker in ci for marker in ci_markers):
+        fail("CI does not cross-compile and verify both Android callback ABIs.")
+
+    documentation = (root / "docs/ANDROID.md").read_text(encoding="utf-8")
+    if (
+        "not a published native payload yet" not in documentation
+        or "Publication gates still open" not in documentation
+        or "does not change process-wide `HOME`" not in documentation
+    ):
+        fail("Android documentation must remain explicit about its open release gates.")
 
 
 def verify_legal_files(root: Path) -> None:
@@ -378,6 +549,7 @@ def main() -> None:
     verify_no_native_payload(root)
     verify_policy(root)
     verify_pin_occurrences(root)
+    verify_android_contract(root)
     verify_legal_files(root)
     print("KMediaVlc source and licensing policy verified.")
 

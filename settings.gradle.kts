@@ -2,6 +2,7 @@
 
 pluginManagement {
     repositories {
+        google()
         gradlePluginPortal()
         mavenCentral()
     }
@@ -9,9 +10,22 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
+        google()
         mavenCentral()
     }
 }
 
 rootProject.name = "KMediaVlc"
 include(":runtime-desktop")
+
+val desktopOnly =
+    providers.gradleProperty("kmediaVlcDesktopOnly").orNull?.let { configuredValue ->
+        require(configuredValue == "true" || configuredValue == "false") {
+            "kmediaVlcDesktopOnly must be either true or false."
+        }
+        configuredValue.toBoolean()
+    } ?: false
+
+if (!desktopOnly) {
+    include(":runtime-android")
+}

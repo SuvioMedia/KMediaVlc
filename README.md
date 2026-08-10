@@ -13,6 +13,10 @@ dependencies {
 }
 ```
 
+The Android coordinate is reserved as
+`io.github.shusek:kmedia-vlc-runtime-android`; it is not published until the
+Android gates below are complete.
+
 The runtime artifact contains a pinned libVLC 4 build, its allowlisted
 plugins and dependencies, and a stable KMediaVlc bridge. It never downloads
 native code at runtime. Native payloads are release inputs and are never
@@ -50,6 +54,9 @@ calls Compose and never waits for a UI render.
   shared `R16G16B16A16_FLOAT` linear-sRGB TextureView frame.
 - macOS and Linux GPU producers are deliberately release-ineligible until
   IOSurface and DMA-BUF import, fences, and native integration tests exist.
+- Android has a two-ABI AAR and direct libVLC 4 ANativeWindow bridge. Its
+  candidate payload is deliberately release-ineligible until the static module
+  license/link graph and device surface-lifecycle tests are closed.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 
@@ -60,7 +67,7 @@ KMediaVlc allowlisted graph.
 ## Checks
 
 ```shell
-./gradlew check complianceCheck
+bash gradlew check complianceCheck
 python scripts/verify_source_compliance.py --root .
 ```
 
@@ -72,9 +79,10 @@ embedded in the native manifest and must match the checked-out KMediaVlc
 commit. The Gradle publication consumes only the packager's verified output;
 an arbitrary directory cannot bypass the component/license inventory.
 
-The portable CPU-pull implementation exists for controlled tests, but the
-published native payload matrix remains Windows-only in this version.
+The portable CPU-pull implementation and Android ANativeWindow API exist for
+controlled integration work, but the published native payload matrix remains
+Windows-only until each platform-specific publication gate is complete.
 
-See `docs/ARCHITECTURE.md`, `docs/FRAME-TRANSPORT.md`, and
+See `docs/ARCHITECTURE.md`, `docs/ANDROID.md`, `docs/FRAME-TRANSPORT.md`, and
 `docs/LICENSING.md`. Release setup and the exact four GitHub secrets are
 documented in `docs/RELEASING.md` and `docs/MAVEN-CENTRAL.md`.

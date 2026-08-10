@@ -27,3 +27,12 @@ texts, a SHA-256 inventory with per-file SPDX/source/linkage metadata, and a
 corresponding-source offer. Dynamic replacement instructions are part of
 every release. Publication cannot consume an arbitrary payload directory; it
 depends on the same fail-closed packager that creates the verified resources.
+
+On Android, the AAR inventory is exactly two shared libraries per ABI. The
+client bridge remains proprietary and dynamically links to `libvlc.so`.
+VideoLAN's `libvlcjni.so` and Java wrapper are not distributed. The candidate
+`libvlc.so` internally contains statically linked VLC modules and contribs;
+therefore the upstream `--license a` switch is only a starting filter, not
+proof of eligibility. Publication stays disabled until the generated module
+symbols and every linked archive are mapped to allowed licenses and complete
+corresponding source.

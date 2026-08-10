@@ -269,11 +269,9 @@ def main() -> None:
         target = destination.joinpath(*relative.parts)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
-    (destination / "manifest.properties").write_text(
-        manifest_text(inventory, files, runtime_id, source_offer, recipe_revision),
-        encoding="iso-8859-1",
-        newline="\n",
-    )
+    manifest_path = destination / "manifest.properties"
+    with manifest_path.open("w", encoding="iso-8859-1", newline="\n") as handle:
+        handle.write(manifest_text(inventory, files, runtime_id, source_offer, recipe_revision))
     print(f"Packaged verified KMediaVlc runtime {runtime_id} for {args.target}")
 
 
