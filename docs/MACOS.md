@@ -49,8 +49,10 @@ rendering.
    inventory, notices, corresponding-source archive, and relinking material.
 2. Run the manually dispatched `macOS libVLC source audit` for the exact
    candidate commit and retain its path-free relocation report, contrib list,
-   and two-test JUnit evidence. The workflow rebuilds from clean inputs and
-   never uploads the still-unapproved native payload.
+   bound autotools-macro hashes, and two-test JUnit evidence. The build binds
+   Homebrew gettext/iconv and pkgconf M4 providers into VLC's bootstrapped
+   aclocal path, rebuilds from clean inputs, and never uploads the
+   still-unapproved native payload.
 3. Run real pinned-VLC MKV/MP4, audio, subtitles, VideoToolbox, HTTPS, seek,
    long lifecycle, and device replacement tests on macOS hardware.
 4. Resolve and test the pinned `vgl` HDR limitation before claiming HDR10 or

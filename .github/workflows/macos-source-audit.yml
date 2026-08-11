@@ -133,6 +133,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/runtime-desktop/build/test-results/test/TEST-io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest.xml" \
             "$evidence/test-results.xml"
           cp "$RUNNER_TEMP/vlc-macos-build/contrib-list.txt" "$evidence/"
+          cp "$RUNNER_TEMP/vlc-macos-build/autotools-macro-SHA256SUMS" "$evidence/"
           jq -n \
             --arg testedCommit "$TESTED_COMMIT" \
             --arg candidateVersion "$CANDIDATE_VERSION" \

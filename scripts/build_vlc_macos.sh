@@ -57,7 +57,42 @@ if [[ ! -x "$upstream_builder" ]]; then
     exit 1
 fi
 
+# A fresh arm64 GitHub runner provides gettext/autopoint and pkgconf through
+# Homebrew, but their M4 files live outside the aclocal prefix of the tools
+# bootstrapped by VLC. Without these explicit providers, autoreconf can leave
+# the gettext, iconv, and pkg-config macros unresolved and corrupt configure.
+brew_executable="$(command -v brew || true)"
+if [[ -z "$brew_executable" ]]; then
+    echo "Homebrew is required to bind the macOS autotools macro providers" >&2
+    exit 1
+fi
+gettext_macro_directory="$($brew_executable --prefix gettext)/share/gettext/m4"
+pkgconf_macro_directory="$($brew_executable --prefix pkgconf)/share/aclocal"
+readonly gettext_macro_directory pkgconf_macro_directory
+for macro in \
+    "$gettext_macro_directory/gettext.m4" \
+    "$gettext_macro_directory/iconv.m4" \
+    "$pkgconf_macro_directory/pkg.m4"; do
+    if [[ ! -f "$macro" || -L "$macro" ]]; then
+        echo "required macOS autotools macro is missing or unsafe: $(basename "$macro")" >&2
+        exit 1
+    fi
+done
+readonly bound_aclocal_path="$gettext_macro_directory:$pkgconf_macro_directory"
+if [[ -n "${ACLOCAL_PATH:-}" ]]; then
+    export ACLOCAL_PATH="$bound_aclocal_path:$ACLOCAL_PATH"
+else
+    export ACLOCAL_PATH="$bound_aclocal_path"
+fi
+
 mkdir "$build_directory"
+for macro in \
+    "$gettext_macro_directory/gettext.m4" \
+    "$gettext_macro_directory/iconv.m4" \
+    "$pkgconf_macro_directory/pkg.m4"; do
+    digest="$(shasum -a 256 "$macro" | awk '{print $1}')"
+    printf '%s  %s\n' "$digest" "$(basename "$macro")"
+done > "$build_directory/autotools-macro-SHA256SUMS"
 cd "$build_directory"
 "$upstream_builder" \
     --arch=arm64 \
