@@ -1,0 +1,12 @@
+diff --git a/gen.tab/meson.build b/gen.tab/meson.build
+index 2154eb7..9abe04d 100644
+--- a/gen.tab/meson.build
++++ b/gen.tab/meson.build
+@@ -1,5 +1,6 @@
+ # gen.tab
+ 
+-native_cc = meson.get_compiler('c')
++add_languages('c', native: true)
++native_cc = meson.get_compiler('c', native: true)
+ 
+ # Don't pick up top-level config.h, as that has defines for the cross-compiler

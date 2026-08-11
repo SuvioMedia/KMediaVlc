@@ -201,6 +201,7 @@ jobs:
           source_offer="https://github.com/SuvioMedia/KMediaVlc/releases/download/v$VERSION/kmedia-vlc-$VERSION-corresponding-source.tar.gz"
           ./gradlew check complianceCheck \
             :runtime-desktop:publishMavenPublicationToReleaseRepository \
+            -PkmediaVlcDesktopOnly=true \
             -PpublicationVersion="$VERSION" \
             -PkmediaVlcNativeStagingDirectory="$KMEDIAVLC_STAGE" \
             -PkmediaVlcNativeInventory="$KMEDIAVLC_INVENTORY" \

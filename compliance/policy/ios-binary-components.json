@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "targets": [
+    "ios-arm64",
+    "ios-simulator-arm64"
+  ],
+  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+  "toolchain": {
+    "xcodeVersion": "26.6",
+    "xcodeBuild": "17F113",
+    "sdkVersion": "26.5",
+    "minimumIos": "16.2",
+    "architecture": "arm64"
+  },
+  "reviewStatus": "pending-link-command-and-license-audit",
+  "buildOnlyContribPackages": [],
+  "components": {
+    "dav1d": {
+      "version": "1.5.4",
+      "licenseSpdx": ["BSD-2-Clause"],
+      "sourceArchive": "dav1d-1.5.4.tar.xz"
+    },
+    "ffmpeg": {
+      "version": "8.1.2",
+      "licenseSpdx": ["LGPL-2.1-or-later"],
+      "sourceArchive": "ffmpeg-8.1.2.tar.xz"
+    },
+    "flac": {
+      "version": "1.5.0",
+      "licenseSpdx": ["BSD-3-Clause"],
+      "sourceArchive": "flac-1.5.0.tar.xz"
+    },
+    "freetype": {
+      "version": "2.13.1",
+      "licenseSpdx": ["FTL"],
+      "sourceArchive": "freetype-2.13.1.tar.xz"
+    },
+    "fribidi": {
+      "version": "1.0.16",
+      "licenseSpdx": ["LGPL-2.1-or-later"],
+      "sourceArchive": "fribidi-1.0.16.tar.xz"
+    },
+    "gsm": {
+      "version": "1.0-pl22",
+      "licenseSpdx": ["TU-Berlin-1.0"],
+      "sourceArchive": "gsm-1.0-pl22.tar.gz"
+    },
+    "harfbuzz": {
+      "version": "14.2.1",
+      "licenseSpdx": ["MIT"],
+      "sourceArchive": "harfbuzz-14.2.1.tar.xz"
+    },
+    "libass": {
+      "version": "0.17.5",
+      "licenseSpdx": ["ISC"],
+      "sourceArchive": "libass-0.17.5.tar.xz"
+    },
+    "libdvbpsi": {
+      "version": "1.3.3",
+      "licenseSpdx": ["LGPL-2.1-or-later"],
+      "sourceArchive": "libdvbpsi-1.3.3.tar.bz2"
+    },
+    "libebml": {
+      "version": "1.4.6",
+      "licenseSpdx": ["LGPL-2.1-or-later"],
+      "sourceArchive": "libebml-1.4.6.tar.xz"
+    },
+    "libjpeg-turbo": {
+      "version": "3.1.4.1",
+      "licenseSpdx": ["IJG", "Zlib"],
+      "sourceArchive": "libjpeg-turbo-3.1.4.1.tar.gz"
+    },
+    "libmatroska": {
+      "version": "1.7.2",
+      "licenseSpdx": ["LGPL-2.1-or-later"],
+      "sourceArchive": "libmatroska-1.7.2.tar.xz"
+    },
+    "libogg": {
+      "version": "1.3.6",
+      "licenseSpdx": ["BSD-3-Clause"],
+      "sourceArchive": "libogg-1.3.6.tar.xz"
+    },
+    "libpng": {
+      "version": "1.6.58",
+      "licenseSpdx": ["Libpng-2.0"],
+      "sourceArchive": "libpng-1.6.58.tar.xz"
+    },
+    "libvorbis": {
+      "version": "1.3.7",
+      "licenseSpdx": ["BSD-3-Clause"],
+      "sourceArchive": "libvorbis-1.3.7.tar.xz"
+    },
+    "libvpx": {
+      "version": "1.16.0",
+      "licenseSpdx": ["BSD-3-Clause"],
+      "sourceArchive": "libvpx-1.16.0.tar.gz"
+    },
+    "libxml2": {
+      "version": "2.15.3",
+      "licenseSpdx": ["MIT"],
+      "sourceArchive": "libxml2-2.15.3.tar.xz"
+    },
+    "openjpeg": {
+      "version": "2.5.4",
+      "licenseSpdx": ["BSD-2-Clause"],
+      "sourceArchive": "openjpeg-2.5.4.tar.gz"
+    },
+    "opus": {
+      "version": "1.6.1",
+      "licenseSpdx": ["BSD-3-Clause"],
+      "sourceArchive": "opus-1.6.1.tar.gz"
+    },
+    "soxr": {
+      "version": "0.1.3",
+      "licenseSpdx": ["LGPL-2.1-or-later"],
+      "sourceArchive": "soxr-0.1.3-Source.tar.xz"
+    },
+    "utfcpp": {
+      "version": "3.2.5",
+      "licenseSpdx": ["BSL-1.0"],
+      "sourceArchive": "utfcpp-3.2.5.tar.gz"
+    },
+    "zlib": {
+      "version": "1.3.2",
+      "licenseSpdx": ["Zlib"],
+      "sourceArchive": "zlib-1.3.2.tar.xz"
+    }
+  },
+  "coreComponents": [],
+  "moduleComponents": {
+    "avcodec": ["ffmpeg", "gsm", "openjpeg", "zlib"],
+    "dav1d": ["dav1d"],
+    "flac": ["flac", "libogg"],
+    "freetype": ["freetype", "fribidi", "harfbuzz", "zlib"],
+    "inflate": ["zlib"],
+    "jpeg": ["libjpeg-turbo"],
+    "libass": ["freetype", "fribidi", "harfbuzz", "libass", "zlib"],
+    "mkv": ["libebml", "libmatroska", "utfcpp", "zlib"],
+    "mp4": ["zlib"],
+    "ogg": ["libogg", "libvorbis"],
+    "opus": ["libogg", "opus"],
+    "packetizer_avparser": ["ffmpeg", "gsm", "openjpeg", "zlib"],
+    "png": ["libpng", "zlib"],
+    "soxr": ["ffmpeg", "gsm", "openjpeg", "soxr", "zlib"],
+    "swscale": ["ffmpeg", "zlib"],
+    "ts": ["libdvbpsi"],
+    "vorbis": ["libogg", "libvorbis"],
+    "vpx": ["libvpx"],
+    "xml": ["libxml2"]
+  },
+  "moduleAdditionalLicenses": {
+    "mkv": ["MIT"],
+    "opus": ["BSD-3-Clause"],
+    "ts": ["BSD-3-Clause"]
+  }
+}

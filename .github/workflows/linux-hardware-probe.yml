@@ -1,0 +1,198 @@
+# SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+
+name: Linux DMA-BUF hardware probe
+run-name: Linux DMA-BUF probe for ${{ inputs.tested_commit }} on ${{ inputs.architecture }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tested_commit:
+        description: Exact forty-character KMediaVlc commit to probe
+        required: true
+        type: string
+      architecture:
+        description: Architecture label on the dedicated GPU runner
+        required: true
+        default: x64
+        type: choice
+        options: [x64, ARM64]
+      render_node:
+        description: Dedicated DRM render node exposed to the runner
+        required: true
+        default: /dev/dri/renderD128
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kmediavlc-linux-hardware-${{ inputs.architecture }}
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: Import DMA-BUFs and transfer explicit fences
+    if: github.ref == 'refs/heads/codex/libvlc4-backend'
+    runs-on: [self-hosted, linux, "${{ inputs.architecture }}", kmediavlc-linux-gpu]
+    timeout-minutes: 360
+    env:
+      TESTED_COMMIT: ${{ inputs.tested_commit }}
+      RENDER_NODE: ${{ inputs.render_node }}
+      RUNNER_ARCHITECTURE: ${{ inputs.architecture }}
+      VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+    steps:
+      - name: Check out the exact KMediaVlc revision
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ inputs.tested_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check out the exact VLC source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          repository: videolan/vlc
+          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          path: .vlc-source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind the request to immutable sources and physical hardware
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$TESTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$RENDER_NODE" =~ ^/dev/dri/renderD[0-9]+$ ]]
+          test -c "$RENDER_NODE"
+          test "$(git rev-parse HEAD)" = "$TESTED_COMMIT"
+          test "$(git -C .vlc-source rev-parse HEAD)" = "$VLC_REVISION"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          test -z "$(git -C .vlc-source status --porcelain --untracked-files=no)"
+          case "$RUNNER_ARCHITECTURE" in
+            x64)
+              test "$(uname -m)" = x86_64
+              target=linux-x86_64
+              ;;
+            ARM64)
+              test "$(uname -m)" = aarch64
+              target=linux-aarch64
+              ;;
+            *)
+              exit 1
+              ;;
+          esac
+          scratch="$(mktemp -d "$RUNNER_TEMP/kmediavlc-hardware.XXXXXX")"
+          printf 'target=%s\n' "$target" >> "$GITHUB_OUTPUT"
+          printf 'scratch=%s\n' "$scratch" >> "$GITHUB_OUTPUT"
+          python3 scripts/verify_source_compliance.py --root .
+
+      - name: Verify the pre-provisioned Linux graphics toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          for command in autoconf automake autopoint bison bzip2 cc c++ cmake \
+              curl file flex gettext git gperf help2man jq libtoolize make meson \
+              nasm ninja patch patchelf pkg-config python3 ragel tar unzip xz \
+              yasm zstd; do
+            command -v "$command" >/dev/null
+          done
+          pkg-config --exists egl glesv2 gbm libdrm fontconfig libpulse
+
+      - name: Set up Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      - name: Compile the exact Linux DMA-BUF bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash ./gradlew buildNativeBridge \
+            -PkmediaVlcDesktopOnly=true \
+            -PkmediaVlcVlcSourceDir="$GITHUB_WORKSPACE/.vlc-source" \
+            --no-daemon --stacktrace --console=plain
+          test -f "$GITHUB_WORKSPACE/build/native/${{ steps.request.outputs.target }}/libkmediavlc_bridge.so"
+
+      - name: Build and stage the pinned libVLC graph
+        shell: bash
+        env:
+          SCRATCH: ${{ steps.request.outputs.scratch }}
+          TARGET: ${{ steps.request.outputs.target }}
+        run: |
+          set -euo pipefail
+          build="$SCRATCH/vlc-linux-build"
+          bash scripts/build_vlc_linux.sh "$GITHUB_WORKSPACE/.vlc-source" "$build" 4
+          install="$build/vlc-$TARGET"
+          bridge="$GITHUB_WORKSPACE/build/native/$TARGET/libkmediavlc_bridge.so"
+          stage="$SCRATCH/kmediavlc-$TARGET-candidate"
+          report="$SCRATCH/kmediavlc-$TARGET-candidate.json"
+          python3 scripts/stage_vlc_linux_runtime.py \
+            --root "$GITHUB_WORKSPACE" \
+            --install "$install" \
+            --bridge "$bridge" \
+            --target "$TARGET" \
+            --output "$stage" \
+            --report "$report" \
+            --allow-audit-candidate
+          test "$(jq -r .selectedPluginCount "$report")" = 85
+          test "$(jq -r .auditCandidate "$report")" = true
+
+      - name: Import seven physical DMA-BUF frames with explicit fences
+        shell: bash
+        env:
+          SCRATCH: ${{ steps.request.outputs.scratch }}
+          TARGET: ${{ steps.request.outputs.target }}
+        run: |
+          set -euo pipefail
+          stage="$SCRATCH/kmediavlc-$TARGET-candidate"
+          LD_LIBRARY_PATH="$stage/bin" bash ./gradlew :runtime-desktop:test \
+            -PkmediaVlcDesktopOnly=true \
+            -PkmediaVlcNativeBridgePath="$stage/bin/libkmediavlc_bridge.so" \
+            -PkmediaVlcTestLibVlcPath="$stage/bin/libvlc.so.12" \
+            -PkmediaVlcTestPluginDirectory="$stage/lib/vlc/plugins" \
+            -PkmediaVlcTestLinuxRenderNode="$RENDER_NODE" \
+            --tests '*.VlcDesktopPlayerIntegrationTest.pinnedVideoLanFixtureImportsLinuxDmaBufsAndReturnsExplicitFences' \
+            --no-daemon --stacktrace --console=plain
+
+      - name: Record the physical evidence summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          node_name="$(basename "$RENDER_NODE")"
+          driver=unknown
+          if [[ -L "/sys/class/drm/$node_name/device/driver" ]]; then
+            driver="$(basename "$(readlink "/sys/class/drm/$node_name/device/driver")")"
+          fi
+          {
+            echo '### Linux DMA-BUF hardware probe passed'
+            echo "- KMediaVlc commit: \`$TESTED_COMMIT\`"
+            echo "- VLC commit: \`$VLC_REVISION\`"
+            echo "- Architecture: \`$(uname -m)\`"
+            echo "- Render node: \`$RENDER_NODE\`"
+            echo "- Kernel DRM driver: \`$driver\`"
+            echo '- Seven independent imports passed; iteration three omitted its release fence and four later imports still passed.'
+            echo '- No candidate binary was uploaded.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove the unpublished candidate from the self-hosted runner
+        if: always()
+        shell: bash
+        env:
+          SCRATCH: ${{ steps.request.outputs.scratch }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$SCRATCH" ]]; then
+            case "$SCRATCH" in
+              "$RUNNER_TEMP"/kmediavlc-hardware.*) ;;
+              *) exit 1 ;;
+            esac
+            rm -rf -- "$SCRATCH"
+            test ! -e "$SCRATCH"
+          fi
+          rm -rf -- "$GITHUB_WORKSPACE/build/native"
+          test ! -e "$GITHUB_WORKSPACE/build/native"

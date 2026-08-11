@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "artifact": "KMediaVlcApple",
+  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+  "vlcSource": "https://code.videolan.org/videolan/vlc.git",
+  "upstreamBuildScript": "extras/package/apple/build.sh",
+  "upstreamBuildConfiguration": "build-recipes/vlc-apple.conf",
+  "sourcePatches": [
+    "build-recipes/patches/vlc-ios-meson-native-compiler.patch",
+    "build-recipes/patches/fribidi-meson-native-generator.patch"
+  ],
+  "mesonNativeFile": "build-recipes/vlc-apple-native.ini",
+  "sourceOverlays": [
+    "build-recipes/vlc-contrib-utfcpp-rules.mak"
+  ],
+  "buildMode": "shared-frameworks",
+  "targets": {
+    "ios-arm64": {
+      "sdk": "iphoneos",
+      "architecture": "arm64",
+      "minimumOs": "16.2",
+      "simulator": false
+    },
+    "ios-simulator-arm64": {
+      "sdk": "iphonesimulator",
+      "architecture": "arm64",
+      "minimumOs": "16.2",
+      "simulator": true
+    }
+  },
+  "libVlcBuildArguments": {
+    "ios-arm64": [
+      "--arch=arm64",
+      "--sdk=iphoneos",
+      "--enable-shared",
+      "--disable-debug",
+      "--config=build-recipes/vlc-apple.conf"
+    ],
+    "ios-simulator-arm64": [
+      "--arch=arm64",
+      "--sdk=iphonesimulator",
+      "--enable-shared",
+      "--disable-debug",
+      "--config=build-recipes/vlc-apple.conf"
+    ]
+  },
+  "selectedContribPackages": [
+    "ass",
+    "dav1d",
+    "dvbpsi",
+    "ebml",
+    "ffmpeg",
+    "flac",
+    "freetype2",
+    "fribidi",
+    "harfbuzz",
+    "jpeg",
+    "libxml2",
+    "matroska",
+    "ogg",
+    "opus",
+    "png",
+    "soxr",
+    "vorbis",
+    "vpx",
+    "zlib"
+  ],
+  "resolvedContribPackages": [
+    "ass",
+    "dav1d",
+    "dvbpsi",
+    "ebml",
+    "ffmpeg",
+    "flac",
+    "freetype2",
+    "fribidi",
+    "gsm",
+    "harfbuzz",
+    "jpeg",
+    "libxml2",
+    "matroska",
+    "ogg",
+    "openjpeg",
+    "opus",
+    "png",
+    "soxr",
+    "utfcpp",
+    "vorbis",
+    "vpx",
+    "zlib"
+  ],
+  "usesPrebuiltContribs": false,
+  "contribSelectionMode": "disable-all-then-enable-closed-set",
+  "contribLicenseProfile": "LGPL-2.1-plus-ad-clauses-no-GPL-no-GNUv3",
+  "runtimeIntegration": "cocoapods-xcframeworks-embedded-and-signed-by-xcode",
+  "pluginPackaging": "one-dynamic-framework-per-selected-vlc-plugin",
+  "requiredFrameDeliveryModes": [
+    "CPU_PULL"
+  ],
+  "requiredPlaybackCapabilities": [
+    "audio-output",
+    "file-input",
+    "http-input",
+    "https-input",
+    "matroska-demux",
+    "mp4-demux",
+    "software-video-decode",
+    "subtitles"
+  ],
+  "requiresClosedPluginInventory": true,
+  "requiresClosedMachOGraph": true,
+  "requiresApplicationPrivateRelocation": true,
+  "requiresConsumerCodeSigning": true,
+  "requiresCorrespondingSource": true,
+  "requiresRealLibVlcPlaybackTest": true,
+  "stagedPluginCount": 84,
+  "rawSourceBuildPluginCount": 285,
+  "frameworkCountPerSlice": 87,
+  "pluginDiscovery": "runtime-scan-of-flattened-plugin-frameworks",
+  "forbidsStockNightly": true,
+  "reviewStatus": "device-and-simulator-source-build-xcframework-and-simulator-playback-evidence-complete-device-playback-and-license-audit-pending",
+  "candidateReleaseEligible": false
+}

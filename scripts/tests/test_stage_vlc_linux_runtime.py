@@ -1,0 +1,218 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
+from __future__ import annotations
+
+import importlib.util
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+
+ROOT = Path(__file__).resolve().parents[2]
+MODULE_PATH = ROOT / "scripts/stage_vlc_linux_runtime.py"
+SPEC = importlib.util.spec_from_file_location("stage_vlc_linux_runtime", MODULE_PATH)
+assert SPEC is not None and SPEC.loader is not None
+STAGER = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(STAGER)
+
+
+class LinuxRuntimeStagerTest(unittest.TestCase):
+    def test_symbol_versions_use_numeric_family_maxima(self) -> None:
+        parsed = STAGER.parse_symbol_versions(
+            "GLIBC_2.9 GLIBC_2.39 GLIBCXX_3.4.9 GLIBCXX_3.4.33 CXXABI_1.3.15"
+        )
+        self.assertEqual(
+            {"GLIBC": "2.39", "GLIBCXX": "3.4.33", "CXXABI": "1.3.15"},
+            parsed,
+        )
+        self.assertTrue(STAGER.version_at_most("2.39", "2.39"))
+        self.assertTrue(STAGER.version_at_most("3.4.9", "3.4.33"))
+        self.assertFalse(STAGER.version_at_most("2.40", "2.39"))
+
+    def test_dynamic_parser_rejects_legacy_rpath(self) -> None:
+        valid = """
+         0x000000000000000e (SONAME)             Library soname: [libvlc.so.12]
+         0x0000000000000001 (NEEDED)             Shared library: [libvlccore.so.9]
+         0x000000000000001d (RUNPATH)            Library runpath: [$ORIGIN]
+        """
+        self.assertEqual(
+            ("libvlc.so.12", ["libvlccore.so.9"], "$ORIGIN"),
+            STAGER.parse_dynamic(valid),
+        )
+        with self.assertRaisesRegex(SystemExit, "SONAME/RUNPATH"):
+            STAGER.parse_dynamic(valid + "\n (RPATH) Library rpath: [/tmp]\n")
+
+    def test_symbol_version_parser_allows_an_elf_without_direct_glibc_symbols(self) -> None:
+        self.assertEqual(
+            {"GLIBC": None, "GLIBCXX": None, "CXXABI": None},
+            STAGER.parse_symbol_versions("No version information found in this file."),
+        )
+
+    def test_stages_exact_policy_with_mocked_elf_tools_and_stays_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as value:
+            temporary = Path(value)
+            install = temporary / "install"
+            bridge = temporary / "libkmediavlc_bridge.so"
+            output = temporary / "stage"
+            report = temporary / "report.json"
+            tools = temporary / "tools"
+            tools.mkdir()
+            self.write_file(install / "lib/libvlc.so")
+            self.write_file(install / "lib/libvlccore.so.9.0.0")
+            self.write_file(install / "lib/libvlc_pulse.so")
+            self.write_file(bridge)
+
+            policy = json.loads(
+                (ROOT / "compliance/policy/linux-playback-modules.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            for family, names in policy["modulesByFamily"].items():
+                for name in names:
+                    self.write_file(install / f"lib/vlc/plugins/lib{name}_plugin.so")
+
+            cache_generator = install / "libexec/vlc/vlc-cache-gen"
+            self.write_file(cache_generator)
+            for name in ("patchelf", "readelf", "strip"):
+                self.write_file(tools / name)
+
+            arguments = [
+                "stage_vlc_linux_runtime.py",
+                "--root",
+                str(ROOT),
+                "--install",
+                str(install),
+                "--bridge",
+                str(bridge),
+                "--target",
+                "linux-x86_64",
+                "--output",
+                str(output),
+                "--report",
+                str(report),
+                "--patchelf",
+                str(tools / "patchelf"),
+                "--readelf",
+                str(tools / "readelf"),
+                "--strip",
+                str(tools / "strip"),
+            ]
+            with mock.patch.object(sys, "argv", arguments):
+                with self.assertRaisesRegex(SystemExit, "have not completed review"):
+                    STAGER.main()
+
+            with mock.patch.object(sys, "argv", arguments + ["--allow-audit-candidate"]):
+                with mock.patch.object(STAGER, "run_tool", side_effect=self.fake_run_tool):
+                    with mock.patch.object(
+                        STAGER.subprocess,
+                        "run",
+                        side_effect=self.fake_cache_generator,
+                    ):
+                        STAGER.main()
+            evidence = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(85, evidence["selectedPluginCount"])
+            self.assertEqual(85, evidence["rawPluginCount"])
+            self.assertTrue(evidence["auditCandidate"])
+            self.assertEqual(90, len(evidence["files"]))
+            self.assertEqual(89, len(evidence["elf"]))
+            self.assertEqual(
+                ["libvlccore.so.9", "libpulse.so.0", "libc.so.6"],
+                evidence["elf"]["bin/libvlc_pulse.so"]["dependencies"],
+            )
+            support = next(
+                entry
+                for entry in evidence["files"]
+                if entry["path"] == "bin/libvlc_pulse.so"
+            )
+            self.assertEqual("SUPPORT", support["role"])
+            self.assertEqual(["LGPL-2.1-or-later"], support["licenseSpdx"])
+            self.assertEqual(["pulse"], support["requiredByModules"])
+            self.assertEqual(
+                ["libc.so.6"],
+                evidence["elf"][
+                    "lib/vlc/plugins/libfloat_mixer_plugin.so"
+                ]["dependencies"],
+            )
+            self.assertEqual(
+                ["libvlccore.so.9", "libvlc_pulse.so", "libc.so.6"],
+                evidence["elf"][
+                    "lib/vlc/plugins/libpulse_plugin.so"
+                ]["dependencies"],
+            )
+            self.assertEqual(
+                ["libvlc_pulse.so"],
+                evidence["elf"][
+                    "lib/vlc/plugins/libpulse_plugin.so"
+                ]["requiredPrivateDependencies"],
+            )
+            self.assertTrue((output / "lib/vlc/plugins/plugins.dat").is_file())
+
+    @staticmethod
+    def write_file(path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"synthetic-elf")
+
+    def fake_run_tool(self, command: list[str], timeout_seconds: int = 180) -> str:
+        self.assertEqual(180, timeout_seconds)
+        tool = Path(command[0]).name
+        if tool in {"patchelf", "strip"}:
+            return ""
+        self.assertEqual("readelf", tool)
+        arguments = command[1:]
+        name = Path(arguments[-1]).name
+        if name == "libkmediavlc_bridge.so":
+            role = "bridge"
+        elif name == "libvlc.so.12":
+            role = "libvlc"
+        elif name == "libvlccore.so.9":
+            role = "core"
+        elif name == "libvlc_pulse.so":
+            role = "support"
+        else:
+            role = "plugin"
+
+        if "-h" in arguments:
+            return (
+                "  Class:                             ELF64\n"
+                "  Machine:                           Advanced Micro Devices X86-64\n"
+            )
+        if "-dW" in arguments:
+            dependencies = ""
+            if role in {"libvlc", "support"} or (
+                role == "plugin" and name != "libfloat_mixer_plugin.so"
+            ):
+                dependencies += " (NEEDED) Shared library: [libvlccore.so.9]\n"
+            if role == "support":
+                dependencies += " (NEEDED) Shared library: [libpulse.so.0]\n"
+            if name == "libpulse_plugin.so":
+                dependencies += " (NEEDED) Shared library: [libvlc_pulse.so]\n"
+            dependencies += " (NEEDED) Shared library: [libc.so.6]\n"
+            runpath = "$ORIGIN/../../../bin" if role == "plugin" else "$ORIGIN"
+            return (
+                f" (SONAME) Library soname: [{name}]\n"
+                f"{dependencies}"
+                f" (RUNPATH) Library runpath: [{runpath}]\n"
+            )
+        if "-lW" in arguments:
+            return (
+                " GNU_STACK 0x000000 0x000000 0x000000 0x000000 0x000000 RW 0x10\n"
+                " GNU_RELRO 0x000000 0x000000 0x000000 0x000000 0x000000 R 0x1\n"
+            )
+        if "-nW" in arguments:
+            return " Build ID: 0123456789abcdef0123456789abcdef01234567\n"
+        if "--version-info" in arguments:
+            return " Name: GLIBC_2.39\n"
+        self.fail(f"Unexpected readelf arguments: {arguments}")
+
+    def fake_cache_generator(self, command: list[str], **_: object) -> mock.Mock:
+        self.assertEqual("vlc-cache-gen", Path(command[0]).name)
+        self.assertEqual(2, len(command))
+        (Path(command[1]) / "plugins.dat").write_bytes(b"cache")
+        return mock.Mock(returncode=0, stdout="", stderr="")
+
+
+if __name__ == "__main__":
+    unittest.main()

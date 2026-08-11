@@ -4,6 +4,7 @@ import org.gradle.api.tasks.Exec
 
 plugins {
     base
+    alias(libs.plugins.android.library) apply false
 }
 
 val publicationVersion = providers.gradleProperty("publicationVersion").orElse("0.1.0-SNAPSHOT")
@@ -48,6 +49,16 @@ val nativeBridgeBinary =
             else -> directory.file("libkmediavlc_bridge.so")
         }
     }
+val nativeFakeLibVlcBinary =
+    nativeBuildDirectory.zip(nativeBuildType) { directory, buildType ->
+        when {
+            operatingSystem.contains("win") -> directory.file("$buildType/kmediavlc_fake_libvlc.dll")
+            operatingSystem.contains("mac") -> directory.file("libkmediavlc_fake_libvlc.dylib")
+            else -> directory.file("libkmediavlc_fake_libvlc.so")
+        }
+    }
+val buildNativeTestFixtures =
+    providers.gradleProperty("kmediaVlcBuildNativeTestFixtures").map(String::toBoolean).orElse(false)
 
 val configureNativeBridge =
     tasks.register<Exec>("configureNativeBridge") {
@@ -55,6 +66,7 @@ val configureNativeBridge =
         description = "Configures the JNI/GPU bridge against the exact pinned VLC source checkout."
         inputs.dir(layout.projectDirectory.dir("native"))
         inputs.dir(vlcSourceDirectory)
+        inputs.property("buildNativeTestFixtures", buildNativeTestFixtures)
         outputs.file(nativeBuildDirectory.map { it.file("CMakeCache.txt") })
         doFirst {
             require(vlcSourceDirectory.isPresent) {
@@ -68,6 +80,7 @@ val configureNativeBridge =
                     "-B",
                     nativeBuildDirectory.get().asFile.absolutePath,
                     "-DKMEDIAVLC_VLC_SOURCE_DIR=${vlcSourceDirectory.get().absolutePath}",
+                    "-DKMEDIAVLC_BUILD_TEST_FIXTURES=${if (buildNativeTestFixtures.get()) "ON" else "OFF"}",
                 )
             if (operatingSystem.contains("win")) {
                 arguments += listOf(
@@ -75,6 +88,15 @@ val configureNativeBridge =
                     "Visual Studio 17 2022",
                     "-A",
                     if (nativeTargetName.get().endsWith("aarch64")) "ARM64" else "x64",
+                )
+            } else if (operatingSystem.contains("mac")) {
+                require(nativeTargetName.get() == "macos-aarch64") {
+                    "The bundled macOS runtime currently targets Apple Silicon exactly."
+                }
+                arguments += listOf(
+                    "-DCMAKE_BUILD_TYPE=${nativeBuildType.get()}",
+                    "-DCMAKE_OSX_ARCHITECTURES=arm64",
+                    "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0",
                 )
             } else {
                 arguments += "-DCMAKE_BUILD_TYPE=${nativeBuildType.get()}"
@@ -88,7 +110,12 @@ tasks.register<Exec>("buildNativeBridge") {
     description = "Builds the KMediaVlc bridge after the pinned-header ABI gate succeeds."
     dependsOn(configureNativeBridge)
     inputs.dir(layout.projectDirectory.dir("native"))
-    outputs.file(nativeBridgeBinary)
+    outputs.files(provider {
+        buildList {
+            add(nativeBridgeBinary.get().asFile)
+            if (buildNativeTestFixtures.get()) add(nativeFakeLibVlcBinary.get().asFile)
+        }
+    })
     doFirst {
         commandLine(
             cmakeExecutable.get(),
@@ -133,6 +160,9 @@ val testPackagingPolicy =
 
 tasks.named("check") {
     dependsOn(":runtime-desktop:check")
+    if (findProject(":runtime-android") != null) {
+        dependsOn(":runtime-android:check")
+    }
     dependsOn(verifySourceCompliance)
     dependsOn(testPackagingPolicy)
 }
@@ -141,6 +171,9 @@ tasks.register("complianceCheck") {
     group = "verification"
     description = "Runs JVM tests and every repository-level licensing gate."
     dependsOn(":runtime-desktop:check")
+    if (findProject(":runtime-android") != null) {
+        dependsOn(":runtime-android:check")
+    }
     dependsOn(verifySourceCompliance)
     dependsOn(testPackagingPolicy)
 }

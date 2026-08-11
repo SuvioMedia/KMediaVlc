@@ -1,0 +1,40 @@
+diff --git a/contrib/src/fribidi/rules.mak b/contrib/src/fribidi/rules.mak
+index 2cbda47..9aa75ea 100644
+--- a/contrib/src/fribidi/rules.mak
++++ b/contrib/src/fribidi/rules.mak
+@@ -14,6 +14,7 @@ $(TARBALLS)/fribidi-$(FRIBIDI_VERSION).tar.xz:
+ 
+ fribidi: fribidi-$(FRIBIDI_VERSION).tar.xz .sum-fribidi
+ 	$(UNPACK)
++	$(APPLY) $(SRC)/fribidi/kmediavlc-meson-native-generator.patch
+ 	$(MOVE)
+ 
+ # FIXME: DEPS_fribidi = iconv $(DEPS_iconv)
+diff --git a/contrib/src/main.mak b/contrib/src/main.mak
+index b00406c..9100e53 100644
+--- a/contrib/src/main.mak
++++ b/contrib/src/main.mak
+@@ -597,7 +597,11 @@ ifdef HAVE_CROSS_COMPILE
+ # expected.
+ MESONFLAGS += --cross-file $(abspath crossfile.meson)
++ifneq ($(KMEDIAVLC_MESON_NATIVE_FILE),)
++MESONFLAGS += --native-file "$(KMEDIAVLC_MESON_NATIVE_FILE)"
++endif
+ MESON = env -i PATH="$(PATH)" \
++	TMPDIR="$(KMEDIAVLC_MESON_NATIVE_TMPDIR)" \
+ 	meson setup -Dpkg_config_path="$(PKG_CONFIG_PATH)" \
+ 	$(MESONFLAGS)
+ 
+ else
+diff --git a/contrib/src/gsm/rules.mak b/contrib/src/gsm/rules.mak
+--- a/contrib/src/gsm/rules.mak
++++ b/contrib/src/gsm/rules.mak
+@@ -21,6 +21,8 @@ gsm: gsm-$(GSM_MAJVERSION)-pl$(GSM_MINVERSION).tar.gz .sum-gsm
+ 	sed -i.orig 's,GSM_INSTALL_MAN =,GSM_INSTALL_MAN ?=,' "$(UNPACK_DIR)/Makefile"
+ 	# use the default make rules (use CPPFLAGS)
+ 	sed -i.orig 's,^.c.o:,#.c.o:,' "$(UNPACK_DIR)/Makefile"
++	# retain the Apple cross target and deployment flags from HOSTVARS_PIC
++	sed -i.orig 's,^CFLAGS[[:space:]]*=,CFLAGS +=,' "$(UNPACK_DIR)/Makefile"
+ 	sed -i.orig 's,^		$$(CC),#		$$(CC),' "$(UNPACK_DIR)/Makefile"
+ 	sed -i.orig 's,^		@-mv,#		@-mv,' "$(UNPACK_DIR)/Makefile"
+ 	sed -i.orig 's,make \$$,$$(MAKE) \$$,' "$(UNPACK_DIR)/Makefile"

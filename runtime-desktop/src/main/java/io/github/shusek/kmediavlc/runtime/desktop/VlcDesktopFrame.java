@@ -5,6 +5,7 @@ package io.github.shusek.kmediavlc.runtime.desktop;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** One bridge-owned video frame. Ownership is released exactly once. */
 public final class VlcDesktopFrame implements VlcReleasableFrame {
@@ -20,7 +21,7 @@ public final class VlcDesktopFrame implements VlcReleasableFrame {
     private final VlcSourceDynamicRange sourceDynamicRange;
     private final VlcNativeHandleType handleType;
     private final long platformHandle;
-    private final int acquireFenceFd;
+    private final AtomicInteger acquireFenceFd;
     private final int stride;
     private final int fourcc;
     private final int offset;
@@ -49,7 +50,7 @@ public final class VlcDesktopFrame implements VlcReleasableFrame {
             sourceDynamicRange = VlcSourceDynamicRange.fromNative(Math.toIntExact(values[7]));
             handleType = VlcNativeHandleType.fromNative(Math.toIntExact(values[8]));
             platformHandle = values[9];
-            acquireFenceFd = Math.toIntExact(values[10]);
+            acquireFenceFd = new AtomicInteger(Math.toIntExact(values[10]));
             stride = Math.toIntExact(values[11]);
             fourcc = Math.toIntExact(values[12]);
             offset = Math.toIntExact(values[13]);
@@ -69,6 +70,10 @@ public final class VlcDesktopFrame implements VlcReleasableFrame {
                 this.cpuPixels = null;
             }
         } catch (RuntimeException failure) {
+            if (values != null && values.length == 19 &&
+                    values[10] >= 0 && values[10] <= Integer.MAX_VALUE) {
+                NativeBridge.closeFence((int) values[10]);
+            }
             if (ownedFrame > 0) NativeBridge.releaseFrame(ownedFrame, NO_FENCE);
             throw failure;
         }
@@ -83,7 +88,8 @@ public final class VlcDesktopFrame implements VlcReleasableFrame {
     public VlcSourceDynamicRange sourceDynamicRange() { return sourceDynamicRange; }
     public VlcNativeHandleType handleType() { return handleType; }
     public long platformHandle() { return platformHandle; }
-    public int acquireFenceFd() { return acquireFenceFd; }
+    /** Transfers ownership of the acquire sync-file descriptor, or returns {@link #NO_FENCE}. */
+    public int acquireFenceFd() { return acquireFenceFd.getAndSet(NO_FENCE); }
     public int stride() { return stride; }
     public int fourcc() { return fourcc; }
     public int offset() { return offset; }
@@ -97,6 +103,8 @@ public final class VlcDesktopFrame implements VlcReleasableFrame {
 
     public void release(int releaseFenceFd) {
         if (released.compareAndSet(false, true)) {
+            int unclaimedAcquireFence = acquireFenceFd.getAndSet(NO_FENCE);
+            if (unclaimedAcquireFence >= 0) NativeBridge.closeFence(unclaimedAcquireFence);
             NativeBridge.releaseFrame(nativeFrame, releaseFenceFd);
         } else if (releaseFenceFd >= 0) {
             NativeBridge.closeFence(releaseFenceFd);

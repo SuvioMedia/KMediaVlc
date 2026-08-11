@@ -47,6 +47,7 @@ record NativePayloadManifest(
                     "Apache-2.0",
                     "BSD-2-Clause",
                     "BSD-3-Clause",
+                    "BSL-1.0",
                     "FTL",
                     "IJG",
                     "ISC",
@@ -193,11 +194,18 @@ record NativePayloadManifest(
     }
 
     private static void validateEngines(String target, Set<VlcRenderEngine> engines) {
-        if (!target.startsWith("windows-")) {
-            reject("This KMediaVlc release supports bundled native payloads on Windows only.");
-        }
-        if (!engines.contains(VlcRenderEngine.D3D11)) {
-            reject("Windows runtime must expose the D3D11 output engine.");
+        switch (target) {
+            case "windows-x86_64", "windows-aarch64" -> {
+                if (!engines.equals(Set.of(VlcRenderEngine.D3D11))) {
+                    reject("Windows runtime must expose only the D3D11 output engine.");
+                }
+            }
+            case "macos-aarch64" -> {
+                if (!engines.equals(Set.of(VlcRenderEngine.OPENGL))) {
+                    reject("macOS runtime must expose only the OpenGL IOSurface output engine.");
+                }
+            }
+            default -> reject("This KMediaVlc release does not support the requested native target.");
         }
     }
 

@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "target": "macos-aarch64",
+  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+  "reviewStatus": "pending-mach-o-and-source-license-audit",
+  "primaryLicenseSpdx": "LGPL-2.1-or-later",
+  "additionalDirectSourceLicenses": {
+    "mkv": ["MIT"],
+    "opus": ["BSD-3-Clause"],
+    "ts": ["BSD-3-Clause"]
+  },
+  "modulesByFamily": {
+    "access": [
+      "access_mms",
+      "data",
+      "filesystem",
+      "ftp",
+      "http",
+      "https",
+      "webdav"
+    ],
+    "audio_filter": [
+      "audio_format",
+      "simple_channel_mixer",
+      "soxr",
+      "tospdif",
+      "trivial_channel_mixer"
+    ],
+    "audio_mixer": [
+      "float_mixer",
+      "integer_mixer"
+    ],
+    "audio_output": [
+      "adummy",
+      "auhal"
+    ],
+    "codec": [
+      "avcodec",
+      "cc",
+      "dav1d",
+      "flac",
+      "jpeg",
+      "libass",
+      "opus",
+      "png",
+      "rawvideo",
+      "spdif",
+      "subsdec",
+      "substx3g",
+      "videotoolbox",
+      "vorbis",
+      "vpx",
+      "webvtt"
+    ],
+    "demux": [
+      "asf",
+      "avi",
+      "es",
+      "h26x",
+      "image",
+      "mkv",
+      "mp4",
+      "ogg",
+      "playlist",
+      "ps",
+      "subtitle",
+      "ts",
+      "wav"
+    ],
+    "keystore": [
+      "keychain",
+      "memory_keystore"
+    ],
+    "logger": [
+      "console_logger"
+    ],
+    "misc": [
+      "securetransport",
+      "xml"
+    ],
+    "packetizer": [
+      "packetizer_a52",
+      "packetizer_av1",
+      "packetizer_avparser",
+      "packetizer_copy",
+      "packetizer_dts",
+      "packetizer_flac",
+      "packetizer_h264",
+      "packetizer_hevc",
+      "packetizer_mjpeg",
+      "packetizer_mlp",
+      "packetizer_mpeg4audio",
+      "packetizer_mpeg4video",
+      "packetizer_mpegaudio",
+      "packetizer_mpegvideo",
+      "packetizer_vc1"
+    ],
+    "stream_filter": [
+      "cache_read",
+      "inflate",
+      "prefetch",
+      "record",
+      "skiptags"
+    ],
+    "text_renderer": [
+      "freetype",
+      "tdummy"
+    ],
+    "video_chroma": [
+      "chain",
+      "cvpx",
+      "i420_nv12",
+      "i420_rgb",
+      "orient",
+      "rv32",
+      "swscale",
+      "yuvp",
+      "yuy2_i420",
+      "yuy2_i422"
+    ],
+    "video_output": [
+      "gl",
+      "glinterop_cvpx",
+      "glinterop_sw",
+      "glsampler_builtin",
+      "vgl",
+      "vmem",
+      "wdummy"
+    ]
+  }
+}

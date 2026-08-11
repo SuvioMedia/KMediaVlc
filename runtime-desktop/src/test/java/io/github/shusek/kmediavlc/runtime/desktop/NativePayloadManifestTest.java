@@ -22,6 +22,24 @@ class NativePayloadManifestTest {
     }
 
     @Test
+    void acceptsPinnedMacOsOpenGlIosurfacePayload() {
+        String macManifest = validManifest()
+                .replace("target=windows-x86_64", "target=macos-aarch64")
+                .replace("renderEngines=D3D11", "renderEngines=OPENGL");
+        var manifest = NativePayloadManifest.parse(
+                macManifest.getBytes(StandardCharsets.ISO_8859_1), "macos-aarch64");
+        assertTrue(manifest.capabilities().renderEngines().contains(VlcRenderEngine.OPENGL));
+
+        String wrongEngine = macManifest.replace("renderEngines=OPENGL", "renderEngines=D3D11");
+        assertThrows(VlcRuntimeException.class, () -> NativePayloadManifest.parse(
+                wrongEngine.getBytes(StandardCharsets.ISO_8859_1), "macos-aarch64"));
+
+        String extraEngine = macManifest.replace("renderEngines=OPENGL", "renderEngines=OPENGL,D3D11");
+        assertThrows(VlcRuntimeException.class, () -> NativePayloadManifest.parse(
+                extraEngine.getBytes(StandardCharsets.ISO_8859_1), "macos-aarch64"));
+    }
+
+    @Test
     void rejectsGplPayloadAndPathTraversal() {
         String gpl = validManifest().replace("gplComponents=false", "gplComponents=true");
         assertThrows(VlcRuntimeException.class, () -> NativePayloadManifest.parse(gpl.getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64"));

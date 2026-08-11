@@ -215,6 +215,12 @@ void on_state_changed(void* opaque, libvlc_state_t state) {
     auto* player = static_cast<kmediavlc_player*>(opaque);
     if (player == nullptr) return;
     const auto mapped = map_state(state);
+    if (mapped == KMEDIAVLC_STATE_STOPPED) {
+        const auto current = player->state.load(std::memory_order_acquire);
+        // VLC reports the semantic stop reason separately, then may emit a
+        // generic Stopping/Stopped state. Keep the richer terminal result.
+        if (current == KMEDIAVLC_STATE_ENDED || current == KMEDIAVLC_STATE_ERROR) return;
+    }
     player->state_before_buffering.store(mapped, std::memory_order_release);
     notify_state(player, mapped);
 }
@@ -222,12 +228,18 @@ void on_state_changed(void* opaque, libvlc_state_t state) {
 void on_buffering_changed(void* opaque, float buffering) {
     auto* player = static_cast<kmediavlc_player*>(opaque);
     if (player == nullptr) return;
+    const auto current = player->state.load(std::memory_order_acquire);
+    // A final buffering callback can race behind on_media_stopping. Keep the
+    // richer terminal result instead of publishing BUFFERING after EOS/error.
+    if (current == KMEDIAVLC_STATE_STOPPED || current == KMEDIAVLC_STATE_ENDED ||
+        current == KMEDIAVLC_STATE_ERROR) {
+        return;
+    }
     const float bounded = std::clamp(buffering, 0.0F, 1.0F);
     player->buffered_permille.store(
         static_cast<std::uint32_t>(std::lround(bounded * 1000.0F)),
         std::memory_order_release);
     if (bounded < 1.0F) {
-        const auto current = player->state.load(std::memory_order_acquire);
         if (current != KMEDIAVLC_STATE_BUFFERING) {
             player->state_before_buffering.store(current, std::memory_order_release);
         }
@@ -278,20 +290,36 @@ unsigned cpu_format(
     unsigned* pitches,
     unsigned* lines) {
     if (opaque == nullptr || *opaque == nullptr || chroma == nullptr || width == nullptr ||
-        height == nullptr || pitches == nullptr || lines == nullptr || *width == 0 || *height == 0 ||
-        *width > kMaximumCpuDimension || *height > kMaximumCpuDimension) {
+        height == nullptr || pitches == nullptr || lines == nullptr) {
         return 0;
     }
     auto* player = static_cast<kmediavlc_player*>(*opaque);
+    // VLC 4 passes coded and visible dimensions as adjacent entries. vmem later
+    // adopts entry zero as the output geometry, so explicitly request the
+    // visible rectangle instead of exposing decoder padding through our ABI.
+    constexpr std::size_t coded_dimension = 0U;
+    constexpr std::size_t visible_dimension = 1U;
+    const unsigned coded_width = width[coded_dimension];
+    const unsigned coded_height = height[coded_dimension];
+    const unsigned visible_width = width[visible_dimension];
+    const unsigned visible_height = height[visible_dimension];
+    if (coded_width == 0 || coded_height == 0 || visible_width == 0 || visible_height == 0 ||
+        coded_width > kMaximumCpuDimension || coded_height > kMaximumCpuDimension ||
+        visible_width > coded_width || visible_height > coded_height) {
+        kmediavlc::set_error(player, "The decoded CPU frame geometry is invalid.");
+        return 0;
+    }
+    width[coded_dimension] = visible_width;
+    height[coded_dimension] = visible_height;
     constexpr std::size_t maximum = std::numeric_limits<std::size_t>::max();
-    const std::size_t width_value = static_cast<std::size_t>(*width);
+    const std::size_t width_value = static_cast<std::size_t>(visible_width);
     if (width_value > (maximum - (kCpuAlignment - 1U)) / 4U) {
         kmediavlc::set_error(player, "The decoded CPU frame dimensions are unsafe.");
         return 0;
     }
     const std::size_t raw_stride = width_value * 4U;
     const std::size_t stride = (raw_stride + kCpuAlignment - 1U) & ~(kCpuAlignment - 1U);
-    const std::size_t height_value = static_cast<std::size_t>(*height);
+    const std::size_t height_value = static_cast<std::size_t>(visible_height);
     if (stride > std::numeric_limits<unsigned>::max() || height_value > maximum / stride) {
         kmediavlc::set_error(player, "The decoded CPU frame dimensions are unsafe.");
         return 0;
@@ -308,8 +336,8 @@ unsigned cpu_format(
         kmediavlc::set_error(player, "The decoded CPU frame buffer could not be allocated.");
         return 0;
     }
-    picture->width = *width;
-    picture->height = *height;
+    picture->width = visible_width;
+    picture->height = visible_height;
     picture->stride = static_cast<std::uint32_t>(stride);
     {
         std::lock_guard lock(player->cpu_mutex);
@@ -317,9 +345,9 @@ unsigned cpu_format(
     }
     std::memcpy(chroma, "RGBA", 4);
     pitches[0] = static_cast<unsigned>(stride);
-    lines[0] = *height;
-    player->video_width.store(*width, std::memory_order_release);
-    player->video_height.store(*height, std::memory_order_release);
+    lines[0] = visible_height;
+    player->video_width.store(visible_width, std::memory_order_release);
+    player->video_height.store(visible_height, std::memory_order_release);
     return 1;
 }
 
@@ -505,8 +533,10 @@ void publish_frame(kmediavlc_player* player, std::unique_ptr<kmediavlc_frame> fr
     frame->info.serial = player->next_serial.fetch_add(1, std::memory_order_acq_rel);
     const auto serial = frame->info.serial;
     const auto generation = frame->info.output_generation;
+    std::unique_ptr<kmediavlc_frame> superseded;
     {
         std::lock_guard lock(player->frame_mutex);
+        superseded = std::move(player->pending_frame);
         player->pending_frame = std::move(frame);
     }
     if (!player->callbacks_enabled.load(std::memory_order_acquire)) return;
@@ -516,6 +546,19 @@ void publish_frame(kmediavlc_player* player, std::unique_ptr<kmediavlc_frame> fr
 }
 
 } // namespace kmediavlc
+
+kmediavlc_frame::~kmediavlc_frame() {
+#if !defined(_WIN32)
+    if (info.acquire_fence >= 0) close(static_cast<int>(info.acquire_fence));
+    if (info.handle_type == KMEDIAVLC_DMABUF &&
+        info.platform_handle <= static_cast<std::uintptr_t>(std::numeric_limits<int>::max())) {
+        close(static_cast<int>(info.platform_handle));
+    }
+#endif
+    if (platform_release != nullptr) {
+        platform_release(platform_owner.get(), -1, acquired);
+    }
+}
 
 extern "C" {
 
@@ -663,6 +706,12 @@ bool kmediavlc_player_pause(kmediavlc_player* player) {
 
 bool kmediavlc_player_stop(kmediavlc_player* player) {
     if (!valid_player(player)) return false;
+    const auto current = player->state.load(std::memory_order_acquire);
+    if (current == KMEDIAVLC_STATE_ENDED || current == KMEDIAVLC_STATE_STOPPED) {
+        player->state_before_buffering.store(KMEDIAVLC_STATE_STOPPED, std::memory_order_release);
+        notify_state(player, KMEDIAVLC_STATE_STOPPED);
+        return true;
+    }
     if (player->api->media_player_stop(player->media_player) == 0) return true;
     capture_vlc_error(player, "libVLC rejected stop.");
     return false;
@@ -749,6 +798,17 @@ bool kmediavlc_player_update_output(kmediavlc_player* player, const kmediavlc_ou
             return false;
         }
     }
+    if (next.width != 0 && next.height != 0 &&
+        (next.width != previous.width || next.height != previous.height)) {
+        libvlc_video_output_resize_cb report = nullptr;
+        void* report_opaque = nullptr;
+        {
+            std::lock_guard lock(player->output_mutex);
+            report = player->report_resize;
+            report_opaque = player->report_resize_opaque;
+        }
+        if (report != nullptr) report(report_opaque, next.width, next.height);
+    }
     return true;
 }
 
@@ -789,10 +849,18 @@ kmediavlc_frame* kmediavlc_player_acquire_latest_frame(
     }
     if (!frame) return nullptr;
     *output = frame->info;
+    frame->acquired = true;
+    frame->info.acquire_fence = -1;
     return frame.release();
 }
 
 void kmediavlc_frame_release(kmediavlc_frame* frame, intptr_t release_fence) {
+    if (frame != nullptr && frame->platform_release != nullptr) {
+        frame->platform_release(
+            frame->platform_owner.get(), release_fence, frame->acquired);
+        frame->platform_release = nullptr;
+        release_fence = -1;
+    }
 #if !defined(_WIN32)
     if (release_fence >= 0) close(static_cast<int>(release_fence));
 #else
@@ -811,9 +879,10 @@ const void* kmediavlc_frame_cpu_pixels(kmediavlc_frame* frame, size_t* byte_coun
 void kmediavlc_player_destroy(kmediavlc_player* player) {
     if (player == nullptr) return;
     player->callbacks_enabled.store(false, std::memory_order_release);
+    std::unique_ptr<kmediavlc_frame> pending;
     {
         std::lock_guard lock(player->frame_mutex);
-        player->pending_frame.reset();
+        pending = std::move(player->pending_frame);
     }
     if (player->renderer && player->media_player) player->renderer->uninstall(player->media_player);
     if (player->media_player) player->api->media_player_release(player->media_player);

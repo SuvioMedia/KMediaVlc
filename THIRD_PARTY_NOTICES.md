@@ -6,13 +6,48 @@ KMediaVlc is an optional client and distribution boundary for libVLC 4. Project-
 
 ## VideoLAN VLC / libVLC
 
-The Windows runtime is built from VideoLAN VLC revision `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`. VLC/libVLC and the selected playback modules are distributed under LGPL-2.1-or-later except for the additional direct-source terms recorded in the closed module policy. The LGPL-2.1 text is included as `LICENSES/LGPL-2.1.txt`.
+The Windows runtime and Apple audit candidates are built from VideoLAN VLC revision `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`. VLC/libVLC and the selected playback modules are distributed under LGPL-2.1-or-later except for the additional direct-source terms recorded in each closed module policy. The LGPL-2.1 text is included as `LICENSES/LGPL-2.1.txt`.
 
 Official source: https://code.videolan.org/videolan/vlc
 
 A release contains no stock VLC nightly. It is eligible only after the exact Meson target graph, linker commands, installed files, dependency source archives, toolchain runtime inputs, licenses, and hashes have all passed the repository policy. GPL, AGPL, nonfree, unknown-license, and uninventoried modules are rejected.
 
 Each release publishes a version-bound complete corresponding-source archive alongside the binary and Maven artifacts. The native manifest identifies that immutable source asset and the exact KMediaVlc and VLC revisions used to build it.
+
+## VideoLAN libvlcjni build system
+
+The Android candidate uses the build machinery from VideoLAN `libvlcjni` revision
+`a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21`, under LGPL-2.1-or-later. Neither its
+Java wrapper classes nor `libvlcjni.so` are distributed by KMediaVlc. The pinned
+scripts and makefiles are corresponding-source build inputs used to combine the
+selected VLC modules into `libvlc.so`.
+
+Official source: https://code.videolan.org/videolan/libvlcjni
+
+The Android source-build candidate uses the upstream `a` license profile
+(LGPL-2.1-compatible contribs plus advertising-clause dependencies), static C++,
+and no prebuilt contribs or published AAR. Its exact 62-archive link graph is now
+closed to 54 contrib components and 55 pinned source tarballs; generated audits
+hash those source inputs, 83 selected in-archive license/patent/source-notice
+records, the NDK distribution notices, and its Clang source-provenance files for
+both packaged ABIs. The NDK map pins Clang `r563880c`, LLVM commit
+`386af4a5c64ab75eaee2448dc38f2e34a40bfed0`, and Android build/patch revision
+`1dab3288f660d43a6cb2479107e2b54b3ab0a2a1`. Deterministic packaging tooling
+now closes the selected source members to their exact Git blobs and rejects a
+different checkout or modified archive. The complete Android corresponding-source
+packager additionally retains the exact KMediaVlc, VLC, and libvlcjni Git trees,
+all 55 audited contrib tarballs, the verified NDK source supplement, the legal
+manifest, and both path-free ABI reports in one version- and commit-bound archive.
+A separate verifier reconstructs that closure from the original Git objects and
+external evidence. Conservative candidate SPDX sets remain marked
+`pending-linked-member-review`. The runtime remains release-ineligible until that
+review, packaged notice completion, final release-bound archive retention, and
+device lifecycle evidence are approved.
+
+Candidate AARs include the exact selected evidence inputs under
+`assets/kmediavlc/legal/ANDROID_STATIC/` together with a manifest that binds both ABI audits and
+all file hashes. Inclusion makes the raw evidence inspectable; it does not change the candidate
+SPDX sets into an approved aggregate license conclusion.
 
 ## Windows x86_64 playback dependency inventory
 
@@ -49,6 +84,41 @@ The following closed inventory is derived from the pinned contrib inputs. Public
 | soxr | 0.1.3 | LGPL-2.1-or-later | `soxr-0.1.3-Source.tar.xz` | `LICENSES/SoXR-LICENCE.txt` |
 | speexdsp | 1.2.1 | BSD-3-Clause | `speexdsp-1.2.1.tar.gz` | `LICENSES/SpeexDSP-COPYING.txt` |
 | zlib | 1.3.2 | Zlib | `zlib-1.3.2.tar.xz` | `LICENSES/zlib-LICENSE.txt` |
+
+## macOS arm64 playback dependency inventory
+
+The macOS audit candidate reuses the reviewed rows above for FFmpeg, FLAC,
+FreeType, FriBidi, GSM, HarfBuzz, libass, libdvbpsi, libebml, libiconv,
+libjpeg-turbo, libmatroska, libogg, libpng, libvorbis, libxml2, OpenJPEG,
+Opus, SoXR, and zlib. Its two additional decoder dependencies are:
+
+| Component | Version | SPDX license | Reviewed source input | Included notice/terms |
+| --- | --- | --- | --- | --- |
+| dav1d | 1.5.4 | BSD-2-Clause | `dav1d-1.5.4.tar.xz` | `LICENSES/Dav1d-COPYING.txt` |
+| libvpx | 1.16.0 | BSD-3-Clause | `libvpx-1.16.0.tar.gz` | `LICENSES/libvpx-LICENSE.txt` |
+
+The macOS candidate is built with Xcode 26.6 (17F113), the macOS 26.5 SDK,
+an arm64-only target, and a minimum deployment version of macOS 14.0. Its
+component and module review states remain pending; this inventory does not make
+the candidate release-eligible.
+
+## iOS arm64 playback dependency inventory
+
+The iOS device and Apple-silicon simulator candidates reuse the applicable
+macOS rows above, but use the system iOS iconv implementation instead of
+shipping libiconv. The local contrib closure also records the header-only
+dependency compiled into libEBML's Matroska path:
+
+| Component | Version | SPDX license | Reviewed source input | Included notice/terms |
+| --- | --- | --- | --- | --- |
+| utfcpp | 3.2.5 | BSL-1.0 | `utfcpp-3.2.5.tar.gz` | `LICENSES/BSL-1.0.txt` |
+
+Both iOS slices are built with Xcode 26.6 (17F113), the iOS 26.5 SDK, arm64,
+and a minimum deployment version of iOS 16.2. The 84 selected VLC plugins,
+their application-private XCFramework graph, and real simulator playback have
+candidate evidence. Device playback plus the source, link-command, and license
+reviews remain open; this inventory does not make the iOS payload
+release-eligible.
 
 ## Toolchain runtime inputs
 

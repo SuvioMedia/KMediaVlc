@@ -90,8 +90,14 @@ void publish_frame(::kmediavlc_player* player, std::unique_ptr<::kmediavlc_frame
 } // namespace kmediavlc
 
 struct kmediavlc_frame final {
+    using PlatformRelease = void (*)(void*, std::intptr_t, bool) noexcept;
+
+    ~kmediavlc_frame();
+
     kmediavlc_frame_info info{};
     std::shared_ptr<void> platform_owner;
+    PlatformRelease platform_release = nullptr;
+    bool acquired = false;
     std::vector<std::uint8_t> cpu_pixels;
 };
 

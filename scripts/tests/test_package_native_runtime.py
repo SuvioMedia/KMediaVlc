@@ -154,6 +154,24 @@ class PackageNativeRuntimePolicyTest(unittest.TestCase):
         )
         self.assertEqual(5, len(self.validate()))
 
+    def test_accepts_only_opengl_for_macos_aarch64(self) -> None:
+        self.inventory["target"] = "macos-aarch64"
+        self.inventory["renderEngines"] = ["OPENGL"]
+        files = PACKAGER.validate_inventory(
+            self.inventory, self.policy, "macos-aarch64", self.staging
+        )
+        self.assertEqual(4, len(files))
+        self.inventory["renderEngines"] = ["D3D11"]
+        with self.assertRaises(SystemExit):
+            PACKAGER.validate_inventory(
+                self.inventory, self.policy, "macos-aarch64", self.staging
+            )
+        self.inventory["renderEngines"] = ["OPENGL", "D3D11"]
+        with self.assertRaises(SystemExit):
+            PACKAGER.validate_inventory(
+                self.inventory, self.policy, "macos-aarch64", self.staging
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -104,7 +104,9 @@ typedef struct kmediavlc_frame_info {
     kmediavlc_pixel_format pixel_format;
     kmediavlc_source_dynamic_range source_dynamic_range;
     kmediavlc_platform_handle_type handle_type;
+    /* The frame retains a DMA-BUF platform_handle until frame_release(). */
     uintptr_t platform_handle;
+    /* Ownership of a non-negative sync-file descriptor transfers to the caller. */
     intptr_t acquire_fence;
     uint32_t stride;
     uint32_t fourcc;
@@ -185,12 +187,18 @@ KMEDIAVLC_API bool kmediavlc_player_get_snapshot(
 /* Returns bridge-owned diagnostics. The pointer stays valid until the next call on this player. */
 KMEDIAVLC_API const char *kmediavlc_player_last_error(kmediavlc_player *player);
 
-/* Pulls and transfers ownership of the newest frame; skipped frames are released internally. */
+/*
+ * Pulls and transfers ownership of the newest frame; skipped frames are released internally.
+ * A returned acquire_fence is caller-owned and must be consumed or closed exactly once.
+ */
 KMEDIAVLC_API kmediavlc_frame *kmediavlc_player_acquire_latest_frame(
     kmediavlc_player *player,
     kmediavlc_frame_info *out_info);
 
-/* Releases one acquired frame and supplies the consumer completion fence when available. */
+/*
+ * Releases one acquired frame and transfers ownership of the consumer completion fence when
+ * available. The bridge always closes or retains a supplied non-negative descriptor.
+ */
 KMEDIAVLC_API void kmediavlc_frame_release(kmediavlc_frame *frame, intptr_t release_fence);
 
 /* Returns the CPU buffer only for KMEDIAVLC_CPU_ADDRESS frames. */
