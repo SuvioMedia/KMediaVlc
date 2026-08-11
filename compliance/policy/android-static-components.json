@@ -214,7 +214,7 @@
     "vlc-contrib/lib/libopus.a": "opus",
     "vlc-contrib/lib/libplacebo.a": "libplacebo",
     "vlc-contrib/lib/libpng16.a": "libpng",
-    "vlc-contrib/lib/libprotobuf.a": "protobuf",
+    "vlc-contrib/lib/libprotobuf-lite.a": "protobuf",
     "vlc-contrib/lib/librist.a": "librist",
     "vlc-contrib/lib/librnnoise.a": "rnnoise",
     "vlc-contrib/lib/libshout.a": "libshout",
