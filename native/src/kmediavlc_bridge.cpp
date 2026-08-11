@@ -228,12 +228,18 @@ void on_state_changed(void* opaque, libvlc_state_t state) {
 void on_buffering_changed(void* opaque, float buffering) {
     auto* player = static_cast<kmediavlc_player*>(opaque);
     if (player == nullptr) return;
+    const auto current = player->state.load(std::memory_order_acquire);
+    // A final buffering callback can race behind on_media_stopping. Keep the
+    // richer terminal result instead of publishing BUFFERING after EOS/error.
+    if (current == KMEDIAVLC_STATE_STOPPED || current == KMEDIAVLC_STATE_ENDED ||
+        current == KMEDIAVLC_STATE_ERROR) {
+        return;
+    }
     const float bounded = std::clamp(buffering, 0.0F, 1.0F);
     player->buffered_permille.store(
         static_cast<std::uint32_t>(std::lround(bounded * 1000.0F)),
         std::memory_order_release);
     if (bounded < 1.0F) {
-        const auto current = player->state.load(std::memory_order_acquire);
         if (current != KMEDIAVLC_STATE_BUFFERING) {
             player->state_before_buffering.store(current, std::memory_order_release);
         }
@@ -700,6 +706,12 @@ bool kmediavlc_player_pause(kmediavlc_player* player) {
 
 bool kmediavlc_player_stop(kmediavlc_player* player) {
     if (!valid_player(player)) return false;
+    const auto current = player->state.load(std::memory_order_acquire);
+    if (current == KMEDIAVLC_STATE_ENDED || current == KMEDIAVLC_STATE_STOPPED) {
+        player->state_before_buffering.store(KMEDIAVLC_STATE_STOPPED, std::memory_order_release);
+        notify_state(player, KMEDIAVLC_STATE_STOPPED);
+        return true;
+    }
     if (player->api->media_player_stop(player->media_player) == 0) return true;
     capture_vlc_error(player, "libVLC rejected stop.");
     return false;

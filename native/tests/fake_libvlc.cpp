@@ -214,6 +214,10 @@ int libvlc_media_player_play(libvlc_media_player_t* player) {
             player->callbacks->on_state_changed(player->callbacks_opaque, libvlc_Stopping);
             player->callbacks->on_state_changed(player->callbacks_opaque, libvlc_Stopped);
         }
+        if (player->callbacks->on_buffering_changed != nullptr) {
+            player->callbacks->on_buffering_changed(player->callbacks_opaque, 0.0F);
+            player->callbacks->on_buffering_changed(player->callbacks_opaque, 1.0F);
+        }
     }
     return 0;
 }

@@ -153,6 +153,8 @@ final class VlcDesktopPlayerIntegrationTest {
             assertEquals(VlcPlaybackState.ENDED, snapshot.state());
             assertEquals(128, snapshot.videoWidth());
             assertEquals(72, snapshot.videoHeight());
+            assertTrue(player.stop());
+            assertEquals(VlcPlaybackState.STOPPED, player.snapshot().state());
         }
     }
 

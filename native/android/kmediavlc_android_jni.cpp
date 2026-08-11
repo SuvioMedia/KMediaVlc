@@ -227,12 +227,15 @@ void on_state_changed(void* opaque, libvlc_state_t state) {
 void on_buffering_changed(void* opaque, float buffering) {
     auto* player = static_cast<AndroidPlayer*>(opaque);
     if (player == nullptr || !std::isfinite(buffering)) return;
+    const auto current = player->state.load(std::memory_order_acquire);
+    // VLC may deliver a final buffering notification after on_media_stopping.
+    // Never let that late progress event replace the semantic terminal state.
+    if (current == kStateStopped || current == kStateEnded || current == kStateError) return;
     const float bounded = std::clamp(buffering, 0.0F, 1.0F);
     player->buffered_permille.store(
         static_cast<unsigned>(std::lround(bounded * 1000.0F)),
         std::memory_order_release);
     if (bounded < 1.0F) {
-        const auto current = player->state.load(std::memory_order_acquire);
         if (current != kStateBuffering) {
             player->state_before_buffering.store(current, std::memory_order_release);
         }
@@ -684,6 +687,12 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_stop(
     JNIEnv*, jclass, jlong handle) {
     auto* player = player_from(handle);
     if (!valid_player(player)) return JNI_FALSE;
+    const auto current = player->state.load(std::memory_order_acquire);
+    if (current == kStateEnded || current == kStateStopped) {
+        player->state_before_buffering.store(kStateStopped, std::memory_order_release);
+        player->state.store(kStateStopped, std::memory_order_release);
+        return JNI_TRUE;
+    }
     if (libvlc_media_player_stop_async(player->media_player) == 0) return JNI_TRUE;
     set_error(player, "libVLC rejected stop.");
     return JNI_FALSE;
