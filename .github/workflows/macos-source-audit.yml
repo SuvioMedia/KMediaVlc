@@ -87,10 +87,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          cmake="$(command -v cmake)"
+          test -x "$cmake"
+          cmake --version
           ./gradlew buildNativeBridge \
             -PkmediaVlcDesktopOnly=true \
             -PkmediaVlcVlcSourceDir="$GITHUB_WORKSPACE/.vlc-source" \
-            -PkmediaVlcCMakeExecutable="$GITHUB_WORKSPACE/.vlc-source/extras/tools/build/bin/cmake" \
+            -PkmediaVlcCMakeExecutable="$cmake" \
             --rerun-tasks --no-daemon --stacktrace --console=plain
 
       - name: Stage and audit the closed macOS runtime
