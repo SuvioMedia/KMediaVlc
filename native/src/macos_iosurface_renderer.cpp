@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+// SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "bridge_internal.hpp"
 
@@ -40,29 +40,38 @@ public:
     bool create(std::string& error) {
         std::lock_guard lock(mutex);
         if (context != nullptr) return true;
-        CGLPixelFormatAttribute attributes[] = {
+        CGLPixelFormatAttribute accelerated_attributes[] = {
             kCGLPFAAccelerated,
             kCGLPFAAllowOfflineRenderers,
             kCGLPFAOpenGLProfile,
             static_cast<CGLPixelFormatAttribute>(kCGLOGLPVersion_3_2_Core),
             static_cast<CGLPixelFormatAttribute>(0),
         };
-        CGLPixelFormatObj pixel_format = nullptr;
-        GLint pixel_format_count = 0;
-        CGLError result = CGLChoosePixelFormat(attributes, &pixel_format, &pixel_format_count);
-        if (result != kCGLNoError || pixel_format == nullptr || pixel_format_count == 0) {
-            error = "A hardware macOS OpenGL pixel format is unavailable.";
-            if (pixel_format != nullptr) CGLReleasePixelFormat(pixel_format);
-            return false;
-        }
-        result = CGLCreateContext(pixel_format, nullptr, &context);
-        CGLReleasePixelFormat(pixel_format);
-        if (result != kCGLNoError || context == nullptr) {
-            error = "The macOS OpenGL producer context could not be created.";
+        CGLPixelFormatAttribute offline_attributes[] = {
+            kCGLPFAAllowOfflineRenderers,
+            kCGLPFAOpenGLProfile,
+            static_cast<CGLPixelFormatAttribute>(kCGLOGLPVersion_3_2_Core),
+            static_cast<CGLPixelFormatAttribute>(0),
+        };
+        const auto try_create = [this](CGLPixelFormatAttribute* attributes) {
+            CGLPixelFormatObj pixel_format = nullptr;
+            GLint pixel_format_count = 0;
+            const CGLError choose_result =
+                CGLChoosePixelFormat(attributes, &pixel_format, &pixel_format_count);
+            if (choose_result != kCGLNoError || pixel_format == nullptr || pixel_format_count == 0) {
+                if (pixel_format != nullptr) CGLReleasePixelFormat(pixel_format);
+                return false;
+            }
+            const CGLError create_result = CGLCreateContext(pixel_format, nullptr, &context);
+            CGLReleasePixelFormat(pixel_format);
+            if (create_result == kCGLNoError && context != nullptr) return true;
+            if (context != nullptr) CGLReleaseContext(context);
             context = nullptr;
             return false;
-        }
-        return true;
+        };
+        if (try_create(accelerated_attributes) || try_create(offline_attributes)) return true;
+        error = "No usable macOS OpenGL 3.2 producer context is available.";
+        return false;
     }
 
     std::recursive_mutex mutex;

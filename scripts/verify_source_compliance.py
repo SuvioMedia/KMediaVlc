@@ -20,7 +20,6 @@ ALLOWED_LICENSES = {
     "FTL",
     "IJG",
     "ISC",
-    "LicenseRef-KMediaVlc-Proprietary",
     "LGPL-2.0-or-later",
     "LGPL-2.1-or-later",
     "LGPL-3.0-or-later",
@@ -94,6 +93,8 @@ def load_json(path: Path) -> dict:
 
 def verify_spdx(root: Path) -> None:
     missing: list[str] = []
+    legacy: list[str] = []
+    legacy_identifier = "LicenseRef-KMediaVlc-" + "Proprietary"
     for path in root.rglob("*"):
         relative = path.relative_to(root)
         if not path.is_file() or any(part in IGNORED_PARTS for part in relative.parts):
@@ -103,8 +104,12 @@ def verify_spdx(root: Path) -> None:
         head = path.read_text(encoding="utf-8", errors="strict")[:4096]
         if "SPDX-License-Identifier:" not in head:
             missing.append(relative.as_posix())
+        if legacy_identifier in head:
+            legacy.append(relative.as_posix())
     if missing:
         fail("Files without SPDX identifiers: " + ", ".join(sorted(missing)))
+    if legacy:
+        fail("Files retain the obsolete proprietary license identifier: " + ", ".join(sorted(legacy)))
 
 
 def verify_platform_project_isolation(root: Path) -> None:
@@ -2403,6 +2408,9 @@ def verify_legal_files(root: Path) -> None:
     missing = [str(path.relative_to(root)) for path in required if not path.is_file() or path.stat().st_size < 100]
     if missing:
         fail("Missing or truncated legal files: " + ", ".join(missing))
+
+    if (root / "LICENSE").read_bytes() != (root / "LICENSES/LGPL-2.1.txt").read_bytes():
+        fail("The repository LICENSE must be the canonical bundled LGPL-2.1 text.")
 
     notices = (root / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
     if windows_binary.get("toolchainImage") not in notices:

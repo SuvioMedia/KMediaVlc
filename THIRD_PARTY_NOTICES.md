@@ -1,8 +1,11 @@
-<!-- SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary -->
+<!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
 
 # Third-party notices
 
-KMediaVlc is an optional client and distribution boundary for libVLC 4. Project-authored code keeps the repository license. VideoLAN VLC, its plugins, native dependencies, and compiler runtime code keep their upstream terms.
+KMediaVlc is an optional LGPL-2.1-or-later client and distribution boundary for
+libVLC 4. The stable `native/include/kmediavlc_client.h` client API is ISC.
+VideoLAN VLC, its plugins, native dependencies, and compiler runtime code keep
+their upstream terms.
 
 ## VideoLAN VLC / libVLC
 

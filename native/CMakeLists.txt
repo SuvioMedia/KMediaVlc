@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
 cmake_minimum_required(VERSION 3.25)
 project(kmediavlc_bridge VERSION 0.1.0 LANGUAGES CXX)

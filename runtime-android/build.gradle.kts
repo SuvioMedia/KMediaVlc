@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+// SPDX-License-Identifier: LGPL-2.1-or-later
 
 import com.android.build.api.dsl.LibraryExtension
 import groovy.json.JsonSlurper
@@ -690,7 +690,7 @@ val publicationVersionValue = project.version.toString()
 
 extensions.configure<LibraryExtension> {
     namespace = "io.github.shusek.kmediavlc.runtime.android"
-    compileSdk = 37
+    compileSdk = 36
     enableKotlin = false
     defaultConfig {
         minSdk = 28
@@ -959,11 +959,6 @@ afterEvaluate {
                     description.set("Bundled, source-audited libVLC 4 runtime with a narrow ANativeWindow JNI API.")
                     url.set("https://github.com/SuvioMedia/KMediaVlc")
                     licenses {
-                        license {
-                            name.set("KMediaVlc Proprietary License 1.0")
-                            url.set("https://github.com/SuvioMedia/KMediaVlc/blob/main/LICENSE")
-                            distribution.set("repo")
-                        }
                         license {
                             name.set("GNU Lesser General Public License, version 2.1 or later")
                             url.set("https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html")

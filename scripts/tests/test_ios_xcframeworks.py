@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
 from __future__ import annotations
 
@@ -111,6 +111,11 @@ class IosXcframeworkTest(unittest.TestCase):
             "a" * 64,
         )
         self.assertIn("spec.name                  = 'KMediaVlc'", value)
+        self.assertIn(
+            "spec.license               = "
+            "{ :type => 'LGPL-2.1-or-later', :file => 'LICENSE' }",
+            value,
+        )
         self.assertIn("spec.ios.deployment_target = '16.2'", value)
         self.assertIn(
             "spec.vendored_frameworks   = 'Frameworks/*.xcframework'",

@@ -3,7 +3,7 @@ Subject: [PATCH] Make the Android static module set deterministic and LGPL-only
 
 The upstream Android build is also used by GPL applications and its broad
 blacklist does not exclude every VLC module that declares GPL-2.0-or-later.
-KMediaVlc links the modules into a library used by a proprietary bridge, so
+KMediaVlc links the modules into a library used by its LGPL bridge, so
 reject those modules before the final libvlc.so link and sort the input list.
 
 The Android runtime does not expose optical Blu-ray disc playback. Disable its

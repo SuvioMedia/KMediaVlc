@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary -->
+<!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
 
 # KMediaVlc
 
@@ -21,6 +21,21 @@ The runtime artifact contains a pinned libVLC 4 build, its allowlisted
 plugins and dependencies, and a stable KMediaVlc bridge. It never downloads
 native code at runtime. Native payloads are release inputs and are never
 committed to this repository.
+
+## License and private-consumer boundary
+
+KMediaVlc's project-authored runtime clients, native bridges, build recipes,
+and packaging tools are licensed under LGPL-2.1-or-later. The stable
+`native/include/kmediavlc_client.h` ABI is ISC so an independent application or
+adapter can use the runtime without copying its implementation. VideoLAN and
+all bundled dependencies retain their upstream licenses.
+
+KMediaPlayer is a separate consumer. Making KMediaPlayer private neither
+changes this repository's LGPL terms nor removes a recipient's rights to the
+KMediaVlc source, notices, replacement mechanism, and release-bound relinking
+materials. Published KMediaVlc artifacts therefore remain usable by the
+private KMediaPlayer adapter without moving runtime implementation code into
+that repository.
 
 `scripts/build_vlc_windows.sh` wraps VideoLAN's own pinned Windows build in
 release, UCRT, headless, GPL-disabled mode. It permits the reviewed LGPLv3

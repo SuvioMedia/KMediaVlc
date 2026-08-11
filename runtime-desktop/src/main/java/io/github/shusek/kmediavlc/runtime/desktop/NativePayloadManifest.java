@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+// SPDX-License-Identifier: LGPL-2.1-or-later
 
 package io.github.shusek.kmediavlc.runtime.desktop;
 
@@ -51,7 +51,6 @@ record NativePayloadManifest(
                     "FTL",
                     "IJG",
                     "ISC",
-                    "LicenseRef-KMediaVlc-Proprietary",
                     "LGPL-2.0-or-later",
                     "LGPL-2.1-or-later",
                     "LGPL-3.0-or-later",

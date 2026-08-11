@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+// SPDX-License-Identifier: LGPL-2.1-or-later
 
 #ifndef KMEDIAVLC_LINUX_DMABUF_INSPECTOR_HPP
 #define KMEDIAVLC_LINUX_DMABUF_INSPECTOR_HPP

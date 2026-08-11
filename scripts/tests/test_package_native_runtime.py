@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ class PackageNativeRuntimePolicyTest(unittest.TestCase):
             path.write_bytes(relative.encode("ascii"))
         roles = ["BRIDGE", "LIBVLC", "CORE", "PLUGIN"]
         licenses = [
-            "LicenseRef-KMediaVlc-Proprietary",
+            "LGPL-2.1-or-later",
             "LGPL-2.1-or-later",
             "LGPL-2.1-or-later",
             "LGPL-2.1-or-later",

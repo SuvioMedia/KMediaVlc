@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+// SPDX-License-Identifier: LGPL-2.1-or-later
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>

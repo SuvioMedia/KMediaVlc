@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+// SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "kmediavlc_client.h"
 #if defined(__linux__) && !defined(__ANDROID__)

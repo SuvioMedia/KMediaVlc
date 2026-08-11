@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+// SPDX-License-Identifier: LGPL-2.1-or-later
 
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.PublishToMavenLocal
@@ -343,12 +343,7 @@ publishing {
                 url.set("https://github.com/SuvioMedia/KMediaVlc")
                 licenses {
                     license {
-                        name.set("KMediaVlc Proprietary License 1.0")
-                        url.set("https://github.com/SuvioMedia/KMediaVlc/blob/main/LICENSE")
-                        distribution.set("repo")
-                    }
-                    license {
-                        name.set("GNU Lesser General Public License, version 2.1 or later (libVLC)")
+                        name.set("GNU Lesser General Public License, version 2.1 or later")
                         url.set("https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html")
                         distribution.set("repo")
                     }
