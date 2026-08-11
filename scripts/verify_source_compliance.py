@@ -2344,7 +2344,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "workflow_dispatch:",
         "tested_commit:",
         "options: [x64, ARM64]",
-        'github.ref == \'refs/heads/codex/libvlc4-backend\'',
+        'github.ref == \'refs/heads/main\'',
         'runs-on: [self-hosted, linux, "${{ inputs.architecture }}", kmediavlc-linux-gpu]',
         "pinnedVideoLanFixtureImportsLinuxDmaBufsAndReturnsExplicitFences",
         "Remove the unpublished candidate from the self-hosted runner",

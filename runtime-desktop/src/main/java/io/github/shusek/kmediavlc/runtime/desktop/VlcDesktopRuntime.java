@@ -125,6 +125,7 @@ public final class VlcDesktopRuntime {
                 };
         if (os.contains("windows")) return "windows-" + arch;
         if (os.contains("mac") && arch.equals("aarch64")) return "macos-aarch64";
+        if (os.contains("linux")) return "linux-" + arch;
         throw new VlcRuntimeException(
                 UNSUPPORTED_PLATFORM,
                 "A bundled KMediaVlc GPU payload is unavailable for this desktop target.");

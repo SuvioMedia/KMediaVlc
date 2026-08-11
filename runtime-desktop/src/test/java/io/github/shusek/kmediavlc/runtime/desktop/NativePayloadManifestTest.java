@@ -40,6 +40,22 @@ class NativePayloadManifestTest {
     }
 
     @Test
+    void acceptsPinnedLinuxGles2DmaBufPayloads() {
+        for (String target : new String[] {"linux-x86_64", "linux-aarch64"}) {
+            String linuxManifest = validManifest()
+                    .replace("target=windows-x86_64", "target=" + target)
+                    .replace("renderEngines=D3D11", "renderEngines=GLES2");
+            var manifest = NativePayloadManifest.parse(
+                    linuxManifest.getBytes(StandardCharsets.ISO_8859_1), target);
+            assertTrue(manifest.capabilities().renderEngines().contains(VlcRenderEngine.GLES2));
+
+            String wrongEngine = linuxManifest.replace("renderEngines=GLES2", "renderEngines=OPENGL");
+            assertThrows(VlcRuntimeException.class, () -> NativePayloadManifest.parse(
+                    wrongEngine.getBytes(StandardCharsets.ISO_8859_1), target));
+        }
+    }
+
+    @Test
     void rejectsGplPayloadAndPathTraversal() {
         String gpl = validManifest().replace("gplComponents=false", "gplComponents=true");
         assertThrows(VlcRuntimeException.class, () -> NativePayloadManifest.parse(gpl.getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64"));

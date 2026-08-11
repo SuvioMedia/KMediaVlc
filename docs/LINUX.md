@@ -90,8 +90,8 @@ then require four more successful frames, covering fail-closed retirement and
 replacement. Hosted runners compile this probe but do not run it or claim
 hardware evidence.
 
-After this workflow is present on the default branch, the manually dispatched
-`Linux DMA-BUF hardware probe` accepts only an exact KMediaVlc commit, an
+The manually dispatched `Linux DMA-BUF hardware probe` runs only from the
+default branch and accepts an exact KMediaVlc commit, an
 x64/ARM64 choice, and a `/dev/dri/renderD*` node. It targets a dedicated
 self-hosted runner carrying all of the `self-hosted`, `linux`, architecture,
 and `kmediavlc-linux-gpu` labels. The runner must be pre-provisioned with the
@@ -148,8 +148,10 @@ are recorded:
   retirement and buffer reuse;
 - KMediaPlayer/Nucleus normal and VR-projection consumer acceptance;
 - final per-binary source and license review;
-- enabling Linux in the runtime manifest/parser and publication policy only
-  after the preceding evidence exists.
+- approval of both Linux policy files for the exact candidate. The runtime
+  selector and GLES2 manifest contract recognize both Linux architectures,
+  while the release packager still rejects them until those reviews are
+  explicitly `approved`.
 
 The hosted source-validation runners are intentionally insufficient for the
 physical GPU and VR gates. Candidate reports continue to record those fields

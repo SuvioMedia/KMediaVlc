@@ -64,7 +64,7 @@ calls Compose and never waits for a UI render.
 ## Runtime policy
 
 - ABI major is pinned to libVLC 4.
-- The published bundled matrix remains Windows-only: VLC renders bounded BT.2020/PQ
+- The Windows x86-64 candidate renders bounded BT.2020/PQ
   into a 16-bit D3D11 intermediate and the bridge converts it on-GPU to a
   shared `R16G16B16A16_FLOAT` linear-sRGB TextureView frame.
 - The Apple-silicon macOS bridge now renders through libVLC 4 OpenGL callbacks
@@ -96,9 +96,10 @@ calls Compose and never waits for a UI render.
   libvlcjni trees, all 55 contrib tarballs, the NDK supplement, and both ABI
   audits. Real ARM64/API 35 instrumented tests cover MediaCodec and software
   decode, subtitle composition, repeated Surface replacement, seek, stop, and
-  destruction. The candidate remains deliberately release-ineligible until its
-  fail-closed physical-device harness passes and its conservative SPDX sets and
-  final release-bound source artifacts are reviewed and closed.
+  destruction. On 2026-08-11 the exact two-ABI candidate also passed all three
+  physical-device tests on an HDR-capable OnePlus CPH2747 running Android 16,
+  including a BT.2020/PQ SurfaceFlinger assertion. Its conservative SPDX sets
+  still require explicit review before publication.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 
@@ -127,9 +128,11 @@ reconstructs and verifies every selected Git object before attaching that archiv
 requires the independently verified Android corresponding-source archive, both upstream Git
 checkouts, all audited contrib tarballs, the real legal manifest, and both ABI link audits.
 
-The portable CPU-pull implementation and Android ANativeWindow API exist for
-controlled integration work, but the published native payload matrix remains
-Windows-only until each platform-specific publication gate is complete.
+The portable CPU-pull implementation, Linux DMA-BUF/GLES2 selector, macOS
+IOSurface/OpenGL selector, and Android ANativeWindow API are all present.
+Native publication remains fail-closed per target: recognizing a platform does
+not package it until its playback and binary policies are both explicitly
+approved for the exact candidate.
 
 See `docs/ARCHITECTURE.md`, `docs/ANDROID.md`, `docs/FRAME-TRANSPORT.md`,
 `docs/MACOS.md`, `docs/IOS.md`, `docs/LINUX.md`, and `docs/LICENSING.md`.

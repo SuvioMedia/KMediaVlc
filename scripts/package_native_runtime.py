@@ -19,6 +19,26 @@ ALLOWED_TARGETS = {
     "windows-x86_64": {"D3D11"},
     "windows-aarch64": {"D3D11"},
     "macos-aarch64": {"OPENGL"},
+    "linux-x86_64": {"GLES2"},
+    "linux-aarch64": {"GLES2"},
+}
+PLATFORM_REVIEW_POLICIES = {
+    "windows-x86_64": (
+        "compliance/policy/windows-x86_64-playback-modules.json",
+        "compliance/policy/windows-x86_64-binary-components.json",
+    ),
+    "macos-aarch64": (
+        "compliance/policy/macos-aarch64-playback-modules.json",
+        "compliance/policy/macos-aarch64-binary-components.json",
+    ),
+    "linux-x86_64": (
+        "compliance/policy/linux-playback-modules.json",
+        "compliance/policy/linux-binary-components.json",
+    ),
+    "linux-aarch64": (
+        "compliance/policy/linux-playback-modules.json",
+        "compliance/policy/linux-binary-components.json",
+    ),
 }
 REQUIRED_ROLES = {"BRIDGE", "LIBVLC", "CORE", "PLUGIN"}
 COMMIT_REVISION = re.compile(r"[0-9a-f]{40}")
@@ -82,6 +102,27 @@ def load_inventory(path: Path) -> dict:
     if not isinstance(value, dict):
         fail("Component inventory root must be an object.")
     return value
+
+
+def require_approved_platform_review(root: Path, target: str) -> None:
+    policy_paths = PLATFORM_REVIEW_POLICIES.get(target)
+    if policy_paths is None:
+        fail(f"No closed publication policy exists for native target {target}.")
+    for relative in policy_paths:
+        path = root / relative
+        if path.is_symlink() or not path.is_file():
+            fail(f"Native target policy is missing or unsafe: {relative}")
+        policy = load_inventory(path)
+        if policy.get("schemaVersion") != 1 or policy.get("vlcRevision") != PINNED_REVISION:
+            fail(f"Native target policy identity is invalid: {relative}")
+        declared_target = policy.get("target")
+        declared_targets = policy.get("targets")
+        if declared_target != target and (
+            not isinstance(declared_targets, list) or target not in declared_targets
+        ):
+            fail(f"Native target policy does not cover {target}: {relative}")
+        if policy.get("reviewStatus") != "approved":
+            fail(f"Native target policy review is not approved: {relative}")
 
 
 def validate_license_expression(expression: object, allowed_licenses: set[str]) -> str:
@@ -257,6 +298,7 @@ def main() -> None:
         fail("Output directory must not already exist.")
     policy = load_policy(root)
     inventory = load_inventory(inventory_path)
+    require_approved_platform_review(root, args.target)
     source_offer = validate_source_reference(args.source_offer, "release source offer")
     recipe_revision = validate_recipe_revision(args.recipe_revision)
     files = validate_inventory(inventory, policy, args.target, staging)

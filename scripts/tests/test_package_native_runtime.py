@@ -93,6 +93,33 @@ class PackageNativeRuntimePolicyTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.validate()
 
+    def test_requires_both_platform_reviews_to_be_approved(self) -> None:
+        review_root = self.root / "review-root"
+        policy_root = review_root / "compliance/policy"
+        policy_root.mkdir(parents=True)
+        policy = {
+            "schemaVersion": 1,
+            "targets": ["linux-x86_64", "linux-aarch64"],
+            "vlcRevision": PACKAGER.PINNED_REVISION,
+            "reviewStatus": "pending-review",
+        }
+        paths = [
+            policy_root / "linux-playback-modules.json",
+            policy_root / "linux-binary-components.json",
+        ]
+        for path in paths:
+            path.write_text(json.dumps(policy), encoding="utf-8")
+        with self.assertRaises(SystemExit):
+            PACKAGER.require_approved_platform_review(review_root, "linux-x86_64")
+        policy["reviewStatus"] = "approved"
+        for path in paths:
+            path.write_text(json.dumps(policy), encoding="utf-8")
+        PACKAGER.require_approved_platform_review(review_root, "linux-x86_64")
+
+    def test_rejects_target_without_a_closed_platform_policy(self) -> None:
+        with self.assertRaises(SystemExit):
+            PACKAGER.require_approved_platform_review(ROOT, "windows-aarch64")
+
     def test_rejects_non_commit_recipe_revision(self) -> None:
         self.assertEqual(
             "0123456789abcdef0123456789abcdef01234567",
@@ -166,6 +193,21 @@ class PackageNativeRuntimePolicyTest(unittest.TestCase):
             PACKAGER.validate_inventory(
                 self.inventory, self.policy, "macos-aarch64", self.staging
             )
+
+    def test_accepts_only_gles2_for_linux_targets(self) -> None:
+        for target in ("linux-x86_64", "linux-aarch64"):
+            with self.subTest(target=target):
+                self.inventory["target"] = target
+                self.inventory["renderEngines"] = ["GLES2"]
+                files = PACKAGER.validate_inventory(
+                    self.inventory, self.policy, target, self.staging
+                )
+                self.assertEqual(4, len(files))
+                self.inventory["renderEngines"] = ["OPENGL"]
+                with self.assertRaises(SystemExit):
+                    PACKAGER.validate_inventory(
+                        self.inventory, self.policy, target, self.staging
+                    )
         self.inventory["renderEngines"] = ["OPENGL", "D3D11"]
         with self.assertRaises(SystemExit):
             PACKAGER.validate_inventory(

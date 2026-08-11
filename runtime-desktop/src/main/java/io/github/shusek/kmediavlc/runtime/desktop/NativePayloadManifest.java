@@ -204,6 +204,11 @@ record NativePayloadManifest(
                     reject("macOS runtime must expose only the OpenGL IOSurface output engine.");
                 }
             }
+            case "linux-x86_64", "linux-aarch64" -> {
+                if (!engines.equals(Set.of(VlcRenderEngine.GLES2))) {
+                    reject("Linux runtime must expose only the GLES2 DMA-BUF output engine.");
+                }
+            }
             default -> reject("This KMediaVlc release does not support the requested native target.");
         }
     }
