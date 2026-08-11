@@ -11,6 +11,7 @@
   "upstreamBuildScript": "extras/package/win32/build.sh",
   "libVlcBuildArguments": ["-r", "-u", "-z", "-g", "l", "-m"],
   "contribBuildArguments": ["--disable-sout", "--enable-shout"],
+  "mesonBuildArguments": ["-Dstream_outputs=false", "-Dvideolan_manager=false"],
   "mesonInstallTags": ["runtime"],
   "stripInstalledTargets": true,
   "usesPrebuiltContribs": false,

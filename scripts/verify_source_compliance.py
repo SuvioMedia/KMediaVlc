@@ -295,6 +295,11 @@ def verify_policy(root: Path) -> None:
         fail("Windows VLC recipe is missing required release/UCRT/headless/GPL-disabled flags.")
     if recipe.get("contribBuildArguments") != ["--disable-sout", "--enable-shout"]:
         fail("Windows playback recipe must exclude encoders while retaining upstream libshout.")
+    if recipe.get("mesonBuildArguments") != [
+        "-Dstream_outputs=false",
+        "-Dvideolan_manager=false",
+    ]:
+        fail("Windows Meson recipe must disable stream outputs and their VLM consumer.")
     if recipe.get("usesPrebuiltContribs") is not False:
         fail("Release recipe must build contribs from their verified source inputs.")
     if recipe.get("mesonInstallTags") != ["runtime"] or recipe.get("stripInstalledTargets") is not True:
@@ -310,6 +315,7 @@ def verify_policy(root: Path) -> None:
         'win64-ucrt-meson',
         'winarm64-ucrt-meson',
         'export CONTRIBFLAGS="--disable-sout --enable-shout"',
+        'export MCONFIGFLAGS="-Dstream_outputs=false -Dvideolan_manager=false"',
         'VLC source build produced an empty install payload',
     ]
     if not all(marker in builder for marker in install_markers):
@@ -1349,6 +1355,11 @@ def verify_macos_transport_contract(root: Path) -> None:
         or recipe.get("libVlcDylibMajor") != 12
         or recipe.get("libVlcCoreDylibMajor") != 9
         or recipe.get("usesPrebuiltContribs") is not False
+        or recipe.get("autotoolsMacroProviders")
+        != {
+            "gettext": ["gettext.m4", "iconv.m4"],
+            "pkgconf": ["pkg.m4"],
+        }
         or recipe.get("selectedContribPackages") != selected_contribs
         or recipe.get("resolvedContribPackages") != resolved_contribs
         or recipe.get("renderEngine") != "OPENGL"
@@ -1409,6 +1420,11 @@ def verify_macos_transport_contract(root: Path) -> None:
         "--sdk=macosx",
         "--enable-shared",
         "--disable-debug",
+        'brew_executable="$(command -v brew || true)"',
+        'gettext_macro_directory="$($brew_executable --prefix gettext)/share/gettext/m4"',
+        'pkgconf_macro_directory="$($brew_executable --prefix pkgconf)/share/aclocal"',
+        'export ACLOCAL_PATH="$bound_aclocal_path:$ACLOCAL_PATH"',
+        "autotools-macro-SHA256SUMS",
         'git -C "$source_directory" status --porcelain --untracked-files=no',
         'make -C "$contrib_directory" list',
         "vlc-macosx-arm64",
@@ -1496,6 +1512,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         "pinnedVideoLanFixturePublishesCpuPullFrame",
         "pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames",
         "releaseEligible:false",
+        "autotools-macro-SHA256SUMS",
         "path: ${{ runner.temp }}/macos-aarch64-evidence",
     ]
     if not all(marker in source_audit for marker in source_audit_markers):

@@ -19,6 +19,10 @@
   "libVlcDylibMajor": 12,
   "libVlcCoreDylibMajor": 9,
   "usesPrebuiltContribs": false,
+  "autotoolsMacroProviders": {
+    "gettext": ["gettext.m4", "iconv.m4"],
+    "pkgconf": ["pkg.m4"]
+  },
   "contribSelectionMode": "disable-all-then-enable-closed-set",
   "contribLicenseProfile": "LGPL-2.1-plus-ad-clauses-no-GPL-no-GNUv3",
   "selectedContribPackages": [
