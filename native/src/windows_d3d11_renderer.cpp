@@ -263,29 +263,42 @@ private:
             D3D_FEATURE_LEVEL_10_0,
         };
         D3D_FEATURE_LEVEL actual{};
-        result = D3D11CreateDevice(
-            selected,
-            D3D_DRIVER_TYPE_UNKNOWN,
-            nullptr,
-            flags,
-            levels.data(),
-            static_cast<UINT>(levels.size()),
-            D3D11_SDK_VERSION,
-            &device_,
-            &actual,
-            &context_);
-        if (result == E_INVALIDARG) {
-            result = D3D11CreateDevice(
+        const auto create = [&](UINT creation_flags) {
+            actual = {};
+            HRESULT created = D3D11CreateDevice(
                 selected,
                 D3D_DRIVER_TYPE_UNKNOWN,
                 nullptr,
-                flags,
-                levels.data() + 1,
-                static_cast<UINT>(levels.size() - 1U),
+                creation_flags,
+                levels.data(),
+                static_cast<UINT>(levels.size()),
                 D3D11_SDK_VERSION,
                 &device_,
                 &actual,
                 &context_);
+            if (created == E_INVALIDARG) {
+                release_interface(context_);
+                release_interface(device_);
+                created = D3D11CreateDevice(
+                    selected,
+                    D3D_DRIVER_TYPE_UNKNOWN,
+                    nullptr,
+                    creation_flags,
+                    levels.data() + 1,
+                    static_cast<UINT>(levels.size() - 1U),
+                    D3D11_SDK_VERSION,
+                    &device_,
+                    &actual,
+                    &context_);
+            }
+            return created;
+        };
+        result = create(flags);
+        if (FAILED(result) && video_support) {
+            release_interface(context_);
+            release_interface(device_);
+            trace_callback("video-capable device unavailable; retrying render-only device");
+            result = create(flags & ~D3D11_CREATE_DEVICE_VIDEO_SUPPORT);
         }
         selected->Release();
         if (FAILED(result) || device_ == nullptr || context_ == nullptr || actual < D3D_FEATURE_LEVEL_10_0) {

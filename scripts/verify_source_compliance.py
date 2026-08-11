@@ -331,7 +331,8 @@ def verify_policy(root: Path) -> None:
         "MultiThreadedDLL</RuntimeLibrary>",
         "bridge-link.command.1.tlog",
         "-PkmediaVlcNativeBridgePath=$bridge",
-        "pinnedVideoLanFixturePublishesCpuPullFrame",
+        "loadsBridgeBuiltAgainstPinnedLibVlcHeaders()",
+        "pinnedVideoLanFixturePublishesCpuPullFrame()",
         "hardware HDR evidence remains mandatory",
         ".vlc-source/contrib/python-venv",
         'rm -f "$stamp"',
@@ -346,8 +347,9 @@ def verify_policy(root: Path) -> None:
         "windows-x86_64-candidate",
         "KMEDIAVLC_TEST_PLUGIN_CACHE",
         "49b960ac28ae13153ba8e62e3fceb50408564c21f25fc38936e7c8a06b61f2db",
-        "pinnedChromiumHdr10FixturePublishesFp16D3D11Frame",
-        "pinnedChromiumHttpsFixturePublishesCpuPullFrame",
+        "pinnedVideoLanFixtureKeepsSdrD3D11FrameSrgbOnHdrHost()",
+        "pinnedChromiumHdr10FixturePublishesFp16D3D11Frame()",
+        "pinnedChromiumHttpsFixturePublishesCpuPullFrame()",
         "85af8764718f33f0d221e96f31f5d993f364b4a2",
         "intro-targets.json",
         'cp -a "$meson_info"',
@@ -1514,6 +1516,9 @@ def verify_macos_transport_contract(root: Path) -> None:
         "releaseEligible:false",
         "autotools-macro-SHA256SUMS",
         "path: ${{ runner.temp }}/macos-aarch64-evidence",
+        "scripts/create_posix_native_inventory.py",
+        "kmediavlc-macos-aarch64-tested-candidate-",
+        "path: ${{ runner.temp }}/kmediavlc-macos-aarch64-tested-candidate",
     ]
     if not all(marker in source_audit for marker in source_audit_markers):
         fail("The manual macOS source audit is incomplete or does not retain bounded evidence.")
@@ -1521,10 +1526,9 @@ def verify_macos_transport_contract(root: Path) -> None:
         "pull_request:",
         "push:",
         "${{ secrets.",
-        "path: ${{ runner.temp }}/macos-aarch64-candidate",
     ]
     if any(marker in source_audit for marker in forbidden_source_audit_markers):
-        fail("The macOS source audit must remain manual, secret-free, and candidate-free.")
+        fail("The macOS source audit must remain manual and secret-free.")
 
     desktop_build = (root / "runtime-desktop/build.gradle.kts").read_text(encoding="utf-8")
     if (
@@ -2290,12 +2294,14 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "--allow-audit-candidate",
         'LD_LIBRARY_PATH="$stage/bin"',
         "pinnedVideoLanFixturePublishesCpuPullFrame",
-        "without retaining binaries",
+        "scripts/create_posix_native_inventory.py",
+        "Upload the exact tested Linux candidate",
+        "kmediavlc-${{ matrix.target }}-tested-candidate-",
     ]
     if not all(marker in workflow for marker in workflow_markers):
         fail("Linux validation does not cover both native architectures and real CPU playback.")
-    if "upload-artifact" in workflow or "contents: write" in workflow:
-        fail("Linux candidate validation must not publish or retain native payloads.")
+    if "contents: write" in workflow or "${{ secrets." in workflow:
+        fail("Linux candidate validation must remain read-only and secret-free.")
 
     stager = (root / "scripts/stage_vlc_linux_runtime.py").read_text(encoding="utf-8")
     stager_markers = [
@@ -2510,6 +2516,94 @@ def verify_legal_files(root: Path) -> None:
             fail(f"Third-party notices omit the reviewed component terms: {component_id}")
 
 
+def verify_multiplatform_release_contract(root: Path) -> None:
+    release = (root / ".github/workflows/release.yml").read_text(encoding="utf-8")
+    release_markers = [
+        "Create immutable multiplatform KMediaVlc release",
+        "windows_audit_run_id:",
+        "linux_audit_run_id:",
+        "macos_audit_run_id:",
+        "android_audit_run_id:",
+        "compliance/policy/windows-x86_64-playback-modules.json",
+        "compliance/policy/linux-playback-modules.json",
+        "compliance/policy/macos-aarch64-playback-modules.json",
+        "compliance/policy/android-static-components.json",
+        "kmediavlc-linux-x86_64-tested-candidate-",
+        "kmediavlc-linux-aarch64-tested-candidate-",
+        "kmediavlc-macos-aarch64-tested-candidate-",
+        "kmediavlc-android-release-candidate-",
+        "scripts/assemble_desktop_corresponding_source.py",
+        "scripts/verify_desktop_corresponding_source_archive.py",
+        "-PkmediaVlcNativeMatrix=",
+        ":runtime-android:publishReleasePublicationToReleaseRepository",
+        "kmedia-vlc-runtime-desktop",
+        "kmedia-vlc-runtime-android",
+        "Desktop: Windows x64, Linux x64, Linux ARM64, macOS ARM64",
+    ]
+    if not all(marker in release for marker in release_markers):
+        fail("The immutable release workflow does not require the complete desktop/Android matrix.")
+    forbidden_release_markers = [
+        "\n      audit_run_id:",
+        "-PkmediaVlcNativeTarget=windows-x86_64",
+        "Optional KMediaVlc libVLC 4 preview backend for desktop.",
+    ]
+    if any(marker in release for marker in forbidden_release_markers):
+        fail("The immutable release workflow retains a legacy Windows-only publication path.")
+
+    desktop_build = (root / "runtime-desktop/build.gradle.kts").read_text(encoding="utf-8")
+    build_markers = [
+        'providers.gradleProperty("kmediaVlcNativeMatrix")',
+        "Desktop publication requires the complete audited Windows, Linux, and macOS matrix.",
+        '"linux-aarch64"',
+        '"linux-x86_64"',
+        '"macos-aarch64"',
+        '"windows-x86_64"',
+        "scripts/package_native_runtime_matrix.py",
+    ]
+    if not all(marker in desktop_build for marker in build_markers):
+        fail("Desktop publication does not fail closed on the complete native matrix.")
+
+    matrix = (root / "scripts/package_native_runtime_matrix.py").read_text(encoding="utf-8")
+    inventory = (root / "scripts/create_posix_native_inventory.py").read_text(encoding="utf-8")
+    if (
+        "REQUIRED_TARGETS" not in matrix
+        or "Desktop runtime matrix targets must be complete, unique, and sorted." not in matrix
+        or "stage_vlc_linux_runtime.py" not in inventory
+        or "stage_vlc_macos_runtime.py" not in inventory
+        or "Native staging report hash differs from the staged file" not in inventory
+    ):
+        fail("The POSIX inventories or native matrix packager are incomplete.")
+
+    central = (root / "scripts/build_maven_central_bundle.py").read_text(encoding="utf-8")
+    if (
+        '"kmedia-vlc-runtime-android"' not in central
+        or '"kmedia-vlc-runtime-desktop"' not in central
+        or '"primaryExtension": "aar"' not in central
+        or '"android-ndk-source", "tar.gz"' not in central
+    ):
+        fail("The Maven Central bundle does not close both public coordinates.")
+
+    android_audit = (root / ".github/workflows/android-release-audit.yml").read_text(
+        encoding="utf-8"
+    )
+    android_markers = [
+        "workflow_dispatch:",
+        "github.ref == 'refs/heads/main'",
+        "runs-on: [self-hosted, linux, x64, kmediavlc-android-hdr]",
+        "scripts/build_vlc_android.sh",
+        "scripts/package_android_ndk_source.py",
+        "scripts/package_android_corresponding_source.py",
+        "scripts/run_android_device_smoke.sh",
+        "automaticDecodePreservesHdr10SurfaceSignal",
+        "kmediavlc-android-release-candidate-",
+        "contents: read",
+    ]
+    if not all(marker in android_audit for marker in android_markers):
+        fail("The Android release audit does not bind source, both ABIs, and physical HDR evidence.")
+    if any(marker in android_audit for marker in ("pull_request:", "push:", "${{ secrets.")):
+        fail("The Android release audit must remain manual, read-only, and secret-free.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
@@ -2525,6 +2619,7 @@ def main() -> None:
     verify_linux_runtime_contract(root)
     verify_android_contract(root)
     verify_legal_files(root)
+    verify_multiplatform_release_contract(root)
     print("KMediaVlc source and licensing policy verified.")
 
 

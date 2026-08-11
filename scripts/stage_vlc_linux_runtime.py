@@ -548,7 +548,10 @@ def main() -> None:
                 "frameTransport": "DMA_BUF",
                 "gpuPushEvidence": "pending-render-node-and-explicit-fence-test",
                 "vrConsumerEvidence": "pending-kmediaplayer-projection-acceptance",
-                "auditCandidate": True,
+                "auditCandidate": (
+                    playback["reviewStatus"] != "approved"
+                    or binary["reviewStatus"] != "approved"
+                ),
                 "files": copied,
                 "elf": audits,
                 "components": binary["components"],

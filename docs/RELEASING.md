@@ -12,8 +12,19 @@ requires reviewed native evidence; tokens cannot replace that review.
 
 ## Native release inputs
 
-For every Windows target, retain all of the following from the same source
-build:
+Every release is atomic across the supported runtime matrix:
+
+- Windows x64;
+- Linux x64 and Linux ARM64;
+- macOS ARM64;
+- Android ARM64 and ARMv7.
+
+The desktop targets are packaged into one universal JAR; Android is a separate
+AAR with the same version. The immutable release workflow requires one
+successful, commit-bound audit run for Windows, Linux, macOS, and Android. A
+missing target or audit artifact stops the whole release.
+
+For Windows x64, retain all of the following from the same source build:
 
 - a clean KMediaVlc checkout and its forty-character commit;
 - VLC revision `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`;
@@ -47,6 +58,26 @@ Standard hosted runners have no physical HDR display, so separate hardware
 HDR evidence remains mandatory.
 Review its complete DLL/plugin inventory and upstream licenses before using
 any of those bytes as release inputs.
+
+Dispatch `Linux libVLC source validation` for the same exact commit. Both
+matrix jobs must complete on their native x64/ARM64 runners, retain the closed
+runtime inventory and contrib source inputs, and play a real CPU-pull frame.
+Policy approval additionally requires the separate physical render-node,
+DMA-BUF/fence, normal consumer, and VR-projection acceptance described in
+`docs/LINUX.md`.
+
+Dispatch `macOS libVLC source audit` for that commit. It must retain the
+relocated ARM64 runtime, its Mach-O inventory, contrib source inputs, real
+CPU-pull playback, and real IOSurface-generation evidence. Policy approval also
+requires KMediaPlayer Metal consumption and representative physical-display
+acceptance described in `docs/MACOS.md`.
+
+Dispatch `Android libVLC source and HDR release audit` from `main` on a
+self-hosted Linux x64 runner labelled `kmediavlc-android-hdr` with exactly one
+authorized physical HDR Android device. That workflow builds both ABIs from
+the pinned sources, produces and independently reopens both source archives,
+builds the AAR, and requires all three physical MediaCodec/software/lifecycle/
+HDR tests. It cannot approve the SPDX review by itself.
 
 ## Android NDK source closure
 
@@ -100,16 +131,17 @@ override the separate approved-SPDX, legal-manifest, release-eligibility, or dev
 
 ## Stage the Maven repository
 
-With the audited paths available, publish into a new empty directory. The
-source-offer URL must identify the corresponding-source asset of the same
-future `v<version>` release.
+With all four audited desktop payloads available, write a schema-1 matrix JSON
+whose sorted targets are `linux-aarch64`, `linux-x86_64`, `macos-aarch64`, and
+`windows-x86_64`; each entry identifies its absolute staging directory and
+inventory file. Publish into a new empty directory. The source-offer URL must
+identify the union corresponding-source asset of the same future
+`v<version>` release.
 
 ```text
 ./gradlew --no-daemon \
   -PpublicationVersion=<version> \
-  -PkmediaVlcNativeStagingDirectory=<audited-runtime-directory> \
-  -PkmediaVlcNativeInventory=<reviewed-inventory.json> \
-  -PkmediaVlcNativeTarget=windows-x86_64 \
+  -PkmediaVlcNativeMatrix=<complete-desktop-matrix.json> \
   -PkmediaVlcSourceOffer=https://github.com/SuvioMedia/KMediaVlc/releases/download/v<version>/kmedia-vlc-<version>-corresponding-source.tar.gz \
   -PrecipeRevision=<tested-kmediavlc-commit> \
   -PcorrespondingSourceArchive=<corresponding-source.tar.gz> \
@@ -124,10 +156,13 @@ python3 scripts/build_maven_central_bundle.py normalize \
   --staging <maven-directory> --version <version>
 ```
 
-The normalized repository must contain exactly five files for
-`io.github.shusek:kmedia-vlc-runtime-desktop:<version>`: primary JAR, POM,
-sources JAR, Javadoc JAR, and corresponding-source archive. Create the
-deterministic, safely re-openable release asset:
+After the matching Android publication is staged into the same repository, the
+normalized repository must contain exactly 11 base files: five for
+`io.github.shusek:kmedia-vlc-runtime-desktop:<version>` and six for
+`io.github.shusek:kmedia-vlc-runtime-android:<version>`. The Android coordinate
+adds its AAR and NDK-source classifier to the usual POM, sources, Javadoc, and
+complete corresponding source. Create the deterministic, safely re-openable
+release asset:
 
 ```text
 python3 scripts/package_release_repository.py \
@@ -137,14 +172,17 @@ python3 scripts/package_release_repository.py \
 ```
 
 The command prints the SHA-256 entry for the asset. The archive always has one
-`maven/` root and contains only the closed five-file coordinate.
+`maven/` root and contains only the closed two-coordinate, 11-file contract.
 
 ## Create the GitHub release
 
 Collect at least:
 
 - `kmedia-vlc-<version>-maven-repository.tar.gz`;
-- `kmedia-vlc-<version>-corresponding-source.tar.gz`;
+- the desktop-union and Android corresponding-source archives plus the Android
+  NDK source supplement;
+- standalone Windows x64, Linux x64, Linux ARM64, and macOS ARM64 runtimes;
+- the exact two-ABI Android AAR;
 - the reviewed component inventory and build/test evidence;
 - `NOTICE`, `THIRD_PARTY_NOTICES.md`, `docs/LICENSING.md`, and
   `docs/RELINKING.md`.
@@ -154,14 +192,15 @@ tested KMediaVlc commit, and create a non-draft public GitHub release. RC
 versions are prereleases. Do not replace an asset after publishing the release;
 issue another version instead.
 
-After the first source-built VLC output and its native link graph have been
-reviewed, set both Windows policy review states to `approved`, commit the exact
-policy and notices, and run the native audit again for that approved commit.
-Then dispatch **Create immutable KMediaVlc release** with the version, exact
-commit, and successful audit run ID. The workflow repeats the checks above,
-requires byte-for-byte equality with the runtime JAR tested on Windows, and
-creates the immutable tag and prerelease. It never guesses licenses from DLL
-names or replaces an existing release.
+After every source-built graph and physical gate has been reviewed, set the
+Windows, Linux, macOS, and Android policy review states to `approved`, commit
+the exact policies and notices, and rerun all four audits for that approved
+commit. Then dispatch **Create immutable multiplatform KMediaVlc release** with
+the version, exact commit, and the four successful audit run IDs. The workflow
+reopens every payload and source archive, assembles the complete desktop JAR,
+requires byte equality with the physically tested Android AAR, closes both
+Maven coordinates, and creates the immutable tag and prerelease. It never
+guesses licenses or replaces an existing release.
 
 ## Publish to Central and verify
 

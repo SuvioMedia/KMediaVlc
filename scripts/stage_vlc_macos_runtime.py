@@ -382,6 +382,10 @@ def main() -> None:
                 "vlcRevision": policy["vlcRevision"],
                 "reviewStatus": policy["reviewStatus"],
                 "binaryReviewStatus": binary_policy["reviewStatus"],
+                "auditCandidate": (
+                    policy["reviewStatus"] != "approved"
+                    or binary_policy["reviewStatus"] != "approved"
+                ),
                 "selectedPluginCount": len(selected_names),
                 "rawPluginCount": len(raw_plugins),
                 "excludedPluginCount": len(raw_plugins) - len(selected_names),
