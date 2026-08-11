@@ -1,7 +1,7 @@
-# SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
-name: Create immutable KMediaVlc release
-run-name: Release KMediaVlc v${{ inputs.version }} from audit ${{ inputs.audit_run_id }}
+name: Create immutable multiplatform KMediaVlc release
+run-name: Release KMediaVlc v${{ inputs.version }} for desktop and Android
 
 on:
   workflow_dispatch:
@@ -12,11 +12,23 @@ on:
         default: 0.1.0-rc.1
         type: string
       tested_commit:
-        description: Exact forty-character commit used by the successful native audit
+        description: Exact forty-character commit shared by every successful audit
         required: true
         type: string
-      audit_run_id:
-        description: Successful native-audit Actions run containing the tested artifacts
+      windows_audit_run_id:
+        description: Successful Windows source and native audit run
+        required: true
+        type: string
+      linux_audit_run_id:
+        description: Successful two-architecture Linux source audit run
+        required: true
+        type: string
+      macos_audit_run_id:
+        description: Successful macOS source and IOSurface audit run
+        required: true
+        type: string
+      android_audit_run_id:
+        description: Successful Android source and physical HDR audit run
         required: true
         type: string
 
@@ -31,12 +43,18 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 360
     env:
       VERSION: ${{ inputs.version }}
       TESTED_COMMIT: ${{ inputs.tested_commit }}
-      AUDIT_RUN_ID: ${{ inputs.audit_run_id }}
-      NATIVE_AUDIT_WORKFLOW_ID: "330617636"
+      WINDOWS_AUDIT_RUN_ID: ${{ inputs.windows_audit_run_id }}
+      LINUX_AUDIT_RUN_ID: ${{ inputs.linux_audit_run_id }}
+      MACOS_AUDIT_RUN_ID: ${{ inputs.macos_audit_run_id }}
+      ANDROID_AUDIT_RUN_ID: ${{ inputs.android_audit_run_id }}
+      VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+      LIBVLCJNI_REVISION: a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21
+      LLVM_PROJECT_REVISION: 386af4a5c64ab75eaee2448dc38f2e34a40bfed0
+      LLVM_ANDROID_REVISION: 1dab3288f660d43a6cb2479107e2b54b3ab0a2a1
     steps:
       - name: Check out the exact audited revision
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -45,7 +63,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Validate the immutable release request
+      - name: Validate the complete immutable release request
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -55,13 +73,23 @@ jobs:
           [[ "$VERSION" =~ $semver ]]
           [[ "${VERSION^^}" != *SNAPSHOT* ]]
           [[ "$TESTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$AUDIT_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          for run_id in \
+            "$WINDOWS_AUDIT_RUN_ID" "$LINUX_AUDIT_RUN_ID" \
+            "$MACOS_AUDIT_RUN_ID" "$ANDROID_AUDIT_RUN_ID"; do
+            [[ "$run_id" =~ ^[1-9][0-9]*$ ]]
+          done
           test "$(git rev-parse HEAD)" = "$TESTED_COMMIT"
           test -z "$(git status --porcelain --untracked-files=no)"
           python3 scripts/verify_source_compliance.py --root .
           python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+
           test "$(jq -r .reviewStatus compliance/policy/windows-x86_64-playback-modules.json)" = approved
           test "$(jq -r .reviewStatus compliance/policy/windows-x86_64-binary-components.json)" = approved
+          test "$(jq -r .reviewStatus compliance/policy/linux-playback-modules.json)" = approved
+          test "$(jq -r .reviewStatus compliance/policy/linux-binary-components.json)" = approved
+          test "$(jq -r .reviewStatus compliance/policy/macos-aarch64-playback-modules.json)" = approved
+          test "$(jq -r .reviewStatus compliance/policy/macos-aarch64-binary-components.json)" = approved
+          test "$(jq -r .reviewStatus compliance/policy/android-static-components.json)" = approved
 
           tag="v$VERSION"
           remote_tag="$(git ls-remote --tags origin "refs/tags/$tag" | awk '{print $1}')"
@@ -74,114 +102,317 @@ jobs:
             exit 1
           fi
 
-      - name: Bind every input to the successful native audit
+      - name: Bind all four audit runs and their artifacts
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          run="$RUNNER_TEMP/audit-run.json"
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$AUDIT_RUN_ID" > "$run"
-          test "$(jq -r .workflow_id "$run")" = "$NATIVE_AUDIT_WORKFLOW_ID"
-          test "$(jq -r .path "$run")" = ".github/workflows/native-audit.yml"
-          test "$(jq -r .event "$run")" = workflow_dispatch
-          test "$(jq -r .status "$run")" = completed
-          test "$(jq -r .conclusion "$run")" = success
-          test "$(jq -r .head_sha "$run")" = "$TESTED_COMMIT"
-          test "$(jq -r .head_repository.full_name "$run")" = "$GITHUB_REPOSITORY"
+          audit_root="$RUNNER_TEMP/audit-metadata"
+          mkdir "$audit_root"
+          bind_run() {
+            local platform="$1" run_id="$2" workflow_path="$3"
+            local run="$audit_root/$platform-run.json"
+            local artifacts="$audit_root/$platform-artifacts.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" > "$run"
+            test "$(jq -r .path "$run")" = "$workflow_path"
+            test "$(jq -r .event "$run")" = workflow_dispatch
+            test "$(jq -r .status "$run")" = completed
+            test "$(jq -r .conclusion "$run")" = success
+            test "$(jq -r .head_sha "$run")" = "$TESTED_COMMIT"
+            test "$(jq -r .head_repository.full_name "$run")" = "$GITHUB_REPOSITORY"
+            gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts?per_page=100" \
+              --slurp > "$artifacts"
+          }
+          require_artifact() {
+            local platform="$1" name="$2"
+            test "$(jq --arg name "$name" \
+              '[.[].artifacts[] | select(.name == $name and .expired == false)] | length' \
+              "$audit_root/$platform-artifacts.json")" = 1
+          }
 
-          artifacts="$RUNNER_TEMP/audit-artifacts.json"
-          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$AUDIT_RUN_ID/artifacts?per_page=100" \
-            --slurp > "$artifacts"
+          bind_run windows "$WINDOWS_AUDIT_RUN_ID" .github/workflows/native-audit.yml
+          bind_run linux "$LINUX_AUDIT_RUN_ID" .github/workflows/linux-source-audit.yml
+          bind_run macos "$MACOS_AUDIT_RUN_ID" .github/workflows/macos-source-audit.yml
+          bind_run android "$ANDROID_AUDIT_RUN_ID" .github/workflows/android-release-audit.yml
+
           for name in \
             "vlc-windows-x86_64-source-audit-$TESTED_COMMIT" \
             "vlc-windows-x86_64-link-audit-$TESTED_COMMIT" \
             "kmediavlc-windows-x86_64-tested-candidate-$TESTED_COMMIT" \
             "kmediavlc-windows-x86_64-native-validation-$TESTED_COMMIT"; do
-            count="$(jq --arg name "$name" \
-              '[.[].artifacts[] | select(.name == $name and .expired == false)] | length' \
-              "$artifacts")"
-            test "$count" = 1
+            require_artifact windows "$name"
           done
+          for target in linux-x86_64 linux-aarch64; do
+            require_artifact linux "kmediavlc-$target-tested-candidate-$TESTED_COMMIT"
+            require_artifact linux "vlc-$target-source-inputs-$TESTED_COMMIT"
+          done
+          require_artifact macos "kmediavlc-macos-aarch64-tested-candidate-$TESTED_COMMIT"
+          require_artifact macos "kmediavlc-macos-aarch64-source-audit-$TESTED_COMMIT"
+          require_artifact macos "vlc-macos-aarch64-source-inputs-$TESTED_COMMIT"
+          require_artifact android "kmediavlc-android-release-candidate-$TESTED_COMMIT"
 
-      - name: Download the audited source and link evidence
+      - name: Download the Windows corresponding-source base
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          run-id: ${{ inputs.audit_run_id }}
+          run-id: ${{ inputs.windows_audit_run_id }}
           name: vlc-windows-x86_64-source-audit-${{ inputs.tested_commit }}
-          path: ${{ runner.temp }}/audit/source
+          path: ${{ runner.temp }}/audit/windows-source
 
-      - name: Download the exact tested Windows candidate
+      - name: Download the tested Windows runtime
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          run-id: ${{ inputs.audit_run_id }}
+          run-id: ${{ inputs.windows_audit_run_id }}
           name: kmediavlc-windows-x86_64-tested-candidate-${{ inputs.tested_commit }}
-          path: ${{ runner.temp }}/audit/candidate
+          path: ${{ runner.temp }}/audit/windows-candidate
 
-      - name: Download the source and native link evidence
+      - name: Download Windows link evidence
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          run-id: ${{ inputs.audit_run_id }}
+          run-id: ${{ inputs.windows_audit_run_id }}
           name: vlc-windows-x86_64-link-audit-${{ inputs.tested_commit }}
-          path: ${{ runner.temp }}/audit/link
+          path: ${{ runner.temp }}/audit/windows-link
 
-      - name: Download the native Windows test evidence
+      - name: Download Windows native test evidence
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          run-id: ${{ inputs.audit_run_id }}
+          run-id: ${{ inputs.windows_audit_run_id }}
           name: kmediavlc-windows-x86_64-native-validation-${{ inputs.tested_commit }}
-          path: ${{ runner.temp }}/audit/native-validation
+          path: ${{ runner.temp }}/audit/windows-validation
 
-      - name: Reopen and verify the closed release inputs
+      - name: Download the tested Linux x64 runtime
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.linux_audit_run_id }}
+          name: kmediavlc-linux-x86_64-tested-candidate-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit/linux-x86_64-candidate
+
+      - name: Download the Linux x64 source inputs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.linux_audit_run_id }}
+          name: vlc-linux-x86_64-source-inputs-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit/linux-x86_64-source
+
+      - name: Download the tested Linux ARM64 runtime
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.linux_audit_run_id }}
+          name: kmediavlc-linux-aarch64-tested-candidate-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit/linux-aarch64-candidate
+
+      - name: Download the Linux ARM64 source inputs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.linux_audit_run_id }}
+          name: vlc-linux-aarch64-source-inputs-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit/linux-aarch64-source
+
+      - name: Download the tested macOS runtime
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.macos_audit_run_id }}
+          name: kmediavlc-macos-aarch64-tested-candidate-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit/macos-aarch64-candidate
+
+      - name: Download the macOS source inputs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.macos_audit_run_id }}
+          name: vlc-macos-aarch64-source-inputs-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit/macos-aarch64-source
+
+      - name: Download macOS source and IOSurface evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.macos_audit_run_id }}
+          name: kmediavlc-macos-aarch64-source-audit-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit/macos-evidence
+
+      - name: Download the Android AAR and physical HDR evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.android_audit_run_id }}
+          name: kmediavlc-android-release-candidate-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/audit/android
+
+      - name: Reopen every audited native payload
         shell: bash
         run: |
           set -euo pipefail
           unique_file() {
             local root="$1" pattern="$2"
             mapfile -d '' matches < <(find "$root" -type f -name "$pattern" -print0)
-            test "${#matches[@]}" -eq 1
+            test "${#matches[@]}" = 1
             printf '%s' "${matches[0]}"
           }
+          verify_sums() {
+            local root="$1"
+            test -f "$root/SHA256SUMS"
+            (cd "$root" && sha256sum -c SHA256SUMS)
+          }
 
-          candidate="$(unique_file "$RUNNER_TEMP/audit/candidate" \
+          windows_archive="$(unique_file "$RUNNER_TEMP/audit/windows-candidate" \
             "kmediavlc-windows-x86_64-audit-candidate-$TESTED_COMMIT.zip")"
-          inventory="$(unique_file "$RUNNER_TEMP/audit/candidate" \
-            'windows-x86_64-native-inventory.json')"
-          audited_jar="$(unique_file "$RUNNER_TEMP/audit/candidate" \
-            "runtime-desktop-$VERSION.jar")"
-          source_archive="$(unique_file "$RUNNER_TEMP/audit/source" \
-            "kmedia-vlc-$VERSION-corresponding-source-audit.tar.gz")"
-
-          stage="$RUNNER_TEMP/windows-x86_64-stage"
+          windows_inventory="$(unique_file "$RUNNER_TEMP/audit/windows-candidate" \
+            windows-x86_64-native-inventory.json)"
+          windows_stage="$RUNNER_TEMP/native-matrix/windows-x86_64"
+          mkdir -p "$RUNNER_TEMP/native-matrix"
           python3 scripts/extract_windows_candidate.py \
-            --archive "$candidate" --inventory "$inventory" --output "$stage"
-          python3 scripts/verify_corresponding_source_archive.py \
-            --root . --archive "$source_archive" \
+            --archive "$windows_archive" \
+            --inventory "$windows_inventory" \
+            --output "$windows_stage"
+
+          for target in linux-aarch64 linux-x86_64 macos-aarch64; do
+            candidate="$RUNNER_TEMP/audit/$target-candidate"
+            verify_sums "$candidate"
+            test -d "$candidate/runtime"
+            test -f "$candidate/$target-native-inventory.json"
+            mv "$candidate/runtime" "$RUNNER_TEMP/native-matrix/$target"
+          done
+
+          matrix="$RUNNER_TEMP/native-matrix.json"
+          jq -n \
+            --arg linuxArmStage "$RUNNER_TEMP/native-matrix/linux-aarch64" \
+            --arg linuxArmInventory "$RUNNER_TEMP/audit/linux-aarch64-candidate/linux-aarch64-native-inventory.json" \
+            --arg linuxX64Stage "$RUNNER_TEMP/native-matrix/linux-x86_64" \
+            --arg linuxX64Inventory "$RUNNER_TEMP/audit/linux-x86_64-candidate/linux-x86_64-native-inventory.json" \
+            --arg macStage "$RUNNER_TEMP/native-matrix/macos-aarch64" \
+            --arg macInventory "$RUNNER_TEMP/audit/macos-aarch64-candidate/macos-aarch64-native-inventory.json" \
+            --arg windowsStage "$windows_stage" \
+            --arg windowsInventory "$windows_inventory" \
+            '{schemaVersion:1,payloads:[
+              {target:"linux-aarch64",staging:$linuxArmStage,inventory:$linuxArmInventory},
+              {target:"linux-x86_64",staging:$linuxX64Stage,inventory:$linuxX64Inventory},
+              {target:"macos-aarch64",staging:$macStage,inventory:$macInventory},
+              {target:"windows-x86_64",staging:$windowsStage,inventory:$windowsInventory}
+            ]}' > "$matrix"
+          echo "KMEDIAVLC_NATIVE_MATRIX=$matrix" >> "$GITHUB_ENV"
+
+      - name: Assemble and independently verify complete desktop source
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$(find "$RUNNER_TEMP/audit/windows-source" -type f \
+            -name "kmedia-vlc-$VERSION-corresponding-source-audit.tar.gz" -print -quit)"
+          test -n "$base"
+          final="$RUNNER_TEMP/kmedia-vlc-$VERSION-corresponding-source.tar.gz"
+          python3 scripts/assemble_desktop_corresponding_source.py \
+            --root "$GITHUB_WORKSPACE" \
+            --base-archive "$base" \
+            --supplemental-contrib "$RUNNER_TEMP/audit/linux-aarch64-source" \
+            --supplemental-contrib "$RUNNER_TEMP/audit/linux-x86_64-source" \
+            --supplemental-contrib "$RUNNER_TEMP/audit/macos-aarch64-source" \
+            --output "$final" \
+            --version "$VERSION" \
+            --tested-commit "$TESTED_COMMIT" \
+            --epoch "$(git show -s --format=%ct HEAD)"
+          python3 scripts/verify_desktop_corresponding_source_archive.py \
+            --root "$GITHUB_WORKSPACE" \
+            --archive "$final" \
+            --version "$VERSION" \
+            --tested-commit "$TESTED_COMMIT"
+          echo "KMEDIAVLC_DESKTOP_SOURCE=$final" >> "$GITHUB_ENV"
+
+      - name: Check out exact Android source-verification trees
+        shell: bash
+        run: |
+          set -euo pipefail
+          sources="$RUNNER_TEMP/android-verification-sources"
+          mkdir "$sources"
+          git clone --no-checkout --filter=blob:none https://github.com/videolan/vlc.git "$sources/vlc"
+          git -C "$sources/vlc" fetch --depth=1 origin "$VLC_REVISION"
+          git -C "$sources/vlc" checkout --detach FETCH_HEAD
+          git clone --no-checkout --filter=blob:none \
+            https://code.videolan.org/videolan/libvlcjni.git "$sources/libvlcjni"
+          git -C "$sources/libvlcjni" fetch --depth=1 origin "$LIBVLCJNI_REVISION"
+          git -C "$sources/libvlcjni" checkout --detach FETCH_HEAD
+          git clone --no-checkout --filter=blob:none https://github.com/llvm/llvm-project.git "$sources/llvm-project"
+          git -C "$sources/llvm-project" fetch --depth=1 origin "$LLVM_PROJECT_REVISION"
+          git -C "$sources/llvm-project" checkout --detach FETCH_HEAD
+          mkdir "$sources/llvm-android"
+          git -C "$sources/llvm-android" init
+          git -C "$sources/llvm-android" remote add origin \
+            https://android.googlesource.com/toolchain/llvm_android
+          git -C "$sources/llvm-android" fetch --depth=1 origin "$LLVM_ANDROID_REVISION"
+          git -C "$sources/llvm-android" checkout --detach FETCH_HEAD
+          echo "KMEDIAVLC_ANDROID_SOURCES=$sources" >> "$GITHUB_ENV"
+
+      - name: Reopen Android source, AAR, and physical HDR evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          android="$RUNNER_TEMP/audit/android"
+          (cd "$android" && sha256sum -c SHA256SUMS)
+          payload="$android/payload"
+          test "$(sed -n 's/^releaseEligible=//p' "$payload/android-runtime.properties")" = true
+          ndk_source="$(find "$android" -maxdepth 1 -type f \
+            -name "kmedia-vlc-$VERSION-android-ndk-source.tar.gz" -print -quit)"
+          complete_source="$(find "$android" -maxdepth 1 -type f \
+            -name "kmedia-vlc-$VERSION-android-corresponding-source.tar.gz" -print -quit)"
+          arm64="$android/evidence/link-audits/arm64-v8a.json"
+          armv7="$android/evidence/link-audits/armeabi-v7a.json"
+          legal="$payload/legal/android-static-legal.json"
+          contrib="$android/verification-inputs/contrib-tarballs"
+          acceptance="$android/evidence/physical-acceptance/acceptance.json"
+          results="$android/evidence/physical-acceptance/test-results.xml"
+
+          python3 scripts/verify_android_ndk_source_archive.py \
+            --root "$GITHUB_WORKSPACE" --archive "$ndk_source" \
+            --llvm-project "$KMEDIAVLC_ANDROID_SOURCES/llvm-project" \
+            --llvm-android "$KMEDIAVLC_ANDROID_SOURCES/llvm-android" \
+            --version "$VERSION" --tested-commit "$TESTED_COMMIT"
+          python3 scripts/verify_android_corresponding_source_archive.py \
+            --root "$GITHUB_WORKSPACE" --archive "$complete_source" \
+            --vlc "$KMEDIAVLC_ANDROID_SOURCES/vlc" \
+            --libvlcjni "$KMEDIAVLC_ANDROID_SOURCES/libvlcjni" \
+            --contrib-tarballs "$contrib" --ndk-source-archive "$ndk_source" \
+            --llvm-project "$KMEDIAVLC_ANDROID_SOURCES/llvm-project" \
+            --llvm-android "$KMEDIAVLC_ANDROID_SOURCES/llvm-android" \
+            --legal-manifest "$legal" --arm64-audit "$arm64" --armv7-audit "$armv7" \
             --version "$VERSION" --tested-commit "$TESTED_COMMIT"
 
-          release_dir="$RUNNER_TEMP/release"
-          mkdir "$release_dir"
-          final_source="$release_dir/kmedia-vlc-$VERSION-corresponding-source.tar.gz"
-          final_runtime="$release_dir/kmedia-vlc-$VERSION-windows-x86_64-runtime.zip"
-          final_inventory="$release_dir/kmedia-vlc-$VERSION-windows-x86_64-native-inventory.json"
-          cp "$source_archive" "$final_source"
-          cp "$candidate" "$final_runtime"
-          cp "$inventory" "$final_inventory"
-          {
-            echo "KMEDIAVLC_STAGE=$stage"
-            echo "KMEDIAVLC_INVENTORY=$inventory"
-            echo "KMEDIAVLC_AUDITED_JAR=$audited_jar"
-            echo "KMEDIAVLC_SOURCE_ARCHIVE=$final_source"
-            echo "KMEDIAVLC_RELEASE_DIR=$release_dir"
-          } >> "$GITHUB_ENV"
+          regenerated="$RUNNER_TEMP/android-acceptance.json"
+          python3 scripts/verify_android_device_smoke_results.py \
+            --payload "$payload" --results "$results" --tested-commit "$TESTED_COMMIT" \
+            --device-abi "$(jq -r .physicalDevice.primaryAbi "$acceptance")" \
+            --api-level "$(jq -r .physicalDevice.apiLevel "$acceptance")" \
+            --manufacturer "$(jq -r .physicalDevice.manufacturer "$acceptance")" \
+            --model "$(jq -r .physicalDevice.model "$acceptance")" \
+            --build-fingerprint "$(jq -r .physicalDevice.buildFingerprint "$acceptance")" \
+            --output "$regenerated"
+          cmp "$regenerated" "$acceptance"
+          echo "KMEDIAVLC_ANDROID_PAYLOAD=$payload" >> "$GITHUB_ENV"
+          echo "KMEDIAVLC_ANDROID_NDK_SOURCE=$ndk_source" >> "$GITHUB_ENV"
+          echo "KMEDIAVLC_ANDROID_SOURCE=$complete_source" >> "$GITHUB_ENV"
+          echo "KMEDIAVLC_ANDROID_ARM64_AUDIT=$arm64" >> "$GITHUB_ENV"
+          echo "KMEDIAVLC_ANDROID_ARMV7_AUDIT=$armv7" >> "$GITHUB_ENV"
+          echo "KMEDIAVLC_ANDROID_CONTRIB=$contrib" >> "$GITHUB_ENV"
+          echo "KMEDIAVLC_ANDROID_AAR=$(find "$android" -maxdepth 1 -type f -name '*.aar' -print -quit)" >> "$GITHUB_ENV"
 
       - name: Set up Java 21
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -192,68 +423,97 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
 
-      - name: Build the public Maven repository from the audited payload
+      - name: Set up Android SDK for AAR verification
+        uses: android-actions/setup-android@v3
+
+      - name: Install the Android publication SDK
+        shell: bash
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build the universal desktop and Android Maven coordinates
         shell: bash
         run: |
           set -euo pipefail
           repository="$RUNNER_TEMP/maven-repository"
           mkdir "$repository"
           source_offer="https://github.com/SuvioMedia/KMediaVlc/releases/download/v$VERSION/kmedia-vlc-$VERSION-corresponding-source.tar.gz"
-          ./gradlew check complianceCheck \
+          ./gradlew :runtime-desktop:check \
             :runtime-desktop:publishMavenPublicationToReleaseRepository \
             -PkmediaVlcDesktopOnly=true \
             -PpublicationVersion="$VERSION" \
-            -PkmediaVlcNativeStagingDirectory="$KMEDIAVLC_STAGE" \
-            -PkmediaVlcNativeInventory="$KMEDIAVLC_INVENTORY" \
-            -PkmediaVlcNativeTarget=windows-x86_64 \
+            -PkmediaVlcNativeMatrix="$KMEDIAVLC_NATIVE_MATRIX" \
             -PkmediaVlcSourceOffer="$source_offer" \
             -PrecipeRevision="$TESTED_COMMIT" \
-            -PcorrespondingSourceArchive="$KMEDIAVLC_SOURCE_ARCHIVE" \
+            -PcorrespondingSourceArchive="$KMEDIAVLC_DESKTOP_SOURCE" \
+            -PreleaseRepository="$repository" \
+            --no-daemon --stacktrace --console=plain
+          ./gradlew :runtime-android:check \
+            :runtime-android:publishReleasePublicationToReleaseRepository \
+            -PkmediaVlcDesktopOnly=false \
+            -PpublicationVersion="$VERSION" \
+            -PkmediaVlcAndroidNativePayloadDirectory="$KMEDIAVLC_ANDROID_PAYLOAD" \
+            -PkmediaVlcAndroidNdkSourceArchive="$KMEDIAVLC_ANDROID_NDK_SOURCE" \
+            -PkmediaVlcAndroidLlvmProjectSourceDirectory="$KMEDIAVLC_ANDROID_SOURCES/llvm-project" \
+            -PkmediaVlcAndroidLlvmAndroidSourceDirectory="$KMEDIAVLC_ANDROID_SOURCES/llvm-android" \
+            -PkmediaVlcAndroidCorrespondingSourceArchive="$KMEDIAVLC_ANDROID_SOURCE" \
+            -PkmediaVlcAndroidVlcSourceDirectory="$KMEDIAVLC_ANDROID_SOURCES/vlc" \
+            -PkmediaVlcAndroidLibvlcjniSourceDirectory="$KMEDIAVLC_ANDROID_SOURCES/libvlcjni" \
+            -PkmediaVlcAndroidContribTarballsDirectory="$KMEDIAVLC_ANDROID_CONTRIB" \
+            -PkmediaVlcAndroidArm64LinkAudit="$KMEDIAVLC_ANDROID_ARM64_AUDIT" \
+            -PkmediaVlcAndroidArmv7LinkAudit="$KMEDIAVLC_ANDROID_ARMV7_AUDIT" \
+            -PrecipeRevision="$TESTED_COMMIT" \
             -PreleaseRepository="$repository" \
             --no-daemon --stacktrace --console=plain
           python3 scripts/build_maven_central_bundle.py normalize \
             --staging "$repository" --version "$VERSION"
-
-          primary="$repository/io/github/shusek/kmedia-vlc-runtime-desktop/$VERSION/kmedia-vlc-runtime-desktop-$VERSION.jar"
-          test -s "$primary"
-          test "$(sha256sum "$primary" | awk '{print $1}')" = \
-            "$(sha256sum "$KMEDIAVLC_AUDITED_JAR" | awk '{print $1}')"
-          repository_asset="$KMEDIAVLC_RELEASE_DIR/kmedia-vlc-$VERSION-maven-repository.tar.gz"
+          desktop="$repository/io/github/shusek/kmedia-vlc-runtime-desktop/$VERSION/kmedia-vlc-runtime-desktop-$VERSION.jar"
+          android="$repository/io/github/shusek/kmedia-vlc-runtime-android/$VERSION/kmedia-vlc-runtime-android-$VERSION.aar"
+          test -s "$desktop"
+          test "$(sha256sum "$android" | awk '{print $1}')" = \
+            "$(sha256sum "$KMEDIAVLC_ANDROID_AAR" | awk '{print $1}')"
+          release_dir="$RUNNER_TEMP/release"
+          mkdir "$release_dir"
+          repository_asset="$release_dir/kmedia-vlc-$VERSION-maven-repository.tar.gz"
           python3 scripts/package_release_repository.py \
             --staging "$repository" --version "$VERSION" \
             --epoch "$(git show -s --format=%ct HEAD)" --output "$repository_asset"
+          echo "KMEDIAVLC_RELEASE_DIR=$release_dir" >> "$GITHUB_ENV"
+          echo "KMEDIAVLC_MAVEN_REPOSITORY=$repository" >> "$GITHUB_ENV"
 
-      - name: Package release evidence and legal notices
+      - name: Package every platform runtime and retained evidence
         shell: bash
         run: |
           set -euo pipefail
           epoch="$(git show -s --format=%ct HEAD)"
-          evidence="$RUNNER_TEMP/release-evidence"
-          mkdir -p "$evidence/source-build" "$evidence/native-validation" "$evidence/release"
-          rsync -a "$RUNNER_TEMP/audit/link/" "$evidence/source-build/"
-          rsync -a "$RUNNER_TEMP/audit/native-validation/" "$evidence/native-validation/"
-          cp "$RUNNER_TEMP/audit-run.json" "$evidence/release/audit-run.json"
-          cp "$RUNNER_TEMP/audit-artifacts.json" "$evidence/release/audit-artifacts.json"
-          {
-            echo "version=$VERSION"
-            echo "tested_commit=$TESTED_COMMIT"
-            echo "audit_run_id=$AUDIT_RUN_ID"
-          } > "$evidence/release/release-inputs.txt"
-          (
-            cd "$KMEDIAVLC_RELEASE_DIR"
-            sha256sum \
-              "kmedia-vlc-$VERSION-corresponding-source.tar.gz" \
-              "kmedia-vlc-$VERSION-windows-x86_64-runtime.zip" \
-              "kmedia-vlc-$VERSION-windows-x86_64-native-inventory.json" \
-              "kmedia-vlc-$VERSION-maven-repository.tar.gz" \
-              > "$evidence/release/release-input-SHA256SUMS"
-          )
-          evidence_asset="$KMEDIAVLC_RELEASE_DIR/kmedia-vlc-$VERSION-release-evidence.tar.gz"
-          tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
-            -czf "$evidence_asset" -C "$RUNNER_TEMP" release-evidence
-
+          cp "$KMEDIAVLC_DESKTOP_SOURCE" "$KMEDIAVLC_RELEASE_DIR/"
+          cp "$KMEDIAVLC_ANDROID_AAR" \
+            "$KMEDIAVLC_RELEASE_DIR/kmedia-vlc-$VERSION-android.aar"
+          cp "$KMEDIAVLC_ANDROID_SOURCE" "$KMEDIAVLC_ANDROID_NDK_SOURCE" \
+            "$KMEDIAVLC_RELEASE_DIR/"
           cp LICENSE NOTICE THIRD_PARTY_NOTICES.md "$KMEDIAVLC_RELEASE_DIR/"
           cp docs/LICENSING.md docs/RELINKING.md "$KMEDIAVLC_RELEASE_DIR/"
+
+          for target in linux-aarch64 linux-x86_64 macos-aarch64; do
+            tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
+              -czf "$KMEDIAVLC_RELEASE_DIR/kmedia-vlc-$VERSION-$target-runtime.tar.gz" \
+              -C "$RUNNER_TEMP/native-matrix/$target" .
+          done
+          windows_zip="$(find "$RUNNER_TEMP/audit/windows-candidate" -type f \
+            -name "kmediavlc-windows-x86_64-audit-candidate-$TESTED_COMMIT.zip" -print -quit)"
+          cp "$windows_zip" \
+            "$KMEDIAVLC_RELEASE_DIR/kmedia-vlc-$VERSION-windows-x86_64-runtime.zip"
+
+          evidence="$RUNNER_TEMP/release-evidence"
+          mkdir -p "$evidence/audit-metadata" "$evidence/windows" "$evidence/macos" "$evidence/android"
+          cp -R "$RUNNER_TEMP/audit-metadata/." "$evidence/audit-metadata/"
+          cp -R "$RUNNER_TEMP/audit/windows-link/." "$evidence/windows/link-audit"
+          cp -R "$RUNNER_TEMP/audit/windows-validation/." "$evidence/windows/native-validation"
+          cp -R "$RUNNER_TEMP/audit/macos-evidence/." "$evidence/macos/"
+          cp -R "$RUNNER_TEMP/audit/android/evidence/." "$evidence/android/"
+          cp "$KMEDIAVLC_NATIVE_MATRIX" "$evidence/native-matrix.json"
+          tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
+            -czf "$KMEDIAVLC_RELEASE_DIR/kmedia-vlc-$VERSION-release-evidence.tar.gz" \
+            -C "$RUNNER_TEMP" release-evidence
           (
             cd "$KMEDIAVLC_RELEASE_DIR"
             find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%P\0' | sort -z | \
@@ -261,7 +521,7 @@ jobs:
             sha256sum -c SHA256SUMS
           )
 
-      - name: Create the immutable tag and GitHub prerelease
+      - name: Create the immutable tag and public prerelease
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -276,24 +536,22 @@ jobs:
             exit 1
           fi
           if gh release view "$tag" >/dev/null 2>&1; then
-            echo "Release $tag appeared during the release build and will not be modified." >&2
+            echo "Release $tag appeared during the build and will not be modified." >&2
             exit 1
           fi
-
           notes="$RUNNER_TEMP/release-notes.md"
           {
-            echo "Optional KMediaVlc libVLC 4 preview backend for desktop."
+            echo "KMediaVlc libVLC 4 preview runtime for desktop and Android."
             echo
             echo "- Audited KMediaVlc commit: \`$TESTED_COMMIT\`"
-            echo "- Native source build and Windows validation: https://github.com/$GITHUB_REPOSITORY/actions/runs/$AUDIT_RUN_ID"
-            echo "- Windows runtime: source-built VLC 4 UCRT payload plus the natively built MSVC bridge"
-            echo "- Maven coordinate: \`io.github.shusek:kmedia-vlc-runtime-desktop:$VERSION\`"
-            echo "- The corresponding-source and relinking assets accompany the LGPL payload."
-            echo
-            echo "This is a prerelease. Hosted Actions validates loading, HTTPS playback, CPU pull frames, packaging and available D3D11 paths; physical-display HDR acceptance remains a separate hardware test."
+            echo "- Desktop: Windows x64, Linux x64, Linux ARM64, macOS ARM64"
+            echo "- Android: ARM64 and ARMv7 AAR with physical MediaCodec/software/HDR acceptance"
+            echo "- Maven: \`io.github.shusek:kmedia-vlc-runtime-desktop:$VERSION\`"
+            echo "- Maven: \`io.github.shusek:kmedia-vlc-runtime-android:$VERSION\`"
+            echo "- Every native payload is source-built and accompanied by source, notices, and audit evidence."
           } > "$notes"
           mapfile -d '' assets < <(find "$KMEDIAVLC_RELEASE_DIR" -maxdepth 1 -type f -print0 | sort -z)
-          test "${#assets[@]}" -ge 10
+          test "${#assets[@]}" -ge 15
           gh release create "$tag" "${assets[@]}" \
             --verify-tag \
             --title "KMediaVlc $VERSION" \
@@ -320,5 +578,5 @@ jobs:
           )
           test "$(gh release view "v$VERSION" --json isDraft --jq .isDraft)" = false
           test "$(gh release view "v$VERSION" --json isPrerelease --jq .isPrerelease)" = true
-          printf 'Published immutable GitHub prerelease v%s from native audit %s.\n' \
-            "$VERSION" "$AUDIT_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Published immutable multiplatform GitHub prerelease v%s.\n' "$VERSION" \
+            >> "$GITHUB_STEP_SUMMARY"

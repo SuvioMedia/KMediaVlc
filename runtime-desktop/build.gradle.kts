@@ -84,17 +84,22 @@ tasks.withType<Jar>().configureEach {
 val nativeStagingDirectory = providers.gradleProperty("kmediaVlcNativeStagingDirectory").map(project::file)
 val nativeInventory = providers.gradleProperty("kmediaVlcNativeInventory").map(project::file)
 val nativeTarget = providers.gradleProperty("kmediaVlcNativeTarget")
+val nativeMatrix = providers.gradleProperty("kmediaVlcNativeMatrix").map(project::file)
 val nativeSourceOffer = providers.gradleProperty("kmediaVlcSourceOffer")
-val nativePackagingInputs =
-    listOf(
-        nativeStagingDirectory.isPresent,
-        nativeInventory.isPresent,
-        nativeTarget.isPresent,
-        nativeSourceOffer.isPresent,
-    )
-val nativePackagingConfigured = nativePackagingInputs.all { it }
-require(nativePackagingInputs.none { it } || nativePackagingConfigured) {
-    "Native packaging requires staging directory, inventory, target, and source offer together."
+val legacyNativeInputs =
+    listOf(nativeStagingDirectory.isPresent, nativeInventory.isPresent, nativeTarget.isPresent)
+val legacyNativeConfigured = legacyNativeInputs.all { it } && nativeSourceOffer.isPresent
+val matrixNativeConfigured = nativeMatrix.isPresent && nativeSourceOffer.isPresent
+val nativePackagingConfigured = legacyNativeConfigured || matrixNativeConfigured
+require(!(nativeMatrix.isPresent && legacyNativeInputs.any { it })) {
+    "Native matrix packaging and legacy single-target inputs are mutually exclusive."
+}
+require(
+    nativePackagingConfigured ||
+        (!nativeMatrix.isPresent && legacyNativeInputs.none { it } && !nativeSourceOffer.isPresent),
+) {
+    "Native packaging requires either the complete desktop matrix plus source offer, " +
+        "or staging directory, inventory, target, and source offer together."
 }
 val nativePayloadDirectory = rootProject.layout.buildDirectory.dir("verified-native-payload")
 val recipeRevision = providers.gradleProperty("recipeRevision")
@@ -120,14 +125,22 @@ val packageNativeRuntime =
         description = "Builds the only publication-eligible payload through the license/inventory gate."
         onlyIf { nativePackagingConfigured }
         if (nativePackagingConfigured) {
-            inputs.dir(nativeStagingDirectory)
-            inputs.file(nativeInventory)
             inputs.file(rootProject.layout.projectDirectory.file("compliance/policy/release-policy.json"))
             inputs.file(rootProject.layout.projectDirectory.file("scripts/package_native_runtime.py"))
-            inputs.property("nativeTarget", nativeTarget)
+            if (matrixNativeConfigured) {
+                inputs.file(nativeMatrix)
+                inputs.file(
+                    rootProject.layout.projectDirectory.file("scripts/package_native_runtime_matrix.py"),
+                )
+            } else {
+                inputs.dir(nativeStagingDirectory)
+                inputs.file(nativeInventory)
+                inputs.property("nativeTarget", nativeTarget)
+            }
             inputs.property("nativeSourceOffer", nativeSourceOffer)
             inputs.property("recipeRevision", recipeRevision)
             outputs.dir(nativePayloadDirectory)
+            outputs.upToDateWhen { false }
         }
         doFirst {
             require(nativePackagingConfigured) { "Native release packaging inputs are incomplete." }
@@ -135,28 +148,51 @@ val packageNativeRuntime =
                 "Native release packaging requires -PrecipeRevision with the immutable build commit."
             }
             project.delete(nativePayloadDirectory.get().asFile)
-            commandLine(
+            val command =
+                mutableListOf(
                 rootProject.providers
                     .gradleProperty("kmediaVlcPythonExecutable")
                     .orElse(rootProject.providers.environmentVariable("KMEDIAVLC_PYTHON"))
                     .orElse(if (System.getProperty("os.name").startsWith("Windows")) "python" else "python3")
                     .get(),
-                rootProject.layout.projectDirectory.file("scripts/package_native_runtime.py").asFile.absolutePath,
-                "--root",
-                rootProject.layout.projectDirectory.asFile.absolutePath,
-                "--staging",
-                nativeStagingDirectory.get().absolutePath,
-                "--inventory",
-                nativeInventory.get().absolutePath,
-                "--target",
-                nativeTarget.get(),
-                "--source-offer",
-                nativeSourceOffer.get(),
-                "--recipe-revision",
-                recipeRevision.get(),
-                "--output",
-                nativePayloadDirectory.get().asFile.absolutePath,
-            )
+                )
+            if (matrixNativeConfigured) {
+                command +=
+                    listOf(
+                        rootProject.layout.projectDirectory
+                            .file("scripts/package_native_runtime_matrix.py")
+                            .asFile.absolutePath,
+                        "--root",
+                        rootProject.layout.projectDirectory.asFile.absolutePath,
+                        "--matrix",
+                        nativeMatrix.get().absolutePath,
+                    )
+            } else {
+                command +=
+                    listOf(
+                        rootProject.layout.projectDirectory
+                            .file("scripts/package_native_runtime.py")
+                            .asFile.absolutePath,
+                        "--root",
+                        rootProject.layout.projectDirectory.asFile.absolutePath,
+                        "--staging",
+                        nativeStagingDirectory.get().absolutePath,
+                        "--inventory",
+                        nativeInventory.get().absolutePath,
+                        "--target",
+                        nativeTarget.get(),
+                    )
+            }
+            command +=
+                listOf(
+                    "--source-offer",
+                    nativeSourceOffer.get(),
+                    "--recipe-revision",
+                    recipeRevision.get(),
+                    "--output",
+                    nativePayloadDirectory.get().asFile.absolutePath,
+                )
+            commandLine(command)
         }
     }
 
@@ -269,6 +305,25 @@ val verifyRuntimeJar =
                 require(containsNative == nativePackagingConfigured) {
                     "Runtime JAR native resources do not match the explicit payload input."
                 }
+                if (matrixNativeConfigured) {
+                    val requiredTargets =
+                        setOf(
+                            "linux-aarch64",
+                            "linux-x86_64",
+                            "macos-aarch64",
+                            "windows-x86_64",
+                        )
+                    val packagedTargets =
+                        names
+                            .filter {
+                                it.startsWith("META-INF/kmediavlc/native/") &&
+                                    it.endsWith("/manifest.properties")
+                            }.map { it.split('/')[3] }
+                            .toSet()
+                    require(packagedTargets == requiredTargets) {
+                        "Runtime JAR desktop target matrix is partial: $packagedTargets"
+                    }
+                }
             }
         }
     }
@@ -278,8 +333,8 @@ val requireNativePayloadForPublication =
         group = "publishing"
         dependsOn(verifyRuntimeJar, validatePublicationVersion)
         doLast {
-            require(nativePackagingConfigured) {
-                "Publishing requires the complete audited native staging/inventory input set."
+            require(matrixNativeConfigured) {
+                "Desktop publication requires the complete audited Windows, Linux, and macOS matrix."
             }
             require(recipeRevision.isPresent) {
                 "Publishing requires -PrecipeRevision with the immutable build commit."

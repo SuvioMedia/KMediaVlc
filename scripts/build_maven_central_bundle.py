@@ -15,8 +15,25 @@ from pathlib import Path, PurePosixPath
 
 
 GROUP = Path("io/github/shusek")
-ARTIFACT = "kmedia-vlc-runtime-desktop"
-PRIMARY_EXTENSION = "jar"
+ARTIFACTS = {
+    "kmedia-vlc-runtime-android": {
+        "primaryExtension": "aar",
+        "classifiers": [
+            ("sources", "jar"),
+            ("javadoc", "jar"),
+            ("corresponding-source", "tar.gz"),
+            ("android-ndk-source", "tar.gz"),
+        ],
+    },
+    "kmedia-vlc-runtime-desktop": {
+        "primaryExtension": "jar",
+        "classifiers": [
+            ("sources", "jar"),
+            ("javadoc", "jar"),
+            ("corresponding-source", "tar.gz"),
+        ],
+    },
+}
 GENERATED_CHECKSUM_SUFFIXES = (".md5", ".sha1", ".sha256", ".sha512")
 SEMVER_NUMBER = r"(?:0|[1-9][0-9]*)"
 SEMVER_PRERELEASE_IDENTIFIER = r"(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
@@ -49,15 +66,20 @@ def ensure_real_staging(staging: Path) -> None:
 def required_files(staging: Path, version: str) -> list[Path]:
     validate_version(version)
     ensure_real_staging(staging)
-    directory = staging / GROUP / ARTIFACT / version
-    prefix = f"{ARTIFACT}-{version}"
-    expected = [
-        directory / f"{prefix}.{PRIMARY_EXTENSION}",
-        directory / f"{prefix}.pom",
-        directory / f"{prefix}-sources.jar",
-        directory / f"{prefix}-javadoc.jar",
-        directory / f"{prefix}-corresponding-source.tar.gz",
-    ]
+    expected: list[Path] = []
+    for artifact, contract in ARTIFACTS.items():
+        directory = staging / GROUP / artifact / version
+        prefix = f"{artifact}-{version}"
+        expected.extend(
+            [
+                directory / f"{prefix}.{contract['primaryExtension']}",
+                directory / f"{prefix}.pom",
+                *(
+                    directory / f"{prefix}-{classifier}.{extension}"
+                    for classifier, extension in contract["classifiers"]
+                ),
+            ]
+        )
     for path in expected:
         if path.is_symlink() or not path.is_file() or path.stat().st_size == 0:
             raise ValueError(f"Maven staging omits a real required artifact: {path}")
@@ -81,15 +103,21 @@ def normalize(arguments: argparse.Namespace) -> None:
     """Remove only Gradle metadata and generated checksum sidecars."""
     staging = arguments.staging.absolute()
     bases = required_files(staging, arguments.version)
-    artifact_root = staging / GROUP / ARTIFACT
-    directory = artifact_root / arguments.version
-    prefix = f"{ARTIFACT}-{arguments.version}"
-    generated = {
-        directory / f"{prefix}.module",
-        artifact_root / "maven-metadata.xml",
-    }
+    generated: set[Path] = set()
+    artifact_roots = []
+    for artifact in ARTIFACTS:
+        artifact_root = staging / GROUP / artifact
+        artifact_roots.append(artifact_root)
+        directory = artifact_root / arguments.version
+        prefix = f"{artifact}-{arguments.version}"
+        generated.update(
+            {
+                directory / f"{prefix}.module",
+                artifact_root / "maven-metadata.xml",
+            }
+        )
     for base in (*bases, *tuple(generated)):
-        if base.is_relative_to(artifact_root):
+        if any(base.is_relative_to(artifact_root) for artifact_root in artifact_roots):
             for suffix in GENERATED_CHECKSUM_SUFFIXES:
                 generated.add(base.with_name(base.name + suffix))
     for path in sorted(generated):

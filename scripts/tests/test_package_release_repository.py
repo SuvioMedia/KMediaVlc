@@ -20,17 +20,20 @@ finally:
 
 class ReleaseRepositoryPackagerTest(unittest.TestCase):
     def create_staging(self, root: Path, version: str) -> None:
-        directory = root / central.GROUP / central.ARTIFACT / version
-        directory.mkdir(parents=True)
-        prefix = f"{central.ARTIFACT}-{version}"
-        for name in (
-            f"{prefix}.jar",
-            f"{prefix}.pom",
-            f"{prefix}-sources.jar",
-            f"{prefix}-javadoc.jar",
-            f"{prefix}-corresponding-source.tar.gz",
-        ):
-            (directory / name).write_bytes(name.encode("ascii"))
+        for artifact, contract in central.ARTIFACTS.items():
+            directory = root / central.GROUP / artifact / version
+            directory.mkdir(parents=True)
+            prefix = f"{artifact}-{version}"
+            names = [
+                f"{prefix}.{contract['primaryExtension']}",
+                f"{prefix}.pom",
+                *(
+                    f"{prefix}-{classifier}.{extension}"
+                    for classifier, extension in contract["classifiers"]
+                ),
+            ]
+            for name in names:
+                (directory / name).write_bytes(name.encode("ascii"))
 
     def test_is_deterministic_and_round_trips_through_safe_extractor(self) -> None:
         with tempfile.TemporaryDirectory() as value:
@@ -50,7 +53,7 @@ class ReleaseRepositoryPackagerTest(unittest.TestCase):
             extracted = root / "extracted"
             extracted.mkdir()
             extractor.extract(first, extracted)
-            self.assertEqual(5, len(central.base_files(extracted, version)))
+            self.assertEqual(11, len(central.base_files(extracted, version)))
 
 
 if __name__ == "__main__":

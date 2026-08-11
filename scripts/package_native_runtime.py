@@ -137,7 +137,13 @@ def validate_license_expression(expression: object, allowed_licenses: set[str]) 
     return expression
 
 
-def validate_inventory(inventory: dict, policy: dict, target: str, staging: Path) -> list[dict]:
+def validate_inventory(
+    inventory: dict,
+    policy: dict,
+    target: str,
+    staging: Path,
+    inventory_path: Path | None = None,
+) -> list[dict]:
     staging = staging.resolve(strict=True)
     if policy.get("bridgeAbiVersion") != BRIDGE_ABI_VERSION:
         fail("Release policy does not match the native bridge ABI.")
@@ -214,10 +220,12 @@ def validate_inventory(inventory: dict, policy: dict, target: str, staging: Path
     if not REQUIRED_ROLES.issubset(roles):
         fail(f"Runtime role inventory is incomplete: {sorted(roles)}")
 
+    excluded_inventory = inventory_path.resolve() if inventory_path is not None else None
     actual = {
         path.relative_to(staging).as_posix()
         for path in staging.rglob("*")
-        if path.is_file() and path.resolve() != inventory_path_global.resolve()
+        if path.is_file()
+        and (excluded_inventory is None or path.resolve() != excluded_inventory)
     }
     if actual != inventoried:
         missing = sorted(inventoried - actual)
@@ -274,7 +282,44 @@ def manifest_text(
     return "\n".join(lines) + "\n"
 
 
-inventory_path_global = Path(".")
+def package(
+    root: Path,
+    staging: Path,
+    inventory_path: Path,
+    target: str,
+    source_offer: str,
+    recipe_revision: str,
+    output: Path,
+) -> str:
+    root = root.resolve(strict=True)
+    staging = staging.resolve(strict=True)
+    inventory_path = inventory_path.resolve(strict=True)
+    output = output.resolve()
+    if output.exists():
+        fail("Output directory must not already exist.")
+    if target not in ALLOWED_TARGETS:
+        fail(f"Unsupported native target: {target}")
+    policy = load_policy(root)
+    inventory = load_inventory(inventory_path)
+    require_approved_platform_review(root, target)
+    source_offer = validate_source_reference(source_offer, "release source offer")
+    recipe_revision = validate_recipe_revision(recipe_revision)
+    files = validate_inventory(inventory, policy, target, staging, inventory_path)
+    digest_input = json.dumps(files, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    runtime_id = "kmediavlc4-" + hashlib.sha256(digest_input).hexdigest()[:16]
+    destination = output / "META-INF" / "kmediavlc" / "native" / target
+    destination.mkdir(parents=True)
+    for entry in files:
+        relative = PurePosixPath(entry["path"])
+        source = staging.joinpath(*relative.parts)
+        packaged_file = destination.joinpath(*relative.parts)
+        packaged_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, packaged_file)
+    manifest_path = destination / "manifest.properties"
+    with manifest_path.open("w", encoding="iso-8859-1", newline="\n") as handle:
+        handle.write(manifest_text(inventory, files, runtime_id, source_offer, recipe_revision))
+    print(f"Packaged verified KMediaVlc runtime {runtime_id} for {target}")
+    return runtime_id
 
 
 def main() -> None:
@@ -287,35 +332,15 @@ def main() -> None:
     parser.add_argument("--recipe-revision", required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-
-    root = args.root.resolve(strict=True)
-    staging = args.staging.resolve(strict=True)
-    inventory_path = args.inventory.resolve(strict=True)
-    global inventory_path_global
-    inventory_path_global = inventory_path
-    output = args.output.resolve()
-    if output.exists():
-        fail("Output directory must not already exist.")
-    policy = load_policy(root)
-    inventory = load_inventory(inventory_path)
-    require_approved_platform_review(root, args.target)
-    source_offer = validate_source_reference(args.source_offer, "release source offer")
-    recipe_revision = validate_recipe_revision(args.recipe_revision)
-    files = validate_inventory(inventory, policy, args.target, staging)
-    digest_input = json.dumps(files, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    runtime_id = "kmediavlc4-" + hashlib.sha256(digest_input).hexdigest()[:16]
-    destination = output / "META-INF" / "kmediavlc" / "native" / args.target
-    destination.mkdir(parents=True)
-    for entry in files:
-        relative = PurePosixPath(entry["path"])
-        source = staging.joinpath(*relative.parts)
-        target = destination.joinpath(*relative.parts)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
-    manifest_path = destination / "manifest.properties"
-    with manifest_path.open("w", encoding="iso-8859-1", newline="\n") as handle:
-        handle.write(manifest_text(inventory, files, runtime_id, source_offer, recipe_revision))
-    print(f"Packaged verified KMediaVlc runtime {runtime_id} for {args.target}")
+    package(
+        args.root,
+        args.staging,
+        args.inventory,
+        args.target,
+        args.source_offer,
+        args.recipe_revision,
+        args.output,
+    )
 
 
 if __name__ == "__main__":

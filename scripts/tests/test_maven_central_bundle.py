@@ -18,36 +18,46 @@ SPEC.loader.exec_module(CENTRAL)
 
 class MavenCentralBundleTest(unittest.TestCase):
     def create_staging(self, root: Path, version: str) -> Path:
-        directory = root / CENTRAL.GROUP / CENTRAL.ARTIFACT / version
-        directory.mkdir(parents=True)
-        prefix = f"{CENTRAL.ARTIFACT}-{version}"
-        for name in (
-            f"{prefix}.jar",
-            f"{prefix}.pom",
-            f"{prefix}-sources.jar",
-            f"{prefix}-javadoc.jar",
-            f"{prefix}-corresponding-source.tar.gz",
-        ):
-            (directory / name).write_bytes(name.encode("ascii"))
-        return directory
+        first: Path | None = None
+        for artifact, contract in CENTRAL.ARTIFACTS.items():
+            directory = root / CENTRAL.GROUP / artifact / version
+            directory.mkdir(parents=True)
+            first = first or directory
+            prefix = f"{artifact}-{version}"
+            names = [
+                f"{prefix}.{contract['primaryExtension']}",
+                f"{prefix}.pom",
+                *(
+                    f"{prefix}-{classifier}.{extension}"
+                    for classifier, extension in contract["classifiers"]
+                ),
+            ]
+            for name in names:
+                (directory / name).write_bytes(name.encode("ascii"))
+        assert first is not None
+        return first
 
     def test_normalize_removes_only_gradle_generated_files(self) -> None:
         with tempfile.TemporaryDirectory() as value:
             root = Path(value)
             version = "0.1.0-rc.1"
             directory = self.create_staging(root, version)
-            prefix = f"{CENTRAL.ARTIFACT}-{version}"
-            module = directory / f"{prefix}.module"
-            metadata = directory.parent / "maven-metadata.xml"
-            module.write_bytes(b"generated")
-            metadata.write_bytes(b"generated")
-            for path in (*CENTRAL.required_files(root, version), module, metadata):
+            generated = []
+            for artifact in CENTRAL.ARTIFACTS:
+                artifact_root = root / CENTRAL.GROUP / artifact
+                prefix = f"{artifact}-{version}"
+                module = artifact_root / version / f"{prefix}.module"
+                metadata = artifact_root / "maven-metadata.xml"
+                module.write_bytes(b"generated")
+                metadata.write_bytes(b"generated")
+                generated.extend((module, metadata))
+            for path in (*CENTRAL.required_files(root, version), *generated):
                 for suffix in CENTRAL.GENERATED_CHECKSUM_SUFFIXES:
                     path.with_name(path.name + suffix).write_bytes(b"generated")
 
             CENTRAL.normalize(type("Arguments", (), {"staging": root, "version": version})())
 
-            self.assertEqual(5, len(CENTRAL.base_files(root, version)))
+            self.assertEqual(11, len(CENTRAL.base_files(root, version)))
             actual = {
                 path for path in (root / CENTRAL.GROUP).rglob("*") if path.is_file()
             }
@@ -77,7 +87,7 @@ class MavenCentralBundleTest(unittest.TestCase):
                 )()
             )
             with zipfile.ZipFile(output) as archive:
-                self.assertEqual(20, len(archive.namelist()))
+                self.assertEqual(44, len(archive.namelist()))
                 self.assertTrue(all(name.startswith("io/github/shusek/") for name in archive.namelist()))
 
     def test_rejects_snapshot_extra_file_and_missing_signature(self) -> None:

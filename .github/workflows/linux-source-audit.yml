@@ -127,7 +127,7 @@ jobs:
             "$RUNNER_TEMP/vlc-linux-build" \
             4
 
-      - name: Validate the bounded ELF install without retaining binaries
+      - name: Validate the bounded ELF install
         shell: bash
         run: |
           set -euo pipefail
@@ -150,6 +150,24 @@ jobs:
             readelf -h "$binary" | grep -Fq "Machine:                           $expected_machine"
           done < <(find "$install" -type f \( -name '*.so' -o -name '*.so.*' \) -print0)
 
+      - name: Retain the exact Linux contrib source inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_inputs="$RUNNER_TEMP/vlc-${{ matrix.target }}-source-inputs"
+          mkdir "$source_inputs"
+          jq -r '.components[].sourceArchive' compliance/policy/linux-binary-components.json | \
+            sort -u | while IFS= read -r archive; do
+              test -f "$GITHUB_WORKSPACE/.vlc-source/contrib/tarballs/$archive"
+              cp "$GITHUB_WORKSPACE/.vlc-source/contrib/tarballs/$archive" "$source_inputs/$archive"
+            done
+          test "$(find "$source_inputs" -type f | wc -l)" = 24
+          (
+            cd "$source_inputs"
+            find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+            sha256sum -c SHA256SUMS
+          )
+
       - name: Stage the closed runtime and play a real CPU frame
         shell: bash
         run: |
@@ -157,8 +175,10 @@ jobs:
           install="$RUNNER_TEMP/vlc-linux-build/vlc-${{ matrix.target }}"
           bridge="$GITHUB_WORKSPACE/build/native/${{ matrix.target }}/libkmediavlc_bridge.so"
           test -f "$bridge"
-          stage="$RUNNER_TEMP/kmediavlc-${{ matrix.target }}-candidate"
-          report="$RUNNER_TEMP/kmediavlc-${{ matrix.target }}-candidate.json"
+          candidate="$RUNNER_TEMP/kmediavlc-${{ matrix.target }}-tested-candidate"
+          mkdir "$candidate"
+          stage="$candidate/runtime"
+          report="$candidate/${{ matrix.target }}-audit.json"
           python3 scripts/stage_vlc_linux_runtime.py \
             --root "$GITHUB_WORKSPACE" \
             --install "$install" \
@@ -176,3 +196,44 @@ jobs:
             -PkmediaVlcTestPluginDirectory="$stage/lib/vlc/plugins" \
             --tests '*.VlcDesktopPlayerIntegrationTest.pinnedVideoLanFixturePublishesCpuPullFrame' \
             --no-daemon --stacktrace --console=plain
+
+      - name: Close the retained Linux candidate and publication inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate="$RUNNER_TEMP/kmediavlc-${{ matrix.target }}-tested-candidate"
+          source_offer="https://github.com/SuvioMedia/KMediaVlc/releases/download/v$CANDIDATE_VERSION/kmedia-vlc-$CANDIDATE_VERSION-corresponding-source.tar.gz"
+          python3 scripts/create_posix_native_inventory.py \
+            --root "$GITHUB_WORKSPACE" \
+            --staging "$candidate/runtime" \
+            --report "$candidate/${{ matrix.target }}-audit.json" \
+            --output "$candidate/${{ matrix.target }}-native-inventory.json" \
+            --target "${{ matrix.target }}" \
+            --version "$CANDIDATE_VERSION" \
+            --source-offer "$source_offer" \
+            --allow-audit-candidate
+          cp runtime-desktop/build/test-results/test/TEST-io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest.xml \
+            "$candidate/test-results.xml"
+          (
+            cd "$candidate"
+            find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+            sha256sum -c SHA256SUMS
+          )
+
+      - name: Upload the exact tested Linux candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: kmediavlc-${{ matrix.target }}-tested-candidate-${{ env.TESTED_COMMIT }}
+          path: ${{ runner.temp }}/kmediavlc-${{ matrix.target }}-tested-candidate
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload the exact Linux contrib source inputs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: vlc-${{ matrix.target }}-source-inputs-${{ env.TESTED_COMMIT }}
+          path: ${{ runner.temp }}/vlc-${{ matrix.target }}-source-inputs
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

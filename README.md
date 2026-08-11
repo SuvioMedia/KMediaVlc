@@ -13,9 +13,11 @@ dependencies {
 }
 ```
 
-The Android coordinate is reserved as
-`io.github.shusek:kmedia-vlc-runtime-android`; it is not published until the
-Android gates below are complete.
+The matching Android coordinate is
+`io.github.shusek:kmedia-vlc-runtime-android`. A version is published only as
+one closed matrix: the desktop JAR must contain Windows x64, Linux x64, Linux
+ARM64, and macOS ARM64, while the Android AAR must contain ARM64 and ARMv7.
+Neither coordinate is published alone when another required target is missing.
 
 The runtime artifact contains a pinned libVLC 4 build, its allowlisted
 plugins and dependencies, and a stable KMediaVlc bridge. It never downloads
@@ -114,13 +116,12 @@ bash gradlew check complianceCheck
 python scripts/verify_source_compliance.py --root .
 ```
 
-Publishing additionally requires all of
-`kmediaVlcNativeStagingDirectory`, `kmediaVlcNativeInventory`,
-`kmediaVlcNativeTarget`, `kmediaVlcSourceOffer`, and the immutable
-`recipeRevision`, plus `correspondingSourceArchive`. The recipe revision is
-embedded in the native manifest and must match the checked-out KMediaVlc
-commit. The Gradle publication consumes only the packager's verified output;
-an arbitrary directory cannot bypass the component/license inventory.
+Desktop publication requires one `kmediaVlcNativeMatrix` file containing the
+independently inventoried Windows x64, Linux x64, Linux ARM64, and macOS ARM64
+payloads, plus `kmediaVlcSourceOffer`, the immutable `recipeRevision`, and
+`correspondingSourceArchive`. The recipe revision is embedded in every native
+manifest and must match the checked-out KMediaVlc commit. Single-target inputs
+remain available only for audit tests; a Maven publication rejects them.
 
 Android publication additionally requires the deterministic NDK source archive, exact
 `llvm-project` and `llvm_android` checkouts, and the same `recipeRevision`; Gradle independently

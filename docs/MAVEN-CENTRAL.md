@@ -93,9 +93,14 @@ SemVer/RC. Central and GitHub versions are immutable.
 ```kotlin
 dependencies {
     implementation("io.github.shusek:kmedia-vlc-runtime-desktop:<version>")
+    // Android source sets use the matching release version:
+    implementation("io.github.shusek:kmedia-vlc-runtime-android:<version>")
 }
 ```
 
-The first publication contains only the audited Windows native target. A
-single Maven coordinate may gain additional target resources only in a later
-version after those targets satisfy the same inventory, source, and GPU tests.
+The desktop coordinate is one universal JAR containing Windows x64, Linux x64,
+Linux ARM64, and macOS ARM64 resources. The Android coordinate is a two-ABI AAR
+for ARM64 and ARMv7. The Central bundle closes both coordinates together: 11
+base files before signing, including both corresponding-source archives and the
+Android NDK source supplement. A partial Windows-only, desktop-only, or
+Android-only bundle is rejected.

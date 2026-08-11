@@ -96,27 +96,47 @@ jobs:
             -PkmediaVlcCMakeExecutable="$cmake" \
             --rerun-tasks --no-daemon --stacktrace --console=plain
 
+      - name: Retain the exact macOS contrib source inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_inputs="$RUNNER_TEMP/vlc-macos-aarch64-source-inputs"
+          mkdir "$source_inputs"
+          jq -r '.components[].sourceArchive' compliance/policy/macos-aarch64-binary-components.json | \
+            sort -u | while IFS= read -r archive; do
+              test -f "$GITHUB_WORKSPACE/.vlc-source/contrib/tarballs/$archive"
+              cp "$GITHUB_WORKSPACE/.vlc-source/contrib/tarballs/$archive" "$source_inputs/$archive"
+            done
+          test "$(find "$source_inputs" -type f | wc -l)" = 22
+          (
+            cd "$source_inputs"
+            find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS
+            shasum -a 256 -c SHA256SUMS
+          )
+
       - name: Stage and audit the closed macOS runtime
         shell: bash
         run: |
           set -euo pipefail
+          candidate="$RUNNER_TEMP/kmediavlc-macos-aarch64-tested-candidate"
+          mkdir "$candidate"
           python3 scripts/stage_vlc_macos_runtime.py \
             --root "$GITHUB_WORKSPACE" \
             --install "$RUNNER_TEMP/vlc-macos-build/vlc-macosx-arm64" \
             --bridge "$GITHUB_WORKSPACE/build/native/macos-aarch64/libkmediavlc_bridge.dylib" \
-            --output "$RUNNER_TEMP/macos-aarch64-candidate" \
-            --report "$RUNNER_TEMP/macos-aarch64-audit.json" \
+            --output "$candidate/runtime" \
+            --report "$candidate/macos-aarch64-audit.json" \
             --allow-audit-candidate
-          test "$(jq -r .target "$RUNNER_TEMP/macos-aarch64-audit.json")" = macos-aarch64
-          test "$(jq -r .selectedPluginCount "$RUNNER_TEMP/macos-aarch64-audit.json")" = 89
-          test "$(jq -r '.files | length' "$RUNNER_TEMP/macos-aarch64-audit.json")" = 93
-          test "$(jq -r '.machO | length' "$RUNNER_TEMP/macos-aarch64-audit.json")" = 92
+          test "$(jq -r .target "$candidate/macos-aarch64-audit.json")" = macos-aarch64
+          test "$(jq -r .selectedPluginCount "$candidate/macos-aarch64-audit.json")" = 89
+          test "$(jq -r '.files | length' "$candidate/macos-aarch64-audit.json")" = 93
+          test "$(jq -r '.machO | length' "$candidate/macos-aarch64-audit.json")" = 92
 
       - name: Play a real CPU frame and replace an IOSurface generation
         shell: bash
         run: |
           set -euo pipefail
-          stage="$RUNNER_TEMP/macos-aarch64-candidate"
+          stage="$RUNNER_TEMP/kmediavlc-macos-aarch64-tested-candidate/runtime"
           ./gradlew :runtime-desktop:test \
             -PkmediaVlcDesktopOnly=true \
             -PkmediaVlcNativeBridgePath="$stage/bin/libkmediavlc_bridge.dylib" \
@@ -126,13 +146,37 @@ jobs:
             --tests '*.VlcDesktopPlayerIntegrationTest.pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames' \
             --rerun-tasks --no-daemon --stacktrace --console=plain
 
+      - name: Close the retained macOS candidate and publication inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate="$RUNNER_TEMP/kmediavlc-macos-aarch64-tested-candidate"
+          source_offer="https://github.com/SuvioMedia/KMediaVlc/releases/download/v$CANDIDATE_VERSION/kmedia-vlc-$CANDIDATE_VERSION-corresponding-source.tar.gz"
+          python3 scripts/create_posix_native_inventory.py \
+            --root "$GITHUB_WORKSPACE" \
+            --staging "$candidate/runtime" \
+            --report "$candidate/macos-aarch64-audit.json" \
+            --output "$candidate/macos-aarch64-native-inventory.json" \
+            --target macos-aarch64 \
+            --version "$CANDIDATE_VERSION" \
+            --source-offer "$source_offer" \
+            --allow-audit-candidate
+          cp runtime-desktop/build/test-results/test/TEST-io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest.xml \
+            "$candidate/test-results.xml"
+          (
+            cd "$candidate"
+            find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS
+            shasum -a 256 -c SHA256SUMS
+          )
+
       - name: Bind the retained audit evidence
         shell: bash
         run: |
           set -euo pipefail
           evidence="$RUNNER_TEMP/macos-aarch64-evidence"
+          candidate="$RUNNER_TEMP/kmediavlc-macos-aarch64-tested-candidate"
           mkdir "$evidence"
-          cp "$RUNNER_TEMP/macos-aarch64-audit.json" "$evidence/"
+          cp "$candidate/macos-aarch64-audit.json" "$evidence/"
           cp "$GITHUB_WORKSPACE/runtime-desktop/build/test-results/test/TEST-io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest.xml" \
             "$evidence/test-results.xml"
           cp "$RUNNER_TEMP/vlc-macos-build/contrib-list.txt" "$evidence/"
@@ -146,10 +190,28 @@ jobs:
             '{schemaVersion:1, testedCommit:$testedCommit, candidateVersion:$candidateVersion, vlcRevision:$vlcRevision, auditSha256:$auditSha256, testSha256:$testSha256, releaseEligible:false}' \
             > "$evidence/acceptance.json"
 
+      - name: Upload the exact tested macOS candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: kmediavlc-macos-aarch64-tested-candidate-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/kmediavlc-macos-aarch64-tested-candidate
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
       - name: Upload path-free macOS audit evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: kmediavlc-macos-aarch64-source-audit-${{ inputs.tested_commit }}
           path: ${{ runner.temp }}/macos-aarch64-evidence
           if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload the exact macOS contrib source inputs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: vlc-macos-aarch64-source-inputs-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/vlc-macos-aarch64-source-inputs
+          if-no-files-found: error
+          compression-level: 0
           retention-days: 7
