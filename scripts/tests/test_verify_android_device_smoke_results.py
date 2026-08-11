@@ -102,12 +102,12 @@ class AndroidDeviceSmokeResultsTest(unittest.TestCase):
 
     def test_rejects_skipped_test(self) -> None:
         self.write_results(skipped=1)
-        with self.assertRaisesRegex(ValueError, "two-test pass"):
+        with self.assertRaisesRegex(ValueError, "three-test pass"):
             self.verify()
 
     def test_rejects_extra_test(self) -> None:
         self.write_results(extra_case=True)
-        with self.assertRaisesRegex(ValueError, "two-test pass"):
+        with self.assertRaisesRegex(ValueError, "three-test pass"):
             self.verify()
 
     def test_rejects_emulator_result(self) -> None:

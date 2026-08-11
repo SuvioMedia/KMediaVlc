@@ -1,0 +1,33 @@
+From: KMediaVlc Android maintainers <noreply@localhost>
+Subject: [PATCH] android: render external ANativeWindow directly
+
+The libVLC output callback already supplies the final application-owned
+ANativeWindow. Advertising the NDK AImageReader and ASurfaceControl capabilities
+for that external window makes MediaCodec render through an intermediate layer.
+On HDR-capable Android devices that layer can replace the decoder buffer
+dataspace with sRGB, turning HDR10 output into SDR.
+
+Keep the AImageReader path available for VLC-managed Android windows, but disable
+it for AWindowHandler_newFromANWs(). MediaCodec then falls back to the supplied
+ANativeWindow and preserves its per-buffer BT.2020/PQ signal.
+
+---
+ modules/video_output/android/utils.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/modules/video_output/android/utils.c b/modules/video_output/android/utils.c
+index ef277c1..ace5400 100644
+--- a/modules/video_output/android/utils.c
++++ b/modules/video_output/android/utils.c
+@@ -768,6 +768,11 @@ AWindowHandler_newFromANWs(vlc_object_t *obj, ANativeWindow *video,
+     awh->wnd = NULL;
+ 
+     LoadNativeWindowAPI(awh);
++    /* Externally supplied ANativeWindows are already the final video target.
++     * Keep MediaCodec on that target instead of inserting an AImageReader and
++     * ASurfaceControl layer, which can discard per-buffer HDR dataspaces. */
++    awh->b_has_ndk_air_api = false;
++    awh->b_has_ndk_asc_api = false;
+ 
+     awh->views[AWindow_Video].p_anw = video;
+     ANativeWindow_acquire(video);

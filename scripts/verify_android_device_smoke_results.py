@@ -18,6 +18,7 @@ TEST_CLASS = (
     "VlcAndroidPlaybackInstrumentedTest"
 )
 TEST_CASES = (
+    "automaticDecodePreservesHdr10SurfaceSignal",
     "automaticDecodeUsesMediaCodecAndSurvivesSurfaceLifecycle",
     "softwareDecodeAvoidsMediaCodecAndSurvivesSurfaceLifecycle",
 )
@@ -127,20 +128,21 @@ def verify_junit(results: Path) -> tuple[str, list[str]]:
         fail(f"Android JUnit result cannot be parsed: {error}")
     if root.tag != "testsuites":
         fail("Android JUnit result has an unexpected root element.")
+    expected_count = len(TEST_CASES)
     if (
-        nonnegative_count(root, "tests") != 2
+        nonnegative_count(root, "tests") != expected_count
         or nonnegative_count(root, "failures") != 0
         or nonnegative_count(root, "errors") != 0
         or nonnegative_count(root, "skipped") != 0
     ):
-        fail("Android physical-device result is not an exact two-test pass.")
+        fail("Android physical-device result is not an exact three-test pass.")
     suites = root.findall("testsuite")
     if len(suites) != 1:
         fail("Android physical-device result must contain exactly one suite.")
     suite = suites[0]
     if (
         suite.get("name") != TEST_CLASS
-        or nonnegative_count(suite, "tests") != 2
+        or nonnegative_count(suite, "tests") != expected_count
         or nonnegative_count(suite, "failures") != 0
         or nonnegative_count(suite, "errors") != 0
         or nonnegative_count(suite, "skipped") != 0

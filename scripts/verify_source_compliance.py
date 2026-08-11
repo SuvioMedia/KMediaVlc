@@ -404,7 +404,7 @@ def verify_android_contract(root: Path) -> None:
         "libvlcjniSource", "publicationTargets", "ndkVersion", "vlcAndroidApi",
         "clientMinSdk", "libvlcBuildArguments", "contribLicenseProfile",
         "renderEngine", "packagedLibraries", "excludedLibraries",
-        "requiredPlaybackModules", "libvlcjniPatch", "disabledVlcFeatures",
+        "requiredPlaybackModules", "vlcPatch", "libvlcjniPatch", "disabledVlcFeatures",
         "usesPrebuiltContribs", "usesPublishedLibVlcAar",
         "requiresCoreJniOnLoadFirst", "requiresPerFileInventory",
         "requiresModuleLicenseAudit", "requiresCompiledModuleLicenseAudit",
@@ -448,11 +448,13 @@ def verify_android_contract(root: Path) -> None:
     ]
     if (
         recipe.get("requiredPlaybackModules") != expected_playback_modules
+        or recipe.get("vlcPatch")
+        != "patches/vlc/0001-android-external-anw-direct-mediacodec.patch"
         or recipe.get("libvlcjniPatch")
         != "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"
         or recipe.get("disabledVlcFeatures") != ["bluray"]
     ):
-        fail("The Android playback module, disabled feature, or libvlcjni patch policy changed.")
+        fail("The Android playback module, disabled feature, or source patch policy changed.")
     required_true = [
         "requiresCoreJniOnLoadFirst", "requiresPerFileInventory",
         "requiresModuleLicenseAudit", "requiresCompiledModuleLicenseAudit",
@@ -789,6 +791,7 @@ def verify_android_contract(root: Path) -> None:
                     "native/android/CMakeLists.txt",
                     "native/android/kmediavlc_android_jni.cpp",
                     "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch",
+                    "patches/vlc/0001-android-external-anw-direct-mediacodec.patch",
                     "runtime-android/build.gradle.kts",
                     "scripts/build_vlc_android.sh",
                     "scripts/create_android_link_audit.py",
@@ -860,6 +863,8 @@ def verify_android_contract(root: Path) -> None:
         '"--keystore=memory"',
         'libvlc_video_engine_disable',
         'libvlc_media_add_option(media, ":no-hw-dec")',
+        "capture_selected_tracks",
+        "restore_selected_tracks",
         "JNI_OnLoad",
         "current == kStateEnded || current == kStateError",
     ]
@@ -911,7 +916,12 @@ def verify_android_contract(root: Path) -> None:
     ).read_text(encoding="utf-8")
     if not all(
         marker in instrumented_playback
-        for marker in ["VlcAndroidPlaybackState.ENDED", '"the end-of-stream state"']
+        for marker in [
+            "VlcAndroidPlaybackState.ENDED",
+            '"the end-of-stream state"',
+            "automaticDecodePreservesHdr10SurfaceSignal",
+            "BT.2020/PQ",
+        ]
     ):
         fail("The Android bundled playback gate does not preserve end-of-stream state.")
 
@@ -937,7 +947,7 @@ def verify_android_contract(root: Path) -> None:
     device_result_markers = [
         "REQUIRED_LIBRARIES",
         "payload_tree",
-        "physical-device result is not an exact two-test pass",
+        "physical-device result is not an exact three-test pass",
         '"(avd)"',
         '"qemuRejected": True',
         '"treeSha256"',
@@ -986,6 +996,9 @@ def verify_android_contract(root: Path) -> None:
         "stage_android_legal_evidence.py",
         "libvlcjni-kmediavlc",
         "0001-kmediavlc-android-static-module-policy.patch",
+        "0001-android-external-anw-direct-mediacodec.patch",
+        "git -C \"$vlc_source\" apply",
+        "git -C \"$vlc_source\" apply --reverse",
         "upstream process-path line suppressed",
         "libkmediavlc_android.so",
         "releaseEligible=false",
@@ -1015,6 +1028,7 @@ def verify_android_contract(root: Path) -> None:
         "FORBIDDEN_NEEDED",
         '"loadAlignment"',
         '"libvlcjniPatch"',
+        '"vlcPatch"',
         '"effectiveLicenseSpdx"',
         '"staticComponents"',
         '"candidateLicenseSpdx"',
@@ -1125,6 +1139,18 @@ def verify_android_contract(root: Path) -> None:
     ]
     if not all(marker in policy_patch for marker in patch_markers):
         fail("The Android static module policy patch is incomplete.")
+
+    vlc_patch = (
+        root / "patches/vlc/0001-android-external-anw-direct-mediacodec.patch"
+    ).read_text(encoding="utf-8")
+    vlc_patch_markers = [
+        "AWindowHandler_newFromANWs",
+        "awh->b_has_ndk_air_api = false",
+        "awh->b_has_ndk_asc_api = false",
+        "discard per-buffer HDR dataspaces",
+    ]
+    if not all(marker in vlc_patch for marker in vlc_patch_markers):
+        fail("The Android external-ANativeWindow HDR patch is incomplete.")
 
     ci = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
     ci_markers = [

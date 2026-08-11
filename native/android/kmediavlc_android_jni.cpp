@@ -370,6 +370,49 @@ void disable_output_callbacks(AndroidPlayer* player) {
         nullptr);
 }
 
+struct TrackSelection final {
+    bool known = false;
+    std::string ids;
+};
+
+TrackSelection capture_selected_tracks(
+    libvlc_media_player_t* media_player,
+    libvlc_track_type_t type) {
+    TrackSelection selection;
+    if (media_player == nullptr) return selection;
+    libvlc_media_tracklist_t* tracks =
+        libvlc_media_player_get_tracklist(media_player, type, true);
+    if (tracks == nullptr) return selection;
+    selection.known = true;
+    const std::size_t count = libvlc_media_tracklist_count(tracks);
+    for (std::size_t index = 0; index < count; ++index) {
+        const libvlc_media_track_t* track = libvlc_media_tracklist_at(tracks, index);
+        if (track == nullptr || track->psz_id == nullptr || std::strchr(track->psz_id, ',') != nullptr) {
+            selection.known = false;
+            selection.ids.clear();
+            break;
+        }
+        if (!selection.ids.empty()) selection.ids.push_back(',');
+        selection.ids.append(track->psz_id);
+    }
+    libvlc_media_tracklist_delete(tracks);
+    return selection;
+}
+
+void restore_selected_tracks(
+    libvlc_media_player_t* media_player,
+    libvlc_track_type_t type,
+    const TrackSelection& selection) {
+    if (media_player == nullptr || !selection.known) return;
+    libvlc_media_player_select_tracks_by_ids(media_player, type, selection.ids.c_str());
+}
+
+void reset_video_format(AndroidPlayer* player) {
+    if (player == nullptr) return;
+    player->video_width.store(0, std::memory_order_release);
+    player->video_height.store(0, std::memory_order_release);
+}
+
 bool recreate_media_player(AndroidPlayer* player) {
     if (player == nullptr || player->media_player == nullptr || player->current_media == nullptr) {
         return false;
@@ -387,6 +430,12 @@ bool recreate_media_player(AndroidPlayer* player) {
     const libvlc_time_t resume_time = reported_time >= 0
         ? reported_time
         : player->position_microseconds.load(std::memory_order_acquire);
+    const TrackSelection selected_audio =
+        capture_selected_tracks(player->media_player, libvlc_track_audio);
+    const TrackSelection selected_video =
+        capture_selected_tracks(player->media_player, libvlc_track_video);
+    const TrackSelection selected_text =
+        capture_selected_tracks(player->media_player, libvlc_track_text);
 
     libvlc_media_player_t* previous = std::exchange(player->media_player, nullptr);
     player->output_callbacks_installed = false;
@@ -399,6 +448,9 @@ bool recreate_media_player(AndroidPlayer* player) {
     }
 
     libvlc_media_player_set_media(player->media_player, player->current_media);
+    restore_selected_tracks(player->media_player, libvlc_track_audio, selected_audio);
+    restore_selected_tracks(player->media_player, libvlc_track_video, selected_video);
+    restore_selected_tracks(player->media_player, libvlc_track_text, selected_text);
     (void)libvlc_media_player_set_rate(player->media_player, player->playback_rate);
     player->volume_pending = true;
     if (!resume_playback) {
@@ -469,8 +521,7 @@ bool replace_surfaces(
         player->surface_width = width;
         player->surface_height = height;
     }
-    player->video_width.store(0, std::memory_order_release);
-    player->video_height.store(0, std::memory_order_release);
+    reset_video_format(player);
 
     const bool recreating = next_video != nullptr && player->current_media != nullptr;
     const bool installed = recreating
@@ -647,8 +698,7 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_open(
     player->media_generation.fetch_add(1, std::memory_order_acq_rel);
     player->position_microseconds.store(0, std::memory_order_release);
     player->duration_microseconds.store(0, std::memory_order_release);
-    player->video_width.store(0, std::memory_order_release);
-    player->video_height.store(0, std::memory_order_release);
+    reset_video_format(player);
     player->buffered_permille.store(0, std::memory_order_release);
     player->seekable.store(false, std::memory_order_release);
     player->state.store(kStateIdle, std::memory_order_release);

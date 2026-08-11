@@ -190,6 +190,11 @@ fi
         )
         self.assertRegex(result["evidence"]["libvlcjniPatch"]["sha256"], r"^[0-9a-f]{64}$")
         self.assertEqual(
+            "patches/vlc/0001-android-external-anw-direct-mediacodec.patch",
+            result["evidence"]["vlcPatch"]["path"],
+        )
+        self.assertRegex(result["evidence"]["vlcPatch"]["sha256"], r"^[0-9a-f]{64}$")
+        self.assertEqual(
             "compliance/policy/android-static-components.json",
             result["evidence"]["staticComponentPolicy"]["path"],
         )

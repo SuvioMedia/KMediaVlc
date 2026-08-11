@@ -3,6 +3,7 @@
 package io.github.shusek.kmediavlc.runtime.android;
 
 import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
@@ -31,6 +32,7 @@ public final class VlcAndroidSurfaceTestActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setColorMode(ActivityInfo.COLOR_MODE_HDR);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);

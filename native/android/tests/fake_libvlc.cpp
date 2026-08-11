@@ -4,12 +4,14 @@
 
 #include <vlc/vlc.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <new>
 
 struct libvlc_instance_t final {};
 struct libvlc_media_t final {};
+struct libvlc_media_tracklist_t final {};
 
 struct libvlc_media_player_t final {
     libvlc_media_player_cbs callbacks{};
@@ -151,6 +153,32 @@ extern "C" void libvlc_media_release(libvlc_media_t* media) {
 }
 
 extern "C" void libvlc_media_player_set_media(libvlc_media_player_t*, libvlc_media_t*) {}
+
+extern "C" libvlc_media_tracklist_t* libvlc_media_player_get_tracklist(
+    libvlc_media_player_t* player,
+    libvlc_track_type_t,
+    bool) {
+    return player == nullptr ? nullptr : new (std::nothrow) libvlc_media_tracklist_t();
+}
+
+extern "C" std::size_t libvlc_media_tracklist_count(const libvlc_media_tracklist_t*) {
+    return 0;
+}
+
+extern "C" libvlc_media_track_t* libvlc_media_tracklist_at(
+    libvlc_media_tracklist_t*,
+    std::size_t) {
+    return nullptr;
+}
+
+extern "C" void libvlc_media_tracklist_delete(libvlc_media_tracklist_t* tracks) {
+    delete tracks;
+}
+
+extern "C" void libvlc_media_player_select_tracks_by_ids(
+    libvlc_media_player_t*,
+    libvlc_track_type_t,
+    const char*) {}
 
 extern "C" int libvlc_media_player_play(libvlc_media_player_t* player) {
     if (player == nullptr) return -1;

@@ -17,12 +17,14 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
+import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.view.Surface;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -44,6 +46,9 @@ public final class VlcAndroidPlaybackInstrumentedTest {
     private static final String FIXTURE = "kmediavlc-android-playback.mkv";
     private static final String FIXTURE_SHA256 =
             "f9cee3480b4619e2d94979a30b40f19cbb417289d3453e7bbb890a871c6f9718";
+    private static final String HDR10_FIXTURE = "kmediavlc-android-hdr10.mp4";
+    private static final String HDR10_FIXTURE_SHA256 =
+            "7118a549ce377f370dd00bc5e191dc1213f51380670247116005e157c54f2115";
     private static final String MEDIACODEC_THREAD = "vlc-mediacodec";
     private static final String SPU_THREAD = "vlc-dec-spu";
     private static final long PLAYBACK_TIMEOUT_MILLIS = 20_000L;
@@ -61,6 +66,81 @@ public final class VlcAndroidPlaybackInstrumentedTest {
         runPlaybackLifecycle(VlcAndroidDecodeMode.SOFTWARE_ONLY, false);
     }
 
+    @Test
+    public void automaticDecodePreservesHdr10SurfaceSignal() throws Exception {
+        assertTrue("The device must advertise a Main 10 HEVC decoder.", hasHevcMain10Decoder());
+        awaitCondition(
+                () -> !nativeThreadExists(MEDIACODEC_THREAD),
+                TRANSITION_TIMEOUT_MILLIS,
+                "a previous MediaCodec decoder thread to stop");
+        Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        File fixture = new File(instrumentation.getContext().getCacheDir(), HDR10_FIXTURE);
+        VlcAndroidSurfaceTestActivity host = null;
+        VlcAndroidPlayer player = null;
+        try {
+            copyFixture(instrumentation, fixture, HDR10_FIXTURE, HDR10_FIXTURE_SHA256);
+            host = startSurfaceHost(instrumentation);
+            VlcAndroidSurfaceTestActivity activeHost = host;
+            ScreenProbe pixels = new ScreenProbe(instrumentation);
+            player =
+                    VlcAndroidPlayer.create(
+                            instrumentation.getTargetContext(), VlcAndroidDecodeMode.AUTOMATIC);
+            VlcAndroidPlayer activePlayer = player;
+            assertTrue("libVLC rejected HDR fixture looping.", activePlayer.setLoop(true));
+            attachCurrentSurfaces(activePlayer, activeHost);
+            assertTrue(
+                    "libVLC rejected the owned HDR10 fixture: "
+                            + activePlayer.lastError().orElse("no native error"),
+                    activePlayer.open(fixture.getAbsolutePath(), true));
+
+            VlcAndroidPlayerSnapshot observed = null;
+            long outputDeadline = SystemClock.elapsedRealtime() + PLAYBACK_TIMEOUT_MILLIS;
+            while (SystemClock.elapsedRealtime() < outputDeadline) {
+                observed = requireHealthySnapshot(activePlayer);
+                if (isVideoOutputConfigured(observed)) break;
+                SystemClock.sleep(50L);
+            }
+            if (observed == null || !isVideoOutputConfigured(observed)) {
+                fail(
+                        "libVLC HDR video output was not configured: size="
+                                + (observed == null
+                                        ? "unknown"
+                                        : observed.getVideoWidth()
+                                                + "x"
+                                                + observed.getVideoHeight()));
+            }
+            verifyDecoderRoute(true);
+            pixels.awaitVideo(activeHost, "HDR10 video");
+            pixels.awaitHdr10Surface(activeHost);
+
+            assertTrue("libVLC rejected HDR stop.", activePlayer.stop());
+            activePlayer.detachSurfaces();
+            activePlayer.close();
+            assertClosed(activePlayer);
+            player = null;
+            awaitCondition(
+                    () -> !nativeThreadExists(MEDIACODEC_THREAD),
+                    TRANSITION_TIMEOUT_MILLIS,
+                    "the HDR MediaCodec decoder thread to stop after close");
+        } finally {
+            try {
+                if (player != null) player.close();
+            } finally {
+                try {
+                    if (host != null) {
+                        VlcAndroidSurfaceTestActivity hostToFinish = host;
+                        instrumentation.runOnMainSync(hostToFinish::finish);
+                        instrumentation.waitForIdleSync();
+                    }
+                } finally {
+                    if (!fixture.delete() && fixture.exists()) {
+                        throw new IOException("Could not remove the copied Android HDR fixture.");
+                    }
+                }
+            }
+        }
+    }
+
     private void runPlaybackLifecycle(VlcAndroidDecodeMode mode, boolean expectMediaCodec)
             throws Exception {
         awaitCondition(
@@ -72,7 +152,7 @@ public final class VlcAndroidPlaybackInstrumentedTest {
         VlcAndroidSurfaceTestActivity host = null;
         VlcAndroidPlayer player = null;
         try {
-            copyFixture(instrumentation, fixture);
+            copyFixture(instrumentation, fixture, FIXTURE, FIXTURE_SHA256);
             host = startSurfaceHost(instrumentation);
             VlcAndroidSurfaceTestActivity activeHost = host;
             ScreenProbe pixels = new ScreenProbe(instrumentation);
@@ -245,6 +325,10 @@ public final class VlcAndroidPlaybackInstrumentedTest {
         return snapshot;
     }
 
+    private static boolean isVideoOutputConfigured(VlcAndroidPlayerSnapshot snapshot) {
+        return snapshot.getVideoWidth() > 0 && snapshot.getVideoHeight() > 0;
+    }
+
     private static void verifyDecoderRoute(boolean expectMediaCodec) throws Exception {
         if (expectMediaCodec) {
             awaitCondition(
@@ -259,11 +343,15 @@ public final class VlcAndroidPlaybackInstrumentedTest {
         }
     }
 
-    private static void copyFixture(Instrumentation instrumentation, File output)
+    private static void copyFixture(
+            Instrumentation instrumentation,
+            File output,
+            String assetName,
+            String expectedSha256)
             throws Exception {
         Context testContext = instrumentation.getContext();
         try (InputStream source =
-                        new BufferedInputStream(testContext.getAssets().open(FIXTURE));
+                        new BufferedInputStream(testContext.getAssets().open(assetName));
                 OutputStream destination =
                         new BufferedOutputStream(new FileOutputStream(output, false))) {
             byte[] buffer = new byte[32 * 1024];
@@ -273,7 +361,7 @@ public final class VlcAndroidPlaybackInstrumentedTest {
                 destination.write(buffer, 0, count);
             }
         }
-        assertEquals("The playback fixture bytes changed.", FIXTURE_SHA256, sha256(output));
+        assertEquals("The playback fixture bytes changed.", expectedSha256, sha256(output));
     }
 
     private static String sha256(File file) throws IOException, NoSuchAlgorithmException {
@@ -299,6 +387,34 @@ public final class VlcAndroidPlaybackInstrumentedTest {
             if (codec.isEncoder()) continue;
             for (String type : codec.getSupportedTypes()) {
                 if ("video/avc".equalsIgnoreCase(type)) return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasHevcMain10Decoder() {
+        for (MediaCodecInfo codec :
+                new MediaCodecList(MediaCodecList.ALL_CODECS).getCodecInfos()) {
+            if (codec.isEncoder()) continue;
+            for (String type : codec.getSupportedTypes()) {
+                if (!"video/hevc".equalsIgnoreCase(type)) continue;
+                MediaCodecInfo.CodecCapabilities capabilities;
+                try {
+                    capabilities = codec.getCapabilitiesForType(type);
+                } catch (IllegalArgumentException ignored) {
+                    continue;
+                }
+                for (MediaCodecInfo.CodecProfileLevel profileLevel :
+                        capabilities.profileLevels) {
+                    int profile = profileLevel.profile;
+                    if (profile == MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10
+                            || profile
+                                    == MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10HDR10
+                            || profile
+                                    == MediaCodecInfo.CodecProfileLevel.HEVCProfileMain10HDR10Plus) {
+                        return true;
+                    }
+                }
             }
         }
         return false;
@@ -382,6 +498,68 @@ public final class VlcAndroidPlaybackInstrumentedTest {
                 SystemClock.sleep(75L);
             }
             fail("Timed out waiting for " + description + "; screenshotCaptured=" + captured);
+        }
+
+        void awaitHdr10Surface(VlcAndroidSurfaceTestActivity host) throws Exception {
+            long deadline = SystemClock.elapsedRealtime() + PLAYBACK_TIMEOUT_MILLIS;
+            String lastDataspace = "missing SurfaceView layer";
+            while (SystemClock.elapsedRealtime() < deadline) {
+                String dataspace = surfaceDataspace(host);
+                if (dataspace != null) {
+                    lastDataspace = dataspace;
+                    if (dataspace.contains("BT2020") && dataspace.contains("PQ")) return;
+                }
+                SystemClock.sleep(100L);
+            }
+            fail("HDR10 SurfaceView never reached BT.2020/PQ; lastDataspace=" + lastDataspace);
+        }
+
+        private String surfaceDataspace(VlcAndroidSurfaceTestActivity host) throws Exception {
+            String dump = readSurfaceFlingerDump();
+            String activityName = host.getClass().getSimpleName();
+            StringBuilder observed = new StringBuilder();
+            int cursor = 0;
+            while ((cursor = dump.indexOf("SurfaceView[", cursor)) >= 0) {
+                int nextLayer = dump.indexOf("\n  Layer [", cursor + 1);
+                if (nextLayer < 0) nextLayer = dump.length();
+                String block = dump.substring(cursor, nextLayer);
+                if (block.contains(activityName) && block.contains("isVisible=true")) {
+                    int marker = block.indexOf("dataspace=");
+                    if (marker >= 0) {
+                        int end = block.indexOf(' ', marker);
+                        if (end < 0) end = block.length();
+                        String dataspace =
+                                block.substring(marker + "dataspace=".length(), end);
+                        if (dataspace.contains("BT2020") && dataspace.contains("PQ")) {
+                            return dataspace;
+                        }
+                        if (observed.length() > 0) observed.append(',');
+                        observed.append(dataspace);
+                    }
+                }
+                cursor = nextLayer;
+            }
+            return observed.length() == 0 ? null : observed.toString();
+        }
+
+        private String readSurfaceFlingerDump() throws IOException {
+            try (ParcelFileDescriptor descriptor =
+                            automation.executeShellCommand("dumpsys SurfaceFlinger");
+                    InputStream input = new FileInputStream(descriptor.getFileDescriptor());
+                    ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+                byte[] buffer = new byte[32 * 1024];
+                int total = 0;
+                while (true) {
+                    int count = input.read(buffer);
+                    if (count < 0) break;
+                    total += count;
+                    if (total > 4 * 1024 * 1024) {
+                        throw new IOException("SurfaceFlinger dump exceeded the test boundary.");
+                    }
+                    output.write(buffer, 0, count);
+                }
+                return output.toString(StandardCharsets.UTF_8.name());
+            }
         }
 
         private Bitmap capture(VlcAndroidSurfaceTestActivity host) throws Exception {

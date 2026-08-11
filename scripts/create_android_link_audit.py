@@ -244,17 +244,25 @@ def required_modules(root: Path) -> set[str]:
     return set(values)
 
 
-def libvlcjni_patch(root: Path) -> tuple[str, Path]:
+def recipe_patch(root: Path, key: str, description: str) -> tuple[str, Path]:
     recipe = read_json(root / "build-recipes/android.json")
-    value = recipe.get("libvlcjniPatch")
+    value = recipe.get(key)
     if not isinstance(value, str):
-        fail("Android libvlcjni patch path is missing.")
+        fail(f"Android {description} patch path is missing.")
     relative = PurePosixPath(value)
     if relative.is_absolute() or relative.as_posix() != value or ".." in relative.parts:
-        fail("Android libvlcjni patch path is not canonical.")
-    patch = real_file(root.joinpath(*relative.parts), "Android libvlcjni policy patch")
+        fail(f"Android {description} patch path is not canonical.")
+    patch = real_file(root.joinpath(*relative.parts), f"Android {description} patch")
     relative_to(patch, root)
     return value, patch
+
+
+def libvlcjni_patch(root: Path) -> tuple[str, Path]:
+    return recipe_patch(root, "libvlcjniPatch", "libvlcjni policy")
+
+
+def vlc_patch(root: Path) -> tuple[str, Path]:
+    return recipe_patch(root, "vlcPatch", "VLC external-ANativeWindow")
 
 
 def static_component_policy(root: Path) -> dict:
@@ -840,6 +848,7 @@ def create(
     modules = parse_module_manifest(module_manifest)
     required = required_modules(root)
     patch_path, patch_file = libvlcjni_patch(root)
+    vlc_patch_path, vlc_patch_file = vlc_patch(root)
     component_policy = static_component_policy(root)
     component_policy_path = real_file(
         root / "compliance/policy/android-static-components.json",
@@ -992,6 +1001,10 @@ def create(
             "libvlcjniPatch": {
                 "path": patch_path,
                 "sha256": sha256(patch_file),
+            },
+            "vlcPatch": {
+                "path": vlc_patch_path,
+                "sha256": sha256(vlc_patch_file),
             },
             "linkMapSha256": sha256(link_map),
             "moduleManifestSha256": sha256(module_manifest),
