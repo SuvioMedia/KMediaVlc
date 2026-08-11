@@ -18,6 +18,8 @@ build:
 - a clean KMediaVlc checkout and its forty-character commit;
 - VLC revision `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`;
 - output of `scripts/build_vlc_windows.sh`, never a VideoLAN nightly;
+- a decoder-only Windows graph with Meson `stream_outputs=false` and
+  `videolan_manager=false`, matching the contrib `--disable-sout` profile;
 - a stripped Meson `runtime`-tag install, without headers, import libraries, or
   other development-only files;
 - the KMediaVlc bridge built against headers from that exact VLC revision;
