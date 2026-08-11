@@ -47,8 +47,10 @@ rendering.
 1. Complete source/license and static-link review for the 89 selected modules
    and every contrib actually folded into them; produce the per-binary legal
    inventory, notices, corresponding-source archive, and relinking material.
-2. Reproduce the source build, relocation report, plugin cache, and real
-   playback tests in CI from clean inputs.
+2. Run the manually dispatched `macOS libVLC source audit` for the exact
+   candidate commit and retain its path-free relocation report, contrib list,
+   and two-test JUnit evidence. The workflow rebuilds from clean inputs and
+   never uploads the still-unapproved native payload.
 3. Run real pinned-VLC MKV/MP4, audio, subtitles, VideoToolbox, HTTPS, seek,
    long lifecycle, and device replacement tests on macOS hardware.
 4. Resolve and test the pinned `vgl` HDR limitation before claiming HDR10 or

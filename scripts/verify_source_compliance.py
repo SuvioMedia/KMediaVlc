@@ -1483,6 +1483,32 @@ def verify_macos_transport_contract(root: Path) -> None:
     if not all(marker in ci for marker in ci_markers):
         fail("CI must exercise the macOS bridge and real SDR/HDR IOSurface allocations.")
 
+    source_audit = (root / ".github/workflows/macos-source-audit.yml").read_text(
+        encoding="utf-8"
+    )
+    source_audit_markers = [
+        "workflow_dispatch:",
+        "tested_commit:",
+        "candidate_version:",
+        "permissions:\n  contents: read",
+        "scripts/build_vlc_macos.sh",
+        "scripts/stage_vlc_macos_runtime.py",
+        "pinnedVideoLanFixturePublishesCpuPullFrame",
+        "pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames",
+        "releaseEligible:false",
+        "path: ${{ runner.temp }}/macos-aarch64-evidence",
+    ]
+    if not all(marker in source_audit for marker in source_audit_markers):
+        fail("The manual macOS source audit is incomplete or does not retain bounded evidence.")
+    forbidden_source_audit_markers = [
+        "pull_request:",
+        "push:",
+        "${{ secrets.",
+        "path: ${{ runner.temp }}/macos-aarch64-candidate",
+    ]
+    if any(marker in source_audit for marker in forbidden_source_audit_markers):
+        fail("The macOS source audit must remain manual, secret-free, and candidate-free.")
+
     desktop_build = (root / "runtime-desktop/build.gradle.kts").read_text(encoding="utf-8")
     if (
         'inputs.file(bridgePath).withPropertyName("nativeBridgeTestBinary")' not in desktop_build
@@ -2344,7 +2370,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "workflow_dispatch:",
         "tested_commit:",
         "options: [x64, ARM64]",
-        'github.ref == \'refs/heads/codex/libvlc4-backend\'',
+        'github.ref == \'refs/heads/main\'',
         'runs-on: [self-hosted, linux, "${{ inputs.architecture }}", kmediavlc-linux-gpu]',
         "pinnedVideoLanFixtureImportsLinuxDmaBufsAndReturnsExplicitFences",
         "Remove the unpublished candidate from the self-hosted runner",

@@ -32,7 +32,7 @@ concurrency:
 jobs:
   probe:
     name: Import DMA-BUFs and transfer explicit fences
-    if: github.ref == 'refs/heads/codex/libvlc4-backend'
+    if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, linux, "${{ inputs.architecture }}", kmediavlc-linux-gpu]
     timeout-minutes: 360
     env:

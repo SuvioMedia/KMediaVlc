@@ -1,0 +1,151 @@
+# SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+
+name: macOS libVLC source audit
+run-name: macOS source audit for ${{ inputs.tested_commit }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tested_commit:
+        description: Exact forty-character KMediaVlc commit to validate
+        required: true
+        type: string
+      candidate_version:
+        description: Immutable SemVer intended for this audit candidate
+        required: true
+        default: 0.1.0-rc.1
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kmediavlc-macos-source-${{ inputs.tested_commit }}
+  cancel-in-progress: false
+
+jobs:
+  source-build:
+    name: Source build, relocation, and real IOSurface playback
+    runs-on: macos-15
+    timeout-minutes: 360
+    env:
+      TESTED_COMMIT: ${{ inputs.tested_commit }}
+      CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+      VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+    steps:
+      - name: Check out the exact KMediaVlc revision
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ inputs.tested_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check out the exact VLC source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          repository: videolan/vlc
+          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          path: .vlc-source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind the audit to immutable sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          semver='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?$'
+          [[ "$TESTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$CANDIDATE_VERSION" =~ $semver ]]
+          candidate_upper="$(printf '%s' "$CANDIDATE_VERSION" | tr '[:lower:]' '[:upper:]')"
+          [[ "$candidate_upper" != *SNAPSHOT* ]]
+          test "$(git rev-parse HEAD)" = "$TESTED_COMMIT"
+          test "$(git -C .vlc-source rev-parse HEAD)" = "$VLC_REVISION"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          test -z "$(git -C .vlc-source status --porcelain --untracked-files=no)"
+          test "$(uname -m)" = arm64
+          python3 scripts/verify_source_compliance.py --root .
+
+      - name: Set up Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      - name: Build pinned shared libVLC from source
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/build_vlc_macos.sh \
+            "$GITHUB_WORKSPACE/.vlc-source" \
+            "$RUNNER_TEMP/vlc-macos-build" \
+            8
+
+      - name: Build the exact macOS bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew buildNativeBridge \
+            -PkmediaVlcDesktopOnly=true \
+            -PkmediaVlcVlcSourceDir="$GITHUB_WORKSPACE/.vlc-source" \
+            -PkmediaVlcCMakeExecutable="$GITHUB_WORKSPACE/.vlc-source/extras/tools/build/bin/cmake" \
+            --rerun-tasks --no-daemon --stacktrace --console=plain
+
+      - name: Stage and audit the closed macOS runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/stage_vlc_macos_runtime.py \
+            --root "$GITHUB_WORKSPACE" \
+            --install "$RUNNER_TEMP/vlc-macos-build/vlc-macosx-arm64" \
+            --bridge "$GITHUB_WORKSPACE/build/native/macos-aarch64/libkmediavlc_bridge.dylib" \
+            --output "$RUNNER_TEMP/macos-aarch64-candidate" \
+            --report "$RUNNER_TEMP/macos-aarch64-audit.json" \
+            --allow-audit-candidate
+          test "$(jq -r .target "$RUNNER_TEMP/macos-aarch64-audit.json")" = macos-aarch64
+          test "$(jq -r .selectedPluginCount "$RUNNER_TEMP/macos-aarch64-audit.json")" = 89
+          test "$(jq -r '.files | length' "$RUNNER_TEMP/macos-aarch64-audit.json")" = 93
+          test "$(jq -r '.machO | length' "$RUNNER_TEMP/macos-aarch64-audit.json")" = 92
+
+      - name: Play a real CPU frame and replace an IOSurface generation
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="$RUNNER_TEMP/macos-aarch64-candidate"
+          ./gradlew :runtime-desktop:test \
+            -PkmediaVlcDesktopOnly=true \
+            -PkmediaVlcNativeBridgePath="$stage/bin/libkmediavlc_bridge.dylib" \
+            -PkmediaVlcTestLibVlcPath="$stage/bin/libvlc.12.dylib" \
+            -PkmediaVlcTestPluginDirectory="$stage/lib/vlc/plugins" \
+            --tests '*.VlcDesktopPlayerIntegrationTest.pinnedVideoLanFixturePublishesCpuPullFrame' \
+            --tests '*.VlcDesktopPlayerIntegrationTest.pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames' \
+            --rerun-tasks --no-daemon --stacktrace --console=plain
+
+      - name: Bind the retained audit evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/macos-aarch64-evidence"
+          mkdir "$evidence"
+          cp "$RUNNER_TEMP/macos-aarch64-audit.json" "$evidence/"
+          cp "$GITHUB_WORKSPACE/runtime-desktop/build/test-results/test/TEST-io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest.xml" \
+            "$evidence/test-results.xml"
+          cp "$RUNNER_TEMP/vlc-macos-build/contrib-list.txt" "$evidence/"
+          jq -n \
+            --arg testedCommit "$TESTED_COMMIT" \
+            --arg candidateVersion "$CANDIDATE_VERSION" \
+            --arg vlcRevision "$VLC_REVISION" \
+            --arg auditSha256 "$(shasum -a 256 "$evidence/macos-aarch64-audit.json" | awk '{print $1}')" \
+            --arg testSha256 "$(shasum -a 256 "$evidence/test-results.xml" | awk '{print $1}')" \
+            '{schemaVersion:1, testedCommit:$testedCommit, candidateVersion:$candidateVersion, vlcRevision:$vlcRevision, auditSha256:$auditSha256, testSha256:$testSha256, releaseEligible:false}' \
+            > "$evidence/acceptance.json"
+
+      - name: Upload path-free macOS audit evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: kmediavlc-macos-aarch64-source-audit-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/macos-aarch64-evidence
+          if-no-files-found: error
+          retention-days: 7
