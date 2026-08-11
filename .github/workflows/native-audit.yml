@@ -534,9 +534,9 @@ jobs:
               ForEach-Object { ([xml](Get-Content -LiteralPath $_.FullName -Raw)).testsuite.testcase }
           )
           foreach ($required in @(
-            'loadsBridgeBuiltAgainstPinnedLibVlcHeaders',
-            'pinnedVideoLanFixturePublishesCpuPullFrame',
-            'pinnedChromiumHttpsFixturePublishesCpuPullFrame'
+            'loadsBridgeBuiltAgainstPinnedLibVlcHeaders()',
+            'pinnedVideoLanFixturePublishesCpuPullFrame()',
+            'pinnedChromiumHttpsFixturePublishesCpuPullFrame()'
           )) {
             $test = @($testCases | Where-Object { $_.name -eq $required })
             if ($test.Count -ne 1 -or $null -ne $test[0].skipped) {
@@ -544,7 +544,7 @@ jobs:
             }
           }
           $gpu = @($testCases | Where-Object {
-            $_.name -eq 'pinnedVideoLanFixtureKeepsSdrD3D11FrameSrgbOnHdrHost'
+            $_.name -eq 'pinnedVideoLanFixtureKeepsSdrD3D11FrameSrgbOnHdrHost()'
           })
           if ($gpu.Count -ne 1) { throw 'The native D3D11 test result is missing.' }
           if ($null -ne $gpu[0].skipped) {
@@ -553,7 +553,7 @@ jobs:
             Write-Host 'The native D3D11 import test executed on the hosted runner.'
           }
           $hdr = @($testCases | Where-Object {
-            $_.name -eq 'pinnedChromiumHdr10FixturePublishesFp16D3D11Frame'
+            $_.name -eq 'pinnedChromiumHdr10FixturePublishesFp16D3D11Frame()'
           })
           if ($hdr.Count -ne 1) { throw 'The native HDR10 test result is missing.' }
           if ($null -ne $hdr[0].skipped) {
