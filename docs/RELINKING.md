@@ -36,10 +36,11 @@ complete pinned `llvm_android` tree and the closed LLVM runtime source/build clo
 Git trees and blobs. The final release still has to retain the archive generated for its exact
 tested KMediaVlc commit; a provenance record or an archive from another commit is insufficient.
 
-The relink recipe also includes KMediaVlc's committed `libvlcjni` policy patch.
-For the Android profile that patch disables Blu-ray/BD-J and records the
-limitation in the closed build recipe.
-Each build creates a linker map and a path-free audit that binds the patch and
+The relink recipe also includes KMediaVlc's committed `libvlcjni` policy patch and its VLC
+external-ANativeWindow patch. For the Android profile the first patch disables Blu-ray/BD-J and
+records the limitation in the closed build recipe; the second keeps callback-supplied Android
+Surfaces on the direct MediaCodec route so HDR buffer dataspaces survive presentation.
+Each build creates a linker map and a path-free audit that binds both patches and
 generated module-array hashes to the exact static archives and object members
 that entered `libvlc.so`. Those reports must be reviewed together with the
 corresponding contrib sources and notices; they are not a substitute for the

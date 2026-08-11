@@ -18,6 +18,7 @@
         "native/android/CMakeLists.txt",
         "native/android/kmediavlc_android_jni.cpp",
         "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch",
+        "patches/vlc/0001-android-external-anw-direct-mediacodec.patch",
         "runtime-android/build.gradle.kts",
         "scripts/build_vlc_android.sh",
         "scripts/create_android_link_audit.py",

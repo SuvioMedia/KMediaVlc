@@ -51,13 +51,20 @@ The bridge selects libVLC 4's `libvlc_video_engine_anw` callback API. It does no
 5. Detach drops the player's Surface references while the active VLC binding keeps its own stable
    references until VLC tears it down.
 6. Attaching different Surfaces while media is open recreates `libvlc_media_player_t`, reuses the
-   bridge-owned media, restores position/rate/volume and playing/paused state, and installs the
-   ANativeWindow callbacks exactly once on the new player. Playback can continue during the
-   detached interval; reattachment incurs a brief native-player restart.
+   bridge-owned media, restores selected audio/video/subtitle tracks, position/rate/volume and
+   playing/paused state, and installs the ANativeWindow callbacks exactly once on the new player.
+   Playback can continue during the detached interval; reattachment incurs a brief native-player
+   restart.
 
 The optional second Surface is the transparent subtitle plane required when MediaCodec renders
 opaque video directly into the first Surface. Software-only decoding is an explicit closed mode
 implemented with VLC 4's `:no-hw-dec` media option.
+
+For callback-supplied application windows, the pinned VLC source patch keeps MediaCodec directly
+on that final ANativeWindow. It disables only the intermediate NDK AImageReader/ASurfaceControl
+route created for VLC-managed windows; that intermediate layer replaced HDR decoder-buffer
+dataspaces with sRGB on tested hardware. Direct rendering preserves the MediaCodec BT.2020/PQ
+signal while retaining VLC's automatic hardware-decoder selection.
 
 The bridge does not change process-wide `HOME` or any other environment variable. VLC credential
 storage is forced to the non-persistent `memory` keystore.
@@ -69,12 +76,14 @@ The candidate recipe is `build-recipes/android.json`. It uses NDK `29.0.14206865
 stock nightly, or prebuilt contrib archive.
 
 The build uses a transient copy of the pinned `libvlcjni` build machinery and applies the
-committed `patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch`. The patch sorts
-the selected module archives deterministically and excludes the explicit VLC modules that
+committed `patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch`. It also applies
+`patches/vlc/0001-android-external-anw-direct-mediacodec.patch` to the clean pinned VLC checkout
+for the duration of the build and restores the checkout on exit. The libvlcjni patch sorts the
+selected module archives deterministically and excludes the explicit VLC modules that
 declare GPL-2.0-or-later. It also disables the Blu-ray contrib and VLC module: the Android API
 does not expose optical-disc playback, and a host-only BD-J Java payload must not enter the
 mobile source build. File, HTTP, adaptive, MP4, Matroska, MediaCodec, and software-decoding
-modules remain explicit required inputs. Neither upstream checkout is modified.
+modules remain explicit required inputs. Neither upstream checkout is left modified.
 
 ```shell
 bash scripts/build_vlc_android.sh \
@@ -95,7 +104,7 @@ module marker, or a module without VLC's exact LGPL marker. The final `libvlc.so
 no GPL module marker; the report records whether its LGPL metadata marker survives section
 garbage collection. Eligibility comes from the verified linked module archives and exact link
 graph, not from assuming that unused metadata strings survive the final link. Path-free candidate
-reports, including the policy-patch hash, are written under `/path/to/audit-work/link-audits`;
+reports, including both source-patch hashes, are written under `/path/to/audit-work/link-audits`;
 linker maps remain local build evidence and are not placed in the AAR. The report records VLC's
 declared LGPL license but deliberately leaves the final effective SPDX expression unset until
 every contributing static archive is reviewed. The closed policy in
@@ -232,11 +241,13 @@ anything. A pre-existing KMediaVlc test package also stops the run, so cleanup
 cannot remove an unrelated installation.
 
 Gradle independently verifies the complete payload and legal-evidence graph,
-then executes only `VlcAndroidPlaybackInstrumentedTest`. Both automatic
-MediaCodec and software-only cases must render moving video and subtitles,
+then executes only `VlcAndroidPlaybackInstrumentedTest`. The automatic
+MediaCodec and software-only lifecycle cases must render moving video and subtitles,
 survive two Surface replacements, seek to a distinct frame, preserve EOS,
-stop, and release their decoder state. The result verifier rejects skipped,
-extra, emulator-labelled, failed, or errored cases and writes
+stop, and release their decoder state. A third automatic case requires HEVC Main 10,
+renders the owned HDR10 fixture, and requires the visible SurfaceView to reach a
+BT.2020/PQ dataspace. The result verifier rejects skipped, extra, emulator-labelled,
+failed, or errored cases and writes
 `acceptance.json`, binding the exact commit, upstream revisions, device build,
 four runtime-library hashes, complete payload-tree hash, and JUnit hash. Only
 that JSON and the JUnit XML are retained; full device logs are not copied. The
@@ -261,6 +272,12 @@ software-only case verified that thread remained absent. Both cases rendered mov
 separate subtitle plane into real `SurfaceView`/ANativeWindow outputs, preserved playback position
 across two detach/replace/reattach cycles, sought to a distinct frame, stopped, closed, and left no
 MediaCodec decoder thread behind. The fixture is deterministic and hash-checked in the test APK.
+
+On 2026-08-11 an HDR-capable OnePlus CPH2747 running Android 16/API 36 passed the physical
+automatic-decoding HDR10 case with the patched direct-ANativeWindow route. The owned HEVC Main 10
+MP4 fixture declares limited-range BT.2020 primaries and SMPTE ST 2084 transfer; VLC selected
+MediaCodec, rendered visible frames, and SurfaceFlinger reported a BT.2020/PQ SurfaceView signal.
+The same device had reproduced sRGB output through the former AImageReader/ASurfaceControl route.
 
 The NDK source packager and independent verifier were also exercised against those exact upstream
 Git identities. The deterministic candidate contained 19,839 tracked files: the complete 195-file

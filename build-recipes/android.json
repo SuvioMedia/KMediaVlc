@@ -44,6 +44,7 @@
     "mp4",
     "opensles_android"
   ],
+  "vlcPatch": "patches/vlc/0001-android-external-anw-direct-mediacodec.patch",
   "libvlcjniPatch": "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch",
   "disabledVlcFeatures": [
     "bluray"

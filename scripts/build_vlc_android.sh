@@ -48,8 +48,12 @@ actual_ndk_revision="$(sed -n 's/^Pkg.Revision = //p' "$ndk_directory/source.pro
     fail "Android NDK differs from $expected_ndk_revision"
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-patch_file="$project_root/patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"
-[[ -s "$patch_file" && ! -L "$patch_file" ]] || fail "KMediaVlc libvlcjni patch is missing"
+libvlcjni_patch_file="$project_root/patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"
+vlc_patch_file="$project_root/patches/vlc/0001-android-external-anw-direct-mediacodec.patch"
+[[ -s "$libvlcjni_patch_file" && ! -L "$libvlcjni_patch_file" ]] ||
+    fail "KMediaVlc libvlcjni patch is missing"
+[[ -s "$vlc_patch_file" && ! -L "$vlc_patch_file" ]] ||
+    fail "KMediaVlc VLC Android patch is missing"
 patched_libvlcjni="$work_directory/libvlcjni-kmediavlc"
 audit_directory="$work_directory/link-audits"
 [[ ! -e "$patched_libvlcjni" && ! -e "$audit_directory" ]] ||
@@ -60,7 +64,26 @@ if [[ -n "$(find "$libvlcjni_source/buildsystem" "$libvlcjni_source/libvlc" -typ
 fi
 cp -R "$libvlcjni_source/buildsystem" "$patched_libvlcjni/buildsystem"
 cp -R "$libvlcjni_source/libvlc" "$patched_libvlcjni/libvlc"
-patch --batch --forward --strip=1 --directory="$patched_libvlcjni" < "$patch_file"
+patch --batch --forward --strip=1 --directory="$patched_libvlcjni" < "$libvlcjni_patch_file"
+
+vlc_patch_applied=false
+restore_vlc_source() {
+    local status=$?
+    trap - EXIT
+    if [[ "$vlc_patch_applied" == true ]]; then
+        if ! git -C "$vlc_source" apply --reverse --check "$vlc_patch_file" ||
+           ! git -C "$vlc_source" apply --reverse "$vlc_patch_file"; then
+            echo "KMediaVlc Android build: failed to restore the pinned VLC checkout" >&2
+            status=1
+        fi
+    fi
+    exit "$status"
+}
+trap restore_vlc_source EXIT
+git -C "$vlc_source" apply --check "$vlc_patch_file" ||
+    fail "KMediaVlc VLC Android patch does not apply to the pinned checkout"
+git -C "$vlc_source" apply "$vlc_patch_file"
+vlc_patch_applied=true
 
 readelf_executable="$ndk_directory/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-readelf"
 strip_executable="$ndk_directory/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-strip"
