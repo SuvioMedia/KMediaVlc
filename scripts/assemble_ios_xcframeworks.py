@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
 """Assemble audited iOS device/simulator frameworks into one CocoaPods payload."""
 
@@ -456,7 +456,7 @@ def podspec(
   spec.version               = '{version}'
   spec.summary               = 'Bundled, audited libVLC 4 runtime for KMediaPlayer on iOS.'
   spec.homepage              = 'https://github.com/SuvioMedia/KMediaVlc'
-  spec.license               = {{ :type => 'Proprietary', :file => 'LICENSE' }}
+  spec.license               = {{ :type => 'LGPL-2.1-or-later', :file => 'LICENSE' }}
   spec.author                = {{ 'SuvioMedia' => 'SuvioMedia' }}
   spec.source                = {{
     :http => 'https://github.com/SuvioMedia/KMediaVlc/releases/download/v{version}/{archive_name}',

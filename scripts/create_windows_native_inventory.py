@@ -158,7 +158,7 @@ def create(
     add(
         "bin/kmediavlc_bridge.dll",
         "kmediavlc",
-        "LicenseRef-KMediaVlc-Proprietary",
+        "LGPL-2.1-or-later",
         "BRIDGE",
         "DYNAMIC",
     )
@@ -189,7 +189,7 @@ def create(
     add(
         "SHA256SUMS",
         "kmediavlc",
-        "LicenseRef-KMediaVlc-Proprietary",
+        "LGPL-2.1-or-later",
         "DATA",
         "NONE",
     )
@@ -210,7 +210,7 @@ def create(
         {
             "path": AUDIT_NAME,
             "component": "kmediavlc",
-            "licenseSpdx": "LicenseRef-KMediaVlc-Proprietary",
+            "licenseSpdx": "LGPL-2.1-or-later",
             "role": "LEGAL",
             "source": source_offer,
             "linkage": "NONE",

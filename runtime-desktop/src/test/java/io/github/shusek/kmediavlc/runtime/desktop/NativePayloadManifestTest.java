@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary
+// SPDX-License-Identifier: LGPL-2.1-or-later
 
 package io.github.shusek.kmediavlc.runtime.desktop;
 
@@ -112,7 +112,7 @@ class NativePayloadManifestTest {
                 file.0.size=10
                 file.0.sha256=%s
                 file.0.component=kmediavlc-bridge
-                file.0.licenseSpdx=LicenseRef-KMediaVlc-Proprietary
+                file.0.licenseSpdx=LGPL-2.1-or-later
                 file.0.role=BRIDGE
                 file.0.source=sources/kmediavlc-bridge.tar.gz
                 file.0.linkage=DYNAMIC

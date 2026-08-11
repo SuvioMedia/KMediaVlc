@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary -->
+<!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
 
 # Replacing libVLC
 
@@ -18,7 +18,7 @@ not mix plugin directories across libVLC majors.
 ## Android candidate
 
 Android packages `libvlc.so` and `libkmediavlc_android.so` as two separate
-shared libraries for each ABI. The proprietary bridge has a dynamic
+shared libraries for each ABI. The LGPL KMediaVlc bridge has a dynamic
 `DT_NEEDED` edge to `libvlc.so`; no libVLC object code is copied into the
 bridge. VLC's Android build folds its selected modules and contribs into
 `libvlc.so`, so the corresponding-source bundle must include both pinned VLC

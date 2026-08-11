@@ -1,6 +1,12 @@
-<!-- SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary -->
+<!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
 
 # Licensing boundary
+
+Project-authored KMediaVlc runtime clients, native bridges, build recipes, and
+packaging tools are licensed under LGPL-2.1-or-later. The stable public
+`kmediavlc_client.h` ABI is separately licensed under ISC so KMediaPlayer and
+other independent consumers do not inherit KMediaVlc implementation code.
+KMediaPlayer is a separate work and retains its own license.
 
 KMediaVlc does not infer license eligibility from the name `libvlc`. Each
 release consumes an exact component inventory containing the source revision,
@@ -29,7 +35,7 @@ every release. Publication cannot consume an arbitrary payload directory; it
 depends on the same fail-closed packager that creates the verified resources.
 
 On Android, the AAR inventory is exactly two shared libraries per ABI. The
-client bridge remains proprietary and dynamically links to `libvlc.so`.
+LGPL KMediaVlc bridge dynamically links to `libvlc.so`.
 VideoLAN's `libvlcjni.so` and Java wrapper are not distributed. The candidate
 `libvlc.so` internally contains statically linked VLC modules and contribs;
 therefore the upstream `--license a` switch is only a starting filter, not

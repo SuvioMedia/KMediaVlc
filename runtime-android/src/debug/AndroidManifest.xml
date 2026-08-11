@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: LicenseRef-KMediaVlc-Proprietary -->
+<!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <activity
