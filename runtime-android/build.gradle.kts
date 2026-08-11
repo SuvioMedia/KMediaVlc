@@ -690,7 +690,7 @@ val publicationVersionValue = project.version.toString()
 
 extensions.configure<LibraryExtension> {
     namespace = "io.github.shusek.kmediavlc.runtime.android"
-    compileSdk = 37
+    compileSdk = 36
     enableKotlin = false
     defaultConfig {
         minSdk = 28
