@@ -3,9 +3,12 @@
 package io.github.shusek.kmediavlc.runtime.desktop;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
@@ -98,6 +101,39 @@ class NativePayloadManifestTest {
                     "file.3.licenseSpdx=" + invalid);
             assertThrows(VlcRuntimeException.class, () -> NativePayloadManifest.parse(
                     manifest.getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64"));
+        }
+    }
+
+    @Test
+    void acceptsCanonicalCc0LicenseUsedByMacOsGpuPayload() {
+        String conjunction = validManifest()
+                .replace("target=windows-x86_64", "target=macos-aarch64")
+                .replace("renderEngines=D3D11", "renderEngines=OPENGL")
+                .replace(
+                        "file.3.licenseSpdx=LGPL-2.1-or-later",
+                        "file.3.licenseSpdx=Apache-2.0 AND CC0-1.0 AND LGPL-2.1-or-later AND MIT");
+
+        var manifest = NativePayloadManifest.parse(
+                conjunction.getBytes(StandardCharsets.ISO_8859_1), "macos-aarch64");
+
+        assertEquals(
+                "Apache-2.0 AND CC0-1.0 AND LGPL-2.1-or-later AND MIT",
+                manifest.files().get(3).licenseSpdx());
+    }
+
+    @Test
+    void acceptsEveryBundledManifestInReleaseMatrix() throws IOException {
+        assumeTrue(Boolean.getBoolean("kmediavlc.test.bundledManifestMatrix"));
+
+        for (String target : new String[] {
+            "linux-aarch64", "linux-x86_64", "macos-aarch64", "windows-x86_64"
+        }) {
+            String resource = "/META-INF/kmediavlc/native/" + target + "/manifest.properties";
+            var input = NativePayloadManifestTest.class.getResourceAsStream(resource);
+            assertNotNull(input, "Missing bundled manifest: " + resource);
+            try (input) {
+                NativePayloadManifest.parse(input.readAllBytes(), target);
+            }
         }
     }
 

@@ -102,6 +102,11 @@ val legacyNativeInputs =
 val legacyNativeConfigured = legacyNativeInputs.all { it } && nativeSourceOffer.isPresent
 val matrixNativeConfigured = nativeMatrix.isPresent && nativeSourceOffer.isPresent
 val nativePackagingConfigured = legacyNativeConfigured || matrixNativeConfigured
+if (nativePackagingConfigured) {
+    tasks.test {
+        systemProperty("kmediavlc.test.bundledManifestMatrix", "true")
+    }
+}
 require(!(nativeMatrix.isPresent && legacyNativeInputs.any { it })) {
     "Native matrix packaging and legacy single-target inputs are mutually exclusive."
 }
