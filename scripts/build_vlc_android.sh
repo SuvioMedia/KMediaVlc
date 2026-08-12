@@ -48,12 +48,23 @@ actual_ndk_revision="$(sed -n 's/^Pkg.Revision = //p' "$ndk_directory/source.pro
     fail "Android NDK differs from $expected_ndk_revision"
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+archive_prefetcher="$project_root/scripts/prefetch_vlc_archive.py"
 libvlcjni_patch_file="$project_root/patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"
 vlc_patch_file="$project_root/patches/vlc/0001-android-external-anw-direct-mediacodec.patch"
+[[ -f "$archive_prefetcher" && ! -L "$archive_prefetcher" ]] ||
+    fail "checksum-verified VLC archive prefetcher is missing or unsafe"
 [[ -s "$libvlcjni_patch_file" && ! -L "$libvlcjni_patch_file" ]] ||
     fail "KMediaVlc libvlcjni patch is missing"
 [[ -s "$vlc_patch_file" && ! -L "$vlc_patch_file" ]] ||
     fail "KMediaVlc VLC Android patch is missing"
+
+python3 "$archive_prefetcher" \
+    --checksum-manifest "$vlc_source/contrib/src/gcrypt/SHA512SUMS" \
+    --archive libgcrypt-1.12.2.tar.bz2 \
+    --destination-directory "$vlc_source/contrib/tarballs" \
+    --url https://mirrors.dotsrc.org/gcrypt/libgcrypt/libgcrypt-1.12.2.tar.bz2 \
+    --url https://www.mirrorservice.org/sites/ftp.gnupg.org/gcrypt/libgcrypt/libgcrypt-1.12.2.tar.bz2
+
 patched_libvlcjni="$work_directory/libvlcjni-kmediavlc"
 audit_directory="$work_directory/link-audits"
 [[ ! -e "$patched_libvlcjni" && ! -e "$audit_directory" ]] ||
