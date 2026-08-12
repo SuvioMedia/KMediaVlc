@@ -56,7 +56,9 @@ def require_plain_file(root: Path, relative: str) -> Path:
     return candidate
 
 
-def load_policy(root: Path, allow_audit_candidate: bool) -> tuple[dict, list[tuple[str, str]]]:
+def load_policy(
+    root: Path, allow_audit_candidate: bool
+) -> tuple[dict, dict, list[tuple[str, str]]]:
     path = root / "compliance/policy/windows-x86_64-playback-modules.json"
     policy = json.loads(path.read_text(encoding="utf-8"))
     if policy.get("schemaVersion") != 1 or policy.get("target") != "windows-x86_64":
@@ -97,7 +99,7 @@ def load_policy(root: Path, allow_audit_candidate: bool) -> tuple[dict, list[tup
     additional = policy.get("additionalDirectSourceLicenses")
     if not isinstance(additional, dict) or not set(additional).issubset(seen):
         fail("Additional direct-source licenses reference an unknown module.")
-    return policy, modules
+    return policy, binary_policy, modules
 
 
 def copy_file(source: Path, destination: Path) -> dict:
@@ -132,7 +134,7 @@ def main() -> None:
     if bridge.is_symlink() or not bridge.is_file():
         fail("The MSVC bridge input is missing or unsafe.")
 
-    policy, modules = load_policy(root, args.allow_audit_candidate)
+    policy, binary_policy, modules = load_policy(root, args.allow_audit_candidate)
     copied: list[dict] = []
     fixed_files = [
         (require_plain_file(install, "bin/libvlc.dll"), "bin/libvlc.dll", "LIBVLC"),
@@ -158,13 +160,18 @@ def main() -> None:
     if len(raw_plugins) < len(selected_names):
         fail("The source-build plugin set is smaller than the closed playback policy.")
     report.parent.mkdir(parents=True, exist_ok=True)
-    report.write_text(
+    report_payload = (
         json.dumps(
             {
                 "schemaVersion": 1,
                 "target": policy["target"],
                 "vlcRevision": policy["vlcRevision"],
                 "reviewStatus": policy["reviewStatus"],
+                "binaryReviewStatus": binary_policy["reviewStatus"],
+                "auditCandidate": (
+                    policy["reviewStatus"] != "approved"
+                    or binary_policy["reviewStatus"] != "approved"
+                ),
                 "selectedPluginCount": len(selected_names),
                 "rawPluginCount": len(raw_plugins),
                 "excludedPluginCount": len(raw_plugins) - len(selected_names),
@@ -173,10 +180,10 @@ def main() -> None:
             indent=2,
             sort_keys=True,
         )
-        + "\n",
-        encoding="utf-8",
-        newline="\n",
+        + "\n"
     )
+    with report.open("w", encoding="utf-8", newline="\n") as destination:
+        destination.write(report_payload)
     print(f"Staged {len(selected_names)} closed Windows playback plugins from {len(raw_plugins)} candidates.")
 
 

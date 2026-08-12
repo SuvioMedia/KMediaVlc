@@ -1,0 +1,32 @@
+{
+  "kmediaVlcCommit": "53b76c5d6b01b53cbaa8b43b08e03ac10638d8e9",
+  "libvlcjniRevision": "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21",
+  "payload": {
+    "fileCount": 94,
+    "runtimeLibraries": {
+      "jni/arm64-v8a/libkmediavlc_android.so": "c41009bb29fad4017842fb382a8f54967ffef41fe876634b063b59a78d258fa5",
+      "jni/arm64-v8a/libvlc.so": "1fe53f452c68c87f8b5f53f6ea9330999c9ff9e08ae0665ed7fa52ac38d783a7",
+      "jni/armeabi-v7a/libkmediavlc_android.so": "a96d7d3a826cf627ee964fb6cf7f3248f519e244abaa228114db4e5e28db3344",
+      "jni/armeabi-v7a/libvlc.so": "db002cb1f1f44e46789468cee0cc9c8a4608e863da76e2723a8d515be7aa9102"
+    },
+    "treeSha256": "4ccc5194c5be2e7086009450b82a5458359d99c2510de618ea6703b06f2c4e38"
+  },
+  "physicalDevice": {
+    "apiLevel": 36,
+    "buildFingerprint": "OnePlus/CPH2747/OP611FL1:16/BP2A.250605.015/B.R4T3.16cae21_dc209e_dc22f5:user/release-keys",
+    "gradleDescription": "CPH2747 - 16",
+    "manufacturer": "OnePlus",
+    "model": "CPH2747",
+    "primaryAbi": "arm64-v8a",
+    "qemuRejected": true
+  },
+  "schemaVersion": 1,
+  "testCases": [
+    "automaticDecodePreservesHdr10SurfaceSignal",
+    "automaticDecodeUsesMediaCodecAndSurvivesSurfaceLifecycle",
+    "softwareDecodeAvoidsMediaCodecAndSurvivesSurfaceLifecycle"
+  ],
+  "testClass": "io.github.shusek.kmediavlc.runtime.android.VlcAndroidPlaybackInstrumentedTest",
+  "testResultsSha256": "d19c80698908d21f12735ddc60569598ba84974a79853d72367bb2d9b849a53b",
+  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+}

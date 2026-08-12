@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -31,7 +33,7 @@ class StageVlcWindowsRuntimeTest(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(relative.encode("ascii"))
         self.bridge.write_bytes(b"bridge")
-        _, modules = STAGER.load_policy(ROOT, allow_audit_candidate=False)
+        _, _, modules = STAGER.load_policy(ROOT, allow_audit_candidate=False)
         for _, name in modules:
             path = self.install / "lib/vlc/plugins" / f"lib{name}_plugin.dll"
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -43,8 +45,11 @@ class StageVlcWindowsRuntimeTest(unittest.TestCase):
         self.temporary.cleanup()
 
     def test_stages_only_the_approved_policy(self) -> None:
-        policy, modules = STAGER.load_policy(ROOT, allow_audit_candidate=False)
+        policy, binary_policy, modules = STAGER.load_policy(
+            ROOT, allow_audit_candidate=False
+        )
         self.assertEqual("approved", policy["reviewStatus"])
+        self.assertEqual("approved", binary_policy["reviewStatus"])
         self.assertEqual(90, len(modules))
 
     def test_release_mode_rejects_pending_dependency_review(self) -> None:
@@ -70,6 +75,71 @@ class StageVlcWindowsRuntimeTest(unittest.TestCase):
         result = STAGER.copy_file(self.bridge, destination)
         self.assertEqual(6, result["size"])
         self.assertEqual(64, len(result["sha256"]))
+
+    def test_release_report_is_not_an_audit_candidate(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts/stage_vlc_windows_runtime.py"),
+                "--root",
+                str(ROOT),
+                "--install",
+                str(self.install),
+                "--bridge",
+                str(self.bridge),
+                "--output",
+                str(self.output),
+                "--report",
+                str(self.report),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        report = json.loads(self.report.read_text(encoding="utf-8"))
+        self.assertFalse(report["auditCandidate"])
+        self.assertEqual("approved", report["reviewStatus"])
+        self.assertEqual("approved", report["binaryReviewStatus"])
+
+    def test_explicit_pending_review_report_is_an_audit_candidate(self) -> None:
+        pending_root = self.base / "pending-report-root"
+        for filename, pending_status in {
+            "windows-x86_64-playback-modules.json": "pending-meson-dependency-audit",
+            "windows-x86_64-binary-components.json": "pending-link-command-audit",
+        }.items():
+            policy = json.loads(
+                (ROOT / "compliance/policy" / filename).read_text(encoding="utf-8")
+            )
+            policy["reviewStatus"] = pending_status
+            destination = pending_root / "compliance/policy" / filename
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(json.dumps(policy) + "\n", encoding="utf-8")
+        output = self.base / "audit-output"
+        report_path = self.base / "audit-report.json"
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts/stage_vlc_windows_runtime.py"),
+                "--root",
+                str(pending_root),
+                "--install",
+                str(self.install),
+                "--bridge",
+                str(self.bridge),
+                "--output",
+                str(output),
+                "--report",
+                str(report_path),
+                "--allow-audit-candidate",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        self.assertTrue(report["auditCandidate"])
 
 
 if __name__ == "__main__":

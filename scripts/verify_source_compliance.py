@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -385,6 +388,17 @@ def verify_policy(root: Path) -> None:
         fail("The source-built VLC payload lacks mandatory native Windows validation.")
     if "--allow-audit-candidate" in audit_workflow:
         fail("The approved Windows source audit must execute in release mode.")
+    windows_stager = (root / "scripts/stage_vlc_windows_runtime.py").read_text(
+        encoding="utf-8"
+    )
+    windows_stager_markers = [
+        '"binaryReviewStatus": binary_policy["reviewStatus"]',
+        '"auditCandidate": (',
+        'policy["reviewStatus"] != "approved"',
+        'binary_policy["reviewStatus"] != "approved"',
+    ]
+    if not all(marker in windows_stager for marker in windows_stager_markers):
+        fail("The Windows staging report does not distinguish approved release inputs.")
 
 
 def verify_pin_occurrences(root: Path) -> None:
@@ -984,6 +998,112 @@ def verify_android_contract(root: Path) -> None:
         or not all(marker in device_results for marker in device_result_markers)
     ):
         fail("The physical Android playback acceptance gate is incomplete.")
+
+    retained_policy = load_json(
+        root / "compliance/policy/android-retained-physical-evidence.json"
+    )
+    retained_libraries = {
+        "jni/arm64-v8a/libkmediavlc_android.so":
+            "c41009bb29fad4017842fb382a8f54967ffef41fe876634b063b59a78d258fa5",
+        "jni/arm64-v8a/libvlc.so":
+            "1fe53f452c68c87f8b5f53f6ea9330999c9ff9e08ae0665ed7fa52ac38d783a7",
+        "jni/armeabi-v7a/libkmediavlc_android.so":
+            "a96d7d3a826cf627ee964fb6cf7f3248f519e244abaa228114db4e5e28db3344",
+        "jni/armeabi-v7a/libvlc.so":
+            "db002cb1f1f44e46789468cee0cc9c8a4608e863da76e2723a8d515be7aa9102",
+    }
+    retained_evidence = {
+        "acceptancePath":
+            "compliance/evidence/android-physical-53b76c5/acceptance.json",
+        "acceptanceSha256":
+            "f3d3d139699ac506606fc5e5005c689b9298cec7f6b7b1d1ebf3eedb633829f3",
+        "junitBase64Path":
+            "compliance/evidence/android-physical-53b76c5/test-results.xml.b64",
+        "junitBase64Sha256":
+            "613f0d6c5452d7bfb5a9198496fa9a4b5b5bdf769ca4ccfef91a4d30d7aeed1b",
+        "junitDecodedSha256":
+            "d19c80698908d21f12735ddc60569598ba84974a79853d72367bb2d9b849a53b",
+    }
+    retained_behavior_paths = [
+        "build.gradle.kts",
+        "gradle.properties",
+        "gradle/libs.versions.toml",
+        "native/android",
+        "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch",
+        "patches/vlc/0001-android-external-anw-direct-mediacodec.patch",
+        "runtime-android/build.gradle.kts",
+        "runtime-android/src/androidTest",
+        "runtime-android/src/debug",
+        "runtime-android/src/main",
+        "scripts/run_android_device_smoke.sh",
+        "scripts/verify_android_device_smoke_results.py",
+        "settings.gradle.kts",
+    ]
+    expected_retained_policy = {
+        "schemaVersion": 1,
+        "executionCommit": "53b76c5d6b01b53cbaa8b43b08e03ac10638d8e9",
+        "evidence": retained_evidence,
+        "runtimeLibraries": retained_libraries,
+        "behaviorPaths": retained_behavior_paths,
+    }
+    if retained_policy != expected_retained_policy:
+        fail("The retained physical Android evidence policy is not closed.")
+    acceptance_path = root / retained_evidence["acceptancePath"]
+    junit_path = root / retained_evidence["junitBase64Path"]
+    if (
+        acceptance_path.is_symlink()
+        or junit_path.is_symlink()
+        or not acceptance_path.is_file()
+        or not junit_path.is_file()
+        or hashlib.sha256(acceptance_path.read_bytes()).hexdigest()
+        != retained_evidence["acceptanceSha256"]
+        or hashlib.sha256(junit_path.read_bytes()).hexdigest()
+        != retained_evidence["junitBase64Sha256"]
+    ):
+        fail("The retained physical Android evidence bytes changed.")
+    encoded_junit = junit_path.read_bytes()
+    try:
+        decoded_junit = base64.b64decode(encoded_junit[:-1], validate=True)
+    except binascii.Error:
+        fail("The retained Android JUnit evidence is not canonical base64.")
+    if (
+        not encoded_junit.endswith(b"\n")
+        or b"\n" in encoded_junit[:-1]
+        or b"\r" in encoded_junit
+        or hashlib.sha256(decoded_junit).hexdigest()
+        != retained_evidence["junitDecodedSha256"]
+    ):
+        fail("The retained Android JUnit evidence digest changed.")
+    retained_acceptance = load_json(acceptance_path)
+    if (
+        retained_acceptance.get("schemaVersion") != 1
+        or retained_acceptance.get("kmediaVlcCommit")
+        != expected_retained_policy["executionCommit"]
+        or retained_acceptance.get("vlcRevision") != PINNED_REVISION
+        or retained_acceptance.get("libvlcjniRevision")
+        != PINNED_LIBVLCJNI_REVISION
+        or retained_acceptance.get("payload", {}).get("runtimeLibraries")
+        != retained_libraries
+        or retained_acceptance.get("testResultsSha256")
+        != retained_evidence["junitDecodedSha256"]
+        or retained_acceptance.get("physicalDevice", {}).get("qemuRejected") is not True
+    ):
+        fail("The retained physical Android acceptance identity is invalid.")
+    equivalence_verifier = (
+        root / "scripts/verify_android_physical_evidence_equivalence.py"
+    ).read_text(encoding="utf-8")
+    equivalence_markers = [
+        "merge-base",
+        '"diff", "--quiet"',
+        "Android playback behavior changed after the physical-device execution.",
+        "Release Android runtime libraries differ from the physically tested binaries.",
+        "verify_junit",
+        "behaviorPathsUnchanged",
+        "executionCommit",
+        "releaseCommit",
+    ]
+    if not all(marker in equivalence_verifier for marker in equivalence_markers):
+        fail("The retained physical Android equivalence verifier is incomplete.")
 
     android_build = (root / "runtime-android/build.gradle.kts").read_text(encoding="utf-8")
     gradle_markers = [
