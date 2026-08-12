@@ -26,8 +26,8 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.base = Path(self.temporary.name)
         self.candidate = self.base / "candidate.tar.gz"
-        policy, archives = PACKAGER.load_policy(ROOT, allow_audit_candidate=True)
-        self.assertEqual("pending-link-command-audit", policy["reviewStatus"])
+        policy, archives = PACKAGER.load_policy(ROOT, allow_audit_candidate=False)
+        self.assertEqual("approved", policy["reviewStatus"])
         files = {
             "corresponding-source/kmediavlc/build.gradle.kts": b"plugins { base }\n",
             "corresponding-source/kmediavlc/native/bridge.cpp": b"// bridge\n",
@@ -59,12 +59,10 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
         first = self.base / "first.tar.gz"
         second = self.base / "second.tar.gz"
         first_hash = PACKAGER.package(
-            ROOT, self.candidate, first, COMMIT, "0.1.0-rc.1", 1_700_000_000,
-            allow_audit_candidate=True
+            ROOT, self.candidate, first, COMMIT, "0.1.0-rc.1", 1_700_000_000
         )
         second_hash = PACKAGER.package(
-            ROOT, self.candidate, second, COMMIT, "0.1.0-rc.1", 1_700_000_000,
-            allow_audit_candidate=True
+            ROOT, self.candidate, second, COMMIT, "0.1.0-rc.1", 1_700_000_000
         )
         self.assertEqual(first_hash, second_hash)
         self.assertEqual(first.read_bytes(), second.read_bytes())
@@ -76,12 +74,22 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
             manifest = json.load(archive.extractfile("corresponding-source/SOURCE-MANIFEST.json"))
         self.assertEqual(COMMIT, manifest["testedCommit"])
         self.assertEqual("0.1.0-rc.1", manifest["releaseVersion"])
-        self.assertEqual("pending-link-command-audit", manifest["componentReviewStatus"])
+        self.assertEqual("approved", manifest["componentReviewStatus"])
 
     def test_release_mode_rejects_pending_binary_review(self) -> None:
+        pending_root = self.base / "pending-windows-root"
+        source = ROOT / "compliance/policy/windows-x86_64-binary-components.json"
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        payload["reviewStatus"] = "pending-link-command-audit"
+        destination = (
+            pending_root / "compliance/policy/windows-x86_64-binary-components.json"
+        )
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(json.dumps(payload), encoding="utf-8")
+
         with self.assertRaises(ValueError):
             PACKAGER.package(
-                ROOT,
+                pending_root,
                 self.candidate,
                 self.base / "release.tar.gz",
                 COMMIT,
@@ -104,7 +112,6 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
                 COMMIT,
                 "0.1.0-rc.1",
                 1_700_000_000,
-                allow_audit_candidate=True,
             )
 
 

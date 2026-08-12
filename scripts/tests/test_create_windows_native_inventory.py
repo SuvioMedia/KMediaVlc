@@ -37,7 +37,7 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
         self.base = Path(self.temporary.name)
         self.staging = self.base / "staging"
         self.output = self.base / "inventory.json"
-        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=True)
+        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=False)
         paths = [
             "bin/kmediavlc_bridge.dll",
             "bin/libvlc.dll",
@@ -54,14 +54,13 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def test_creates_packager_valid_closed_audit_inventory(self) -> None:
+    def test_creates_packager_valid_approved_inventory(self) -> None:
         inventory = INVENTORY.create(
             ROOT,
             self.staging,
             self.output,
             VERSION,
             SOURCE_OFFER,
-            allow_audit_candidate=True,
         )
         self.assertEqual(96, len(inventory["files"]))
         self.assertTrue((self.staging / INVENTORY.AUDIT_NAME).is_file())
@@ -86,9 +85,23 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
         self.assertEqual(96, len(validated))
 
     def test_release_mode_rejects_pending_link_review(self) -> None:
+        pending_root = self.base / "pending-windows-root"
+        statuses = {
+            "windows-x86_64-playback-modules.json": "pending-meson-dependency-audit",
+            "windows-x86_64-binary-components.json": "pending-link-command-audit",
+        }
+        for filename, pending_status in statuses.items():
+            payload = json.loads(
+                (ROOT / "compliance/policy" / filename).read_text(encoding="utf-8")
+            )
+            payload["reviewStatus"] = pending_status
+            destination = pending_root / "compliance/policy" / filename
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(json.dumps(payload), encoding="utf-8")
+
         with self.assertRaises(ValueError):
             INVENTORY.create(
-                ROOT,
+                pending_root,
                 self.staging,
                 self.output,
                 VERSION,
@@ -105,7 +118,6 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
                 self.output,
                 VERSION,
                 SOURCE_OFFER,
-                allow_audit_candidate=True,
             )
 
 

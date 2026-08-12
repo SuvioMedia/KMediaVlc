@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -45,11 +46,15 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
     def digest(path: Path) -> str:
         return hashlib.sha256(path.read_bytes()).hexdigest()
 
-    def candidate(self, target: str) -> tuple[Path, Path, Path, dict]:
+    def candidate(
+        self,
+        target: str,
+        root: Path = ROOT,
+    ) -> tuple[Path, Path, Path, dict]:
         staging = self.base / f"{target}-runtime"
         report_path = self.base / f"{target}-report.json"
         output = self.base / f"{target}-inventory.json"
-        playback, binary = INVENTORY.load_policies(ROOT, target, True)
+        playback, binary = INVENTORY.load_policies(root, target, True)
         families = playback["modulesByFamily"]
         modules = [name for family in sorted(families) for name in families[family]]
         suffix = ".dylib" if target == "macos-aarch64" else ".so"
@@ -110,7 +115,10 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
             "vlcRevision": INVENTORY.PINNED_REVISION,
             "reviewStatus": playback["reviewStatus"],
             "binaryReviewStatus": binary["reviewStatus"],
-            "auditCandidate": True,
+            "auditCandidate": (
+                playback["reviewStatus"] != "approved"
+                or binary["reviewStatus"] != "approved"
+            ),
             "files": entries,
         }
         report_path.write_text(json.dumps(report), encoding="utf-8")
@@ -155,7 +163,6 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
                     target,
                     VERSION,
                     SOURCE_OFFER,
-                    allow_audit_candidate=True,
                 )
                 self.assertEqual(expected_count, len(inventory["files"]))
                 self.assertTrue((staging / INVENTORY.AUDIT_NAME).is_file())
@@ -178,7 +185,6 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
             "linux-x86_64",
             VERSION,
             SOURCE_OFFER,
-            allow_audit_candidate=True,
         )
         support = next(
             entry
@@ -189,10 +195,35 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
         self.assertEqual("DYNAMIC", support["linkage"])
 
     def test_release_mode_rejects_pending_platform_reviews(self) -> None:
-        staging, report, output, _ = self.candidate("macos-aarch64")
+        pending_root = self.base / "pending-macos-root"
+        files = {
+            "scripts/stage_vlc_macos_runtime.py": None,
+            "build-recipes/macos.json": None,
+            "compliance/policy/macos-aarch64-playback-modules.json": (
+                "pending-mach-o-and-source-license-audit"
+            ),
+            "compliance/policy/macos-aarch64-binary-components.json": (
+                "pending-link-command-and-license-audit"
+            ),
+        }
+        for relative, pending_status in files.items():
+            source = ROOT / relative
+            destination = pending_root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if pending_status is None:
+                shutil.copy2(source, destination)
+                continue
+            payload = json.loads(source.read_text(encoding="utf-8"))
+            payload["reviewStatus"] = pending_status
+            destination.write_text(json.dumps(payload), encoding="utf-8")
+
+        staging, report, output, _ = self.candidate(
+            "macos-aarch64",
+            pending_root,
+        )
         with self.assertRaises(ValueError):
             INVENTORY.create(
-                ROOT,
+                pending_root,
                 staging,
                 report,
                 output,
@@ -214,7 +245,6 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
                 "linux-x86_64",
                 VERSION,
                 SOURCE_OFFER,
-                allow_audit_candidate=True,
             )
 
 
