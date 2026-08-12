@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
+import shutil
 import tempfile
 import unittest
 import zipfile
@@ -38,7 +40,7 @@ class ExtractWindowsCandidateTest(unittest.TestCase):
         self.base = Path(self.temporary.name)
         self.staging = self.base / "staging"
         self.inventory = self.base / "inventory.json"
-        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=True)
+        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=False)
         paths = [
             "bin/kmediavlc_bridge.dll",
             "bin/libvlc.dll",
@@ -62,27 +64,26 @@ class ExtractWindowsCandidateTest(unittest.TestCase):
             self.inventory,
             VERSION,
             SOURCE_OFFER,
-            allow_audit_candidate=True,
         )
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def archive(self, name: str) -> Path:
+    def archive(self, name: str, staging: Path | None = None) -> Path:
+        staging = self.staging if staging is None else staging
         archive = self.base / name
         with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as target:
-            for path in sorted(self.staging.rglob("*")):
+            for path in sorted(staging.rglob("*")):
                 if path.is_file():
-                    target.write(path, path.relative_to(self.staging).as_posix())
+                    target.write(path, path.relative_to(staging).as_posix())
         return archive
 
-    def test_extracts_only_hash_bound_audit_candidate(self) -> None:
+    def test_extracts_only_hash_bound_approved_candidate(self) -> None:
         output = self.base / "output"
         EXTRACTOR.extract(
             self.archive("candidate.zip"),
             self.inventory,
             output,
-            allow_audit_candidate=True,
         )
         self.assertEqual(96, len([path for path in output.rglob("*") if path.is_file()]))
         self.assertEqual(
@@ -91,10 +92,36 @@ class ExtractWindowsCandidateTest(unittest.TestCase):
         )
 
     def test_release_mode_rejects_pending_review(self) -> None:
+        pending_root = self.base / "pending-windows-root"
+        statuses = {
+            "windows-x86_64-playback-modules.json": "pending-meson-dependency-audit",
+            "windows-x86_64-binary-components.json": "pending-link-command-audit",
+        }
+        for filename, pending_status in statuses.items():
+            payload = json.loads(
+                (ROOT / "compliance/policy" / filename).read_text(encoding="utf-8")
+            )
+            payload["reviewStatus"] = pending_status
+            destination = pending_root / "compliance/policy" / filename
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(json.dumps(payload), encoding="utf-8")
+
+        pending_staging = self.base / "pending-staging"
+        shutil.copytree(self.staging, pending_staging)
+        (pending_staging / INVENTORY.AUDIT_NAME).unlink()
+        pending_inventory = self.base / "pending-inventory.json"
+        INVENTORY.create(
+            pending_root,
+            pending_staging,
+            pending_inventory,
+            VERSION,
+            SOURCE_OFFER,
+            allow_audit_candidate=True,
+        )
         with self.assertRaises(ValueError):
             EXTRACTOR.extract(
-                self.archive("pending.zip"),
-                self.inventory,
+                self.archive("pending.zip", pending_staging),
+                pending_inventory,
                 self.base / "pending-output",
             )
 
@@ -105,7 +132,6 @@ class ExtractWindowsCandidateTest(unittest.TestCase):
                 self.archive("tampered.zip"),
                 self.inventory,
                 self.base / "tampered-output",
-                allow_audit_candidate=True,
             )
 
 

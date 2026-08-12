@@ -3,7 +3,7 @@
   "target": "windows-x86_64",
   "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
   "toolchainImage": "registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331",
-  "reviewStatus": "pending-link-command-audit",
+  "reviewStatus": "approved",
   "components": {
     "ffmpeg": {"version": "8.1.2", "licenseSpdx": ["LGPL-2.1-or-later"], "sourceArchive": "ffmpeg-8.1.2.tar.xz"},
     "flac": {"version": "1.5.0", "licenseSpdx": ["BSD-3-Clause"], "sourceArchive": "flac-1.5.0.tar.xz"},
