@@ -4,6 +4,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.PublishToMavenLocal
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.Exec
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import java.util.zip.ZipFile
 
 plugins {
@@ -69,6 +70,13 @@ tasks.test {
     }
     if (providers.gradleProperty("kmediaVlcDebugCallbacks").orNull == "true") {
         environment("KMEDIAVLC_DEBUG_CALLBACKS", "1")
+        testLogging {
+            exceptionFormat = TestExceptionFormat.FULL
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
+            showStandardStreams = true
+        }
     }
     outputs.upToDateWhen { !nativeBridgeTestPath.isPresent }
     outputs.doNotCacheIf("Native bridge integration must execute on the current hardware") {

@@ -33,11 +33,12 @@ license-closed, relocatable, and accepted by the real Metal consumer.
   source-aware BT.2020/PQ metadata and 10-bit depth reaching an
   RGBA16F/linear-sRGB IOSurface;
 - KMediaPlayer Metal consumption through Nucleus Tao
-  `2.4.0-kmp-hdr.1`, including retention of the same-process IOSurface until
+  `2.4.0-kmp-hdr.2`, including retention of the same-process IOSurface until
   command-buffer completion;
 - physical presentation on an HDR-capable AW3423DWF display: Nucleus reported
   `actual=HDR`, `RGBA16_FLOAT_SCRGB`, headroom `2.327`, and `PRESENTED`; the
-  four-second libVLC run rendered 97 frames with zero drops.
+  45.017-second libVLC run rendered 1078 frames with zero drops at 23.947 fps
+  for a 23.929 fps source.
 
 The hermetic test runs on the standard Apple-silicon `macos-15` GitHub-hosted
 runner as part of normal CI; it covers both SDR and HDR surface allocation.
