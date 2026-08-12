@@ -14,6 +14,8 @@ fi
 source_directory="$(cd "$1" && pwd -P)"
 build_directory="$2"
 jobs="${3:-4}"
+repository_root="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd -P)"
+archive_prefetcher="$repository_root/scripts/prefetch_vlc_archive.py"
 
 if [[ "$(uname -s)" != "Linux" ]]; then
     echo "the Linux libVLC runtime must be built on Linux" >&2
@@ -58,6 +60,17 @@ if [[ -n "$(git -C "$source_directory" status --porcelain --untracked-files=no)"
     echo "VLC source checkout contains tracked modifications" >&2
     exit 1
 fi
+if [[ ! -f "$archive_prefetcher" || -L "$archive_prefetcher" ]]; then
+    echo "checksum-verified VLC archive prefetcher is missing or unsafe" >&2
+    exit 1
+fi
+
+python3 "$archive_prefetcher" \
+    --checksum-manifest "$source_directory/contrib/src/gcrypt/SHA512SUMS" \
+    --archive libgcrypt-1.12.2.tar.bz2 \
+    --destination-directory "$source_directory/contrib/tarballs" \
+    --url https://mirrors.dotsrc.org/gcrypt/libgcrypt/libgcrypt-1.12.2.tar.bz2 \
+    --url https://www.mirrorservice.org/sites/ftp.gnupg.org/gcrypt/libgcrypt/libgcrypt-1.12.2.tar.bz2
 
 case "$(uname -m)" in
     x86_64|amd64)
