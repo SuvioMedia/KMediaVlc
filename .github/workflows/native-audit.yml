@@ -665,7 +665,7 @@ jobs:
           $bundled = @(
             Get-ChildItem runtime-desktop\build\test-results\test -Filter 'TEST-*.xml' |
               ForEach-Object { ([xml](Get-Content -LiteralPath $_.FullName -Raw)).testsuite.testcase } |
-              Where-Object { $_.name -eq 'bundledRuntimeExtractsAndPublishesCpuPullFrame' }
+              Where-Object { $_.name -eq 'bundledRuntimeExtractsAndPublishesCpuPullFrame()' }
           )
           if ($bundled.Count -ne 1 -or $null -ne $bundled[0].skipped) {
             throw 'The packaged-JAR extraction and playback test did not execute.'
