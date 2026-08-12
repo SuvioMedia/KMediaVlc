@@ -101,6 +101,31 @@ class NativePayloadManifestTest {
         }
     }
 
+    @Test
+    void acceptsOnlyTheClosedExtensionlessChecksumFile() {
+        String hash = "a".repeat(64);
+        String checksumManifest = validManifest().replace("file.count=4", "file.count=5")
+                + """
+                file.4.path=SHA256SUMS
+                file.4.size=50
+                file.4.sha256=%s
+                file.4.component=kmediavlc
+                file.4.licenseSpdx=LGPL-2.1-or-later
+                file.4.role=DATA
+                file.4.source=corresponding-source.tar.gz
+                file.4.linkage=NONE
+                """.formatted(hash);
+
+        var manifest = NativePayloadManifest.parse(
+                checksumManifest.getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64");
+        assertTrue(manifest.files().stream().anyMatch(file -> file.path().equals("SHA256SUMS")));
+
+        String unknownExtensionless = checksumManifest.replace(
+                "file.4.path=SHA256SUMS", "file.4.path=CHECKSUMS");
+        assertThrows(VlcRuntimeException.class, () -> NativePayloadManifest.parse(
+                unknownExtensionless.getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64"));
+    }
+
     private static String validManifest() {
         String hash = "a".repeat(64);
         return """
