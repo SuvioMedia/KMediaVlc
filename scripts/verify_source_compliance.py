@@ -1004,25 +1004,25 @@ def verify_android_contract(root: Path) -> None:
     )
     retained_libraries = {
         "jni/arm64-v8a/libkmediavlc_android.so":
-            "c41009bb29fad4017842fb382a8f54967ffef41fe876634b063b59a78d258fa5",
+            "292aab5547aa3eed55c1ee5a5d4f27c37919fce8246aa0d1452130336bb126de",
         "jni/arm64-v8a/libvlc.so":
-            "1fe53f452c68c87f8b5f53f6ea9330999c9ff9e08ae0665ed7fa52ac38d783a7",
+            "735f347eac0c87f5a927381884a14938a4a8e3206881eb9e2f6212a752fe0512",
         "jni/armeabi-v7a/libkmediavlc_android.so":
-            "a96d7d3a826cf627ee964fb6cf7f3248f519e244abaa228114db4e5e28db3344",
+            "2222c26676468465ac4b4587e143c8739e100b17a0c20f7852da20097e7f8500",
         "jni/armeabi-v7a/libvlc.so":
-            "db002cb1f1f44e46789468cee0cc9c8a4608e863da76e2723a8d515be7aa9102",
+            "7826ff6dbc16d24df4907ccb65a4c2aef4855fda4915c1b353c4081d79f6420d",
     }
     retained_evidence = {
         "acceptancePath":
-            "compliance/evidence/android-physical-53b76c5/acceptance.json",
+            "compliance/evidence/android-physical-6a5d1b6/acceptance.json",
         "acceptanceSha256":
-            "f3d3d139699ac506606fc5e5005c689b9298cec7f6b7b1d1ebf3eedb633829f3",
+            "d3b57dbd4eed89a11e5a84532273537c1d93eea70d7f5043518c52faa27abf38",
         "junitBase64Path":
-            "compliance/evidence/android-physical-53b76c5/test-results.xml.b64",
+            "compliance/evidence/android-physical-6a5d1b6/test-results.xml.b64",
         "junitBase64Sha256":
-            "613f0d6c5452d7bfb5a9198496fa9a4b5b5bdf769ca4ccfef91a4d30d7aeed1b",
+            "77a056a39b5e80a786a56b8985170724a0977d1e4d2fc87485a74481e8dc2401",
         "junitDecodedSha256":
-            "d19c80698908d21f12735ddc60569598ba84974a79853d72367bb2d9b849a53b",
+            "8a9639f6f0a624193e6afe3fc28ed937d9ad09dd8a4094e108802830694a7dab",
     }
     retained_behavior_paths = [
         "build.gradle.kts",
@@ -1041,7 +1041,7 @@ def verify_android_contract(root: Path) -> None:
     ]
     expected_retained_policy = {
         "schemaVersion": 1,
-        "executionCommit": "53b76c5d6b01b53cbaa8b43b08e03ac10638d8e9",
+        "executionCommit": "6a5d1b6d8c6e13bc7e89a853bf680455d38e7429",
         "evidence": retained_evidence,
         "runtimeLibraries": retained_libraries,
         "behaviorPaths": retained_behavior_paths,
