@@ -185,10 +185,9 @@ jobs:
             --bridge "$bridge" \
             --target "${{ matrix.target }}" \
             --output "$stage" \
-            --report "$report" \
-            --allow-audit-candidate
+            --report "$report"
           test "$(jq -r .selectedPluginCount "$report")" = 85
-          test "$(jq -r .auditCandidate "$report")" = true
+          test "$(jq -r .auditCandidate "$report")" = false
           LD_LIBRARY_PATH="$stage/bin" bash ./gradlew :runtime-desktop:test \
             -PkmediaVlcDesktopOnly=true \
             -PkmediaVlcNativeBridgePath="$stage/bin/libkmediavlc_bridge.so" \
@@ -210,8 +209,7 @@ jobs:
             --output "$candidate/${{ matrix.target }}-native-inventory.json" \
             --target "${{ matrix.target }}" \
             --version "$CANDIDATE_VERSION" \
-            --source-offer "$source_offer" \
-            --allow-audit-candidate
+            --source-offer "$source_offer"
           cp runtime-desktop/build/test-results/test/TEST-io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest.xml \
             "$candidate/test-results.xml"
           (

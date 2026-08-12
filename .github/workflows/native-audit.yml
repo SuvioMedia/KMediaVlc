@@ -269,8 +269,7 @@ jobs:
             --output "$RUNNER_TEMP/audit-assets/kmedia-vlc-$CANDIDATE_VERSION-corresponding-source-audit.tar.gz" \
             --tested-commit "$TESTED_COMMIT" \
             --version "$CANDIDATE_VERSION" \
-            --epoch "$epoch" \
-            --allow-audit-candidate
+            --epoch "$epoch"
           (
             cd "$RUNNER_TEMP/audit-assets"
             sha256sum \
@@ -482,9 +481,12 @@ jobs:
             --install $env:KMEDIAVLC_RAW_INSTALL `
             --bridge $bridge `
             --output $candidate `
-            --report $report `
-            --allow-audit-candidate
+            --report $report
           if ($LASTEXITCODE -ne 0) { throw 'Closed Windows candidate staging failed.' }
+          $stagingEvidence = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+          if ($stagingEvidence.auditCandidate -ne $false) {
+            throw 'Windows release-mode staging produced an audit candidate.'
+          }
           "KMEDIAVLC_TEST_LIBVLC=$(Join-Path $candidate 'bin\libvlc.dll')" >> $env:GITHUB_ENV
           "KMEDIAVLC_TEST_LIBVLCCORE=$(Join-Path $candidate 'bin\libvlccore-9.dll')" >> $env:GITHUB_ENV
           "KMEDIAVLC_TEST_PLUGINS=$(Join-Path $candidate 'lib\vlc\plugins')" >> $env:GITHUB_ENV
@@ -647,8 +649,7 @@ jobs:
             --staging $env:KMEDIAVLC_CANDIDATE `
             --output $inventory `
             --version $env:CANDIDATE_VERSION `
-            --source-offer $sourceOffer `
-            --allow-audit-candidate
+            --source-offer $sourceOffer
           if ($LASTEXITCODE -ne 0) { throw 'Candidate component inventory generation failed.' }
           .\gradlew.bat :runtime-desktop:verifyRuntimeJar :runtime-desktop:test `
             -PkmediaVlcDesktopOnly=true `
@@ -691,8 +692,7 @@ jobs:
           python scripts/extract_windows_candidate.py `
             --archive $archive `
             --inventory $env:KMEDIAVLC_CANDIDATE_INVENTORY `
-            --output $roundTrip `
-            --allow-audit-candidate
+            --output $roundTrip
           if ($LASTEXITCODE -ne 0) { throw 'Archived Windows candidate did not round-trip.' }
           "KMEDIAVLC_CANDIDATE_ARCHIVE=$archive" >> $env:GITHUB_ENV
 

@@ -125,12 +125,12 @@ jobs:
             --install "$RUNNER_TEMP/vlc-macos-build/vlc-macosx-arm64" \
             --bridge "$GITHUB_WORKSPACE/build/native/macos-aarch64/libkmediavlc_bridge.dylib" \
             --output "$candidate/runtime" \
-            --report "$candidate/macos-aarch64-audit.json" \
-            --allow-audit-candidate
+            --report "$candidate/macos-aarch64-audit.json"
           test "$(jq -r .target "$candidate/macos-aarch64-audit.json")" = macos-aarch64
           test "$(jq -r .selectedPluginCount "$candidate/macos-aarch64-audit.json")" = 89
           test "$(jq -r '.files | length' "$candidate/macos-aarch64-audit.json")" = 93
           test "$(jq -r '.machO | length' "$candidate/macos-aarch64-audit.json")" = 92
+          test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = false
 
       - name: Play a real CPU frame and replace an IOSurface generation
         shell: bash
@@ -163,8 +163,7 @@ jobs:
             --output "$candidate/macos-aarch64-native-inventory.json" \
             --target macos-aarch64 \
             --version "$CANDIDATE_VERSION" \
-            --source-offer "$source_offer" \
-            --allow-audit-candidate
+            --source-offer "$source_offer"
           cp runtime-desktop/build/test-results/test/TEST-io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest.xml \
             "$candidate/test-results.xml"
           (
