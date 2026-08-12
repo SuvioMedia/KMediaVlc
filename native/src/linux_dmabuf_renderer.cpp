@@ -897,6 +897,17 @@ private:
         return glGetError() == GL_NO_ERROR;
     }
 
+    bool rebind_current_surface() {
+        if (current_surface_ == nullptr) return false;
+        glBindFramebuffer(GL_FRAMEBUFFER, current_surface_->framebuffer);
+        glViewport(
+            0,
+            0,
+            static_cast<GLsizei>(current_surface_->width),
+            static_cast<GLsizei>(current_surface_->height));
+        return glGetError() == GL_NO_ERROR;
+    }
+
     bool make_current(bool enter) {
         if (!enter) return leave_current();
         state_mutex_.lock();
@@ -919,7 +930,12 @@ private:
             return false;
         }
         render_lock_held_ = true;
-        if (surfaces_.empty() || bind_writable_surface()) return true;
+        if (surfaces_.empty()) return true;
+        // vgl re-enters the context from VglSwapBuffers after the render pass.
+        // Preserve that completed DMA-BUF instead of clearing another surface
+        // immediately before swap_callback publishes the frame.
+        if (current_surface_ != nullptr && rebind_current_surface()) return true;
+        if (bind_writable_surface()) return true;
         restore_previous_context();
         render_lock_held_ = false;
         context_->mutex.unlock();

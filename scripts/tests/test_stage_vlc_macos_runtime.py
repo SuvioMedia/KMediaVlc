@@ -23,7 +23,7 @@ class StageVlcMacosRuntimeTest(unittest.TestCase):
         policy, binary, modules = STAGER.load_policy(ROOT, allow_audit_candidate=True)
         self.assertEqual("pending-mach-o-and-source-license-audit", policy["reviewStatus"])
         self.assertEqual("pending-link-command-and-license-audit", binary["reviewStatus"])
-        self.assertEqual(22, len(binary["components"]))
+        self.assertEqual(27, len(binary["components"]))
         self.assertEqual(89, len(modules))
         self.assertEqual(89, len({name for _, name in modules}))
         self.assertIn(("video_output", "vgl"), modules)

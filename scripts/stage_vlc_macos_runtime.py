@@ -103,12 +103,13 @@ def load_policy(root: Path, allow_audit_candidate: bool) -> tuple[dict, dict, li
     components = binary.get("components")
     module_components = binary.get("moduleComponents")
     core_components = binary.get("coreComponents")
+    build_only_components = binary.get("buildOnlyContribPackages")
     if (
         not isinstance(components, dict)
         or not isinstance(module_components, dict)
         or not isinstance(core_components, list)
         or not set(module_components).issubset(seen)
-        or binary.get("buildOnlyContribPackages") != []
+        or build_only_components != ["jinja", "markupsafe"]
     ):
         fail("macOS binary component closure is invalid.")
     referenced = set(core_components)
@@ -116,7 +117,7 @@ def load_policy(root: Path, allow_audit_candidate: bool) -> tuple[dict, dict, li
         if not isinstance(component_ids, list):
             fail("macOS module component closure is invalid.")
         referenced.update(component_ids)
-    if referenced != set(components):
+    if referenced | set(build_only_components) != set(components):
         fail("macOS binary component policy contains unused or missing components.")
     return policy, binary, modules
 

@@ -7,8 +7,10 @@
 
 #include <jni.h>
 
+#include <algorithm>
 #include <array>
 #include <atomic>
+#include <cmath>
 #include <condition_variable>
 #include <cstdint>
 #include <cstring>
@@ -225,20 +227,6 @@ std::uint64_t float_bits(float value) {
     return bits;
 }
 
-#if defined(_WIN32)
-template <typename Interface>
-void release_interface(Interface*& value) noexcept {
-    if (value != nullptr) value->Release();
-    value = nullptr;
-}
-
-bool luid_matches(const LUID& left, std::uint64_t right) {
-    const auto packed =
-        (static_cast<std::uint64_t>(static_cast<std::uint32_t>(left.HighPart)) << 32U) |
-        static_cast<std::uint32_t>(left.LowPart);
-    return packed == right;
-}
-
 float half_to_float(std::uint16_t value) {
     const std::uint32_t sign = static_cast<std::uint32_t>(value & 0x8000U) << 16U;
     std::uint32_t exponent = (value >> 10U) & 0x1FU;
@@ -266,6 +254,20 @@ float half_to_float(std::uint16_t value) {
     float result = 0.0F;
     std::memcpy(&result, &bits, sizeof(result));
     return result;
+}
+
+#if defined(_WIN32)
+template <typename Interface>
+void release_interface(Interface*& value) noexcept {
+    if (value != nullptr) value->Release();
+    value = nullptr;
+}
+
+bool luid_matches(const LUID& left, std::uint64_t right) {
+    const auto packed =
+        (static_cast<std::uint64_t>(static_cast<std::uint32_t>(left.HighPart)) << 32U) |
+        static_cast<std::uint32_t>(left.LowPart);
+    return packed == right;
 }
 
 bool inspect_shared_fp16(
@@ -394,6 +396,98 @@ cleanup:
 }
 #endif
 
+#if defined(__APPLE__)
+bool inspect_iosurface_pixels(IOSurfaceRef surface, std::array<float, 8>& output) {
+    if (surface == nullptr) return false;
+    const std::size_t width = IOSurfaceGetWidth(surface);
+    const std::size_t height = IOSurfaceGetHeight(surface);
+    const std::size_t bytes_per_row = IOSurfaceGetBytesPerRow(surface);
+    const std::uint32_t pixel_format = IOSurfaceGetPixelFormat(surface);
+    constexpr std::uint32_t kPixelFormatBgra8 = UINT32_C(0x42475241);
+    constexpr std::uint32_t kPixelFormatRgba16Float = UINT32_C(0x52476841);
+    if (width == 0 || height == 0 ||
+        (pixel_format != kPixelFormatBgra8 && pixel_format != kPixelFormatRgba16Float)) {
+        return false;
+    }
+
+    std::uint32_t seed = 0;
+    if (IOSurfaceLock(surface, kIOSurfaceLockReadOnly, &seed) != kIOReturnSuccess) return false;
+    const auto* base = static_cast<const std::uint8_t*>(IOSurfaceGetBaseAddress(surface));
+    if (base == nullptr) {
+        IOSurfaceUnlock(surface, kIOSurfaceLockReadOnly, &seed);
+        return false;
+    }
+
+    constexpr std::size_t kGridEdge = 8;
+    float maximum_red = 0.0F;
+    float maximum_green = 0.0F;
+    float maximum_blue = 0.0F;
+    float minimum_alpha = std::numeric_limits<float>::max();
+    float maximum_alpha = 0.0F;
+    std::size_t non_black_samples = 0;
+    std::size_t sample_count = 0;
+    bool valid = true;
+    for (std::size_t row = 0; row < kGridEdge && valid; ++row) {
+        const std::size_t y = std::min(
+            height - 1,
+            ((row * 2U + 1U) * height) / (kGridEdge * 2U));
+        for (std::size_t column = 0; column < kGridEdge; ++column) {
+            const std::size_t x = std::min(
+                width - 1,
+                ((column * 2U + 1U) * width) / (kGridEdge * 2U));
+            std::array<float, 4> sample{};
+            if (pixel_format == kPixelFormatBgra8) {
+                const auto* pixel = base + y * bytes_per_row + x * 4U;
+                constexpr float inverse_byte = 1.0F / 255.0F;
+                sample = {
+                    pixel[2] * inverse_byte,
+                    pixel[1] * inverse_byte,
+                    pixel[0] * inverse_byte,
+                    pixel[3] * inverse_byte,
+                };
+            } else {
+                std::uint16_t pixel[4]{};
+                std::memcpy(pixel, base + y * bytes_per_row + x * 8U, sizeof(pixel));
+                sample = {
+                    half_to_float(pixel[0]),
+                    half_to_float(pixel[1]),
+                    half_to_float(pixel[2]),
+                    half_to_float(pixel[3]),
+                };
+            }
+            if (!std::isfinite(sample[0]) || !std::isfinite(sample[1]) ||
+                !std::isfinite(sample[2]) || !std::isfinite(sample[3])) {
+                valid = false;
+                break;
+            }
+            const float red = std::abs(sample[0]);
+            const float green = std::abs(sample[1]);
+            const float blue = std::abs(sample[2]);
+            maximum_red = std::max(maximum_red, red);
+            maximum_green = std::max(maximum_green, green);
+            maximum_blue = std::max(maximum_blue, blue);
+            minimum_alpha = std::min(minimum_alpha, sample[3]);
+            maximum_alpha = std::max(maximum_alpha, sample[3]);
+            if (std::max({red, green, blue}) > 1.0F / 4096.0F) ++non_black_samples;
+            ++sample_count;
+        }
+    }
+    IOSurfaceUnlock(surface, kIOSurfaceLockReadOnly, &seed);
+    if (!valid || sample_count == 0) return false;
+    output = {
+        static_cast<float>(width),
+        static_cast<float>(height),
+        maximum_red,
+        maximum_green,
+        maximum_blue,
+        minimum_alpha,
+        maximum_alpha,
+        static_cast<float>(non_black_samples) / static_cast<float>(sample_count),
+    };
+    return true;
+}
+#endif
+
 } // namespace
 
 extern "C" {
@@ -486,6 +580,53 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_inspectMacIosurface
     (void)env;
     (void)surface_id;
     return nullptr;
+#endif
+}
+
+JNIEXPORT jfloatArray JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_inspectMacIosurfacePixels(
+    JNIEnv* env, jclass, jlong surface_id) {
+#if defined(__APPLE__)
+    if (surface_id <= 0 || surface_id > std::numeric_limits<std::uint32_t>::max()) return nullptr;
+    IOSurfaceRef surface = IOSurfaceLookup(static_cast<IOSurfaceID>(surface_id));
+    if (surface == nullptr) return nullptr;
+    std::array<float, 8> values{};
+    const bool inspected = inspect_iosurface_pixels(surface, values);
+    CFRelease(surface);
+    if (!inspected) return nullptr;
+    jfloatArray result = env->NewFloatArray(static_cast<jsize>(values.size()));
+    if (result != nullptr) {
+        env->SetFloatArrayRegion(result, 0, static_cast<jsize>(values.size()), values.data());
+    }
+    return result;
+#else
+    (void)env;
+    (void)surface_id;
+    return nullptr;
+#endif
+}
+
+JNIEXPORT jlong JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_retainMacIosurface(
+    JNIEnv*, jclass, jlong surface_id) {
+#if defined(__APPLE__)
+    if (surface_id <= 0 || surface_id > std::numeric_limits<std::uint32_t>::max()) return 0;
+    IOSurfaceRef surface = IOSurfaceLookup(static_cast<IOSurfaceID>(surface_id));
+    return static_cast<jlong>(reinterpret_cast<std::uintptr_t>(surface));
+#else
+    (void)surface_id;
+    return 0;
+#endif
+}
+
+JNIEXPORT void JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_releaseMacIosurface(
+    JNIEnv*, jclass, jlong surface_address) {
+#if defined(__APPLE__)
+    if (surface_address == 0) return;
+    CFRelease(reinterpret_cast<IOSurfaceRef>(static_cast<std::uintptr_t>(surface_address)));
+#else
+    (void)surface_address;
 #endif
 }
 
@@ -770,18 +911,20 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_snapshot(
     snapshot.struct_size = sizeof(snapshot);
     snapshot.bridge_abi_version = KMEDIAVLC_BRIDGE_ABI_VERSION;
     if (!kmediavlc_player_get_snapshot(player->native, &snapshot)) return nullptr;
-    const jlong values[8]{
+    const jlong values[10]{
         static_cast<jlong>(snapshot.state),
         static_cast<jlong>(snapshot.media_generation),
         static_cast<jlong>(snapshot.position_microseconds),
         static_cast<jlong>(snapshot.duration_microseconds),
         static_cast<jlong>(snapshot.video_width),
         static_cast<jlong>(snapshot.video_height),
+        static_cast<jlong>(snapshot.video_frame_rate_num),
+        static_cast<jlong>(snapshot.video_frame_rate_den),
         static_cast<jlong>(snapshot.buffered_permille),
         snapshot.seekable ? 1 : 0,
     };
-    jlongArray result = env->NewLongArray(8);
-    if (result != nullptr) env->SetLongArrayRegion(result, 0, 8, values);
+    jlongArray result = env->NewLongArray(10);
+    if (result != nullptr) env->SetLongArrayRegion(result, 0, 10, values);
     return result;
 }
 

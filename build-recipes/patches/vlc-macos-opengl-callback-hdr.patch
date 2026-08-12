@@ -1,0 +1,399 @@
+diff --git a/contrib/src/libplacebo/rules.mak b/contrib/src/libplacebo/rules.mak
+index c71ce1c..0134e42 100644
+--- a/contrib/src/libplacebo/rules.mak
++++ b/contrib/src/libplacebo/rules.mak
+@@ -5,13 +5,19 @@ PLACEBO_ARCHIVE = libplacebo-v$(PLACEBO_VERSION).tar.gz
+ PLACEBO_URL := $(VIDEOLAN_GIT)/videolan/libplacebo/-/archive/v$(PLACEBO_VERSION)/$(PLACEBO_ARCHIVE)
+ 
+ PLACEBOCONF := -Dpython-path=$(PYTHON_VENV)/bin/python3 \
+-	-Dglslang=enabled \
+ 	-Dshaderc=disabled \
+ 	-Ddemos=false \
+ 	-Dtests=false \
+ 	-Dfind_lib_path=$(PREFIX)/lib
+ 
+-DEPS_libplacebo = glad $(DEPS_glad) jinja $(DEPS_jinja) glslang $(DEPS_glslang) vulkan-headers $(DEPS_vulkan-headers)
++DEPS_libplacebo = glad $(DEPS_glad) jinja $(DEPS_jinja)
++ifdef HAVE_DARWIN_OS
++PLACEBOCONF += -Dglslang=disabled -Dvulkan=disabled
++DEPS_libplacebo += vulkan-headers $(DEPS_vulkan-headers)
++else
++PLACEBOCONF += -Dglslang=enabled
++DEPS_libplacebo += glslang $(DEPS_glslang)
++endif
+ ifndef HAVE_WINSTORE
+ PKGS += libplacebo
+ endif
+diff --git a/extras/tools/bootstrap b/extras/tools/bootstrap
+--- a/extras/tools/bootstrap
++++ b/extras/tools/bootstrap
+@@ -304,6 +304,19 @@ case `uname` in
+     *)
+         CPUS=1  # default
+      ;;
+ esac
++
++requested_cpus="${VLC_REQUESTED_CORE_COUNT:-0}"
++case "$requested_cpus" in
++    0)
++        ;;
++    *[!0-9]*|'')
++        echo "Invalid VLC_REQUESTED_CORE_COUNT: $requested_cpus" >&2
++        exit 1
++        ;;
++    *)
++        CPUS=$requested_cpus
++        ;;
++esac
+ 
+ BOOTSTRAP_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
+diff --git a/include/vlc_opengl.h b/include/vlc_opengl.h
+index 7ae361f..e03755b 100644
+--- a/include/vlc_opengl.h
++++ b/include/vlc_opengl.h
+@@ -54,6 +54,7 @@ enum vlc_gl_api_type {
+ struct vlc_gl_cfg
+ {
+     bool need_alpha; /* False by default */
++    const video_format_t *source; /* Initial video source format, or NULL */
+ };
+ 
+ typedef int (*vlc_gl_activate)(vlc_gl_t *, unsigned width, unsigned height,
+@@ -91,6 +92,7 @@ struct vlc_gl_operations
+     int  (*make_current)(vlc_gl_t *gl);
+     void (*release_current)(vlc_gl_t *gl);
+     void (*resize)(vlc_gl_t *gl, unsigned width, unsigned height);
++    int  (*update_source)(vlc_gl_t *gl, const video_format_t *source);
+     void*(*get_proc_address)(vlc_gl_t *gl, const char *symbol);
+     void (*close)(vlc_gl_t *gl);
+ };
+@@ -161,6 +163,13 @@ static inline void vlc_gl_Resize(vlc_gl_t *gl, unsigned w, unsigned h)
+         gl->ops->resize(gl, w, h);
+ }
+ 
++static inline int vlc_gl_UpdateSource(vlc_gl_t *gl,
++                                     const video_format_t *source)
++{
++    return gl->ops->update_source != NULL
++         ? gl->ops->update_source(gl, source) : VLC_SUCCESS;
++}
++
+ static inline void vlc_gl_Swap(vlc_gl_t *gl)
+ {
+     gl->ops->swap(gl);
+diff --git a/modules/video_output/opengl/display.c b/modules/video_output/opengl/display.c
+index 059c7d6..2d4eaf9 100644
+--- a/modules/video_output/opengl/display.c
++++ b/modules/video_output/opengl/display.c
+@@ -112,7 +112,11 @@ UpdateFormat(vout_display_t *vd, const video_format_t *fmt,
+ {
+     vout_display_sys_t *sys = vd->sys;
+ 
+-    int ret = vlc_gl_MakeCurrent(sys->gl);
++    int ret = vlc_gl_UpdateSource(sys->gl, fmt);
++    if (ret != VLC_SUCCESS)
++        return ret;
++
++    ret = vlc_gl_MakeCurrent(sys->gl);
+     if (ret != VLC_SUCCESS)
+         return ret;
+ 
+@@ -267,7 +271,10 @@ static int Open(vout_display_t *vd,
+     }
+ #endif
+ 
+-    sys->gl = vlc_gl_Create(vd->cfg, API, gl_name, NULL);
++    const struct vlc_gl_cfg gl_cfg = {
++        .source = fmt,
++    };
++    sys->gl = vlc_gl_Create(vd->cfg, API, gl_name, &gl_cfg);
+     free(gl_name);
+     if (sys->gl == NULL)
+         goto error;
+diff --git a/modules/video_output/opengl/sampler.c b/modules/video_output/opengl/sampler.c
+index 25f7683..6444fc2 100644
+--- a/modules/video_output/opengl/sampler.c
++++ b/modules/video_output/opengl/sampler.c
+@@ -862,8 +862,27 @@ opengl_fragment_shader_init(struct vlc_gl_sampler *sampler, bool expose_planes)
+ 
+         struct pl_color_space src_space = vlc_placebo_ColorSpace(fmt);
+         struct pl_color_space dst_space = pl_color_space_unknown;
+-        dst_space.primaries = var_InheritInteger(priv->gl, "target-prim");
+-        dst_space.transfer = var_InheritInteger(priv->gl, "target-trc");
++        if (var_InheritBool(priv->gl, "vout-cb-output-format")) {
++            video_format_t output_format = {
++                .primaries = var_InheritInteger(priv->gl, "vout-cb-output-primaries"),
++                .transfer = var_InheritInteger(priv->gl, "vout-cb-output-transfer"),
++                .space = var_InheritInteger(priv->gl, "vout-cb-output-colorspace"),
++                .color_range = COLOR_RANGE_FULL,
++            };
++            dst_space = vlc_placebo_ColorSpace(&output_format);
++
++            /* A floating-point linear callback target is a transport space,
++             * not an SDR display. Preserve the source mastering gamut and
++             * absolute luminance so scRGB values may extend below zero and
++             * above SDR reference white without an SDR tone map. */
++            if (output_format.transfer == TRANSFER_FUNC_LINEAR) {
++                pl_color_space_infer(&src_space);
++                dst_space.hdr = src_space.hdr;
++            }
++        } else {
++            dst_space.primaries = var_InheritInteger(priv->gl, "target-prim");
++            dst_space.transfer = var_InheritInteger(priv->gl, "target-trc");
++        }
+ 
+         char *lut_file = var_InheritString(priv->gl, "gl-lut-file");
+         struct pl_custom_lut *lut = LoadCustomLUT(sampler, lut_file);
+@@ -1187,7 +1206,8 @@ opengl_fragment_shader_init(struct vlc_gl_sampler *sampler, bool expose_planes)
+     priv->pl_sh_res = NULL;
+     priv->pl_log = vlc_placebo_CreateLog(VLC_OBJECT(sampler->gl));
+ 
+     const struct pl_opengl_params gl_params =
+     {
++        .allow_software = var_InheritBool(priv->gl, "kmediavlc-gl-allow-sw"),
+         /* Libplacebo won't control whether the context is current or not.
+          * This is the default but we also want to ensure that the struct is
+@@ -1252,10 +1272,14 @@ opengl_fragment_shader_init(struct vlc_gl_sampler *sampler, bool expose_planes)
+ vlc_module_begin()
+     set_shortname("glsampler")
+     set_description("OpenGL built-in sampler")
+     set_callback_opengl_sampler(Open)
+     set_capability("opengl sampler", 1)
+     set_subcategory(SUBCAT_VIDEO_VOUT)
+ #ifdef HAVE_LIBPLACEBO_GL
++    set_section(N_("OpenGL context"), NULL)
++    add_bool("kmediavlc-gl-allow-sw", false, N_("Allow software rasterizers"),
++             N_("Allow a software OpenGL renderer for isolated source audits"))
++
+     set_section(N_("Colorspace conversion"), NULL)
+     add_placebo_color_map_opts("gl")
+     add_integer("target-prim", PL_COLOR_PRIM_UNKNOWN,
+diff --git a/modules/video_output/vgl.c b/modules/video_output/vgl.c
+index ef2a85d..36518fd 100644
+--- a/modules/video_output/vgl.c
++++ b/modules/video_output/vgl.c
+@@ -50,8 +50,123 @@ typedef struct vout_display_sys_t
+     void* opaque;
+     unsigned width;
+     unsigned height;
++    libvlc_video_render_cfg_t source_cfg;
+ } vout_display_sys_t;
+ 
++static unsigned SourceBitdepth(const video_format_t *source)
++{
++    if (source == NULL)
++        return 8;
++
++    const vlc_chroma_description_t *desc =
++        vlc_fourcc_GetChromaDescription(source->i_chroma);
++    if (desc == NULL || desc->color_bits <= 0.0f)
++        return 8;
++
++    const unsigned bitdepth = (unsigned)(desc->color_bits + 0.5f);
++    return bitdepth != 0 ? bitdepth : 8;
++}
++
++static libvlc_video_color_space_t SourceColorspace(const video_format_t *source)
++{
++    if (source != NULL) {
++        switch (source->space) {
++            case COLOR_SPACE_BT601: return libvlc_video_colorspace_BT601;
++            case COLOR_SPACE_BT709: return libvlc_video_colorspace_BT709;
++            case COLOR_SPACE_BT2020: return libvlc_video_colorspace_BT2020;
++            case COLOR_SPACE_UNDEF: break;
++        }
++    }
++    return libvlc_video_colorspace_BT709;
++}
++
++static libvlc_video_color_primaries_t SourcePrimaries(const video_format_t *source)
++{
++    if (source != NULL) {
++        switch (source->primaries) {
++            case COLOR_PRIMARIES_BT601_525: return libvlc_video_primaries_BT601_525;
++            case COLOR_PRIMARIES_BT601_625: return libvlc_video_primaries_BT601_625;
++            case COLOR_PRIMARIES_BT709: return libvlc_video_primaries_BT709;
++            case COLOR_PRIMARIES_BT2020: return libvlc_video_primaries_BT2020;
++            case COLOR_PRIMARIES_DCI_P3: return libvlc_video_primaries_DCI_P3;
++            case COLOR_PRIMARIES_FCC1953: return libvlc_video_primaries_BT470_M;
++            case COLOR_PRIMARIES_UNDEF: break;
++        }
++    }
++    return libvlc_video_primaries_BT709;
++}
++
++static libvlc_video_transfer_func_t SourceTransfer(const video_format_t *source)
++{
++    if (source != NULL) {
++        switch (source->transfer) {
++            case TRANSFER_FUNC_LINEAR: return libvlc_video_transfer_func_LINEAR;
++            case TRANSFER_FUNC_SRGB: return libvlc_video_transfer_func_SRGB;
++            case TRANSFER_FUNC_BT470_BG: return libvlc_video_transfer_func_BT470_BG;
++            case TRANSFER_FUNC_BT470_M: return libvlc_video_transfer_func_BT470_M;
++            case TRANSFER_FUNC_BT709: return libvlc_video_transfer_func_BT709;
++            case TRANSFER_FUNC_SMPTE_ST2084: return libvlc_video_transfer_func_PQ;
++            case TRANSFER_FUNC_SMPTE_240: return libvlc_video_transfer_func_SMPTE_240;
++            case TRANSFER_FUNC_HLG: return libvlc_video_transfer_func_HLG;
++            case TRANSFER_FUNC_UNDEF: break;
++        }
++    }
++    return libvlc_video_transfer_func_SRGB;
++}
++
++static void SetSourceConfig(vout_display_sys_t *sys, const video_format_t *source)
++{
++    sys->source_cfg = (libvlc_video_render_cfg_t) {
++        .bitdepth = SourceBitdepth(source),
++        .full_range = source != NULL && source->color_range == COLOR_RANGE_FULL,
++        .colorspace = SourceColorspace(source),
++        .primaries = SourcePrimaries(source),
++        .transfer = SourceTransfer(source),
++        .device = NULL,
++    };
++}
++
++static bool OutputColorspace(libvlc_video_color_space_t colorspace,
++                             video_color_space_t *result)
++{
++    switch (colorspace) {
++        case libvlc_video_colorspace_BT601: *result = COLOR_SPACE_BT601; return true;
++        case libvlc_video_colorspace_BT709: *result = COLOR_SPACE_BT709; return true;
++        case libvlc_video_colorspace_BT2020: *result = COLOR_SPACE_BT2020; return true;
++    }
++    return false;
++}
++
++static bool OutputPrimaries(libvlc_video_color_primaries_t primaries,
++                            video_color_primaries_t *result)
++{
++    switch (primaries) {
++        case libvlc_video_primaries_BT601_525: *result = COLOR_PRIMARIES_BT601_525; return true;
++        case libvlc_video_primaries_BT601_625: *result = COLOR_PRIMARIES_BT601_625; return true;
++        case libvlc_video_primaries_BT709: *result = COLOR_PRIMARIES_BT709; return true;
++        case libvlc_video_primaries_BT2020: *result = COLOR_PRIMARIES_BT2020; return true;
++        case libvlc_video_primaries_DCI_P3: *result = COLOR_PRIMARIES_DCI_P3; return true;
++        case libvlc_video_primaries_BT470_M: *result = COLOR_PRIMARIES_FCC1953; return true;
++    }
++    return false;
++}
++
++static bool OutputTransfer(libvlc_video_transfer_func_t transfer,
++                           video_transfer_func_t *result)
++{
++    switch (transfer) {
++        case libvlc_video_transfer_func_LINEAR: *result = TRANSFER_FUNC_LINEAR; return true;
++        case libvlc_video_transfer_func_SRGB: *result = TRANSFER_FUNC_SRGB; return true;
++        case libvlc_video_transfer_func_BT470_BG: *result = TRANSFER_FUNC_BT470_BG; return true;
++        case libvlc_video_transfer_func_BT470_M: *result = TRANSFER_FUNC_BT470_M; return true;
++        case libvlc_video_transfer_func_BT709: *result = TRANSFER_FUNC_BT709; return true;
++        case libvlc_video_transfer_func_PQ: *result = TRANSFER_FUNC_SMPTE_ST2084; return true;
++        case libvlc_video_transfer_func_SMPTE_240: *result = TRANSFER_FUNC_SMPTE_240; return true;
++        case libvlc_video_transfer_func_HLG: *result = TRANSFER_FUNC_HLG; return true;
++    }
++    return false;
++}
++
+ 
+ static void *OurGetProcAddress(vlc_gl_t *gl, const char *name)
+ {
+@@ -80,18 +195,18 @@ static void VglSwapBuffers(vlc_gl_t *gl)
+     ReleaseCurrent(gl);
+ }
+ 
+-static int ResizeInternal(vlc_gl_t * gl, unsigned w, unsigned h)
++static int ConfigureOutput(vlc_gl_t *gl, unsigned w, unsigned h, bool force)
+ {
+     vout_display_sys_t *sys = gl->sys;
+-    if( sys->width == w && sys->height == h )
++    if (!force && sys->width == w && sys->height == h)
+         return VLC_SUCCESS;
+ 
+-    MakeCurrent(gl);
+-    libvlc_video_render_cfg_t output_cfg = {
+-        w, h, 8, true,
+-        libvlc_video_colorspace_BT709, libvlc_video_primaries_BT709,
+-        libvlc_video_transfer_func_SRGB, NULL,
+-    };
++    if (MakeCurrent(gl) != VLC_SUCCESS)
++        return VLC_EGENERIC;
++
++    libvlc_video_render_cfg_t output_cfg = sys->source_cfg;
++    output_cfg.width = w;
++    output_cfg.height = h;
+     libvlc_video_output_cfg_t render_cfg = {
+         .u.opengl_format = GL_RGBA,
+         .full_range = true,
+@@ -106,11 +221,23 @@ static int ResizeInternal(vlc_gl_t * gl, unsigned w, unsigned h)
+     if (!ret)
+         return VLC_EGENERIC;
+ 
+-    assert(render_cfg.u.opengl_format == GL_RGBA);
+-    assert(render_cfg.full_range == true);
+-    assert(render_cfg.colorspace == libvlc_video_colorspace_BT709);
+-    assert(render_cfg.primaries  == libvlc_video_primaries_BT709);
+-    assert(render_cfg.transfer   == libvlc_video_transfer_func_SRGB);
++    video_color_space_t colorspace;
++    video_color_primaries_t primaries;
++    video_transfer_func_t transfer;
++    if (render_cfg.u.opengl_format != GL_RGBA || !render_cfg.full_range ||
++        !OutputColorspace(render_cfg.colorspace, &colorspace) ||
++        !OutputPrimaries(render_cfg.primaries, &primaries) ||
++        !OutputTransfer(render_cfg.transfer, &transfer))
++        return VLC_EGENERIC;
++
++    var_Create(gl, "vout-cb-output-format", VLC_VAR_BOOL);
++    var_Create(gl, "vout-cb-output-colorspace", VLC_VAR_INTEGER);
++    var_Create(gl, "vout-cb-output-primaries", VLC_VAR_INTEGER);
++    var_Create(gl, "vout-cb-output-transfer", VLC_VAR_INTEGER);
++    var_SetBool(gl, "vout-cb-output-format", true);
++    var_SetInteger(gl, "vout-cb-output-colorspace", colorspace);
++    var_SetInteger(gl, "vout-cb-output-primaries", primaries);
++    var_SetInteger(gl, "vout-cb-output-transfer", transfer);
+ 
+     /* video_orientation_t enum is matching libvlc_video_orient_t. */
+     gl->orientation = (video_orientation_t)render_cfg.orientation;
+@@ -123,7 +250,18 @@ static int ResizeInternal(vlc_gl_t * gl, unsigned w, unsigned h)
+ 
+ static void Resize(vlc_gl_t * gl, unsigned w, unsigned h)
+ {
+-    ResizeInternal(gl, w, h);
++    ConfigureOutput(gl, w, h, false);
++}
++
++static int UpdateSource(vlc_gl_t *gl, const video_format_t *source)
++{
++    vout_display_sys_t *sys = gl->sys;
++    const libvlc_video_render_cfg_t previous = sys->source_cfg;
++    SetSourceConfig(sys, source);
++    const int result = ConfigureOutput(gl, sys->width, sys->height, true);
++    if (result != VLC_SUCCESS)
++        sys->source_cfg = previous;
++    return result;
+ }
+ 
+ static void Close(vlc_gl_t *gl)
+@@ -183,6 +321,7 @@ static int Open(vlc_gl_t *gl, unsigned width, unsigned height,
+     SET_CALLBACK_ADDR(sys->swapCb, "vout-cb-swap");
+     SET_CALLBACK_ADDR(sys->makeCurrentCb, "vout-cb-make-current");
+     SET_CALLBACK_ADDR(sys->getProcAddressCb, "vout-cb-get-proc-address");
++    SetSourceConfig(sys, gl_cfg->source);
+ 
+     if( sys->setupCb )
+     {
+@@ -194,7 +333,7 @@ static int Open(vlc_gl_t *gl, unsigned width, unsigned height,
+             return VLC_EGENERIC;
+         }
+     }
+-    if (ResizeInternal(gl, width, height) != VLC_SUCCESS)
++    if (ConfigureOutput(gl, width, height, true) != VLC_SUCCESS)
+     {
+         if( sys->cleanupCb )
+             sys->cleanupCb(sys->opaque);
+@@ -206,6 +345,7 @@ static int Open(vlc_gl_t *gl, unsigned width, unsigned height,
+         .make_current = MakeCurrent,
+         .release_current = ReleaseCurrent,
+         .resize = Resize,
++        .update_source = UpdateSource,
+         .swap = VglSwapBuffers,
+         .get_proc_address = OurGetProcAddress,
+         .close = Close,

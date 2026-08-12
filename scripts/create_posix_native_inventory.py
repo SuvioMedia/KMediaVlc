@@ -23,7 +23,7 @@ SEMVER = re.compile(
 TARGETS = {
     "linux-x86_64": {"engine": "GLES2", "hdr10": False},
     "linux-aarch64": {"engine": "GLES2", "hdr10": False},
-    "macos-aarch64": {"engine": "OPENGL", "hdr10": False},
+    "macos-aarch64": {"engine": "OPENGL", "hdr10": True},
 }
 
 

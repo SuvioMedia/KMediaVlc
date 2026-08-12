@@ -93,12 +93,21 @@ The following closed inventory is derived from the pinned contrib inputs. Public
 The macOS audit candidate reuses the reviewed rows above for FFmpeg, FLAC,
 FreeType, FriBidi, GSM, HarfBuzz, libass, libdvbpsi, libebml, libiconv,
 libjpeg-turbo, libmatroska, libogg, libpng, libvorbis, libxml2, OpenJPEG,
-Opus, SoXR, and zlib. Its two additional decoder dependencies are:
+Opus, SoXR, and zlib. Its additional decoder and HDR renderer inputs are:
 
 | Component | Version | SPDX license | Reviewed source input | Included notice/terms |
 | --- | --- | --- | --- | --- |
 | dav1d | 1.5.4 | BSD-2-Clause | `dav1d-1.5.4.tar.xz` | `LICENSES/Dav1d-COPYING.txt` |
+| glad | 2.0.4 | Apache-2.0 AND CC0-1.0 AND MIT | `glad-2.0.4.tar.gz` | `LICENSES/glad-LICENSE.txt` |
+| jinja | 3.1.2 | BSD-3-Clause | `jinja-3.1.2.tar.gz` | `LICENSES/Jinja-LICENSE.txt` |
+| libplacebo | 5.264.1 | CC0-1.0 AND LGPL-2.1-or-later | `libplacebo-v5.264.1.tar.gz` | `LICENSES/libplacebo-LICENSE.txt` |
 | libvpx | 1.16.0 | BSD-3-Clause | `libvpx-1.16.0.tar.gz` | `LICENSES/libvpx-LICENSE.txt` |
+| markupsafe | 2.1.1 | BSD-3-Clause | `markupsafe-2.1.1.tar.gz` | `LICENSES/MarkupSafe-LICENSE.txt` |
+| vulkan-headers | 1.3.275 | Apache-2.0 AND MIT | `Vulkan-Headers-1.3.275.tar.gz` | `LICENSES/Vulkan-Headers-LICENSE.txt` |
+
+Jinja and MarkupSafe are native build-time generator inputs only. Vulkan-Headers
+is a header-only input to libplacebo's stub API; the macOS runtime does not
+contain or load Vulkan Loader or glslang.
 
 The macOS candidate is built with Xcode 26.6 (17F113), the macOS 26.5 SDK,
 an arm64-only target, and a minimum deployment version of macOS 14.0. Its

@@ -68,15 +68,20 @@ std::filesystem::path path_from_utf8(const char* value) {
 }
 
 std::filesystem::path normalized_path(const char* value) {
+    const auto input = path_from_utf8(value);
+    if (input.empty()) return {};
     std::error_code error;
-    auto path = std::filesystem::absolute(path_from_utf8(value), error);
+    auto path = std::filesystem::absolute(input, error);
     if (error) return {};
-    return path.lexically_normal();
+    path = std::filesystem::canonical(path, error);
+    return error ? std::filesystem::path{} : path;
 }
 
 bool configure_plugin_directory(const char* value, std::string& error) {
     const auto path = normalized_path(value);
-    if (path.empty() || !std::filesystem::is_directory(path)) {
+    const auto library_path = path.parent_path();
+    if (path.empty() || library_path.empty() || !std::filesystem::is_directory(path) ||
+        !std::filesystem::is_directory(library_path)) {
         error = "The verified libVLC plugin directory is invalid.";
         return false;
     }
@@ -86,16 +91,18 @@ bool configure_plugin_directory(const char* value, std::string& error) {
         return false;
     }
 #if defined(_WIN32)
-    // libVLC reads VLC_PLUGIN_PATH through the UCRT environment. Updating only
-    // the Win32 environment block with SetEnvironmentVariableW leaves the CRT
-    // copy stale when the host process was already running (for example a JVM).
-    if (_wputenv_s(L"VLC_PLUGIN_PATH", path.c_str()) != 0) {
-        error = "The verified VLC_PLUGIN_PATH could not be configured.";
+    // Bind both VLC lookup paths to the same verified runtime. The explicit
+    // plugin path is required when MinGW-built libVLC is hosted by an MSVC JVM;
+    // it also replaces any inherited, unverified plugin search directory.
+    if (_wputenv_s(L"VLC_LIB_PATH", library_path.c_str()) != 0 ||
+        _wputenv_s(L"VLC_PLUGIN_PATH", path.c_str()) != 0) {
+        error = "The verified VLC plugin search paths could not be configured.";
         return false;
     }
 #else
-    if (setenv("VLC_PLUGIN_PATH", path.c_str(), 1) != 0) {
-        error = "The verified VLC_PLUGIN_PATH could not be configured.";
+    if (setenv("VLC_LIB_PATH", library_path.c_str(), 1) != 0 ||
+        unsetenv("VLC_PLUGIN_PATH") != 0) {
+        error = "The verified VLC plugin search paths could not be configured.";
         return false;
     }
 #endif
@@ -495,6 +502,8 @@ std::shared_ptr<LibVlcApi> LibVlcApi::load(const char* path_value, std::string& 
     KMEDIAVLC_BIND(media_player_get_time, "libvlc_media_player_get_time");
     KMEDIAVLC_BIND(media_player_get_length, "libvlc_media_player_get_length");
     KMEDIAVLC_BIND(media_player_is_seekable, "libvlc_media_player_is_seekable");
+    KMEDIAVLC_BIND(media_player_get_selected_track, "libvlc_media_player_get_selected_track");
+    KMEDIAVLC_BIND(media_track_release, "libvlc_media_track_release");
     KMEDIAVLC_BIND(media_player_set_rate, "libvlc_media_player_set_rate");
     KMEDIAVLC_BIND(audio_set_volume, "libvlc_audio_set_volume");
     KMEDIAVLC_BIND(media_new_location, "libvlc_media_new_location");
@@ -592,12 +601,23 @@ kmediavlc_player* kmediavlc_player_create(const kmediavlc_player_config* config)
         "--no-video-title-show",
         "--no-osd",
         "--no-stats",
+        "--no-plugins-scan",
     };
     const char* debug_callbacks = std::getenv("KMEDIAVLC_DEBUG_CALLBACKS");
     arguments.push_back(
         debug_callbacks != nullptr && std::strcmp(debug_callbacks, "1") == 0
             ? "--verbose=2"
             : "--quiet");
+#if defined(KMEDIAVLC_MACOS)
+    const char* allow_software_gl = std::getenv("KMEDIAVLC_ALLOW_SOFTWARE_GL");
+    if (allow_software_gl != nullptr && std::strcmp(allow_software_gl, "1") == 0) {
+        // Standard GitHub-hosted Apple-silicon runners expose only Apple Software
+        // Renderer. The committed macOS VLC patch provides this scoped sampler
+        // fallback so the audit can exercise real libVLC/vgl/IOSurface delivery;
+        // hardware acceptance remains a separate, physical-display gate.
+        arguments.push_back("--kmediavlc-gl-allow-sw");
+    }
+#endif
     player->instance = player->api->new_instance(static_cast<int>(arguments.size()), arguments.data());
     if (player->instance == nullptr) return nullptr;
     if (diagnostic_logging_enabled()) {
@@ -826,6 +846,15 @@ bool kmediavlc_player_get_snapshot(kmediavlc_player* player, kmediavlc_player_sn
     output->duration_microseconds = player->duration_microseconds.load(std::memory_order_acquire);
     output->video_width = player->video_width.load(std::memory_order_acquire);
     output->video_height = player->video_height.load(std::memory_order_acquire);
+    libvlc_media_track_t* selected_video =
+        player->api->media_player_get_selected_track(player->media_player, libvlc_track_video);
+    if (selected_video != nullptr) {
+        if (selected_video->u.video != nullptr) {
+            output->video_frame_rate_num = selected_video->u.video->i_frame_rate_num;
+            output->video_frame_rate_den = selected_video->u.video->i_frame_rate_den;
+        }
+        player->api->media_track_release(selected_video);
+    }
     output->buffered_permille = player->buffered_permille.load(std::memory_order_acquire);
     output->seekable = player->seekable.load(std::memory_order_acquire);
     return true;
