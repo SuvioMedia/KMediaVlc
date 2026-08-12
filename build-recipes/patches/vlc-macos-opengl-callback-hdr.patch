@@ -144,6 +144,30 @@ index 25f7683..6444fc2 100644
  
          char *lut_file = var_InheritString(priv->gl, "gl-lut-file");
          struct pl_custom_lut *lut = LoadCustomLUT(sampler, lut_file);
+@@ -1187,7 +1206,8 @@ opengl_fragment_shader_init(struct vlc_gl_sampler *sampler, bool expose_planes)
+     priv->pl_sh_res = NULL;
+     priv->pl_log = vlc_placebo_CreateLog(VLC_OBJECT(sampler->gl));
+ 
+     const struct pl_opengl_params gl_params =
+     {
++        .allow_software = var_InheritBool(priv->gl, "kmediavlc-gl-allow-sw"),
+         /* Libplacebo won't control whether the context is current or not.
+          * This is the default but we also want to ensure that the struct is
+@@ -1252,10 +1272,14 @@ opengl_fragment_shader_init(struct vlc_gl_sampler *sampler, bool expose_planes)
+ vlc_module_begin()
+     set_shortname("glsampler")
+     set_description("OpenGL built-in sampler")
+     set_callback_opengl_sampler(Open)
+     set_capability("opengl sampler", 1)
+     set_subcategory(SUBCAT_VIDEO_VOUT)
+ #ifdef HAVE_LIBPLACEBO_GL
++    set_section(N_("OpenGL context"), NULL)
++    add_bool("kmediavlc-gl-allow-sw", false, N_("Allow software rasterizers"),
++             N_("Allow a software OpenGL renderer for isolated source audits"))
++
+     set_section(N_("Colorspace conversion"), NULL)
+     add_placebo_color_map_opts("gl")
+     add_integer("target-prim", PL_COLOR_PRIM_UNKNOWN,
 diff --git a/modules/video_output/vgl.c b/modules/video_output/vgl.c
 index ef2a85d..36518fd 100644
 --- a/modules/video_output/vgl.c

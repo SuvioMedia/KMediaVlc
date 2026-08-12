@@ -334,7 +334,7 @@ def verify_policy(root: Path) -> None:
         'setenv("VLC_LIB_PATH", library_path.c_str(), 1)',
         'unsetenv("VLC_PLUGIN_PATH")',
         '_wputenv_s(L"VLC_LIB_PATH", library_path.c_str())',
-        '_wputenv_s(L"VLC_PLUGIN_PATH", L"")',
+        '_wputenv_s(L"VLC_PLUGIN_PATH", path.c_str())',
         '"--no-plugins-scan"',
     ]
     if not all(marker in bridge for marker in plugin_isolation_markers):
@@ -1472,6 +1472,8 @@ def verify_macos_transport_contract(root: Path) -> None:
         "vout-cb-output-format",
         "desc->color_bits",
         "dst_space.hdr = src_space.hdr",
+        "kmediavlc-gl-allow-sw",
+        ".allow_software = var_InheritBool",
         "libvlc_video_transfer_func_PQ",
         "libvlc_video_transfer_func_HLG",
     ]
@@ -1559,6 +1561,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         "pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames",
         "pinnedHdr10FixturePublishesFp16MacIosurfaceFrame",
         "runtime-android/src/androidTest/assets/kmediavlc-android-hdr10.mp4",
+        "kmediaVlcAllowSoftwareGl=true",
         "releaseEligible:false",
         "autotools-macro-SHA256SUMS",
         "path: ${{ runner.temp }}/macos-aarch64-evidence",

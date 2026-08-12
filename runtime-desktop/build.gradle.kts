@@ -78,6 +78,9 @@ tasks.test {
             showStandardStreams = true
         }
     }
+    if (providers.gradleProperty("kmediaVlcAllowSoftwareGl").orNull == "true") {
+        environment("KMEDIAVLC_ALLOW_SOFTWARE_GL", "1")
+    }
     outputs.upToDateWhen { !nativeBridgeTestPath.isPresent }
     outputs.doNotCacheIf("Native bridge integration must execute on the current hardware") {
         nativeBridgeTestPath.isPresent

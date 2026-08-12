@@ -91,11 +91,11 @@ bool configure_plugin_directory(const char* value, std::string& error) {
         return false;
     }
 #if defined(_WIN32)
-    // libVLC reads both variables through the UCRT environment. VLC_LIB_PATH
-    // replaces its compiled-in default. Clearing VLC_PLUGIN_PATH prevents an
-    // inherited process setting from appending any unverified plugin directory.
+    // Bind both VLC lookup paths to the same verified runtime. The explicit
+    // plugin path is required when MinGW-built libVLC is hosted by an MSVC JVM;
+    // it also replaces any inherited, unverified plugin search directory.
     if (_wputenv_s(L"VLC_LIB_PATH", library_path.c_str()) != 0 ||
-        _wputenv_s(L"VLC_PLUGIN_PATH", L"") != 0) {
+        _wputenv_s(L"VLC_PLUGIN_PATH", path.c_str()) != 0) {
         error = "The verified VLC plugin search paths could not be configured.";
         return false;
     }
@@ -608,6 +608,16 @@ kmediavlc_player* kmediavlc_player_create(const kmediavlc_player_config* config)
         debug_callbacks != nullptr && std::strcmp(debug_callbacks, "1") == 0
             ? "--verbose=2"
             : "--quiet");
+#if defined(KMEDIAVLC_MACOS)
+    const char* allow_software_gl = std::getenv("KMEDIAVLC_ALLOW_SOFTWARE_GL");
+    if (allow_software_gl != nullptr && std::strcmp(allow_software_gl, "1") == 0) {
+        // Standard GitHub-hosted Apple-silicon runners expose only Apple Software
+        // Renderer. The committed macOS VLC patch provides this scoped sampler
+        // fallback so the audit can exercise real libVLC/vgl/IOSurface delivery;
+        // hardware acceptance remains a separate, physical-display gate.
+        arguments.push_back("--kmediavlc-gl-allow-sw");
+    }
+#endif
     player->instance = player->api->new_instance(static_cast<int>(arguments.size()), arguments.data());
     if (player->instance == nullptr) return nullptr;
     if (diagnostic_logging_enabled()) {

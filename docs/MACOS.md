@@ -42,6 +42,11 @@ license-closed, relocatable, and accepted by the real Metal consumer.
 
 The hermetic test runs on the standard Apple-silicon `macos-15` GitHub-hosted
 runner as part of normal CI; it covers both SDR and HDR surface allocation.
+That runner exposes `Apple Software Renderer`, so the real-libVLC source audit
+explicitly enables the committed VLC patch's software-OpenGL sampler fallback.
+The option is disabled by default. The hosted run still exercises the pinned
+`vgl` compositor and real IOSurface generations, but it is not treated as
+hardware-renderer or physical-display evidence.
 
 The bridge depends only on Apple system frameworks (`CoreFoundation`,
 `CoreVideo`, `IOSurface`, and `OpenGL`) plus `libc++` and `libSystem`. libVLC is

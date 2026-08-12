@@ -92,7 +92,10 @@ elseif(APPLE)
     find_library(KMEDIAVLC_CORE_VIDEO CoreVideo REQUIRED)
     find_library(KMEDIAVLC_IO_SURFACE IOSurface REQUIRED)
     find_library(KMEDIAVLC_OPEN_GL OpenGL REQUIRED)
-    target_compile_definitions(kmediavlc_bridge PRIVATE GL_SILENCE_DEPRECATION)
+    target_compile_definitions(kmediavlc_bridge PRIVATE
+        GL_SILENCE_DEPRECATION
+        KMEDIAVLC_MACOS=1
+    )
     target_compile_options(kmediavlc_bridge PRIVATE -Wall -Wextra -Wpedantic -Wconversion)
     target_link_libraries(kmediavlc_bridge PRIVATE
         ${KMEDIAVLC_CORE_FOUNDATION}

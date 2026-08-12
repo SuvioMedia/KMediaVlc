@@ -144,6 +144,7 @@ jobs:
             -PkmediaVlcTestPluginDirectory="$stage/lib/vlc/plugins" \
             -PkmediaVlcTestHdrMedia="$GITHUB_WORKSPACE/runtime-android/src/androidTest/assets/kmediavlc-android-hdr10.mp4" \
             -PkmediaVlcDebugCallbacks=true \
+            -PkmediaVlcAllowSoftwareGl=true \
             --tests '*.VlcDesktopPlayerIntegrationTest.pinnedVideoLanFixturePublishesCpuPullFrame' \
             --tests '*.VlcDesktopPlayerIntegrationTest.pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames' \
             --tests '*.VlcDesktopPlayerIntegrationTest.pinnedHdr10FixturePublishesFp16MacIosurfaceFrame' \
