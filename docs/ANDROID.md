@@ -8,10 +8,10 @@ separately to VideoLAN `libvlcjni` revision
 `a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21`.
 
 This milestone is **not a published native payload yet**. The Java API, JNI bridge, two-ABI
-payload contract, hermetic NDK ABI fixture, real pinned source builds, and ARM64 emulator playback
-evidence are implemented. A candidate remains `releaseEligible=false` until the source-mapped
-contrib graph receives its linked-member SPDX/notice review and final release-bound source
-artifacts are retained.
+payload contract, hermetic NDK ABI fixture, real pinned source builds, emulator coverage, and
+physical ARM64 HDR playback evidence are implemented. A candidate remains
+`releaseEligible=false` until the source-mapped contrib graph receives its linked-member
+SPDX/notice review and final release-bound source artifacts are retained.
 
 ## AAR contract
 
@@ -279,6 +279,18 @@ MP4 fixture declares limited-range BT.2020 primaries and SMPTE ST 2084 transfer;
 MediaCodec, rendered visible frames, and SurfaceFlinger reported a BT.2020/PQ SurfaceView signal.
 The same device had reproduced sRGB output through the former AImageReader/ASurfaceControl route.
 
+On 2026-08-12 the same physical OnePlus CPH2747/API 36 ran the complete three-case acceptance
+again at KMediaVlc commit `53b76c5d6b01b53cbaa8b43b08e03ac10638d8e9`: automatic
+MediaCodec lifecycle, software-decoding lifecycle, and automatic HDR10 BT.2020/PQ signaling all
+passed with zero failures, errors, or skips. The lossless JUnit bytes and generated acceptance
+report are retained below `compliance/evidence/android-physical-53b76c5`; their hashes, the four
+tested runtime-library hashes, and the playback-affecting Git paths are closed by
+`compliance/policy/android-retained-physical-evidence.json`. The independent
+`scripts/verify_android_physical_evidence_equivalence.py` verifier rejects a release commit if any
+closed playback path changed or any rebuilt runtime library differs from the physically tested
+binary. It deliberately keeps the execution commit distinct from the later release commit and
+does not promote licensing or source-package review state.
+
 The NDK source packager and independent verifier were also exercised against those exact upstream
 Git identities. The deterministic candidate contained 19,839 tracked files: the complete 195-file
 `llvm_android` tree plus 19,644 selected LLVM files (135,808,087 uncompressed source bytes). The
@@ -303,13 +315,11 @@ checkouts, and the matching `recipeRevision`.
 
 ## Publication gates still open
 
-- pass the fail-closed harness on representative physical ARM hardware and retain its hash-bound
-  `acceptance.json` with the final tested commit;
 - review and approve the exact module lists and linked members emitted by the fail-closed audits,
   then bind approved SPDX expressions and complete notices to the recorded source/archive hashes;
 - promote the NDK component in the final legal manifest to `corresponding-source-mapped` only after
   retaining the independently verified archive for that exact release commit;
 - regenerate, independently verify, and retain both source archives for the final tested commit.
 
-Until all three gates pass, the module is useful for API and ABI integration work but cannot be
+Until both remaining gates pass, the module is useful for API and ABI integration work but cannot be
 published as a bundled runtime.
