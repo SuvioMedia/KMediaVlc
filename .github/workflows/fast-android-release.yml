@@ -83,6 +83,18 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Expose Homebrew Autotools macros
+        shell: bash
+        run: |
+          set -euo pipefail
+          gettext_aclocal="$(brew --prefix gettext)/share/gettext/m4"
+          pkg_config_aclocal="$(brew --prefix pkg-config)/share/aclocal"
+          test -s "$gettext_aclocal/gettext.m4"
+          test -s "$gettext_aclocal/iconv.m4"
+          test -s "$pkg_config_aclocal/pkg.m4"
+          printf 'ACLOCAL_PATH=%s:%s\n' \
+            "$gettext_aclocal" "$pkg_config_aclocal" >> "$GITHUB_ENV"
+
       - name: Install Android build tools
         shell: bash
         run: |
