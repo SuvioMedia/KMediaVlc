@@ -153,13 +153,14 @@ public final class VlcDesktopPlayer implements AutoCloseable {
 
     public VlcPlayerSnapshot snapshot() {
         long[] values = callNative(() -> NativeBridge.snapshot(nativePlayer));
-        if (values == null || values.length != 8) {
+        if (values == null || values.length != 10) {
             throw nativeFailure("The VLC bridge returned a malformed player snapshot.");
         }
         return new VlcPlayerSnapshot(
                 VlcPlaybackState.fromNative(Math.toIntExact(values[0])),
                 values[1], values[2], values[3], Math.toIntExact(values[4]),
-                Math.toIntExact(values[5]), Math.toIntExact(values[6]), values[7] != 0);
+                Math.toIntExact(values[5]), Math.toIntExact(values[6]),
+                Math.toIntExact(values[7]), Math.toIntExact(values[8]), values[9] != 0);
     }
 
     /** Pulls the newest frame after a non-owning push notification. */

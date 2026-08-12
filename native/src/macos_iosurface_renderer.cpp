@@ -12,6 +12,9 @@
 #include <dlfcn.h>
 
 #include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -24,6 +27,40 @@ namespace kmediavlc {
 namespace {
 
 constexpr std::size_t kSurfaceCount = 4;
+
+bool debug_callbacks_enabled() {
+    static const bool enabled = [] {
+        const char* value = std::getenv("KMEDIAVLC_DEBUG_CALLBACKS");
+        return value != nullptr && value[0] == '1' && value[1] == '\0';
+    }();
+    return enabled;
+}
+
+void trace_render_config(
+    const libvlc_video_render_cfg_t* config,
+    bool request_hdr) {
+    if (!debug_callbacks_enabled()) return;
+    if (config == nullptr) {
+        std::fprintf(
+            stderr,
+            "[KMediaVlc macOS] render-config=null request-hdr=%d\n",
+            request_hdr ? 1 : 0);
+    } else {
+        std::fprintf(
+            stderr,
+            "[KMediaVlc macOS] render-config width=%u height=%u bitdepth=%u "
+            "full-range=%d colorspace=%d primaries=%d transfer=%d request-hdr=%d\n",
+            config->width,
+            config->height,
+            config->bitdepth,
+            config->full_range ? 1 : 0,
+            static_cast<int>(config->colorspace),
+            static_cast<int>(config->primaries),
+            static_cast<int>(config->transfer),
+            request_hdr ? 1 : 0);
+    }
+    std::fflush(stderr);
+}
 
 class MacOpenGlContext final {
 public:
@@ -368,6 +405,7 @@ private:
             set_error(player_, "The requested macOS IOSurface exceeds the OpenGL texture limit.");
             return false;
         }
+        trace_render_config(config, target.request_hdr);
         source_dynamic_range_ = source_dynamic_range(config);
         source_extended_ = source_dynamic_range_ == KMEDIAVLC_SOURCE_DYNAMIC_RANGE_HDR10 ||
             source_dynamic_range_ == KMEDIAVLC_SOURCE_DYNAMIC_RANGE_HLG;
@@ -505,11 +543,22 @@ private:
         return glGetError() == GL_NO_ERROR;
     }
 
+    bool rebind_current_surface() {
+        if (current_surface_ == nullptr) return false;
+        glBindFramebuffer(GL_FRAMEBUFFER, current_surface_->framebuffer);
+        glViewport(
+            0,
+            0,
+            static_cast<GLsizei>(current_surface_->width),
+            static_cast<GLsizei>(current_surface_->height));
+        return glGetError() == GL_NO_ERROR;
+    }
+
     bool make_current(bool enter) {
         if (context_ == nullptr || context_->context == nullptr) return false;
         if (!enter) {
             if (!render_lock_held_) return false;
-            if (current_surface_ != nullptr) glFlush();
+            glFlush();
             CGLSetCurrentContext(previous_context_);
             previous_context_ = nullptr;
             render_lock_held_ = false;
@@ -525,6 +574,11 @@ private:
         }
         render_lock_held_ = true;
         if (surfaces_.empty()) return true;
+        // vgl enters the callback context once to render and then a second time
+        // from VglSwapBuffers. The rendered surface must survive that second
+        // entry: selecting and clearing a new writable surface here would erase
+        // the completed frame immediately before swap_callback publishes it.
+        if (current_surface_ != nullptr && rebind_current_surface()) return true;
         if (bind_writable_surface()) return true;
         CGLSetCurrentContext(previous_context_);
         previous_context_ = nullptr;
@@ -538,6 +592,54 @@ private:
         std::shared_ptr<MacSurface> surface;
         {
             std::lock_guard lock(context_->mutex);
+            if (!render_lock_held_ || CGLGetCurrentContext() != context_->context) return;
+            // TextureView consumes this IOSurface through Metal and macOS exposes no
+            // cross-API acquire fence for the OpenGL callback path. Finish the producer
+            // commands before publishing; otherwise Metal can sample a surface while VLC
+            // is still drawing it, which appears as intermittent black/partial frames.
+            glFinish();
+            if (debug_callbacks_enabled() && current_surface_ != nullptr) {
+                const std::uint64_t frame_index = ++debug_frame_index_;
+                if (frame_index <= 12 || frame_index % 120 == 0) {
+                    static constexpr float positions[][2]{
+                        {0.25F, 0.25F},
+                        {0.75F, 0.25F},
+                        {0.50F, 0.50F},
+                        {0.25F, 0.75F},
+                        {0.75F, 0.75F},
+                    };
+                    float maximum_rgb = 0.0F;
+                    float minimum_alpha = std::numeric_limits<float>::max();
+                    float maximum_alpha = 0.0F;
+                    GLenum read_error = GL_NO_ERROR;
+                    while (glGetError() != GL_NO_ERROR) {}
+                    for (const auto& position : positions) {
+                        const GLint x = static_cast<GLint>(
+                            position[0] * static_cast<float>(current_surface_->width - 1));
+                        const GLint y = static_cast<GLint>(
+                            position[1] * static_cast<float>(current_surface_->height - 1));
+                        GLfloat pixel[4]{};
+                        glReadPixels(x, y, 1, 1, GL_RGBA, GL_FLOAT, pixel);
+                        maximum_rgb = std::max(
+                            maximum_rgb,
+                            std::max({std::abs(pixel[0]), std::abs(pixel[1]), std::abs(pixel[2])}));
+                        minimum_alpha = std::min(minimum_alpha, pixel[3]);
+                        maximum_alpha = std::max(maximum_alpha, pixel[3]);
+                    }
+                    read_error = glGetError();
+                    std::fprintf(
+                        stderr,
+                        "[KMediaVlc macOS] producer-frame=%llu max-rgb=%.6f "
+                        "alpha=[%.6f,%.6f] gl-error=0x%x format=%s\n",
+                        static_cast<unsigned long long>(frame_index),
+                        maximum_rgb,
+                        minimum_alpha,
+                        maximum_alpha,
+                        static_cast<unsigned>(read_error),
+                        current_surface_->floating_point ? "rgba16f" : "bgra8");
+                    std::fflush(stderr);
+                }
+            }
             surface = std::move(current_surface_);
         }
         if (!surface) return;
@@ -582,6 +684,7 @@ private:
     CGLContextObj previous_context_ = nullptr;
     kmediavlc_source_dynamic_range source_dynamic_range_ = KMEDIAVLC_SOURCE_DYNAMIC_RANGE_UNKNOWN;
     bool source_extended_ = false;
+    std::uint64_t debug_frame_index_ = 0;
 };
 
 } // namespace

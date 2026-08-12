@@ -10,6 +10,8 @@ public record VlcPlayerSnapshot(
         long durationMicroseconds,
         int videoWidth,
         int videoHeight,
+        int videoFrameRateNumerator,
+        int videoFrameRateDenominator,
         int bufferedPermille,
         boolean seekable) {
 
@@ -19,6 +21,8 @@ public record VlcPlayerSnapshot(
         durationMicroseconds = Math.max(0, durationMicroseconds);
         videoWidth = Math.max(0, videoWidth);
         videoHeight = Math.max(0, videoHeight);
+        videoFrameRateNumerator = Math.max(0, videoFrameRateNumerator);
+        videoFrameRateDenominator = Math.max(0, videoFrameRateDenominator);
         bufferedPermille = Math.clamp(bufferedPermille, 0, 1000);
     }
 }

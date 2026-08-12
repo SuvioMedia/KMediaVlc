@@ -39,6 +39,8 @@ public:
     decltype(&libvlc_media_player_get_time) media_player_get_time = nullptr;
     decltype(&libvlc_media_player_get_length) media_player_get_length = nullptr;
     decltype(&libvlc_media_player_is_seekable) media_player_is_seekable = nullptr;
+    decltype(&libvlc_media_player_get_selected_track) media_player_get_selected_track = nullptr;
+    decltype(&libvlc_media_track_release) media_track_release = nullptr;
     decltype(&libvlc_media_player_set_rate) media_player_set_rate = nullptr;
     decltype(&libvlc_audio_set_volume) audio_set_volume = nullptr;
     decltype(&libvlc_media_new_location) media_new_location = nullptr;

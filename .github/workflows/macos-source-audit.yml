@@ -107,7 +107,7 @@ jobs:
               test -f "$GITHUB_WORKSPACE/.vlc-source/contrib/tarballs/$archive"
               cp "$GITHUB_WORKSPACE/.vlc-source/contrib/tarballs/$archive" "$source_inputs/$archive"
             done
-          test "$(find "$source_inputs" -type f | wc -l)" = 22
+          test "$(find "$source_inputs" -type f | wc -l)" = 27
           (
             cd "$source_inputs"
             find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS
@@ -142,8 +142,10 @@ jobs:
             -PkmediaVlcNativeBridgePath="$stage/bin/libkmediavlc_bridge.dylib" \
             -PkmediaVlcTestLibVlcPath="$stage/bin/libvlc.12.dylib" \
             -PkmediaVlcTestPluginDirectory="$stage/lib/vlc/plugins" \
+            -PkmediaVlcTestHdrMedia="$GITHUB_WORKSPACE/runtime-android/src/androidTest/assets/kmediavlc-android-hdr10.mp4" \
             --tests '*.VlcDesktopPlayerIntegrationTest.pinnedVideoLanFixturePublishesCpuPullFrame' \
             --tests '*.VlcDesktopPlayerIntegrationTest.pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames' \
+            --tests '*.VlcDesktopPlayerIntegrationTest.pinnedHdr10FixturePublishesFp16MacIosurfaceFrame' \
             --rerun-tasks --no-daemon --stacktrace --console=plain
 
       - name: Close the retained macOS candidate and publication inventory

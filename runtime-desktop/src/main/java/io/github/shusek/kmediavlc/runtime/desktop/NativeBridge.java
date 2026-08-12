@@ -55,6 +55,9 @@ final class NativeBridge {
     static native long defaultWindowsAdapterLuid();
     static native float[] inspectWindowsD3D11Frame(long adapterLuid, long sharedHandle);
     static native long[] inspectMacIosurfaceFrame(long iosurfaceId);
+    static native float[] inspectMacIosurfacePixels(long iosurfaceId);
+    static native long retainMacIosurface(long iosurfaceId);
+    static native void releaseMacIosurface(long iosurfaceAddress);
     static native long[] linuxDmaBufModifiers(String renderNode);
     static native int[] inspectLinuxDmaBufFrame(
             String renderNode,

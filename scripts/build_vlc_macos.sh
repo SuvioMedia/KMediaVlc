@@ -15,6 +15,7 @@ build_directory="$2"
 jobs="${3:-8}"
 repository_root="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd -P)"
 configuration="$repository_root/build-recipes/vlc-apple.conf"
+source_patch="$repository_root/build-recipes/patches/vlc-macos-opengl-callback-hdr.patch"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
     echo "the macOS libVLC runtime must be built on macOS" >&2
@@ -40,6 +41,10 @@ if [[ ! -f "$configuration" || -L "$configuration" ]]; then
     echo "pinned Apple build configuration is missing or unsafe" >&2
     exit 1
 fi
+if [[ ! -f "$source_patch" || -L "$source_patch" ]]; then
+    echo "pinned macOS VLC source patch is missing or unsafe" >&2
+    exit 1
+fi
 
 actual_revision="$(git -C "$source_directory" rev-parse HEAD)"
 if [[ "$actual_revision" != "$PINNED_REVISION" ]]; then
@@ -50,6 +55,27 @@ if [[ -n "$(git -C "$source_directory" status --porcelain --untracked-files=no)"
     echo "VLC source checkout contains tracked modifications" >&2
     exit 1
 fi
+if ! git -C "$source_directory" apply --check --whitespace=error-all "$source_patch"; then
+    echo "pinned macOS VLC source patch does not apply cleanly" >&2
+    exit 1
+fi
+
+patch_applied=false
+restore_source_checkout() {
+    local status=$?
+    trap - EXIT
+    if [[ "$patch_applied" == true ]]; then
+        if ! git -C "$source_directory" apply --reverse --check "$source_patch" ||
+           ! git -C "$source_directory" apply --reverse "$source_patch"; then
+            echo "failed to restore the pinned VLC source checkout after the macOS build" >&2
+            status=1
+        fi
+    fi
+    exit "$status"
+}
+trap restore_source_checkout EXIT
+git -C "$source_directory" apply --whitespace=error-all "$source_patch"
+patch_applied=true
 
 readonly upstream_builder="$source_directory/extras/package/apple/build.sh"
 if [[ ! -x "$upstream_builder" ]]; then
@@ -86,6 +112,9 @@ else
 fi
 
 mkdir "$build_directory"
+patch_digest="$(shasum -a 256 "$source_patch" | awk '{print $1}')"
+printf '%s  %s\n' "$patch_digest" "$(basename "$source_patch")" \
+    > "$build_directory/source-patch-SHA256SUMS"
 for macro in \
     "$gettext_macro_directory/gettext.m4" \
     "$gettext_macro_directory/iconv.m4" \
@@ -94,6 +123,7 @@ for macro in \
     printf '%s  %s\n' "$digest" "$(basename "$macro")"
 done > "$build_directory/autotools-macro-SHA256SUMS"
 cd "$build_directory"
+export VLC_REQUESTED_CORE_COUNT="$jobs"
 "$upstream_builder" \
     --arch=arm64 \
     --sdk=macosx \

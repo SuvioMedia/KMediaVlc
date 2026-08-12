@@ -152,8 +152,11 @@ bool publish_test_frame(libvlc_media_player_t* player) {
         output_config.orientation != libvlc_video_orient_top_left) {
         return false;
     }
+    // modules/video_output/vgl.c enters the context again from
+    // VglSwapBuffers before invoking the external swap callback.
+    if (!player->output.make_current(opaque, true)) return false;
     player->output.swap(opaque);
-    return true;
+    return player->output.make_current(opaque, false);
 }
 
 } // namespace
@@ -233,6 +236,31 @@ libvlc_time_t libvlc_media_player_get_time(libvlc_media_player_t*) { return 0; }
 libvlc_time_t libvlc_media_player_get_length(libvlc_media_player_t*) { return 1'000'000; }
 
 bool libvlc_media_player_is_seekable(libvlc_media_player_t*) { return true; }
+
+libvlc_media_track_t* libvlc_media_player_get_selected_track(
+    libvlc_media_player_t*,
+    libvlc_track_type_t type) {
+    if (type != libvlc_track_video) return nullptr;
+    auto* video = new (std::nothrow) libvlc_video_track_t{};
+    if (video == nullptr) return nullptr;
+    auto* track = new (std::nothrow) libvlc_media_track_t{};
+    if (track == nullptr) {
+        delete video;
+        return nullptr;
+    }
+    video->i_frame_rate_num = 24U;
+    video->i_frame_rate_den = 1U;
+    track->i_type = libvlc_track_video;
+    track->u.video = video;
+    track->selected = true;
+    return track;
+}
+
+void libvlc_media_track_release(libvlc_media_track_t* track) {
+    if (track == nullptr) return;
+    if (track->i_type == libvlc_track_video) delete track->u.video;
+    delete track;
+}
 
 int libvlc_media_player_set_rate(libvlc_media_player_t*, float) { return 0; }
 

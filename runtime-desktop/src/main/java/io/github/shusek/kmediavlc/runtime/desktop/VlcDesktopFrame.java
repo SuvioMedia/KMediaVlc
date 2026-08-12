@@ -101,6 +101,19 @@ public final class VlcDesktopFrame implements VlcReleasableFrame {
         return Optional.ofNullable(cpuPixels).map(ByteBuffer::asReadOnlyBuffer);
     }
 
+    /**
+     * Retains this frame's macOS IOSurface and exposes its same-process native address.
+     *
+     * <p>{@link #platformHandle()} remains the cross-process-safe IOSurface ID. Consumers whose
+     * API explicitly requires an {@code IOSurfaceRef} pointer must keep the returned lease alive
+     * until that API has retained the surface or finished consuming it.
+     */
+    public Optional<VlcMacIOSurface> retainMacIOSurface() {
+        if (handleType != VlcNativeHandleType.IOSURFACE || released.get()) return Optional.empty();
+        long address = NativeBridge.retainMacIosurface(platformHandle);
+        return address == 0 ? Optional.empty() : Optional.of(new VlcMacIOSurface(address));
+    }
+
     public void release(int releaseFenceFd) {
         if (released.compareAndSet(false, true)) {
             int unclaimedAcquireFence = acquireFenceFd.getAndSet(NO_FENCE);

@@ -17,6 +17,7 @@ ALLOWED_LICENSES = {
     "BSD-2-Clause",
     "BSD-3-Clause",
     "BSL-1.0",
+    "CC0-1.0",
     "FTL",
     "IJG",
     "ISC",
@@ -35,12 +36,14 @@ COMPONENT_NOTICE_FILES = {
     "flac": "FLAC-COPYING-XIPH.txt",
     "freetype": "FreeType-FTL.txt",
     "fribidi": "LGPL-2.1.txt",
+    "glad": "glad-LICENSE.txt",
     "gmp": "LGPL-3.0.txt",
     "gnutls": "LGPL-2.1.txt",
     "gnutls-libtasn1": "LGPL-2.1.txt",
     "gnutls-libunistring": "LGPL-3.0.txt",
     "gsm": "GSM-COPYRIGHT.txt",
     "harfbuzz": "HarfBuzz-COPYING.txt",
+    "jinja": "Jinja-LICENSE.txt",
     "libass": "libass-COPYING.txt",
     "libdvbpsi": "LGPL-2.1.txt",
     "libebml": "LGPL-2.1.txt",
@@ -51,16 +54,19 @@ COMPONENT_NOTICE_FILES = {
     "libmatroska": "LGPL-2.1.txt",
     "libogg": "libogg-COPYING.txt",
     "libpng": "libpng-LICENSE.txt",
+    "libplacebo": "libplacebo-LICENSE.txt",
     "libssh2": "libssh2-COPYING.txt",
     "libvorbis": "libvorbis-COPYING.txt",
     "libvpx": "libvpx-LICENSE.txt",
     "libxml2": "libxml2-Copyright.txt",
+    "markupsafe": "MarkupSafe-LICENSE.txt",
     "nettle": "LGPL-3.0.txt",
     "openjpeg": "OpenJPEG-LICENSE.txt",
     "opus": "Opus-COPYING.txt",
     "soxr": "SoXR-LICENCE.txt",
     "speexdsp": "SpeexDSP-COPYING.txt",
     "utfcpp": "BSL-1.0.txt",
+    "vulkan-headers": "Vulkan-Headers-LICENSE.txt",
     "zlib": "zlib-LICENSE.txt",
 }
 FORBIDDEN_BINARY_SUFFIXES = {
@@ -323,6 +329,16 @@ def verify_policy(root: Path) -> None:
     bridge_cmake = (root / "native/CMakeLists.txt").read_text(encoding="utf-8")
     if 'MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"' not in bridge_cmake:
         fail("The Windows bridge must explicitly use the dynamic MSVC runtime.")
+    bridge = (root / "native/src/kmediavlc_bridge.cpp").read_text(encoding="utf-8")
+    plugin_isolation_markers = [
+        'setenv("VLC_LIB_PATH", library_path.c_str(), 1)',
+        'unsetenv("VLC_PLUGIN_PATH")',
+        '_wputenv_s(L"VLC_LIB_PATH", library_path.c_str())',
+        '_wputenv_s(L"VLC_PLUGIN_PATH", L"")',
+        '"--no-plugins-scan"',
+    ]
+    if not all(marker in bridge for marker in plugin_isolation_markers):
+        fail("The desktop bridge does not isolate libVLC to its verified plugin cache.")
     audit_workflow = (root / ".github/workflows/native-audit.yml").read_text(encoding="utf-8")
     native_validation_markers = [
         "validate-windows-x86-64:",
@@ -1275,13 +1291,15 @@ def verify_macos_transport_contract(root: Path) -> None:
         "approved",
     }:
         fail("macOS binary component policy has an invalid review state.")
-    if binary.get("buildOnlyContribPackages") != []:
+    expected_macos_build_only = ["jinja", "markupsafe"]
+    if binary.get("buildOnlyContribPackages") != expected_macos_build_only:
         fail("macOS playback contrib closure contains unreviewed build-only packages.")
     expected_macos_components = {
-        "dav1d", "ffmpeg", "flac", "freetype", "fribidi", "gsm", "harfbuzz",
-        "libass", "libdvbpsi", "libebml", "libiconv", "libjpeg-turbo",
-        "libmatroska", "libogg", "libpng", "libvorbis", "libvpx", "libxml2",
-        "openjpeg", "opus", "soxr", "zlib",
+        "dav1d", "ffmpeg", "flac", "freetype", "fribidi", "glad", "gsm",
+        "harfbuzz", "jinja", "libass", "libdvbpsi", "libebml", "libiconv",
+        "libjpeg-turbo", "libmatroska", "libogg", "libplacebo", "libpng",
+        "libvorbis", "libvpx", "libxml2", "markupsafe", "openjpeg", "opus",
+        "soxr", "vulkan-headers", "zlib",
     }
     macos_components = binary.get("components")
     if (
@@ -1309,9 +1327,9 @@ def verify_macos_transport_contract(root: Path) -> None:
             fail(f"macOS binary component source archive is unsafe: {component_id}")
     macos_module_components = binary.get("moduleComponents")
     expected_macos_component_modules = {
-        "avcodec", "dav1d", "flac", "freetype", "inflate", "jpeg", "libass",
-        "mkv", "mp4", "ogg", "opus", "packetizer_avparser", "png", "soxr",
-        "swscale", "ts", "vorbis", "vpx", "xml",
+        "avcodec", "dav1d", "flac", "freetype", "glsampler_builtin", "inflate",
+        "jpeg", "libass", "mkv", "mp4", "ogg", "opus", "packetizer_avparser",
+        "png", "soxr", "swscale", "ts", "vorbis", "vpx", "xml",
     }
     if (
         not isinstance(macos_module_components, dict)
@@ -1329,17 +1347,20 @@ def verify_macos_transport_contract(root: Path) -> None:
     if macos_core_components != ["libiconv"]:
         fail("macOS core component closure changed without review.")
     referenced_macos_components.update(macos_core_components)
-    if referenced_macos_components != set(macos_components):
+    if referenced_macos_components | set(expected_macos_build_only) != set(macos_components):
         fail("macOS binary component policy contains unused or missing components.")
     if binary.get("moduleAdditionalLicenses") != expected_additional:
         fail("macOS binary direct-source license exceptions changed without review.")
 
     selected_contribs = [
         "ass", "dav1d", "dvbpsi", "ebml", "ffmpeg", "flac", "freetype2",
-        "fribidi", "harfbuzz", "jpeg", "libxml2", "matroska", "ogg", "opus",
-        "png", "soxr", "vorbis", "vpx", "zlib",
+        "fribidi", "harfbuzz", "jpeg", "libplacebo", "libxml2", "matroska",
+        "ogg", "opus", "png", "soxr", "vorbis", "vpx", "zlib",
     ]
-    resolved_contribs = sorted(selected_contribs + ["gsm", "iconv", "openjpeg"])
+    resolved_contribs = sorted(
+        selected_contribs +
+        ["glad", "gsm", "iconv", "jinja", "markupsafe", "openjpeg", "vulkan-headers"]
+    )
     recipe = load_json(root / "build-recipes/macos.json")
     expected_build_arguments = [
         "--arch=arm64",
@@ -1354,6 +1375,8 @@ def verify_macos_transport_contract(root: Path) -> None:
         or recipe.get("minimumOs") != "14.0"
         or recipe.get("buildMode") != "shared"
         or recipe.get("libVlcBuildArguments") != expected_build_arguments
+        or recipe.get("sourcePatches")
+        != ["build-recipes/patches/vlc-macos-opengl-callback-hdr.patch"]
         or recipe.get("libVlcDylibMajor") != 12
         or recipe.get("libVlcCoreDylibMajor") != 9
         or recipe.get("usesPrebuiltContribs") is not False
@@ -1367,7 +1390,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         or recipe.get("renderEngine") != "OPENGL"
         or recipe.get("frameTransport") != "IOSURFACE"
         or recipe.get("stagedPluginCount") != 89
-        or recipe.get("rawSourceBuildPluginCount") != 285
+        or recipe.get("rawSourceBuildPluginCount") != 288
         or recipe.get("pluginCacheGeneratedAfterRelocation") is not True
         or recipe.get("relocationSignature") != "adhoc-replaced-by-consuming-app-signature"
         or recipe.get("requiresConsumerCodeSigning") is not True
@@ -1399,7 +1422,6 @@ def verify_macos_transport_contract(root: Path) -> None:
         fail("The Apple contrib profile differs from its closed package graph.")
     configure_markers = [
         "--disable-addonmanagermodules",
-        "--disable-libplacebo",
         "--disable-macosx",
         "--disable-nfs",
         "--disable-opencv4",
@@ -1410,6 +1432,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         "--disable-vulkan",
         "--enable-avformat",
         "--enable-libass",
+        "--enable-libplacebo",
         "--enable-matroska",
     ]
     if not all(marker in profile for marker in configure_markers):
@@ -1428,11 +1451,32 @@ def verify_macos_transport_contract(root: Path) -> None:
         'export ACLOCAL_PATH="$bound_aclocal_path:$ACLOCAL_PATH"',
         "autotools-macro-SHA256SUMS",
         'git -C "$source_directory" status --porcelain --untracked-files=no',
+        'git -C "$source_directory" apply --check --whitespace=error-all "$source_patch"',
+        'git -C "$source_directory" apply --reverse "$source_patch"',
+        "source-patch-SHA256SUMS",
+        'export VLC_REQUESTED_CORE_COUNT="$jobs"',
         'make -C "$contrib_directory" list',
         "vlc-macosx-arm64",
     ]
     if not all(marker in builder for marker in builder_markers):
         fail("The macOS VLC build wrapper does not preserve the pinned upstream recipe.")
+
+    source_patch = (
+        root / "build-recipes/patches/vlc-macos-opengl-callback-hdr.patch"
+    ).read_text(encoding="utf-8")
+    patch_markers = [
+        "-Dvulkan=disabled",
+        "DEPS_libplacebo += vulkan-headers",
+        'requested_cpus="${VLC_REQUESTED_CORE_COUNT:-0}"',
+        "vlc_gl_UpdateSource",
+        "vout-cb-output-format",
+        "desc->color_bits",
+        "dst_space.hdr = src_space.hdr",
+        "libvlc_video_transfer_func_PQ",
+        "libvlc_video_transfer_func_HLG",
+    ]
+    if not all(marker in source_patch for marker in patch_markers):
+        fail("The macOS VLC source patch does not preserve source-aware HDR callback output.")
 
     stager = (root / "scripts/stage_vlc_macos_runtime.py").read_text(encoding="utf-8")
     stager_markers = [
@@ -1513,6 +1557,8 @@ def verify_macos_transport_contract(root: Path) -> None:
         "scripts/stage_vlc_macos_runtime.py",
         "pinnedVideoLanFixturePublishesCpuPullFrame",
         "pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames",
+        "pinnedHdr10FixturePublishesFp16MacIosurfaceFrame",
+        "runtime-android/src/androidTest/assets/kmediavlc-android-hdr10.mp4",
         "releaseEligible:false",
         "autotools-macro-SHA256SUMS",
         "path: ${{ runner.temp }}/macos-aarch64-evidence",
@@ -1549,6 +1595,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         or "libvlc_video_engine_opengl" not in fixture
         or "fakeLibVlcPublishesRealSdrAndHdrMacIosurfaceFrames" not in integration
         or "pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames" not in integration
+        or "pinnedHdr10FixturePublishesFp16MacIosurfaceFrame" not in integration
         or "inspectMacIosurfaceFrame" not in integration
     ):
         fail("The pinned macOS callback ABI lacks its real IOSurface integration gate.")
@@ -1563,11 +1610,13 @@ def verify_macos_transport_contract(root: Path) -> None:
         / "runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/"
         "VlcDesktopRuntime.java"
     ).read_text(encoding="utf-8")
+    inventory = (root / "scripts/create_posix_native_inventory.py").read_text(encoding="utf-8")
     documentation = (root / "docs/MACOS.md").read_text(encoding="utf-8")
     if (
         'case "macos-aarch64"' not in parser
         or "Set.of(VlcRenderEngine.OPENGL)" not in parser
         or 'return "macos-aarch64"' not in runtime
+        or '"macos-aarch64": {"engine": "OPENGL", "hdr10": True}' not in inventory
         or "not a published" not in documentation
         or "Publication gates still open" not in documentation
     ):
@@ -2476,6 +2525,7 @@ def verify_legal_files(root: Path) -> None:
         root / "THIRD_PARTY_NOTICES.md",
         root / "LICENSES/LGPL-2.1.txt",
         root / "LICENSES/LGPL-3.0.txt",
+        root / "LICENSES/Apache-2.0.txt",
         root / "LICENSES/ISC-kmediavlc-client-api.txt",
         root / "gradle/wrapper/LICENSE",
     ]

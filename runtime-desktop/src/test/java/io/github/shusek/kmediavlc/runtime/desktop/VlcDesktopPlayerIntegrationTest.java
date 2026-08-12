@@ -153,6 +153,8 @@ final class VlcDesktopPlayerIntegrationTest {
             assertEquals(VlcPlaybackState.ENDED, snapshot.state());
             assertEquals(128, snapshot.videoWidth());
             assertEquals(72, snapshot.videoHeight());
+            assertEquals(24, snapshot.videoFrameRateNumerator());
+            assertEquals(1, snapshot.videoFrameRateDenominator());
             assertTrue(player.stop());
             assertEquals(VlcPlaybackState.STOPPED, player.snapshot().state());
         }
@@ -294,6 +296,9 @@ final class VlcDesktopPlayerIntegrationTest {
                 assertEquals(128, frame.width());
                 assertEquals(72, frame.height());
                 assertTrue(frame.platformHandle() > 0);
+                try (var ioSurface = frame.retainMacIOSurface().orElseThrow()) {
+                    assertTrue(ioSurface.address() != 0);
+                }
                 assertTrue(frame.stride() >= 128 * 4);
                 assertEquals(0x42475241, frame.fourcc(), "kCVPixelFormatType_32BGRA");
                 long[] inspection = NativeBridge.inspectMacIosurfaceFrame(frame.platformHandle());
@@ -304,6 +309,7 @@ final class VlcDesktopPlayerIntegrationTest {
                 assertEquals(frame.stride(), inspection[3]);
                 assertTrue(inspection[4] >= frame.stride() * 72L);
                 assertEquals(frame.fourcc(), inspection[5]);
+                assertMacIosurfaceHasContent(frame);
             }
 
             signal.drainPermits();
@@ -334,6 +340,66 @@ final class VlcDesktopPlayerIntegrationTest {
                 assertEquals(96, inspection[0]);
                 assertEquals(54, inspection[1]);
                 assertEquals(frame.stride(), inspection[3]);
+                assertMacIosurfaceHasContent(frame);
+            }
+            assertTrue(player.stop());
+        }
+    }
+
+    @Test
+    void pinnedHdr10FixturePublishesFp16MacIosurfaceFrame() throws Exception {
+        Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase().contains("mac"));
+        String mediaPath = System.getProperty("kmediavlc.test.hdrMedia");
+        Assumptions.assumeTrue(mediaPath != null, "The immutable HDR10 fixture is opt-in.");
+        Path media = Path.of(mediaPath).toAbsolutePath();
+        Assumptions.assumeTrue(media.toFile().isFile(), "The HDR10 fixture is missing.");
+        var fixture = fixture();
+        var signal = new Semaphore(0);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.GPU_PUSH,
+                true,
+                203f,
+                1_000f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        signal.release();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
+            assertTrue(player.updateOutput(new VlcMacOutputTarget(
+                    43,
+                    320,
+                    180,
+                    true,
+                    203f,
+                    1_000f,
+                    1,
+                    1)));
+            assertTrue(player.open(media.toUri().toString(), Map.of(), true));
+            try (var frame = awaitMacHdrFrame(player, signal, 43)) {
+                assertEquals(VlcNativeHandleType.IOSURFACE, frame.handleType());
+                assertEquals(VlcPixelFormat.RGBA16F_LINEAR_SRGB, frame.pixelFormat());
+                assertEquals(VlcSourceDynamicRange.HDR10, frame.sourceDynamicRange());
+                assertEquals(320, frame.width());
+                assertEquals(180, frame.height());
+                assertTrue(frame.platformHandle() > 0);
+                assertTrue(frame.contentPeakNits() >= 1_000f);
+                assertTrue(frame.stride() >= 320 * 8);
+                assertEquals(0x52476841, frame.fourcc(), "kCVPixelFormatType_64RGBAHalf");
+                try (var ioSurface = frame.retainMacIOSurface().orElseThrow()) {
+                    assertTrue(ioSurface.address() != 0);
+                }
+                long[] inspection = NativeBridge.inspectMacIosurfaceFrame(frame.platformHandle());
+                assertNotNull(inspection);
+                assertEquals(320, inspection[0]);
+                assertEquals(180, inspection[1]);
+                assertEquals(8, inspection[2]);
+                assertEquals(frame.stride(), inspection[3]);
+                assertTrue(inspection[4] >= frame.stride() * 180L);
+                assertEquals(frame.fourcc(), inspection[5]);
+                assertMacIosurfaceHasContent(frame);
             }
             assertTrue(player.stop());
         }
@@ -485,6 +551,9 @@ final class VlcDesktopPlayerIntegrationTest {
                 assertEquals(96, frame.width());
                 assertEquals(54, frame.height());
                 assertTrue(frame.platformHandle() > 0);
+                try (var ioSurface = frame.retainMacIOSurface().orElseThrow()) {
+                    assertTrue(ioSurface.address() != 0);
+                }
                 assertTrue(frame.stride() >= 96 * 8);
                 assertEquals(0x52476841, frame.fourcc(), "kCVPixelFormatType_64RGBAHalf");
                 assertTrue(frame.contentPeakNits() >= 1_000f);
@@ -659,6 +728,47 @@ final class VlcDesktopPlayerIntegrationTest {
             }
             frame.close();
         }
+    }
+
+    private static VlcDesktopFrame awaitMacHdrFrame(
+            VlcDesktopPlayer player,
+            Semaphore signal,
+            long generation) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+        while (true) {
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0 || !signal.tryAcquire(remaining, TimeUnit.NANOSECONDS)) {
+                throw new AssertionError(timeoutDiagnostics(
+                        player,
+                        "Real libVLC published no FP16 HDR10 IOSurface."));
+            }
+            var candidate = player.acquireLatestFrame();
+            if (candidate.isEmpty()) continue;
+            var frame = candidate.orElseThrow();
+            if (frame.generation() == generation
+                    && frame.pixelFormat() == VlcPixelFormat.RGBA16F_LINEAR_SRGB
+                    && frame.sourceDynamicRange() == VlcSourceDynamicRange.HDR10) {
+                return frame;
+            }
+            frame.close();
+        }
+    }
+
+    private static void assertMacIosurfaceHasContent(VlcDesktopFrame frame) {
+        float[] samples = NativeBridge.inspectMacIosurfacePixels(frame.platformHandle());
+        assertNotNull(samples, "The IOSurface could not be sampled.");
+        assertEquals(8, samples.length);
+        assertEquals(frame.width(), (int) samples[0]);
+        assertEquals(frame.height(), (int) samples[1]);
+        float maximumRgb = Math.max(samples[2], Math.max(samples[3], samples[4]));
+        assertTrue(maximumRgb > 1f / 4096f, () ->
+                "The published IOSurface contains only black RGB samples: " + Arrays.toString(samples));
+        assertTrue(samples[5] > 0.9f, () ->
+                "The published IOSurface has invalid alpha samples: " + Arrays.toString(samples));
+        assertTrue(samples[6] >= samples[5], () ->
+                "The published IOSurface alpha range is invalid: " + Arrays.toString(samples));
+        assertTrue(samples[7] > 0f, () ->
+                "The published IOSurface has no non-black sample: " + Arrays.toString(samples));
     }
 
     private static String timeoutDiagnostics(VlcDesktopPlayer player, String fallback) {

@@ -169,7 +169,7 @@ class PackageNativeRuntimeMatrixTest(unittest.TestCase):
                         "frameDeliveryModes": ["GPU_PUSH", "CPU_PULL"],
                         "renderEngines": [engines[target]],
                         "pluginDirectory": "plugins",
-                        "hdr10Metadata": target == "windows-x86_64",
+                        "hdr10Metadata": target in {"macos-aarch64", "windows-x86_64"},
                         "files": files,
                     }
                 ),
