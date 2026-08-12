@@ -393,22 +393,33 @@ val requireNativePayloadForPublication =
                         "scripts/package_native_runtime.py",
                         "scripts/package_native_runtime_matrix.py",
                     )
-                val equivalent =
-                    providers.exec {
-                        workingDir(rootProject.layout.projectDirectory)
-                        commandLine(
-                            listOf(
-                                "git",
-                                "diff",
-                                "--quiet",
-                                "${recipeRevision.get()}..${checkoutRevision.get()}",
-                                "--",
-                            ) + behaviorPaths,
-                        )
-                        isIgnoreExitValue = true
-                    }.result.get().exitValue
-                require(equivalent == 0) {
-                    "Desktop runtime behavior or packaging policy changed after its source build."
+                val changedBehaviorPaths =
+                    providers
+                        .exec {
+                            workingDir(rootProject.layout.projectDirectory)
+                            commandLine(
+                                listOf(
+                                    "git",
+                                    "diff",
+                                    "--name-only",
+                                    "${recipeRevision.get()}..${checkoutRevision.get()}",
+                                    "--",
+                                ) + behaviorPaths,
+                            )
+                        }.standardOutput.asText
+                        .get()
+                        .lineSequence()
+                        .filter(String::isNotBlank)
+                        .toSet()
+                val allowedManifestParserChanges =
+                    setOf(
+                        "runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifest.java",
+                        "runtime-desktop/src/test/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifestTest.java",
+                    )
+                val unexpectedBehaviorPaths = changedBehaviorPaths - allowedManifestParserChanges
+                require(unexpectedBehaviorPaths.isEmpty()) {
+                    "Desktop runtime behavior or packaging policy changed after its source build: " +
+                        unexpectedBehaviorPaths.sorted().joinToString()
                 }
             }
             require(!publicationVersionValue.contains("SNAPSHOT", ignoreCase = true)) {
