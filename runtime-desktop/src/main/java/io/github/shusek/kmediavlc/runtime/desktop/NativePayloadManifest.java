@@ -41,6 +41,7 @@ record NativePayloadManifest(
     private static final Pattern COMMIT_REVISION = Pattern.compile("[0-9a-f]{40}");
     private static final Pattern COMPONENT = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._+\\-]{0,127}");
     private static final Pattern SAFE_DIRECTORY = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._+\\-/]{0,510}");
+    private static final String EXTENSIONLESS_CHECKSUM_FILE = "SHA256SUMS";
     private static final Set<String> ALLOWED_LICENSES =
             Set.of(
                     "0BSD",
@@ -248,7 +249,7 @@ record NativePayloadManifest(
 
     private static String requireSafeRelativeFile(String value) {
         String safe = requireSafeRelativeDirectory(value);
-        if (!safe.contains(".") || safe.endsWith(".")) {
+        if ((!safe.contains(".") && !safe.equals(EXTENSIONLESS_CHECKSUM_FILE)) || safe.endsWith(".")) {
             return reject("Native manifest file path is invalid.");
         }
         return safe;
