@@ -8,8 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -31,8 +33,13 @@ final class VlcDesktopPlayerIntegrationTest {
         Path image = createImage();
         var inspection = VlcDesktopRuntime.inspectBundled();
         assertTrue(inspection.available());
-        var runtime = VlcDesktopRuntime.resolveBundled(
-                temporaryDirectory.resolve("bundled-runtime").toAbsolutePath());
+        Path extractionRoot = temporaryDirectory.resolve("bundled-runtime").toAbsolutePath();
+        if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("windows")) {
+            // Windows keeps loaded DLLs locked until the test JVM exits. Keep their application-like
+            // extraction directory outside JUnit's eagerly deleted @TempDir tree.
+            extractionRoot = Files.createTempDirectory("kmediavlc-loaded-runtime-").toAbsolutePath();
+        }
+        var runtime = VlcDesktopRuntime.resolveBundled(extractionRoot);
         var signal = new CountDownLatch(1);
         var config = new VlcDesktopPlayerConfig(
                 VlcFrameDeliveryMode.CPU_PULL,
