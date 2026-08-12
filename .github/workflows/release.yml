@@ -9,7 +9,7 @@ on:
       version:
         description: Immutable release version, including RCs
         required: true
-        default: 0.1.0-rc.1
+        default: 0.1.0-rc.2
         type: string
       tested_commit:
         description: Exact forty-character release commit
@@ -90,7 +90,8 @@ jobs:
           python3 -m unittest discover -s scripts/tests -p 'test_*.py'
           python3 scripts/verify_fast_release_licenses.py --root .
           git merge-base --is-ancestor "$DESKTOP_RUNTIME_COMMIT" "$TESTED_COMMIT"
-          test -z "$(git diff --name-only "$DESKTOP_RUNTIME_COMMIT..$TESTED_COMMIT" -- \
+          # A Java-only manifest-parser hotfix may reuse byte-identical retained native payloads.
+          restricted_changes="$(git diff --name-only "$DESKTOP_RUNTIME_COMMIT..$TESTED_COMMIT" -- \
             native runtime-desktop/src build-recipes patches/vlc gradle/libs.versions.toml \
             compliance/policy/release-policy.json \
             compliance/policy/windows-x86_64-playback-modules.json \
@@ -101,6 +102,9 @@ jobs:
             compliance/policy/macos-aarch64-binary-components.json \
             compliance/policy/android-static-components.json \
             scripts/package_native_runtime.py scripts/package_native_runtime_matrix.py)"
+          unexpected_restricted_changes="$(printf '%s\n' "$restricted_changes" | sed '/^$/d' | \
+            grep -Ev '^(runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifest.java|runtime-desktop/src/test/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifestTest.java)$' || true)"
+          test -z "$unexpected_restricted_changes"
 
           tag="v$VERSION"
           remote_tag="$(git ls-remote --tags origin "refs/tags/$tag" | awk '{print $1}')"
