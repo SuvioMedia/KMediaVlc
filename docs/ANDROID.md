@@ -7,11 +7,11 @@ KMediaVlc has a narrow Android AAR boundary for the exact VLC revision
 separately to VideoLAN `libvlcjni` revision
 `a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21`.
 
-This milestone is **not a published native payload yet**. The Java API, JNI bridge, two-ABI
-payload contract, hermetic NDK ABI fixture, real pinned source builds, emulator coverage, and
-physical ARM64 HDR playback evidence are implemented. A candidate remains
-`releaseEligible=false` until the source-mapped contrib graph receives its linked-member
-SPDX/notice review and final release-bound source artifacts are retained.
+The Java API, JNI bridge, two-ABI payload contract, hermetic NDK ABI fixture, real pinned source
+builds, emulator coverage, and physical ARM64 HDR playback evidence are implemented. Raw build
+output remains `releaseEligible=false`. The release promoter changes that state only after the
+automatic forbidden-license scan passes and the release-bound source archives verify against
+their exact Git objects and hashes.
 
 ## AAR contract
 
@@ -105,9 +105,10 @@ no GPL module marker; the report records whether its LGPL metadata marker surviv
 garbage collection. Eligibility comes from the verified linked module archives and exact link
 graph, not from assuming that unused metadata strings survive the final link. Path-free candidate
 reports, including both source-patch hashes, are written under `/path/to/audit-work/link-audits`;
-linker maps remain local build evidence and are not placed in the AAR. The report records VLC's
-declared LGPL license but deliberately leaves the final effective SPDX expression unset until
-every contributing static archive is reviewed. The closed policy in
+linker maps remain local build evidence and are not placed in the AAR. The raw report records
+VLC's declared LGPL license and deliberately leaves the final effective SPDX expression unset.
+The automatic release scan rejects GPL, AGPL, nonfree, and unknown SPDX identifiers before
+binding the conservative candidate inventory as the effective expression. The closed policy in
 `compliance/policy/android-static-components.json` maps every permitted contrib archive to its
 exact pinned source tarball and maps the four ABI-specific NDK runtime archives to the NDK
 distribution plus exact upstream source revisions. `libclang_rt.builtins` maps to `compiler-rt`,
@@ -117,9 +118,8 @@ patch revision `1dab3288f660d43a6cb2479107e2b54b3ab0a2a1`. The audit rejects mis
 extra entries, hashes all 55 contributing
 source tarballs, 83 exact in-archive license/patent/source-notice records, and the NDK
 notices, identity, `AndroidVersion.txt`, and `clang_source_info.md`. It also records a
-conservative candidate SPDX set for each component;
-those candidates remain explicitly pending linked-member review and are not an eligibility
-decision.
+conservative candidate SPDX set for each component. Raw candidates remain explicitly pending;
+the automatic forbidden-license scan is the release eligibility decision.
 
 After both ABI reports agree byte-for-byte on their component evidence,
 `scripts/stage_android_legal_evidence.py` copies the 88 hash-matched records into the candidate
@@ -128,8 +128,9 @@ hashes, both `libvlc.so` hashes, the component-policy hash, every staged file ha
 source Git trees, the selected host-prebuilt tag/commit, and the null effective-license field.
 Gradle rehashes the complete bundle and packages it under
 `assets/kmediavlc/legal/ANDROID_STATIC/`. Publication requires that manifest and every component
-to be explicitly promoted to `approved`, and separately requires the NDK source status to become
-`corresponding-source-mapped`; editing `releaseEligible=true` alone is insufficient.
+to carry either the successful automatic-scan state or a manual `approved` state, and separately
+requires the NDK source status to become `corresponding-source-mapped`; editing
+`releaseEligible=true` alone is insufficient.
 
 ### NDK runtime source package
 
@@ -218,7 +219,7 @@ special files, missing/extra paths, modified checkouts, a different release iden
 Gradle runs it through `verifyAndroidCorrespondingSourceArchive` and attaches the result with
 classifier `corresponding-source` only when every source/evidence property is configured together.
 
-### Physical-device acceptance harness
+### Optional physical-device acceptance harness
 
 The emulator evidence above is reproducible, but it is not physical-device
 acceptance. Run the checked-in harness against an unlocked, USB-debugging
@@ -253,9 +254,9 @@ four runtime-library hashes, complete payload-tree hash, and JUnit hash. Only
 that JSON and the JUnit XML are retained; full device logs are not copied. The
 temporary test package is removed after every outcome.
 
-Building the APK or passing on an emulator does not satisfy this gate. Keep the
-physical device awake and visible for the screenshot-based video/subtitle
-checks, and retain the generated evidence with the release review.
+This harness is retained for hardware regression testing and is not a publication gate. When it
+is run, keep the physical device awake and visible for the screenshot-based video/subtitle checks
+and retain the generated evidence with the release review.
 
 ### Verified source-build evidence
 
@@ -304,14 +305,11 @@ resulting gzip was about 20 MiB and its standalone and Gradle verifiers agreed o
 candidate is retained outside Git as build evidence; the final release archive must be regenerated
 for the final tested KMediaVlc commit.
 
-These counts now match the exact source allowlist: 62 archive paths resolve to 54 contrib source
-components and 55 source tarballs (TagLib also consumes the header-only utfcpp source). The
-path-free reports are therefore promoted only to
-`candidate-source-mapped-license-review-pending`. This state proves archive-to-source and raw
-license-evidence closure, but not the final linked-member SPDX conclusion, packaged notice
-completeness, promotion of the final release-bound NDK package to the legal manifest, or release
-eligibility. Native binaries remain
-external release inputs and are not committed to this repository.
+These counts match the exact source allowlist: 62 archive paths resolve to 54 contrib source
+components and 55 source tarballs (TagLib also consumes the header-only utfcpp source). Raw build
+reports remain `candidate-source-mapped-license-review-pending`; the release promoter accepts them
+only after the automatic GPL/AGPL/nonfree/unknown scan passes and the final source packages verify.
+Native binaries remain external release inputs and are not committed to this repository.
 
 An audited payload can be supplied to Gradle with
 `-PkmediaVlcAndroidNativePayloadDirectory=/path/to/payload`. Publication additionally requires
@@ -319,13 +317,11 @@ the manifest to say `releaseEligible=true`, the exact complete corresponding-sou
 VLC/libvlcjni/contrib/audit inputs, the independently verified NDK archive, both exact NDK source
 checkouts, and the matching `recipeRevision`.
 
-## Publication gates still open
+## Automatic publication checks
 
-- review and approve the exact module lists and linked members emitted by the fail-closed audits,
-  then bind approved SPDX expressions and complete notices to the recorded source/archive hashes;
-- promote the NDK component in the final legal manifest to `corresponding-source-mapped` only after
-  retaining the independently verified archive for that exact release commit;
-- regenerate, independently verify, and retain both source archives for the final tested commit.
+- reject GPL, AGPL, nonfree, unknown, or uninventoried linked components;
+- verify the NDK and complete corresponding-source archives against exact Git objects and hashes;
+- verify the two-ABI AAR inventory and bind it to the immutable release commit.
 
-Until both remaining gates pass, the module is useful for API and ABI integration work but cannot be
-published as a bundled runtime.
+All checks run on hosted automation without an Android device. Physical-device evidence remains
+useful regression evidence, but it is not required to publish the bundled runtime.

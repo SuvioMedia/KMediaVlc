@@ -496,21 +496,35 @@ def load_legal_manifest(
     static_digest, _ = sha256_file(static_path)
     review_status = manifest.get("reviewStatus")
     if (
-        set(manifest) != expected_keys
+        frozenset(manifest)
+        not in {frozenset(expected_keys), frozenset(expected_keys | {"automaticLicenseScan"})}
         or manifest.get("schemaVersion") != 1
         or manifest.get("vlcRevision") != static_policy["vlcRevision"]
         or manifest.get("ndkRevision") != static_policy["ndkRevision"]
-        or review_status not in {"candidate-linked-member-review-pending", "approved"}
+        or review_status not in {
+            "candidate-linked-member-review-pending",
+            "automatic-forbidden-license-scan-passed",
+            "approved",
+        }
         or manifest.get("staticComponentPolicy")
         != {"path": STATIC_POLICY_PATH.as_posix(), "sha256": static_digest}
         or not isinstance(manifest.get("files"), list)
         or not isinstance(manifest.get("candidateLicenseInventorySpdx"), list)
     ):
         fail("Android legal evidence does not match the corresponding-source inputs.")
-    if (review_status == "approved") != isinstance(manifest.get("effectiveLicenseSpdx"), str):
+    publishable = review_status in {"automatic-forbidden-license-scan-passed", "approved"}
+    if publishable != isinstance(manifest.get("effectiveLicenseSpdx"), str):
         fail("Android legal evidence review state and effective license disagree.")
-    if review_status != "approved" and manifest.get("effectiveLicenseSpdx") is not None:
+    if not publishable and manifest.get("effectiveLicenseSpdx") is not None:
         fail("Candidate Android legal evidence must not declare an effective license.")
+    if review_status == "automatic-forbidden-license-scan-passed" and manifest.get(
+        "automaticLicenseScan"
+    ) != {
+        "forbiddenPrefixes": ["GPL-", "AGPL-", "LicenseRef-NonFree", "unknown"],
+        "result": "passed",
+        "scanner": "scripts/verify_fast_release_licenses.py",
+    }:
+        fail("Android automatic license scan evidence is incomplete.")
 
     audits = manifest.get("abiAudits")
     if not isinstance(audits, list) or len(audits) != 2:
