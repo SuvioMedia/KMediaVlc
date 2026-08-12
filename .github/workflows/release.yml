@@ -328,10 +328,20 @@ jobs:
           git -C "$vlc_source" fetch --depth=1 origin "$VLC_REVISION"
           git -C "$vlc_source" checkout --detach FETCH_HEAD
 
+          windows_contrib="$RUNNER_TEMP/audit/windows-contrib"
+          mkdir "$windows_contrib"
+          python3 scripts/prefetch_vlc_archive.py \
+            --checksum-manifest "$vlc_source/contrib/src/speexdsp/SHA512SUMS" \
+            --archive speexdsp-1.2.1.tar.gz \
+            --destination-directory "$windows_contrib" \
+            --url https://downloads.videolan.org/pub/contrib/speexdsp/speexdsp-1.2.1.tar.gz \
+            --url https://ftp.osuosl.org/pub/xiph/releases/speex/speexdsp-1.2.1.tar.gz
+
           final="$RUNNER_TEMP/kmedia-vlc-$VERSION-corresponding-source.tar.gz"
           python3 scripts/package_release_corresponding_source.py \
             --root "$GITHUB_WORKSPACE" \
             --vlc "$vlc_source" \
+            --contrib "$windows_contrib" \
             --contrib "$RUNNER_TEMP/audit/linux-aarch64-source" \
             --contrib "$RUNNER_TEMP/audit/linux-x86_64-source" \
             --contrib "$RUNNER_TEMP/audit/macos-aarch64-source" \
@@ -344,6 +354,7 @@ jobs:
           python3 scripts/verify_release_corresponding_source.py \
             --root "$GITHUB_WORKSPACE" \
             --vlc "$vlc_source" \
+            --contrib "$windows_contrib" \
             --contrib "$RUNNER_TEMP/audit/linux-aarch64-source" \
             --contrib "$RUNNER_TEMP/audit/linux-x86_64-source" \
             --contrib "$RUNNER_TEMP/audit/macos-aarch64-source" \
