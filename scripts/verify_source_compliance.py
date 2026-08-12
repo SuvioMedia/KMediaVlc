@@ -358,7 +358,7 @@ def verify_policy(root: Path) -> None:
         "runtime_sha256: ${{ steps.package.outputs.runtime_sha256 }}",
         "EXPECTED_RUNTIME_SHA256",
         "Stage the closed Windows playback candidate",
-        "--allow-audit-candidate",
+        "Windows release-mode staging produced an audit candidate.",
         "Generate the plugin cache for the closed candidate",
         "windows-x86_64-candidate",
         "KMEDIAVLC_TEST_PLUGIN_CACHE",
@@ -383,6 +383,8 @@ def verify_policy(root: Path) -> None:
     ]
     if not all(marker in audit_workflow for marker in native_validation_markers):
         fail("The source-built VLC payload lacks mandatory native Windows validation.")
+    if "--allow-audit-candidate" in audit_workflow:
+        fail("The approved Windows source audit must execute in release mode.")
 
 
 def verify_pin_occurrences(root: Path) -> None:
@@ -1566,6 +1568,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         "autotools-macro-SHA256SUMS",
         "path: ${{ runner.temp }}/macos-aarch64-evidence",
         "scripts/create_posix_native_inventory.py",
+        'test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = false',
         "kmediavlc-macos-aarch64-tested-candidate-",
         "path: ${{ runner.temp }}/kmediavlc-macos-aarch64-tested-candidate",
     ]
@@ -1578,6 +1581,8 @@ def verify_macos_transport_contract(root: Path) -> None:
     ]
     if any(marker in source_audit for marker in forbidden_source_audit_markers):
         fail("The macOS source audit must remain manual and secret-free.")
+    if "--allow-audit-candidate" in source_audit:
+        fail("The approved macOS source audit must execute in release mode.")
 
     desktop_build = (root / "runtime-desktop/build.gradle.kts").read_text(encoding="utf-8")
     if (
@@ -2343,7 +2348,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "bash scripts/build_vlc_linux.sh",
         "Stage the closed runtime and play a real CPU frame",
         "python3 scripts/stage_vlc_linux_runtime.py",
-        "--allow-audit-candidate",
+        'test "$(jq -r .auditCandidate "$report")" = false',
         'LD_LIBRARY_PATH="$stage/bin"',
         "pinnedVideoLanFixturePublishesCpuPullFrame",
         "scripts/create_posix_native_inventory.py",
@@ -2352,6 +2357,8 @@ def verify_linux_runtime_contract(root: Path) -> None:
     ]
     if not all(marker in workflow for marker in workflow_markers):
         fail("Linux validation does not cover both native architectures and real CPU playback.")
+    if "--allow-audit-candidate" in workflow:
+        fail("The approved Linux source audit must execute in release mode.")
     if "contents: write" in workflow or "${{ secrets." in workflow:
         fail("Linux candidate validation must remain read-only and secret-free.")
 
