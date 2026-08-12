@@ -16,6 +16,7 @@ jobs="${3:-8}"
 repository_root="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd -P)"
 configuration="$repository_root/build-recipes/vlc-apple.conf"
 source_patch="$repository_root/build-recipes/patches/vlc-macos-opengl-callback-hdr.patch"
+archive_prefetcher="$repository_root/scripts/prefetch_vlc_archive.py"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
     echo "the macOS libVLC runtime must be built on macOS" >&2
@@ -45,6 +46,10 @@ if [[ ! -f "$source_patch" || -L "$source_patch" ]]; then
     echo "pinned macOS VLC source patch is missing or unsafe" >&2
     exit 1
 fi
+if [[ ! -f "$archive_prefetcher" || -L "$archive_prefetcher" ]]; then
+    echo "checksum-verified VLC archive prefetcher is missing or unsafe" >&2
+    exit 1
+fi
 
 actual_revision="$(git -C "$source_directory" rev-parse HEAD)"
 if [[ "$actual_revision" != "$PINNED_REVISION" ]]; then
@@ -59,6 +64,13 @@ if ! git -C "$source_directory" apply --check --whitespace=error-all "$source_pa
     echo "pinned macOS VLC source patch does not apply cleanly" >&2
     exit 1
 fi
+
+python3 "$archive_prefetcher" \
+    --checksum-manifest "$source_directory/extras/tools/SHA512SUMS" \
+    --archive m4-1.4.21.tar.gz \
+    --destination-directory "$source_directory/extras/tools" \
+    --url https://ftp.gnu.org/gnu/m4/m4-1.4.21.tar.gz \
+    --url https://ftpmirror.gnu.org/gnu/m4/m4-1.4.21.tar.gz
 
 patch_applied=false
 restore_source_checkout() {
