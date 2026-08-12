@@ -291,6 +291,12 @@ closed playback path changed or any rebuilt runtime library differs from the phy
 binary. It deliberately keeps the execution commit distinct from the later release commit and
 does not promote licensing or source-package review state.
 
+Later on 2026-08-12 the same OnePlus repeated all three cases against the final two-ABI payload at
+KMediaVlc commit `6a5d1b6d8c6e13bc7e89a853bf680455d38e7429`. All cases again passed with
+zero failures, errors, or skips. The active retained-evidence policy now binds the lossless JUnit,
+acceptance report, complete payload tree, and four exact runtime-library hashes below
+`compliance/evidence/android-physical-6a5d1b6`.
+
 The NDK source packager and independent verifier were also exercised against those exact upstream
 Git identities. The deterministic candidate contained 19,839 tracked files: the complete 195-file
 `llvm_android` tree plus 19,644 selected LLVM files (135,808,087 uncompressed source bytes). The
