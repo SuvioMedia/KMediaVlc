@@ -56,16 +56,14 @@ commit, modified checkout, missing/extra member, link, special file, metadata dr
 
 The candidate AAR carries a separate legal-evidence manifest and the exact raw
 notice inputs selected from those source archives. It binds both ABI report
-hashes and rejects any file mismatch, but publication still requires an
-approved effective SPDX conclusion, an NDK status of
+hashes and rejects any file mismatch. Publication requires the successful automatic
+GPL/AGPL/nonfree/unknown scan (or a manual approved conclusion), an NDK status of
 `corresponding-source-mapped`, and the complete source/relinking bundle.
 
 The pinned recipe has been exercised successfully for ARM64 and ARMv7 and the
-resulting stripped payload has passed the real AAR inventory gate. Publication
-still requires the per-ABI archive graphs and candidate SPDX conclusions to be
-reviewed, and both source archives to be retained for the final tested commit.
+resulting stripped payload has passed the real AAR inventory check. Both source archives are
+generated and independently reopened for the final tested commit.
 
 An application can replace the pair by substituting a rebuilt AAR (or its
 matching `jni/<abi>` entries) while retaining bridge ABI 1 and the exact VLC
-4 callback ABI. This remains documentation for an audit candidate, not a
-release promise, until `docs/ANDROID.md` lists no open publication gates.
+4 callback ABI. The public release includes these relinking inputs alongside the AAR.

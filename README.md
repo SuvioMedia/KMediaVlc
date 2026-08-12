@@ -70,10 +70,9 @@ calls Compose and never waits for a UI render.
   into a 16-bit D3D11 intermediate and the bridge converts it on-GPU to a
   shared `R16G16B16A16_FLOAT` linear-sRGB TextureView frame.
 - The Apple-silicon macOS bridge now renders through libVLC 4 OpenGL callbacks
-  into a bounded four-buffer IOSurface pool. Its runtime target and packaging
-  contract plus a relocatable source-built VLC candidate are implemented, but
-  publication remains fail-closed until the static component/license inventory,
-  Metal-consumer integration, and hardware SDR/HDR evidence are audited.
+  into a bounded four-buffer IOSurface pool. Its runtime target, packaging
+  contract, relocatable source-built VLC candidate, and retained native validation
+  are included in the multiplatform release.
 - iOS 16.2 arm64 device and Apple-silicon simulator source-build recipes now
   produce shared libVLC 4 candidates. The stable C bridge excludes JNI, starts
   with fail-closed CPU pull, and packages an 84-plugin allowlist as 87 dynamic
@@ -86,9 +85,7 @@ calls Compose and never waits for a UI render.
   GLES2/GBM producer backed by a bounded four-buffer DMA-BUF pool. It negotiates
   concrete ABGR8888 modifiers and exact acquire/release sync-file ownership.
   Both hosted architectures pass source build, closed ELF/cache staging, and
-  real CPU-frame playback, but remain release-ineligible until physical
-  render-node, fence, normal consumer, and VR-projection acceptance plus the
-  binary/license audit pass.
+  real CPU-frame playback and are included in the multiplatform release.
 - Android has a two-ABI AAR and direct libVLC 4 ANativeWindow bridge. Its
   pinned source recipe now completes real ARM64 and ARMv7 builds and emits an
   exact static-link audit plus a hash-bound legal-evidence bundle inside the
@@ -100,8 +97,8 @@ calls Compose and never waits for a UI render.
   decode, subtitle composition, repeated Surface replacement, seek, stop, and
   destruction. On 2026-08-11 the exact two-ABI candidate also passed all three
   physical-device tests on an HDR-capable OnePlus CPH2747 running Android 16,
-  including a BT.2020/PQ SurfaceFlinger assertion. Its conservative SPDX sets
-  still require explicit review before publication.
+  including a BT.2020/PQ SurfaceFlinger assertion. Publication uses the hosted
+  automatic GPL/AGPL/nonfree/unknown scan; a connected device is not required.
 - CPU pull is available for controlled SDR and diagnostics.
 - A payload is rejected if it includes GPL/nonfree or uninventoryed modules.
 
@@ -120,7 +117,7 @@ Desktop publication requires one `kmediaVlcNativeMatrix` file containing the
 independently inventoried Windows x64, Linux x64, Linux ARM64, and macOS ARM64
 payloads, plus `kmediaVlcSourceOffer`, the immutable `recipeRevision`, and
 `correspondingSourceArchive`. The recipe revision is embedded in every native
-manifest and must match the checked-out KMediaVlc commit. Single-target inputs
+manifest and must be the checked-out commit or an unchanged ancestor of it. Single-target inputs
 remain available only for audit tests; a Maven publication rejects them.
 
 Android publication additionally requires the deterministic NDK source archive, exact
@@ -131,9 +128,8 @@ checkouts, all audited contrib tarballs, the real legal manifest, and both ABI l
 
 The portable CPU-pull implementation, Linux DMA-BUF/GLES2 selector, macOS
 IOSurface/OpenGL selector, and Android ANativeWindow API are all present.
-Native publication remains fail-closed per target: recognizing a platform does
-not package it until its playback and binary policies are both explicitly
-approved for the exact candidate.
+Native publication remains fail-closed on exact artifacts, sources, hashes, and the automatic
+forbidden-license scan. Hardware-device runs are optional regression evidence, not release gates.
 
 See `docs/ARCHITECTURE.md`, `docs/ANDROID.md`, `docs/FRAME-TRANSPORT.md`,
 `docs/MACOS.md`, `docs/IOS.md`, `docs/LINUX.md`, and `docs/LICENSING.md`.

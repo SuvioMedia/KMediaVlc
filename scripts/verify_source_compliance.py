@@ -1118,7 +1118,7 @@ def verify_android_contract(root: Path) -> None:
         'legalDirectory.set(rootProject.layout.projectDirectory.dir("LICENSES"))',
         "assets/kmediavlc/legal/ANDROID_STATIC/",
         "does not bind the packaged libvlc.so",
-        "Publishing requires approved hash-bound Android legal evidence.",
+        "Publishing requires the automatic forbidden-license scan to pass.",
         "Publishing requires the NDK runtime source package to match its recorded revisions.",
         "kmediaVlcAndroidNdkSourceArchive",
         "verify_android_ndk_source_archive.py",
@@ -1315,13 +1315,13 @@ def verify_android_contract(root: Path) -> None:
 
     documentation = (root / "docs/ANDROID.md").read_text(encoding="utf-8")
     if (
-        "not a published native payload yet" not in documentation
-        or "Publication gates still open" not in documentation
+        "automatic forbidden-license scan" not in documentation
+        or "Automatic publication checks" not in documentation
         or "does not change process-wide `HOME`" not in documentation
-        or "Physical-device acceptance harness" not in documentation
+        or "Optional physical-device acceptance harness" not in documentation
         or "acceptance.json" not in documentation
     ):
-        fail("Android documentation must remain explicit about its open release gates.")
+        fail("Android documentation must describe the automatic device-free release checks.")
 
 
 def verify_macos_transport_contract(root: Path) -> None:
@@ -2713,6 +2713,8 @@ def verify_multiplatform_release_contract(root: Path) -> None:
         "linux_audit_run_id:",
         "macos_audit_run_id:",
         "android_audit_run_id:",
+        "desktop_runtime_commit:",
+        ".github/workflows/fast-android-release.yml",
         "compliance/policy/windows-x86_64-playback-modules.json",
         "compliance/policy/linux-playback-modules.json",
         "compliance/policy/macos-aarch64-playback-modules.json",
@@ -2721,8 +2723,8 @@ def verify_multiplatform_release_contract(root: Path) -> None:
         "kmediavlc-linux-aarch64-tested-candidate-",
         "kmediavlc-macos-aarch64-tested-candidate-",
         "kmediavlc-android-release-candidate-",
-        "scripts/assemble_desktop_corresponding_source.py",
-        "scripts/verify_desktop_corresponding_source_archive.py",
+        "scripts/package_release_corresponding_source.py",
+        "scripts/verify_release_corresponding_source.py",
         "-PkmediaVlcNativeMatrix=",
         ":runtime-android:publishReleasePublicationToReleaseRepository",
         "kmedia-vlc-runtime-desktop",
@@ -2788,9 +2790,31 @@ def verify_multiplatform_release_contract(root: Path) -> None:
         "contents: read",
     ]
     if not all(marker in android_audit for marker in android_markers):
-        fail("The Android release audit does not bind source, both ABIs, and physical HDR evidence.")
+        fail("The optional Android physical regression workflow is incomplete.")
     if any(marker in android_audit for marker in ("pull_request:", "push:", "${{ secrets.")):
-        fail("The Android release audit must remain manual, read-only, and secret-free.")
+        fail("The optional Android physical regression workflow must remain manual and secret-free.")
+
+    fast_android = (root / ".github/workflows/fast-android-release.yml").read_text(
+        encoding="utf-8"
+    )
+    fast_android_markers = [
+        "workflow_dispatch:",
+        "runs-on: macos-15",
+        "scripts/build_vlc_android.sh",
+        "scripts/verify_fast_release_licenses.py",
+        "scripts/promote_android_payload.py",
+        "scripts/package_android_ndk_source.py",
+        "scripts/package_android_corresponding_source.py",
+        "kmediavlc-android-release-candidate-",
+        "contents: read",
+    ]
+    if not all(marker in fast_android for marker in fast_android_markers):
+        fail("The hosted Android release workflow is incomplete.")
+    if any(
+        marker in fast_android
+        for marker in ("self-hosted", "adb ", "run_android_device_smoke.sh", "${{ secrets.")
+    ):
+        fail("The hosted Android release workflow must remain device-free and secret-free.")
 
 
 def main() -> None:

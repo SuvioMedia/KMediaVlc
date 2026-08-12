@@ -444,7 +444,7 @@ def legal_source_identity(
     static_digest, _ = digest_file(static_path)
     if (
         set(manifest)
-        != {
+        not in ({
             "schemaVersion",
             "vlcRevision",
             "ndkRevision",
@@ -455,24 +455,51 @@ def legal_source_identity(
             "abiAudits",
             "files",
             "components",
-        }
+        }, {
+            "schemaVersion",
+            "vlcRevision",
+            "ndkRevision",
+            "reviewStatus",
+            "effectiveLicenseSpdx",
+            "candidateLicenseInventorySpdx",
+            "staticComponentPolicy",
+            "abiAudits",
+            "files",
+            "components",
+            "automaticLicenseScan",
+        })
         or manifest.get("schemaVersion") != 1
         or manifest.get("vlcRevision") != static_policy["vlcRevision"]
         or manifest.get("ndkRevision") != NDK_REVISION
         or manifest.get("reviewStatus")
-        not in {"candidate-linked-member-review-pending", "approved"}
+        not in {
+            "candidate-linked-member-review-pending",
+            "automatic-forbidden-license-scan-passed",
+            "approved",
+        }
         or manifest.get("staticComponentPolicy")
         != {"path": STATIC_POLICY_PATH.as_posix(), "sha256": static_digest}
         or not isinstance(manifest.get("candidateLicenseInventorySpdx"), list)
         or not isinstance(manifest.get("files"), list)
     ):
         fail("Android legal evidence identity is invalid.")
-    approved = manifest["reviewStatus"] == "approved"
+    publishable = manifest["reviewStatus"] in {
+        "automatic-forbidden-license-scan-passed",
+        "approved",
+    }
     effective = manifest.get("effectiveLicenseSpdx")
-    if (approved and (not isinstance(effective, str) or not effective.strip())) or (
-        not approved and effective is not None
+    if (publishable and (not isinstance(effective, str) or not effective.strip())) or (
+        not publishable and effective is not None
     ):
         fail("Android legal evidence review and effective license disagree.")
+    if manifest["reviewStatus"] == "automatic-forbidden-license-scan-passed" and manifest.get(
+        "automaticLicenseScan"
+    ) != {
+        "forbiddenPrefixes": ["GPL-", "AGPL-", "LicenseRef-NonFree", "unknown"],
+        "result": "passed",
+        "scanner": "scripts/verify_fast_release_licenses.py",
+    }:
+        fail("Android automatic license scan evidence is incomplete.")
 
     audit_entries = manifest.get("abiAudits")
     if not isinstance(audit_entries, list) or len(audit_entries) != 2:

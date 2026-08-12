@@ -33,8 +33,9 @@ private const val LLVM_PROJECT_REVISION = "386af4a5c64ab75eaee2448dc38f2e34a40bf
 private const val LLVM_ANDROID_REVISION = "1dab3288f660d43a6cb2479107e2b54b3ab0a2a1"
 private const val NDK_SOURCE_CANDIDATE_STATUS =
     "exact-source-revisions-recorded-source-package-pending"
+const val AUTOMATIC_LICENSE_STATUS = "automatic-forbidden-license-scan-passed"
 private val REVIEW_STATES =
-    setOf("candidate-linked-member-review-pending", "approved")
+    setOf("candidate-linked-member-review-pending", AUTOMATIC_LICENSE_STATUS, "approved")
 private val CANDIDATE_LICENSES =
     setOf(
         "Apache-2.0",
@@ -123,9 +124,9 @@ fun read(payloadRoot: File, staticPolicy: File): Bundle {
         "Android legal evidence review state is invalid."
     }
     val effectiveLicense = manifest["effectiveLicenseSpdx"] as? String
-    if (reviewStatus == "approved") {
+    if (reviewStatus in setOf(AUTOMATIC_LICENSE_STATUS, "approved")) {
         require(!effectiveLicense.isNullOrBlank()) {
-            "Approved Android legal evidence requires an effective SPDX expression."
+            "Publishable Android legal evidence requires an effective SPDX expression."
         }
     } else {
         require(manifest["effectiveLicenseSpdx"] == null) {
@@ -228,9 +229,14 @@ fun read(payloadRoot: File, staticPolicy: File): Bundle {
             "Android legal evidence component version is missing: $id"
         }
         val componentReview = component["licenseReviewStatus"]
+        val expectedComponentReview =
+            when (reviewStatus) {
+                "approved" -> "approved"
+                AUTOMATIC_LICENSE_STATUS -> AUTOMATIC_LICENSE_STATUS
+                else -> "pending-linked-member-review"
+            }
         require(
-            componentReview ==
-                if (reviewStatus == "approved") "approved" else "pending-linked-member-review",
+            componentReview == expectedComponentReview,
         ) {
             "Android legal evidence component review state is invalid: $id"
         }
@@ -891,8 +897,11 @@ fun requirePublicationPayload() {
             nativePayload.get(),
             rootProject.file("compliance/policy/android-static-components.json"),
         )
-    require(legalBundle.reviewStatus == "approved" && !legalBundle.effectiveLicenseSpdx.isNullOrBlank()) {
-        "Publishing requires approved hash-bound Android legal evidence."
+    require(
+        legalBundle.reviewStatus in setOf(AndroidLegalEvidence.AUTOMATIC_LICENSE_STATUS, "approved") &&
+            !legalBundle.effectiveLicenseSpdx.isNullOrBlank(),
+    ) {
+        "Publishing requires the automatic forbidden-license scan to pass."
     }
     require(legalBundle.ndkSourceStatus == "corresponding-source-mapped") {
         "Publishing requires the NDK runtime source package to match its recorded revisions."

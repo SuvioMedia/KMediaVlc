@@ -1,0 +1,155 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
+name: Fast Android libVLC release candidate
+run-name: Fast Android release candidate for ${{ inputs.tested_commit }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tested_commit:
+        description: Exact forty-character KMediaVlc commit to package
+        required: true
+        type: string
+      candidate_version:
+        description: Immutable SemVer intended for this candidate
+        required: true
+        default: 0.1.0-rc.1
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kmediavlc-fast-android-${{ inputs.tested_commit }}
+  cancel-in-progress: false
+
+jobs:
+  source-build:
+    name: Build both Android ABIs and run automatic license scan
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-15
+    timeout-minutes: 360
+    env:
+      TESTED_COMMIT: ${{ inputs.tested_commit }}
+      CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+      VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+      LIBVLCJNI_REVISION: a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21
+      LLVM_PROJECT_REVISION: 386af4a5c64ab75eaee2448dc38f2e34a40bfed0
+      LLVM_ANDROID_REVISION: 1dab3288f660d43a6cb2479107e2b54b3ab0a2a1
+    steps:
+      - name: Check out exact KMediaVlc
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ inputs.tested_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check out exact VLC
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          repository: videolan/vlc
+          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          path: .audit-sources/vlc
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out exact libvlcjni and LLVM sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://code.videolan.org/videolan/libvlcjni.git .audit-sources/libvlcjni
+          git -C .audit-sources/libvlcjni fetch --depth=1 origin "$LIBVLCJNI_REVISION"
+          git -C .audit-sources/libvlcjni checkout --detach FETCH_HEAD
+          git clone --no-checkout --filter=blob:none https://github.com/llvm/llvm-project.git .audit-sources/llvm-project
+          git -C .audit-sources/llvm-project fetch --depth=1 origin "$LLVM_PROJECT_REVISION"
+          git -C .audit-sources/llvm-project checkout --detach FETCH_HEAD
+          mkdir .audit-sources/llvm-android
+          git -C .audit-sources/llvm-android init
+          git -C .audit-sources/llvm-android remote add origin \
+            https://android.googlesource.com/toolchain/llvm_android
+          git -C .audit-sources/llvm-android fetch --depth=1 origin "$LLVM_ANDROID_REVISION"
+          git -C .audit-sources/llvm-android checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$TESTED_COMMIT"
+          test "$(git -C .audit-sources/vlc rev-parse HEAD)" = "$VLC_REVISION"
+          test "$(git -C .audit-sources/libvlcjni rev-parse HEAD)" = "$LIBVLCJNI_REVISION"
+
+      - name: Set up Java and Gradle
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      - name: Install Android build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" \
+            "ndk;29.0.14206865" "cmake;4.1.2"
+
+      - name: Build, scan, and promote both Android ABIs
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/android-source-build"
+          candidate="$RUNNER_TEMP/android-native-candidate"
+          payload="$RUNNER_TEMP/android-native-payload"
+          sources="$RUNNER_TEMP/android-source-packages"
+          mkdir "$candidate" "$sources"
+          bash scripts/build_vlc_android.sh \
+            "$GITHUB_WORKSPACE/.audit-sources/vlc" \
+            "$GITHUB_WORKSPACE/.audit-sources/libvlcjni" \
+            "$ANDROID_HOME/ndk/29.0.14206865" \
+            "$ANDROID_HOME/cmake/4.1.2/bin/cmake" \
+            "$work" "$candidate"
+          python3 scripts/verify_fast_release_licenses.py --root . --input "$candidate"
+          ndk_source="$sources/kmedia-vlc-$CANDIDATE_VERSION-android-ndk-source.tar.gz"
+          python3 scripts/package_android_ndk_source.py \
+            --root . --llvm-project .audit-sources/llvm-project \
+            --llvm-android .audit-sources/llvm-android --output "$ndk_source" \
+            --tested-commit "$TESTED_COMMIT" --version "$CANDIDATE_VERSION" \
+            --epoch "$(git show -s --format=%ct HEAD)"
+          python3 scripts/promote_android_payload.py \
+            --root . --payload "$candidate" --output "$payload" \
+            --ndk-source-archive "$ndk_source" \
+            --llvm-project .audit-sources/llvm-project \
+            --llvm-android .audit-sources/llvm-android \
+            --version "$CANDIDATE_VERSION" --tested-commit "$TESTED_COMMIT"
+          complete_source="$sources/kmedia-vlc-$CANDIDATE_VERSION-android-corresponding-source.tar.gz"
+          python3 scripts/package_android_corresponding_source.py \
+            --root . --vlc .audit-sources/vlc --libvlcjni .audit-sources/libvlcjni \
+            --contrib-tarballs .audit-sources/vlc/contrib/tarballs \
+            --ndk-source-archive "$ndk_source" \
+            --llvm-project .audit-sources/llvm-project --llvm-android .audit-sources/llvm-android \
+            --legal-manifest "$payload/legal/android-static-legal.json" \
+            --arm64-audit "$work/link-audits/arm64-v8a.json" \
+            --armv7-audit "$work/link-audits/armeabi-v7a.json" \
+            --output "$complete_source" --tested-commit "$TESTED_COMMIT" \
+            --version "$CANDIDATE_VERSION" --epoch "$(git show -s --format=%ct HEAD)"
+          ./gradlew :runtime-android:check \
+            -PkmediaVlcDesktopOnly=false -PpublicationVersion="$CANDIDATE_VERSION" \
+            -PkmediaVlcAndroidNativePayloadDirectory="$payload" --no-daemon --console=plain
+          artifact="$RUNNER_TEMP/kmediavlc-android-release-candidate"
+          mkdir -p "$artifact/evidence/link-audits" "$artifact/verification-inputs/contrib-tarballs"
+          cp -R "$payload" "$artifact/payload"
+          cp "$ndk_source" "$complete_source" "$artifact/"
+          cp "$work/link-audits/arm64-v8a.json" "$artifact/evidence/link-audits/arm64-v8a.json"
+          cp "$work/link-audits/armeabi-v7a.json" "$artifact/evidence/link-audits/armeabi-v7a.json"
+          cp runtime-android/build/outputs/aar/runtime-android-release.aar \
+            "$artifact/kmedia-vlc-$CANDIDATE_VERSION-android-candidate.aar"
+          jq -r '.contribComponents[].sourceArchives[]' compliance/policy/android-static-components.json | \
+            sort -u | while IFS= read -r archive; do
+              cp ".audit-sources/vlc/contrib/tarballs/$archive" \
+                "$artifact/verification-inputs/contrib-tarballs/$archive"
+            done
+          (cd "$artifact" && find . -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 shasum -a 256 > SHA256SUMS && shasum -a 256 -c SHA256SUMS)
+
+      - name: Upload Android release candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: kmediavlc-android-release-candidate-${{ inputs.tested_commit }}
+          path: ${{ runner.temp }}/kmediavlc-android-release-candidate
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

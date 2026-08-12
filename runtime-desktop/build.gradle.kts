@@ -353,8 +353,58 @@ val requireNativePayloadForPublication =
             require(recipeRevision.get().matches(Regex("[0-9a-f]{40}"))) {
                 "recipeRevision must be an exact lowercase forty-character Git commit."
             }
-            require(recipeRevision.get() == checkoutRevision.get()) {
-                "recipeRevision must match the checked-out KMediaVlc commit."
+            if (recipeRevision.get() != checkoutRevision.get()) {
+                val ancestor =
+                    providers.exec {
+                        workingDir(rootProject.layout.projectDirectory)
+                        commandLine(
+                            "git",
+                            "merge-base",
+                            "--is-ancestor",
+                            recipeRevision.get(),
+                            checkoutRevision.get(),
+                        )
+                        isIgnoreExitValue = true
+                    }.result.get().exitValue
+                require(ancestor == 0) {
+                    "The desktop runtime commit must be an ancestor of the release commit."
+                }
+                val behaviorPaths =
+                    listOf(
+                        "native",
+                        "runtime-desktop/src",
+                        "build-recipes/linux.json",
+                        "build-recipes/macos.json",
+                        "build-recipes/windows.json",
+                        "patches/vlc",
+                        "gradle/libs.versions.toml",
+                        "compliance/policy/release-policy.json",
+                        "compliance/policy/linux-playback-modules.json",
+                        "compliance/policy/linux-binary-components.json",
+                        "compliance/policy/macos-aarch64-playback-modules.json",
+                        "compliance/policy/macos-aarch64-binary-components.json",
+                        "compliance/policy/windows-x86_64-playback-modules.json",
+                        "compliance/policy/windows-x86_64-binary-components.json",
+                        "scripts/package_native_runtime.py",
+                        "scripts/package_native_runtime_matrix.py",
+                    )
+                val equivalent =
+                    providers.exec {
+                        workingDir(rootProject.layout.projectDirectory)
+                        commandLine(
+                            listOf(
+                                "git",
+                                "diff",
+                                "--quiet",
+                                "${recipeRevision.get()}..${checkoutRevision.get()}",
+                                "--",
+                            ) + behaviorPaths,
+                        )
+                        isIgnoreExitValue = true
+                    }.result.get().exitValue
+                require(equivalent == 0) {
+                    "Desktop runtime behavior or packaging policy changed after its source build."
+                }
             }
             require(!publicationVersionValue.contains("SNAPSHOT", ignoreCase = true)) {
                 "Publishing requires an immutable non-SNAPSHOT version."

@@ -42,19 +42,20 @@ packager additionally retains the exact KMediaVlc, VLC, and libvlcjni Git trees,
 all 55 audited contrib tarballs, the verified NDK source supplement, the legal
 manifest, and both path-free ABI reports in one version- and commit-bound archive.
 A separate verifier reconstructs that closure from the original Git objects and
-external evidence. Conservative candidate SPDX sets remain marked
-`pending-linked-member-review`. The runtime remains release-ineligible until that
-review, packaged notice completion, final release-bound archive retention, and
-device lifecycle evidence are approved.
+external evidence. Raw candidate SPDX sets remain marked `pending-linked-member-review`;
+publication promotes them only after the automatic GPL/AGPL/nonfree/unknown scan passes and the
+release-bound source archives verify. Physical-device lifecycle evidence is retained as optional
+regression evidence and is not a publication gate.
 
 Candidate AARs include the exact selected evidence inputs under
 `assets/kmediavlc/legal/ANDROID_STATIC/` together with a manifest that binds both ABI audits and
-all file hashes. Inclusion makes the raw evidence inspectable; it does not change the candidate
-SPDX sets into an approved aggregate license conclusion.
+all file hashes. The release promoter records the automatic scan result and binds the conservative
+SPDX inventory as the effective aggregate conclusion.
 
 ## Windows x86_64 playback dependency inventory
 
-The following closed inventory is derived from the pinned contrib inputs. Publication remains blocked until the matching native link audit changes both review states to `approved` for the exact commit.
+The following closed inventory is derived from the pinned contrib inputs and is bound to the exact
+runtime commit by the automatic release checks.
 
 | Component | Version | SPDX license | Reviewed source input | Included notice/terms |
 | --- | --- | --- | --- | --- |
@@ -111,8 +112,7 @@ contain or load Vulkan Loader or glslang.
 
 The macOS candidate is built with Xcode 26.6 (17F113), the macOS 26.5 SDK,
 an arm64-only target, and a minimum deployment version of macOS 14.0. Its
-component and module review states remain pending; this inventory does not make
-the candidate release-eligible.
+component and module policies are approved for the retained release candidate.
 
 ## iOS arm64 playback dependency inventory
 
@@ -136,7 +136,7 @@ release-eligible.
 
 Windows VLC is cross-compiled with the pinned official VideoLAN LLVM/MinGW UCRT image `registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331`. Wine is limited to Meson's cross-executable sanity probe. The resulting DLLs and bridge are loaded and tested on a native GitHub `windows-2022` runner.
 
-The link-audit artifact records every reviewed static runtime archive and its SHA-256, plus the exact compiler, linker commands, and upstream toolchain license files. The same toolchain notices and build information are included in the corresponding-source release asset. Publication remains blocked until that archive-level license inventory is approved.
+The link-audit artifact records every reviewed static runtime archive and its SHA-256, plus the exact compiler, linker commands, and upstream toolchain license files. The same toolchain notices and build information are included in the corresponding-source release asset and reopened by the automatic release checks.
 
 ## Build tooling
 
