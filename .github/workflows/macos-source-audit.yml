@@ -107,7 +107,7 @@ jobs:
               test -f "$GITHUB_WORKSPACE/.vlc-source/contrib/tarballs/$archive"
               cp "$GITHUB_WORKSPACE/.vlc-source/contrib/tarballs/$archive" "$source_inputs/$archive"
             done
-          test "$(find "$source_inputs" -type f | wc -l)" = 27
+          test "$(find "$source_inputs" -type f -print | awk 'END { print NR + 0 }')" = 27
           (
             cd "$source_inputs"
             find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS
