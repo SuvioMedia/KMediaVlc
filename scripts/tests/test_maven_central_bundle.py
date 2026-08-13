@@ -121,6 +121,31 @@ class MavenCentralBundleTest(unittest.TestCase):
                     all("kmedia-vlc-runtime-ios" in name for name in archive.namelist())
                 )
 
+    def test_packages_the_desktop_coordinate_as_an_independent_deployment(self) -> None:
+        with tempfile.TemporaryDirectory() as value:
+            root = Path(value)
+            version = "0.1.0-rc.4"
+            self.create_staging(root, version, "desktop")
+            bases = CENTRAL.base_files(root, version, "desktop")
+            self.assertEqual(5, len(bases))
+            for path in bases:
+                path.with_name(path.name + ".asc").write_bytes(b"signature")
+            arguments = type(
+                "Arguments",
+                (),
+                {"staging": root, "version": version, "artifact_set": "desktop"},
+            )()
+            CENTRAL.checksums(arguments)
+            output = root / "central-desktop.zip"
+            arguments.output = output
+            arguments.epoch = 1_700_000_000
+            CENTRAL.package(arguments)
+            with zipfile.ZipFile(output) as archive:
+                self.assertEqual(20, len(archive.namelist()))
+                self.assertTrue(
+                    all("kmedia-vlc-runtime-desktop" in name for name in archive.namelist())
+                )
+
     def test_rejects_snapshot_extra_file_and_missing_signature(self) -> None:
         with tempfile.TemporaryDirectory() as value:
             root = Path(value)

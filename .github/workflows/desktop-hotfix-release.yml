@@ -1,0 +1,362 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
+name: Create immutable KMediaVlc desktop Maven hotfix
+run-name: Release KMediaVlc v${{ inputs.version }} desktop Maven hotfix
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Immutable desktop hotfix version
+        required: true
+        default: 0.1.0-rc.4
+        type: string
+      tested_commit:
+        description: Exact forty-character release commit
+        required: true
+        type: string
+      desktop_runtime_commit:
+        description: Exact commit shared by the retained desktop runtime builds
+        required: true
+        type: string
+      windows_audit_run_id:
+        description: Successful retained Windows source and native audit run
+        required: true
+        type: string
+      linux_audit_run_id:
+        description: Successful retained two-architecture Linux audit run
+        required: true
+        type: string
+      macos_audit_run_id:
+        description: Successful retained macOS source and IOSurface audit run
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: kmediavlc-desktop-hotfix-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      VERSION: ${{ inputs.version }}
+      TESTED_COMMIT: ${{ inputs.tested_commit }}
+      DESKTOP_RUNTIME_COMMIT: ${{ inputs.desktop_runtime_commit }}
+      WINDOWS_AUDIT_RUN_ID: ${{ inputs.windows_audit_run_id }}
+      LINUX_AUDIT_RUN_ID: ${{ inputs.linux_audit_run_id }}
+      MACOS_AUDIT_RUN_ID: ${{ inputs.macos_audit_run_id }}
+      VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+    steps:
+      - name: Check out the exact hotfix revision
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ inputs.tested_commit }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Validate the immutable Java-only desktop hotfix
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          semver='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9][0-9]*|[0-9A-Za-z-][0-9A-Za-z-]*))*)?$'
+          [[ "$VERSION" =~ $semver ]]
+          [[ "${VERSION^^}" != *SNAPSHOT* ]]
+          [[ "$TESTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$DESKTOP_RUNTIME_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          for run_id in "$WINDOWS_AUDIT_RUN_ID" "$LINUX_AUDIT_RUN_ID" "$MACOS_AUDIT_RUN_ID"; do
+            [[ "$run_id" =~ ^[1-9][0-9]*$ ]]
+          done
+          test "$(git rev-parse HEAD)" = "$TESTED_COMMIT"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          python3 scripts/verify_source_compliance.py --root .
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+          git merge-base --is-ancestor "$DESKTOP_RUNTIME_COMMIT" "$TESTED_COMMIT"
+          restricted_changes="$(git diff --name-only "$DESKTOP_RUNTIME_COMMIT..$TESTED_COMMIT" -- \
+            native runtime-desktop/src build-recipes patches/vlc gradle/libs.versions.toml \
+            compliance/policy/release-policy.json \
+            compliance/policy/windows-x86_64-playback-modules.json \
+            compliance/policy/windows-x86_64-binary-components.json \
+            compliance/policy/linux-playback-modules.json \
+            compliance/policy/linux-binary-components.json \
+            compliance/policy/macos-aarch64-playback-modules.json \
+            compliance/policy/macos-aarch64-binary-components.json \
+            scripts/package_native_runtime.py scripts/package_native_runtime_matrix.py)"
+          unexpected_changes="$(printf '%s\n' "$restricted_changes" | sed '/^$/d' | \
+            grep -Ev '^(build-recipes/vlc-apple\.conf|runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifest\.java|runtime-desktop/src/test/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifestTest\.java|runtime-desktop/src/main/resources/META-INF/native-image/io\.github\.shusek/kmedia-vlc-runtime-desktop/reachability-metadata\.json)$' || true)"
+          test -z "$unexpected_changes"
+          tag="v$VERSION"
+          test -z "$(git ls-remote --tags origin "refs/tags/$tag")"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists and will not be replaced." >&2
+            exit 1
+          fi
+
+      - name: Bind retained desktop audit artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bind_run() {
+            local run_id="$1" workflow_path="$2"
+            local run="$RUNNER_TEMP/run-$run_id.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" > "$run"
+            test "$(jq -r .path "$run")" = "$workflow_path"
+            test "$(jq -r .event "$run")" = workflow_dispatch
+            test "$(jq -r .status "$run")" = completed
+            test "$(jq -r .conclusion "$run")" = success
+            test "$(jq -r .head_sha "$run")" = "$DESKTOP_RUNTIME_COMMIT"
+            test "$(jq -r .head_repository.full_name "$run")" = "$GITHUB_REPOSITORY"
+          }
+          bind_run "$WINDOWS_AUDIT_RUN_ID" .github/workflows/native-audit.yml
+          bind_run "$LINUX_AUDIT_RUN_ID" .github/workflows/linux-source-audit.yml
+          bind_run "$MACOS_AUDIT_RUN_ID" .github/workflows/macos-source-audit.yml
+
+      - name: Download retained Windows runtime
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.windows_audit_run_id }}
+          name: kmediavlc-windows-x86_64-tested-candidate-${{ inputs.desktop_runtime_commit }}
+          path: ${{ runner.temp }}/audit/windows-x86_64-candidate
+
+      - name: Download retained Linux x64 runtime
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.linux_audit_run_id }}
+          name: kmediavlc-linux-x86_64-tested-candidate-${{ inputs.desktop_runtime_commit }}
+          path: ${{ runner.temp }}/audit/linux-x86_64-candidate
+
+      - name: Download retained Linux x64 source inputs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.linux_audit_run_id }}
+          name: vlc-linux-x86_64-source-inputs-${{ inputs.desktop_runtime_commit }}
+          path: ${{ runner.temp }}/audit/linux-x86_64-source
+
+      - name: Download retained Linux ARM64 runtime
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.linux_audit_run_id }}
+          name: kmediavlc-linux-aarch64-tested-candidate-${{ inputs.desktop_runtime_commit }}
+          path: ${{ runner.temp }}/audit/linux-aarch64-candidate
+
+      - name: Download retained Linux ARM64 source inputs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.linux_audit_run_id }}
+          name: vlc-linux-aarch64-source-inputs-${{ inputs.desktop_runtime_commit }}
+          path: ${{ runner.temp }}/audit/linux-aarch64-source
+
+      - name: Download retained macOS runtime
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.macos_audit_run_id }}
+          name: kmediavlc-macos-aarch64-tested-candidate-${{ inputs.desktop_runtime_commit }}
+          path: ${{ runner.temp }}/audit/macos-aarch64-candidate
+
+      - name: Download retained macOS source inputs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.macos_audit_run_id }}
+          name: vlc-macos-aarch64-source-inputs-${{ inputs.desktop_runtime_commit }}
+          path: ${{ runner.temp }}/audit/macos-aarch64-source
+
+      - name: Reopen every retained native payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          unique_file() {
+            local root="$1" pattern="$2"
+            mapfile -d '' matches < <(find "$root" -type f -name "$pattern" -print0)
+            test "${#matches[@]}" = 1
+            printf '%s' "${matches[0]}"
+          }
+          verify_sums() {
+            local root="$1"
+            test -f "$root/SHA256SUMS"
+            (cd "$root" && sha256sum -c SHA256SUMS)
+          }
+          windows_candidate="$RUNNER_TEMP/audit/windows-x86_64-candidate"
+          windows_archive="$(unique_file "$windows_candidate" \
+            "kmediavlc-windows-x86_64-audit-candidate-$DESKTOP_RUNTIME_COMMIT.zip")"
+          windows_inventory="$(unique_file "$windows_candidate" windows-x86_64-native-inventory.json)"
+          windows_stage="$RUNNER_TEMP/native-matrix/windows-x86_64"
+          mkdir -p "$RUNNER_TEMP/native-matrix"
+          python3 scripts/extract_windows_candidate.py \
+            --archive "$windows_archive" --inventory "$windows_inventory" --output "$windows_stage"
+          for target in linux-aarch64 linux-x86_64 macos-aarch64; do
+            candidate="$RUNNER_TEMP/audit/$target-candidate"
+            verify_sums "$candidate"
+            test -d "$candidate/runtime"
+            test -f "$candidate/$target-native-inventory.json"
+            mv "$candidate/runtime" "$RUNNER_TEMP/native-matrix/$target"
+          done
+          matrix="$RUNNER_TEMP/native-matrix.json"
+          jq -n \
+            --arg linuxArmStage "$RUNNER_TEMP/native-matrix/linux-aarch64" \
+            --arg linuxArmInventory "$RUNNER_TEMP/audit/linux-aarch64-candidate/linux-aarch64-native-inventory.json" \
+            --arg linuxX64Stage "$RUNNER_TEMP/native-matrix/linux-x86_64" \
+            --arg linuxX64Inventory "$RUNNER_TEMP/audit/linux-x86_64-candidate/linux-x86_64-native-inventory.json" \
+            --arg macStage "$RUNNER_TEMP/native-matrix/macos-aarch64" \
+            --arg macInventory "$RUNNER_TEMP/audit/macos-aarch64-candidate/macos-aarch64-native-inventory.json" \
+            --arg windowsStage "$windows_stage" \
+            --arg windowsInventory "$windows_inventory" \
+            '{schemaVersion:1,payloads:[
+              {target:"linux-aarch64",staging:$linuxArmStage,inventory:$linuxArmInventory},
+              {target:"linux-x86_64",staging:$linuxX64Stage,inventory:$linuxX64Inventory},
+              {target:"macos-aarch64",staging:$macStage,inventory:$macInventory},
+              {target:"windows-x86_64",staging:$windowsStage,inventory:$windowsInventory}
+            ]}' > "$matrix"
+          echo "KMEDIAVLC_NATIVE_MATRIX=$matrix" >> "$GITHUB_ENV"
+
+      - name: Assemble and verify complete desktop corresponding source
+        shell: bash
+        run: |
+          set -euo pipefail
+          vlc_source="$RUNNER_TEMP/release-source-vlc"
+          git clone --no-checkout --filter=blob:none https://github.com/videolan/vlc.git "$vlc_source"
+          git -C "$vlc_source" fetch --depth=1 origin "$VLC_REVISION"
+          git -C "$vlc_source" checkout --detach FETCH_HEAD
+          windows_contrib="$RUNNER_TEMP/audit/windows-contrib"
+          mkdir "$windows_contrib"
+          python3 scripts/prefetch_vlc_archive.py \
+            --checksum-manifest "$vlc_source/contrib/src/speexdsp/SHA512SUMS" \
+            --archive speexdsp-1.2.1.tar.gz \
+            --destination-directory "$windows_contrib" \
+            --url https://downloads.videolan.org/pub/contrib/speexdsp/speexdsp-1.2.1.tar.gz \
+            --url https://ftp.osuosl.org/pub/xiph/releases/speex/speexdsp-1.2.1.tar.gz
+          source_archive="$RUNNER_TEMP/kmedia-vlc-$VERSION-corresponding-source.tar.gz"
+          source_arguments=(
+            --root "$GITHUB_WORKSPACE"
+            --vlc "$vlc_source"
+            --contrib "$windows_contrib"
+            --contrib "$RUNNER_TEMP/audit/linux-aarch64-source"
+            --contrib "$RUNNER_TEMP/audit/linux-x86_64-source"
+            --contrib "$RUNNER_TEMP/audit/macos-aarch64-source"
+            --version "$VERSION"
+            --release-commit "$TESTED_COMMIT"
+            --runtime-commit "$DESKTOP_RUNTIME_COMMIT"
+          )
+          python3 scripts/package_release_corresponding_source.py \
+            "${source_arguments[@]}" --output "$source_archive" \
+            --epoch "$(git show -s --format=%ct "$TESTED_COMMIT")"
+          python3 scripts/verify_release_corresponding_source.py \
+            "${source_arguments[@]}" --archive "$source_archive"
+          echo "KMEDIAVLC_DESKTOP_SOURCE=$source_archive" >> "$GITHUB_ENV"
+
+      - name: Set up Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      - name: Build the desktop-only Maven coordinate
+        shell: bash
+        run: |
+          set -euo pipefail
+          repository="$RUNNER_TEMP/maven-repository"
+          mkdir "$repository"
+          source_offer="https://github.com/SuvioMedia/KMediaVlc/releases/download/v$VERSION/kmedia-vlc-$VERSION-corresponding-source.tar.gz"
+          ./gradlew :runtime-desktop:check \
+            :runtime-desktop:publishMavenPublicationToReleaseRepository \
+            -PkmediaVlcDesktopOnly=true \
+            -PpublicationVersion="$VERSION" \
+            -PkmediaVlcNativeMatrix="$KMEDIAVLC_NATIVE_MATRIX" \
+            -PkmediaVlcSourceOffer="$source_offer" \
+            -PrecipeRevision="$DESKTOP_RUNTIME_COMMIT" \
+            -PcorrespondingSourceArchive="$KMEDIAVLC_DESKTOP_SOURCE" \
+            -PreleaseRepository="$repository" \
+            --no-daemon --stacktrace --console=plain
+          python3 scripts/build_maven_central_bundle.py normalize \
+            --staging "$repository" --version "$VERSION" --artifact-set desktop
+          desktop="$repository/io/github/shusek/kmedia-vlc-runtime-desktop/$VERSION/kmedia-vlc-runtime-desktop-$VERSION.jar"
+          test -s "$desktop"
+          unzip -p "$desktop" \
+            META-INF/native-image/io.github.shusek/kmedia-vlc-runtime-desktop/reachability-metadata.json | \
+            grep -F 'onPlaybackStateChanged'
+          release_dir="$RUNNER_TEMP/release"
+          mkdir "$release_dir"
+          repository_asset="$release_dir/kmedia-vlc-$VERSION-desktop-maven-repository.tar.gz"
+          python3 scripts/package_release_repository.py \
+            --staging "$repository" --version "$VERSION" --artifact-set desktop \
+            --epoch "$(git show -s --format=%ct HEAD)" --output "$repository_asset"
+          cp "$KMEDIAVLC_DESKTOP_SOURCE" "$release_dir/"
+          cp LICENSE NOTICE THIRD_PARTY_NOTICES.md "$release_dir/"
+          cp docs/LICENSING.md docs/RELINKING.md "$release_dir/"
+          (
+            cd "$release_dir"
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%P\0' | sort -z | \
+              xargs -0 sha256sum > SHA256SUMS
+            sha256sum -c SHA256SUMS
+          )
+          echo "KMEDIAVLC_RELEASE_DIR=$release_dir" >> "$GITHUB_ENV"
+
+      - name: Create the immutable tag and desktop hotfix prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v$VERSION"
+          git push origin "$TESTED_COMMIT:refs/tags/$tag"
+          notes="$RUNNER_TEMP/release-notes.md"
+          {
+            echo "KMediaVlc desktop Maven hotfix with GraalVM JNI callback metadata."
+            echo
+            echo "- KMediaVlc commit: \`$TESTED_COMMIT\`"
+            echo "- Retained native runtime commit: \`$DESKTOP_RUNTIME_COMMIT\`"
+            echo "- Desktop payload: Windows x64, Linux x64, Linux ARM64, macOS ARM64"
+            echo "- Maven: \`io.github.shusek:kmedia-vlc-runtime-desktop:$VERSION\`"
+            echo "- Native binaries are byte-identical to the retained audited payloads."
+          } > "$notes"
+          mapfile -d '' assets < <(find "$KMEDIAVLC_RELEASE_DIR" -maxdepth 1 -type f -print0 | sort -z)
+          test "${#assets[@]}" -eq 8
+          gh release create "$tag" "${assets[@]}" \
+            --verify-tag --title "KMediaVlc $VERSION — GraalVM desktop hotfix" \
+            --notes-file "$notes" --prerelease
+
+      - name: Re-download and verify every public release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          public="$RUNNER_TEMP/public-release"
+          mkdir "$public"
+          gh release download "v$VERSION" --dir "$public"
+          (
+            cd "$public"
+            sha256sum -c SHA256SUMS
+            expected="$(mktemp)"
+            actual="$(mktemp)"
+            { awk '{print $2}' SHA256SUMS; echo SHA256SUMS; } | sed 's|^\./||' | sort > "$expected"
+            find . -maxdepth 1 -type f -printf '%P\n' | sort > "$actual"
+            cmp "$expected" "$actual"
+          )
+          test "$(gh release view "v$VERSION" --json isDraft --jq .isDraft)" = false
+          test "$(gh release view "v$VERSION" --json isPrerelease --jq .isPrerelease)" = true

@@ -47,6 +47,7 @@ ARTIFACT_SETS = {
         "kmedia-vlc-runtime-android",
         "kmedia-vlc-runtime-desktop",
     ),
+    "desktop": ("kmedia-vlc-runtime-desktop",),
     "ios": ("kmedia-vlc-runtime-ios",),
 }
 GENERATED_CHECKSUM_SUFFIXES = (".md5", ".sha1", ".sha256", ".sha512")

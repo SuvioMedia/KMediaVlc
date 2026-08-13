@@ -20,7 +20,7 @@ on:
         required: true
         default: MULTIPLATFORM
         type: choice
-        options: [MULTIPLATFORM, IOS]
+        options: [MULTIPLATFORM, DESKTOP, IOS]
 
 permissions:
   contents: read
@@ -63,6 +63,7 @@ jobs:
           test "$(gh release view "v$VERSION" --json isDraft --jq .isDraft)" = false
           case "$ARTIFACT_SET" in
             MULTIPLATFORM) name="kmedia-vlc-$VERSION-maven-repository.tar.gz" ;;
+            DESKTOP) name="kmedia-vlc-$VERSION-desktop-maven-repository.tar.gz" ;;
             IOS) name="kmedia-vlc-$VERSION-ios-maven-repository.tar.gz" ;;
             *) exit 1 ;;
           esac
