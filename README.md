@@ -9,7 +9,7 @@ or package VLC binaries.
 
 ```kotlin
 dependencies {
-    implementation("io.github.shusek:kmedia-vlc-runtime-desktop:0.1.0-rc.1")
+    implementation("io.github.shusek:kmedia-vlc-runtime-desktop:0.1.0-rc.2")
 }
 ```
 
@@ -18,6 +18,10 @@ The matching Android coordinate is
 one closed matrix: the desktop JAR must contain Windows x64, Linux x64, Linux
 ARM64, and macOS ARM64, while the Android AAR must contain ARM64 and ARMv7.
 Neither coordinate is published alone when another required target is missing.
+The iOS build-time coordinate is
+`io.github.shusek:kmedia-vlc-runtime-ios:0.1.0-rc.3`. It is a ZIP containing
+device and Apple Silicon simulator XCFramework slices; Gradle resolves it from
+Maven and Xcode embeds and signs the selected frameworks in the application.
 
 The runtime artifact contains a pinned libVLC 4 build, its allowlisted
 plugins and dependencies, and a stable KMediaVlc bridge. It never downloads
@@ -77,10 +81,11 @@ calls Compose and never waits for a UI render.
   produce shared libVLC 4 candidates. The stable C bridge excludes JNI, starts
   with fail-closed CPU pull, and packages an 84-plugin allowlist as 87 dynamic
   frameworks per slice. Both source-built slices pass relocation audit, and the
-  repository now contains deterministic XCFramework/CocoaPods assembly plus an
+  repository now contains deterministic XCFramework/Maven assembly plus an
   independent archive verifier. Real simulator playback through the packaged
-  graph and paired archive verification pass; iOS remains unpublished until
-  device playback passes and the full binary and license audits close.
+  graph and paired archive verification pass. The iOS Maven prerelease keeps
+  `auditCandidate=true` in its inventory because physical-device AudioUnit
+  acceptance has not been run; it does not claim that missing evidence.
 - Linux x86-64/AArch64 now has a source-built 85-plugin candidate and a real
   GLES2/GBM producer backed by a bounded four-buffer DMA-BUF pool. It negotiates
   concrete ABGR8888 modifiers and exact acquire/release sync-file ownership.

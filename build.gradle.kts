@@ -160,6 +160,7 @@ val testPackagingPolicy =
 
 tasks.named("check") {
     dependsOn(":runtime-desktop:check")
+    dependsOn(":runtime-ios:check")
     if (findProject(":runtime-android") != null) {
         dependsOn(":runtime-android:check")
     }
@@ -171,6 +172,7 @@ tasks.register("complianceCheck") {
     group = "verification"
     description = "Runs JVM tests and every repository-level licensing gate."
     dependsOn(":runtime-desktop:check")
+    dependsOn(":runtime-ios:check")
     if (findProject(":runtime-android") != null) {
         dependsOn(":runtime-android:check")
     }

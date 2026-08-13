@@ -15,12 +15,18 @@ on:
         default: USER_MANAGED
         type: choice
         options: [USER_MANAGED, AUTOMATIC]
+      artifact_set:
+        description: Maven coordinates contained by the existing release asset
+        required: true
+        default: MULTIPLATFORM
+        type: choice
+        options: [MULTIPLATFORM, IOS]
 
 permissions:
   contents: read
 
 concurrency:
-  group: kmediavlc-central-${{ inputs.version }}
+  group: kmediavlc-central-${{ inputs.version }}-${{ inputs.artifact_set }}
   cancel-in-progress: false
 
 jobs:
@@ -31,6 +37,7 @@ jobs:
     env:
       VERSION: ${{ inputs.version }}
       PUBLISHING_TYPE: ${{ inputs.publishing_type }}
+      ARTIFACT_SET: ${{ inputs.artifact_set }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
@@ -54,7 +61,11 @@ jobs:
         run: |
           mkdir "$RUNNER_TEMP/release" "$RUNNER_TEMP/staging"
           test "$(gh release view "v$VERSION" --json isDraft --jq .isDraft)" = false
-          name="kmedia-vlc-$VERSION-maven-repository.tar.gz"
+          case "$ARTIFACT_SET" in
+            MULTIPLATFORM) name="kmedia-vlc-$VERSION-maven-repository.tar.gz" ;;
+            IOS) name="kmedia-vlc-$VERSION-ios-maven-repository.tar.gz" ;;
+            *) exit 1 ;;
+          esac
           gh release download "v$VERSION" --dir "$RUNNER_TEMP/release" \
             --pattern "$name" --pattern SHA256SUMS
           matches="$(awk -v p="$name" '$2 == p || $2 == "./" p {print $1}' "$RUNNER_TEMP/release/SHA256SUMS")"
@@ -65,7 +76,8 @@ jobs:
           python3 scripts/extract_release_repository.py \
             --archive "$RUNNER_TEMP/release/$name" --output "$RUNNER_TEMP/staging"
           python3 scripts/build_maven_central_bundle.py normalize \
-            --staging "$RUNNER_TEMP/staging" --version "$VERSION"
+            --staging "$RUNNER_TEMP/staging" --version "$VERSION" \
+            --artifact-set "${ARTIFACT_SET,,}"
 
       - name: Sign staged artifacts without exposing protected values
         env:
@@ -100,7 +112,8 @@ jobs:
             ! -name '*.asc' ! -name '*.md5' ! -name '*.sha1' \
             ! -name '*.sha256' ! -name '*.sha512' -print0 | sort -z)
           python3 scripts/build_maven_central_bundle.py checksums \
-            --staging "$RUNNER_TEMP/staging" --version "$VERSION"
+            --staging "$RUNNER_TEMP/staging" --version "$VERSION" \
+            --artifact-set "${ARTIFACT_SET,,}"
 
       - name: Build and reopen the fail-closed Central bundle
         shell: bash
@@ -108,12 +121,13 @@ jobs:
           bundle="$RUNNER_TEMP/kmedia-vlc-$VERSION-central.zip"
           python3 scripts/build_maven_central_bundle.py package \
             --staging "$RUNNER_TEMP/staging" --version "$VERSION" \
-            --epoch "$(git show -s --format=%ct HEAD)" --output "$bundle"
+            --epoch "$(git show -s --format=%ct HEAD)" --output "$bundle" \
+            --artifact-set "${ARTIFACT_SET,,}"
           unzip -tq "$bundle"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: kmediavlc-central-${{ inputs.version }}
+          name: kmediavlc-central-${{ inputs.version }}-${{ inputs.artifact_set }}
           path: ${{ runner.temp }}/kmedia-vlc-${{ inputs.version }}-central.zip
           if-no-files-found: error
           compression-level: 0

@@ -26,9 +26,15 @@ def tar_info(name: str, epoch: int, directory: bool = False) -> tarfile.TarInfo:
     return info
 
 
-def package(staging: Path, version: str, epoch: int, output: Path) -> str:
+def package(
+    staging: Path,
+    version: str,
+    epoch: int,
+    output: Path,
+    artifact_set: str = "multiplatform",
+) -> str:
     staging = staging.absolute()
-    files = central.base_files(staging, version)
+    files = central.base_files(staging, version, artifact_set)
     if output.is_symlink() or output.exists():
         raise ValueError("release repository output already exists")
     output = output.absolute()
@@ -65,8 +71,19 @@ def main() -> int:
     parser.add_argument("--version", required=True)
     parser.add_argument("--epoch", type=int, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--artifact-set",
+        choices=sorted(central.ARTIFACT_SETS),
+        default="multiplatform",
+    )
     arguments = parser.parse_args()
-    sha256 = package(arguments.staging, arguments.version, arguments.epoch, arguments.output)
+    sha256 = package(
+        arguments.staging,
+        arguments.version,
+        arguments.epoch,
+        arguments.output,
+        arguments.artifact_set,
+    )
     print(f"{sha256}  {arguments.output.name}")
     return 0
 

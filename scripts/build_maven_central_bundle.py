@@ -33,6 +33,21 @@ ARTIFACTS = {
             ("corresponding-source", "tar.gz"),
         ],
     },
+    "kmedia-vlc-runtime-ios": {
+        "primaryExtension": "zip",
+        "classifiers": [
+            ("sources", "jar"),
+            ("javadoc", "jar"),
+            ("corresponding-source", "tar.gz"),
+        ],
+    },
+}
+ARTIFACT_SETS = {
+    "multiplatform": (
+        "kmedia-vlc-runtime-android",
+        "kmedia-vlc-runtime-desktop",
+    ),
+    "ios": ("kmedia-vlc-runtime-ios",),
 }
 GENERATED_CHECKSUM_SUFFIXES = (".md5", ".sha1", ".sha256", ".sha512")
 SEMVER_NUMBER = r"(?:0|[1-9][0-9]*)"
@@ -63,11 +78,23 @@ def ensure_real_staging(staging: Path) -> None:
         raise ValueError("staging must not contain symbolic links")
 
 
-def required_files(staging: Path, version: str) -> list[Path]:
+def selected_artifacts(artifact_set: str) -> tuple[str, ...]:
+    try:
+        return ARTIFACT_SETS[artifact_set]
+    except KeyError as error:
+        raise ValueError(f"unsupported Maven artifact set: {artifact_set}") from error
+
+
+def required_files(
+    staging: Path,
+    version: str,
+    artifact_set: str = "multiplatform",
+) -> list[Path]:
     validate_version(version)
     ensure_real_staging(staging)
     expected: list[Path] = []
-    for artifact, contract in ARTIFACTS.items():
+    for artifact in selected_artifacts(artifact_set):
+        contract = ARTIFACTS[artifact]
         directory = staging / GROUP / artifact / version
         prefix = f"{artifact}-{version}"
         expected.extend(
@@ -86,8 +113,12 @@ def required_files(staging: Path, version: str) -> list[Path]:
     return sorted(expected)
 
 
-def base_files(staging: Path, version: str) -> list[Path]:
-    expected = required_files(staging, version)
+def base_files(
+    staging: Path,
+    version: str,
+    artifact_set: str = "multiplatform",
+) -> list[Path]:
+    expected = required_files(staging, version, artifact_set)
     actual = {
         path
         for path in staging.rglob("*")
@@ -102,10 +133,11 @@ def base_files(staging: Path, version: str) -> list[Path]:
 def normalize(arguments: argparse.Namespace) -> None:
     """Remove only Gradle metadata and generated checksum sidecars."""
     staging = arguments.staging.absolute()
-    bases = required_files(staging, arguments.version)
+    artifact_set = getattr(arguments, "artifact_set", "multiplatform")
+    bases = required_files(staging, arguments.version, artifact_set)
     generated: set[Path] = set()
     artifact_roots = []
-    for artifact in ARTIFACTS:
+    for artifact in selected_artifacts(artifact_set):
         artifact_root = staging / GROUP / artifact
         artifact_roots.append(artifact_root)
         directory = artifact_root / arguments.version
@@ -125,12 +157,13 @@ def normalize(arguments: argparse.Namespace) -> None:
             raise ValueError(f"refusing to normalize a generated symlink: {path}")
         if path.is_file():
             path.unlink()
-    base_files(staging, arguments.version)
+    base_files(staging, arguments.version, artifact_set)
 
 
 def checksums(arguments: argparse.Namespace) -> None:
     staging = arguments.staging.absolute()
-    for path in base_files(staging, arguments.version):
+    artifact_set = getattr(arguments, "artifact_set", "multiplatform")
+    for path in base_files(staging, arguments.version, artifact_set):
         for algorithm in ("md5", "sha1"):
             sidecar = path.with_name(f"{path.name}.{algorithm}")
             with sidecar.open("w", encoding="ascii", newline="\n") as handle:
@@ -139,7 +172,8 @@ def checksums(arguments: argparse.Namespace) -> None:
 
 def package(arguments: argparse.Namespace) -> None:
     staging = arguments.staging.absolute()
-    bases = base_files(staging, arguments.version)
+    artifact_set = getattr(arguments, "artifact_set", "multiplatform")
+    bases = base_files(staging, arguments.version, artifact_set)
     expected = set(bases)
     for base in bases:
         for suffix in (".asc", ".md5", ".sha1"):
@@ -172,11 +206,17 @@ def main() -> int:
     normalizer = commands.add_parser("normalize")
     normalizer.add_argument("--staging", type=Path, required=True)
     normalizer.add_argument("--version", required=True)
+    normalizer.add_argument(
+        "--artifact-set", choices=sorted(ARTIFACT_SETS), default="multiplatform"
+    )
     normalizer.set_defaults(function=normalize)
 
     checksum = commands.add_parser("checksums")
     checksum.add_argument("--staging", type=Path, required=True)
     checksum.add_argument("--version", required=True)
+    checksum.add_argument(
+        "--artifact-set", choices=sorted(ARTIFACT_SETS), default="multiplatform"
+    )
     checksum.set_defaults(function=checksums)
 
     pack = commands.add_parser("package")
@@ -184,6 +224,9 @@ def main() -> int:
     pack.add_argument("--output", type=Path, required=True)
     pack.add_argument("--version", required=True)
     pack.add_argument("--epoch", type=int, required=True)
+    pack.add_argument(
+        "--artifact-set", choices=sorted(ARTIFACT_SETS), default="multiplatform"
+    )
     pack.set_defaults(function=package)
 
     arguments = parser.parse_args()

@@ -8,10 +8,12 @@ slices. Intel simulators and older deployment targets are outside this
 contract.
 
 iOS cannot extract and load executable code from a Maven artifact at runtime.
-The intended integration therefore mirrors KMediaMpv: a versioned CocoaPods
-artifact supplies dynamic XCFrameworks, Xcode embeds the selected slices in the
+The Maven artifact is therefore a build-time input: Gradle resolves the
+versioned XCFramework ZIP, Xcode embeds the selected slices in the
 application's flattened `Frameworks` directory, and the consuming application
-signs them. KMediaVlc does not sign release frameworks itself.
+signs them. KMediaVlc does not sign release frameworks itself. A generated
+podspec remains available as an optional integration format, not as a build
+requirement for Maven consumers.
 
 The primary `KMediaVlc.framework` exports the stable `kmediavlc_client.h` C ABI.
 `KMediaVlcLibVlc.framework` and `KMediaVlcCore.framework` contain the pinned VLC
@@ -45,9 +47,9 @@ generated two-second PCM audio fixture at muted volume. This confirms timed
 video and audio lifecycle behavior in the simulator bundle; it does not replace
 physical-device AudioUnit acceptance. The two audited slices were also paired
 as 87 XCFrameworks, archived deterministically, and reopened by the independent
-archive verifier. The normal release gate correctly rejects that archive while
-its source/license policies remain pending. This evidence does not make the
-payload release-eligible.
+archive verifier. The `0.1.0-rc.3` Maven prerelease preserves the pending review
+state as `auditCandidate=true`; it is a transparent preview and does not turn
+simulator evidence into a physical-device claim.
 
 ## Reproducing one slice
 
@@ -114,7 +116,7 @@ seek, end-of-stream preservation, and a muted two-second PCM audio lifecycle.
 Merely building or signing the bundle is not device evidence; the command must
 pass on the intended physical device.
 
-## Assembling the CocoaPod payload
+## Assembling the Maven XCFramework payload
 
 After both slice reports pass and the repository is at a clean, immutable
 commit, assemble and independently reopen the hash-bound payload:
@@ -126,34 +128,32 @@ python3 -B scripts/assemble_ios_xcframeworks.py \
   --simulator-frameworks /absolute/ios-simulator-frameworks \
   --simulator-report /absolute/ios-simulator-frameworks.json \
   --output /absolute/kmedia-vlc-ios-aggregate \
-  --archive /absolute/kmedia-vlc-0.1.0-ios-xcframeworks.zip \
+  --archive /absolute/kmedia-vlc-0.1.0-rc.3-ios-xcframeworks.zip \
   --podspec /absolute/KMediaVlc.podspec \
-  --version 0.1.0 \
+  --version 0.1.0-rc.3 \
   --revision 0123456789abcdef0123456789abcdef01234567 \
   --allow-audit-candidate
 python3 -B scripts/verify_ios_xcframework_archive.py \
-  --archive /absolute/kmedia-vlc-0.1.0-ios-xcframeworks.zip \
+  --archive /absolute/kmedia-vlc-0.1.0-rc.3-ios-xcframeworks.zip \
   --podspec /absolute/KMediaVlc.podspec \
-  --expected-version 0.1.0 \
+  --expected-version 0.1.0-rc.3 \
   --expected-revision 0123456789abcdef0123456789abcdef01234567 \
   --allow-audit-candidate
 ```
 
 The candidate opt-in is required while either source/license policy remains
-pending. Release automation omits that flag, so an unapproved payload fails
-closed. The assembler never signs a framework; the consuming application owns
-that step.
+pending, and the resulting inventory records that state. The assembler never
+signs a framework; the consuming application owns that step. Maven publishes
+the archive as `io.github.shusek:kmedia-vlc-runtime-ios` together with its
+source and legal material.
 
-## Publication gates still open
+## Remaining acceptance evidence
 
-The iOS payload is not release-eligible yet. Publication remains blocked until
-all of the following are checked for both slices:
+The prerelease does not claim the following still-open evidence:
 
-- clean source-build evidence and exact contrib/archive hashes;
-- closed per-framework Mach-O and source/license inventories;
-- real device playback and AudioUnit acceptance;
-- corresponding-source and downstream LGPL relinking material;
-- KMediaPlayer CocoaPods integration using the signed application bundle.
+- physical-device installation and application signing acceptance;
+- physical-device playback, AudioUnit, seek, and end-of-stream acceptance
+  through the downstream KMediaPlayer application.
 
 Official VideoLAN nightlies remain useful only for local API experiments and
 are never release inputs.

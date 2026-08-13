@@ -19,8 +19,14 @@ finally:
 
 
 class ReleaseRepositoryPackagerTest(unittest.TestCase):
-    def create_staging(self, root: Path, version: str) -> None:
-        for artifact, contract in central.ARTIFACTS.items():
+    def create_staging(
+        self,
+        root: Path,
+        version: str,
+        artifact_set: str = "multiplatform",
+    ) -> None:
+        for artifact in central.selected_artifacts(artifact_set):
+            contract = central.ARTIFACTS[artifact]
             directory = root / central.GROUP / artifact / version
             directory.mkdir(parents=True)
             prefix = f"{artifact}-{version}"
@@ -54,6 +60,22 @@ class ReleaseRepositoryPackagerTest(unittest.TestCase):
             extracted.mkdir()
             extractor.extract(first, extracted)
             self.assertEqual(11, len(central.base_files(extracted, version)))
+
+    def test_packages_only_the_ios_artifact_set(self) -> None:
+        with tempfile.TemporaryDirectory() as value:
+            root = Path(value)
+            staging = root / "staging"
+            staging.mkdir()
+            version = "0.1.0-rc.3"
+            self.create_staging(staging, version, "ios")
+            archive = root / "ios.tar.gz"
+
+            release.package(staging, version, 1_700_000_000, archive, "ios")
+
+            extracted = root / "extracted"
+            extracted.mkdir()
+            extractor.extract(archive, extracted)
+            self.assertEqual(5, len(central.base_files(extracted, version, "ios")))
 
 
 if __name__ == "__main__":
