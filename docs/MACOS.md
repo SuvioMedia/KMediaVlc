@@ -16,11 +16,11 @@ license-closed, relocatable, and accepted by the real Metal consumer.
 - producer flush before notification and generation-safe latest-frame delivery;
 - `macos-aarch64` runtime selection and exact `OPENGL` manifest policy;
 - a hermetic Java/JNI/callback/OpenGL/IOSurface integration test;
-- a source build of pinned VLC commit `b5536cde` using the upstream Apple
+- a source build of pinned VLC commit `e4396920` using the upstream Apple
   shared-library entry point and a `--disable-all` contrib profile;
 - a 27-package resolved contrib graph with stream-output encoders, GPL, and
   GNUv3 packages disabled;
-- a closed 89-plugin playback candidate selected from 288 built modules;
+- a closed 89-plugin playback candidate selected from 289 built modules;
 - application-private `@loader_path` relocation, arm64/macOS 14 validation,
   system-only Mach-O dependency validation, ad-hoc re-signing, and plugin-cache
   generation after relocation;

@@ -99,7 +99,7 @@
   "requiresClosedMachOGraph": true,
   "requiresApplicationPrivateRelocation": true,
   "stagedPluginCount": 89,
-  "rawSourceBuildPluginCount": 288,
+  "rawSourceBuildPluginCount": 289,
   "pluginCacheGeneratedAfterRelocation": true,
   "relocationSignature": "adhoc-replaced-by-consuming-app-signature",
   "requiresConsumerCodeSigning": true,

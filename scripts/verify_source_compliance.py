@@ -1528,7 +1528,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         or recipe.get("renderEngine") != "OPENGL"
         or recipe.get("frameTransport") != "IOSURFACE"
         or recipe.get("stagedPluginCount") != 89
-        or recipe.get("rawSourceBuildPluginCount") != 288
+        or recipe.get("rawSourceBuildPluginCount") != 289
         or recipe.get("pluginCacheGeneratedAfterRelocation") is not True
         or recipe.get("relocationSignature") != "adhoc-replaced-by-consuming-app-signature"
         or recipe.get("requiresConsumerCodeSigning") is not True
