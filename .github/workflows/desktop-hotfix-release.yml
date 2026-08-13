@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       desktop_runtime_commit:
-        description: Exact commit shared by the retained desktop runtime builds
+        description: Exact commit shared by the retained Windows and Linux runtime builds
         required: true
         type: string
       windows_audit_run_id:
@@ -60,7 +60,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Validate the immutable Java-only desktop hotfix
+      - name: Validate the immutable desktop hotfix
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -90,7 +90,7 @@ jobs:
             compliance/policy/macos-aarch64-binary-components.json \
             scripts/package_native_runtime.py scripts/package_native_runtime_matrix.py)"
           unexpected_changes="$(printf '%s\n' "$restricted_changes" | sed '/^$/d' | \
-            grep -Ev '^(build-recipes/vlc-apple\.conf|runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifest\.java|runtime-desktop/src/test/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifestTest\.java|runtime-desktop/src/main/resources/META-INF/native-image/io\.github\.shusek/kmedia-vlc-runtime-desktop/reachability-metadata\.json)$' || true)"
+            grep -Ev '^(build-recipes/vlc-apple\.conf|native/src/macos_iosurface_renderer\.cpp|native/tests/fake_libvlc\.cpp|runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifest\.java|runtime-desktop/src/test/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifestTest\.java|runtime-desktop/src/main/resources/META-INF/native-image/io\.github\.shusek/kmedia-vlc-runtime-desktop/reachability-metadata\.json)$' || true)"
           test -z "$unexpected_changes"
           tag="v$VERSION"
           test -z "$(git ls-remote --tags origin "refs/tags/$tag")"
@@ -106,19 +106,19 @@ jobs:
         run: |
           set -euo pipefail
           bind_run() {
-            local run_id="$1" workflow_path="$2"
+            local run_id="$1" workflow_path="$2" expected_commit="$3"
             local run="$RUNNER_TEMP/run-$run_id.json"
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" > "$run"
             test "$(jq -r .path "$run")" = "$workflow_path"
             test "$(jq -r .event "$run")" = workflow_dispatch
             test "$(jq -r .status "$run")" = completed
             test "$(jq -r .conclusion "$run")" = success
-            test "$(jq -r .head_sha "$run")" = "$DESKTOP_RUNTIME_COMMIT"
+            test "$(jq -r .head_sha "$run")" = "$expected_commit"
             test "$(jq -r .head_repository.full_name "$run")" = "$GITHUB_REPOSITORY"
           }
-          bind_run "$WINDOWS_AUDIT_RUN_ID" .github/workflows/native-audit.yml
-          bind_run "$LINUX_AUDIT_RUN_ID" .github/workflows/linux-source-audit.yml
-          bind_run "$MACOS_AUDIT_RUN_ID" .github/workflows/macos-source-audit.yml
+          bind_run "$WINDOWS_AUDIT_RUN_ID" .github/workflows/native-audit.yml "$DESKTOP_RUNTIME_COMMIT"
+          bind_run "$LINUX_AUDIT_RUN_ID" .github/workflows/linux-source-audit.yml "$DESKTOP_RUNTIME_COMMIT"
+          bind_run "$MACOS_AUDIT_RUN_ID" .github/workflows/macos-source-audit.yml "$TESTED_COMMIT"
 
       - name: Download retained Windows runtime
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -171,7 +171,7 @@ jobs:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.macos_audit_run_id }}
-          name: kmediavlc-macos-aarch64-tested-candidate-${{ inputs.desktop_runtime_commit }}
+          name: kmediavlc-macos-aarch64-tested-candidate-${{ inputs.tested_commit }}
           path: ${{ runner.temp }}/audit/macos-aarch64-candidate
 
       - name: Download retained macOS source inputs
@@ -180,7 +180,7 @@ jobs:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.macos_audit_run_id }}
-          name: vlc-macos-aarch64-source-inputs-${{ inputs.desktop_runtime_commit }}
+          name: vlc-macos-aarch64-source-inputs-${{ inputs.tested_commit }}
           path: ${{ runner.temp }}/audit/macos-aarch64-source
 
       - name: Reopen every retained native payload
@@ -264,7 +264,7 @@ jobs:
             --contrib "$RUNNER_TEMP/audit/macos-aarch64-source"
             --version "$VERSION"
             --release-commit "$TESTED_COMMIT"
-            --runtime-commit "$DESKTOP_RUNTIME_COMMIT"
+            --runtime-commit "$TESTED_COMMIT"
           )
           python3 scripts/package_release_corresponding_source.py \
             "${source_arguments[@]}" --output "$source_archive" \
@@ -295,7 +295,7 @@ jobs:
             -PpublicationVersion="$VERSION" \
             -PkmediaVlcNativeMatrix="$KMEDIAVLC_NATIVE_MATRIX" \
             -PkmediaVlcSourceOffer="$source_offer" \
-            -PrecipeRevision="$DESKTOP_RUNTIME_COMMIT" \
+            -PrecipeRevision="$TESTED_COMMIT" \
             -PcorrespondingSourceArchive="$KMEDIAVLC_DESKTOP_SOURCE" \
             -PreleaseRepository="$repository" \
             --no-daemon --stacktrace --console=plain
@@ -333,13 +333,14 @@ jobs:
           git push origin "$TESTED_COMMIT:refs/tags/$tag"
           notes="$RUNNER_TEMP/release-notes.md"
           {
-            echo "KMediaVlc desktop Maven hotfix with GraalVM JNI callback metadata."
+            echo "KMediaVlc desktop Maven hotfix with an updated macOS native bridge."
             echo
             echo "- KMediaVlc commit: \`$TESTED_COMMIT\`"
-            echo "- Retained native runtime commit: \`$DESKTOP_RUNTIME_COMMIT\`"
+            echo "- Retained Windows/Linux runtime commit: \`$DESKTOP_RUNTIME_COMMIT\`"
+            echo "- Rebuilt macOS runtime commit: \`$TESTED_COMMIT\`"
             echo "- Desktop payload: Windows x64, Linux x64, Linux ARM64, macOS ARM64"
             echo "- Maven: \`io.github.shusek:kmedia-vlc-runtime-desktop:$VERSION\`"
-            echo "- Native binaries are byte-identical to the retained audited payloads."
+            echo "- Windows and Linux binaries are byte-identical to the retained payloads."
           } > "$notes"
           mapfile -d '' assets < <(find "$KMEDIAVLC_RELEASE_DIR" -maxdepth 1 -type f -print0 | sort -z)
           test "${#assets[@]}" -eq 8
