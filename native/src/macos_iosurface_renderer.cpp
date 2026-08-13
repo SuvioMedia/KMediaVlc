@@ -425,7 +425,10 @@ private:
         output->transfer = hdr_output
             ? libvlc_video_transfer_func_LINEAR
             : libvlc_video_transfer_func_SRGB;
-        output->orientation = libvlc_video_orient_top_left;
+        // OpenGL framebuffer storage is bottom-left oriented, while IOSurface is imported by
+        // TextureView as a top-left Metal texture. Ask VLC to compensate while rendering so the
+        // shared surface is upright for its consumer without a CPU copy or a second GPU pass.
+        output->orientation = libvlc_video_orient_bottom_left;
         return true;
     }
 
