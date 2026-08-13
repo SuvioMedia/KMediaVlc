@@ -15,7 +15,7 @@ if(NOT KMEDIAVLC_VLC_SOURCE_DIR)
     message(FATAL_ERROR "KMEDIAVLC_VLC_SOURCE_DIR is required")
 endif()
 
-set(KMEDIAVLC_PINNED_VLC_REVISION "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee")
+set(KMEDIAVLC_PINNED_VLC_REVISION "e439692079a75cacb5f07310d1ec2dc20bfd1fe0")
 if(NOT EXISTS "${KMEDIAVLC_VLC_SOURCE_DIR}/include/vlc/libvlc_media_player.h")
     message(FATAL_ERROR "KMEDIAVLC_VLC_SOURCE_DIR does not contain LibVLC headers")
 endif()

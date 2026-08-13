@@ -27,7 +27,7 @@ missing target or audit artifact stops the whole release.
 For Windows x64, retain all of the following from the same source build:
 
 - a clean KMediaVlc checkout and its forty-character commit;
-- VLC revision `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`;
+- VLC revision `e439692079a75cacb5f07310d1ec2dc20bfd1fe0`;
 - output of `scripts/build_vlc_windows.sh`, never a VideoLAN nightly;
 - a decoder-only Windows graph with Meson `stream_outputs=false` and
   `videolan_manager=false`, matching the contrib `--disable-sout` profile;

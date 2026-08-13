@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 
-PINNED_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 PINNED_VERSION = "4.0.0-dev"
 PINNED_LIBVLCJNI_REVISION = "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21"
 ALLOWED_LICENSES = {
@@ -1582,7 +1582,7 @@ def verify_macos_transport_contract(root: Path) -> None:
 
     builder = (root / "scripts/build_vlc_macos.sh").read_text(encoding="utf-8")
     builder_markers = [
-        'readonly PINNED_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"',
+        'readonly PINNED_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"',
         "--arch=arm64",
         "--sdk=macosx",
         "--enable-shared",
@@ -1958,7 +1958,7 @@ def verify_ios_runtime_contract(root: Path) -> None:
             "build-recipes/patches/fribidi-meson-native-generator.patch",
         ]
         or recipe.get("mesonNativeFile") != "build-recipes/vlc-apple-native.ini"
-        or recipe.get("sourceOverlays") != ["build-recipes/vlc-contrib-utfcpp-rules.mak"]
+        or recipe.get("sourceOverlays") != []
         or recipe.get("selectedContribPackages") != selected_contribs
         or recipe.get("resolvedContribPackages") != resolved_contribs
         or recipe.get("usesPrebuiltContribs") is not False
@@ -1989,13 +1989,13 @@ def verify_ios_runtime_contract(root: Path) -> None:
         fail("The Apple VLC profile must keep libplacebo enabled only for macOS.")
     builder = (root / "scripts/build_vlc_ios.sh").read_text(encoding="utf-8")
     builder_markers = [
-        'readonly PINNED_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"',
+        'readonly PINNED_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"',
         "iphoneos)",
         "iphonesimulator)",
         'git -C "$source_directory" apply --check "$source_patch"',
         'KMEDIAVLC_MESON_NATIVE_FILE="$meson_native_file"',
         'KMEDIAVLC_MESON_NATIVE_TMPDIR="$meson_native_tmpdir"',
-        'contrib/src/utfcpp',
+        'contrib/src/utfcpp/rules.mak',
         'make -C "$contrib_directory" list',
     ]
     if not all(marker in builder for marker in builder_markers):
@@ -2467,7 +2467,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
 
     builder = (root / "scripts/build_vlc_linux.sh").read_text(encoding="utf-8")
     builder_markers = [
-        'readonly PINNED_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"',
+        'readonly PINNED_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"',
         'readonly PINNED_MESON_VERSION="1.10.0"',
         "--disable-all",
         "--disable-gpl",

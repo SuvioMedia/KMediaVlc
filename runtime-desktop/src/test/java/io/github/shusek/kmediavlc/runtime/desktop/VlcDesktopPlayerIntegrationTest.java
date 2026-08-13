@@ -116,7 +116,7 @@ final class VlcDesktopPlayerIntegrationTest {
                         4,
                         2,
                         "4.0.0-dev",
-                        "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+                        "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
                         Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
                         Set.of(VlcRenderEngine.OPENGL),
                         false));
@@ -487,7 +487,7 @@ final class VlcDesktopPlayerIntegrationTest {
                         4,
                         2,
                         "4.0.0-dev",
-                        "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+                        "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
                         Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
                         Set.of(VlcRenderEngine.OPENGL),
                         false));
@@ -693,7 +693,7 @@ final class VlcDesktopPlayerIntegrationTest {
                         4,
                         2,
                         "4.0.0-dev",
-                        "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+                        "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
                         Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
                         renderEngines,
                         true));

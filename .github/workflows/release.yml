@@ -56,7 +56,7 @@ jobs:
       LINUX_AUDIT_RUN_ID: ${{ inputs.linux_audit_run_id }}
       MACOS_AUDIT_RUN_ID: ${{ inputs.macos_audit_run_id }}
       ANDROID_AUDIT_RUN_ID: ${{ inputs.android_audit_run_id }}
-      VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+      VLC_REVISION: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
       LIBVLCJNI_REVISION: a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21
       LLVM_PROJECT_REVISION: 386af4a5c64ab75eaee2448dc38f2e34a40bfed0
       LLVM_ANDROID_REVISION: 1dab3288f660d43a6cb2479107e2b54b3ab0a2a1

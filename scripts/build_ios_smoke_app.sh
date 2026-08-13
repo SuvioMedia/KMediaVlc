@@ -4,7 +4,7 @@
 set -euo pipefail
 
 readonly PLAYBACK_FIXTURE_SHA256="f9cee3480b4619e2d94979a30b40f19cbb417289d3453e7bbb890a871c6f9718"
-readonly VLC_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+readonly VLC_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 readonly MINIMUM_IOS="16.2"
 
 if [[ $# -ne 3 && $# -ne 5 ]]; then

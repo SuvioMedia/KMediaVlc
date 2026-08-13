@@ -30,7 +30,7 @@ record NativePayloadManifest(
         List<FileEntry> files) {
 
     static final String VLC_VERSION = "4.0.0-dev";
-    static final String VLC_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee";
+    static final String VLC_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0";
     static final int BRIDGE_ABI_VERSION = 2;
     static final int MAX_MANIFEST_BYTES = 256 * 1024;
     private static final int MAX_FILES = 2_048;

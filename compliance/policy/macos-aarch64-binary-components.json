@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "target": "macos-aarch64",
-  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+  "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
   "toolchain": {
     "xcodeVersion": "26.6",
     "xcodeBuild": "17F113",
@@ -9,7 +9,7 @@
     "minimumMacos": "14.0",
     "architecture": "arm64"
   },
-  "reviewStatus": "approved",
+  "reviewStatus": "pending-link-command-and-license-audit",
   "buildOnlyContribPackages": ["jinja", "markupsafe"],
   "components": {
     "dav1d": {
@@ -18,9 +18,9 @@
       "sourceArchive": "dav1d-1.5.4.tar.xz"
     },
     "ffmpeg": {
-      "version": "8.1.2",
+      "version": "9.0",
       "licenseSpdx": ["LGPL-2.1-or-later"],
-      "sourceArchive": "ffmpeg-8.1.2.tar.xz"
+      "sourceArchive": "ffmpeg-9.0.tar.xz"
     },
     "flac": {
       "version": "1.5.0",
@@ -28,9 +28,9 @@
       "sourceArchive": "flac-1.5.0.tar.xz"
     },
     "freetype": {
-      "version": "2.13.1",
+      "version": "2.14.3",
       "licenseSpdx": ["FTL"],
-      "sourceArchive": "freetype-2.13.1.tar.xz"
+      "sourceArchive": "freetype-2.14.3.tar.xz"
     },
     "fribidi": {
       "version": "1.0.16",
@@ -53,9 +53,9 @@
       "sourceArchive": "harfbuzz-14.2.1.tar.xz"
     },
     "jinja": {
-      "version": "3.1.2",
+      "version": "3.1.6",
       "licenseSpdx": ["BSD-3-Clause"],
-      "sourceArchive": "jinja-3.1.2.tar.gz"
+      "sourceArchive": "jinja-3.1.6.tar.gz"
     },
     "libass": {
       "version": "0.17.5",
@@ -118,9 +118,9 @@
       "sourceArchive": "libxml2-2.15.3.tar.xz"
     },
     "markupsafe": {
-      "version": "2.1.1",
+      "version": "2.1.5",
       "licenseSpdx": ["BSD-3-Clause"],
-      "sourceArchive": "markupsafe-2.1.1.tar.gz"
+      "sourceArchive": "markupsafe-2.1.5.tar.gz"
     },
     "openjpeg": {
       "version": "2.5.4",
@@ -138,9 +138,9 @@
       "sourceArchive": "soxr-0.1.3-Source.tar.xz"
     },
     "vulkan-headers": {
-      "version": "1.3.275",
+      "version": "1.4.355",
       "licenseSpdx": ["Apache-2.0", "MIT"],
-      "sourceArchive": "Vulkan-Headers-1.3.275.tar.gz"
+      "sourceArchive": "Vulkan-Headers-1.4.355.tar.gz"
     },
     "zlib": {
       "version": "1.3.2",

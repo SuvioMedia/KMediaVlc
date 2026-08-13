@@ -93,7 +93,7 @@ extern "C" const char* libvlc_get_version(void) {
 }
 
 extern "C" const char* libvlc_get_changeset(void) {
-    return "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee";
+    return "e439692079a75cacb5f07310d1ec2dc20bfd1fe0";
 }
 
 extern "C" libvlc_media_player_t* libvlc_media_player_new(

@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-readonly expected_vlc_revision=b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+readonly expected_vlc_revision=e439692079a75cacb5f07310d1ec2dc20bfd1fe0
 readonly expected_libvlcjni_revision=a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21
 readonly expected_ndk_revision=29.0.14206865
 

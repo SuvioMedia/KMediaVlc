@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
-PINNED_VLC_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+PINNED_VLC_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 PINNED_LIBVLCJNI_REVISION = "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21"
 TEST_CLASS = (
     "io.github.shusek.kmediavlc.runtime.android."

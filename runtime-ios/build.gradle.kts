@@ -41,7 +41,6 @@ val iosSourcesJar =
                 "build-recipes/ios.json",
                 "build-recipes/vlc-apple.conf",
                 "build-recipes/vlc-apple-native.ini",
-                "build-recipes/vlc-contrib-utfcpp-rules.mak",
                 "build-recipes/patches/fribidi-meson-native-generator.patch",
                 "build-recipes/patches/vlc-ios-meson-native-compiler.patch",
                 "compliance/policy/ios-binary-components.json",

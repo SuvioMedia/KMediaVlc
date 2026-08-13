@@ -58,7 +58,7 @@ target_compile_definitions(
     kmediavlc_android
     PRIVATE
         KMEDIAVLC_ANDROID_ABI="${ANDROID_ABI}"
-        KMEDIAVLC_VLC_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+        KMEDIAVLC_VLC_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 )
 target_compile_options(
     kmediavlc_android

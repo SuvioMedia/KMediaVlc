@@ -106,7 +106,7 @@ class StageVlcIosFrameworksTest(unittest.TestCase):
             self.assertEqual("KMediaVlc", metadata["CFBundleExecutable"])
             self.assertEqual("16.2", metadata["MinimumOSVersion"])
 
-    def test_recipe_closes_device_simulator_and_utfcpp_inputs(self) -> None:
+    def test_recipe_closes_device_simulator_and_upstream_utfcpp_inputs(self) -> None:
         recipe = json.loads(
             (ROOT / "build-recipes/ios.json").read_text(encoding="utf-8")
         )
@@ -124,10 +124,7 @@ class StageVlcIosFrameworksTest(unittest.TestCase):
         self.assertEqual(285, recipe["rawSourceBuildPluginCount"])
         self.assertEqual(87, recipe["frameworkCountPerSlice"])
         self.assertIn("utfcpp", recipe["resolvedContribPackages"])
-        self.assertEqual(
-            ["build-recipes/vlc-contrib-utfcpp-rules.mak"],
-            recipe["sourceOverlays"],
-        )
+        self.assertEqual([], recipe["sourceOverlays"])
 
     def test_bridge_cmake_excludes_jni_and_macos_renderer_on_ios(self) -> None:
         cmake = (ROOT / "native/CMakeLists.txt").read_text(encoding="utf-8")

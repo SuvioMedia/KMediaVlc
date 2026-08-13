@@ -35,21 +35,12 @@ input, Matroska/MP4 demuxing, subtitles, and the conversion modules required by
 CPU pull. The package contains 87 dynamic frameworks per slice: bridge,
 libVLC, core, and the 84 selected plugins.
 
-The arm64 device and simulator slices have been reproduced from a clean
-checkout of VLC `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`. All 87 staged
-frameworks in each slice passed the closed Mach-O relocation audit. A real
-Apple-silicon simulator then loaded the packaged simulator frameworks through
-the application bundle and played the pinned 12-second, 320-by-180 H.264
-Matroska fixture through CPU pull. The smoke gate observed multiple distinct
-RGBA8 frames, the exact media duration, a seek to seven seconds, and a preserved
-end-of-stream state. It then completed a second media generation containing a
-generated two-second PCM audio fixture at muted volume. This confirms timed
-video and audio lifecycle behavior in the simulator bundle; it does not replace
-physical-device AudioUnit acceptance. The two audited slices were also paired
-as 87 XCFrameworks, archived deterministically, and reopened by the independent
-archive verifier. The `0.1.0-rc.3` Maven prerelease preserves the pending review
-state as `auditCandidate=true`; it is a transparent preview and does not turn
-simulator evidence into a physical-device claim.
+Revision `e439692079a75cacb5f07310d1ec2dc20bfd1fe0` is the current source-build
+candidate. The retained simulator, device, relocation, and XCFramework evidence
+belongs to the previous VLC pin. All 87 frameworks and both slices must be
+rebuilt and reopened by the independent verifier before this candidate can
+replace the Maven payload. Until then, any assembled archive remains
+`auditCandidate=true`.
 
 ## Reproducing one slice
 
@@ -71,9 +62,9 @@ python3 -B scripts/stage_vlc_ios_frameworks.py \
 
 Use `iphoneos` and `ios-arm64` for the device slice. The source wrapper applies
 recorded fixes for Meson cross-build generators and preserves the iOS 16.2
-deployment flags that upstream GSM otherwise replaces. It installs the
-already-pinned `utfcpp 3.2.5` archive as a local contrib; libEBML is never
-allowed to fetch an undeclared dependency through CMake.
+deployment flags that upstream GSM otherwise replaces. The pinned VLC revision
+now provides its own `utfcpp 3.2.5` contrib and declares it as a libEBML
+dependency, so libEBML never fetches an undeclared dependency through CMake.
 
 ## Physical-device acceptance harness
 

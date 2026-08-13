@@ -4,7 +4,7 @@
     "linux-x86_64",
     "linux-aarch64"
   ],
-  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+  "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
   "vlcSource": "https://code.videolan.org/videolan/vlc.git",
   "buildSystem": "meson",
   "mesonVersion": "1.10.0",
