@@ -15,6 +15,11 @@ on:
         required: true
         default: 0.1.0-rc.1
         type: string
+      audit_candidate:
+        description: Build and test policies whose manual review is still pending
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -31,6 +36,7 @@ jobs:
     env:
       TESTED_COMMIT: ${{ inputs.tested_commit }}
       CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+      AUDIT_CANDIDATE: ${{ inputs.audit_candidate }}
       VLC_REVISION: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
     steps:
       - name: Check out the exact KMediaVlc revision
@@ -120,17 +126,26 @@ jobs:
           set -euo pipefail
           candidate="$RUNNER_TEMP/kmediavlc-macos-aarch64-tested-candidate"
           mkdir "$candidate"
+          candidate_args=()
+          if [[ "$AUDIT_CANDIDATE" == true ]]; then
+            candidate_args+=(--allow-audit-candidate)
+          fi
           python3 scripts/stage_vlc_macos_runtime.py \
             --root "$GITHUB_WORKSPACE" \
             --install "$RUNNER_TEMP/vlc-macos-build/vlc-macosx-arm64" \
             --bridge "$GITHUB_WORKSPACE/build/native/macos-aarch64/libkmediavlc_bridge.dylib" \
             --output "$candidate/runtime" \
-            --report "$candidate/macos-aarch64-audit.json"
+            --report "$candidate/macos-aarch64-audit.json" \
+            "${candidate_args[@]}"
           test "$(jq -r .target "$candidate/macos-aarch64-audit.json")" = macos-aarch64
           test "$(jq -r .selectedPluginCount "$candidate/macos-aarch64-audit.json")" = 89
           test "$(jq -r '.files | length' "$candidate/macos-aarch64-audit.json")" = 93
           test "$(jq -r '.machO | length' "$candidate/macos-aarch64-audit.json")" = 92
-          test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = false
+          if [[ "$AUDIT_CANDIDATE" == true ]]; then
+            test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = true
+          else
+            test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = false
+          fi
 
       - name: Play a real CPU frame and replace an IOSurface generation
         shell: bash
@@ -156,6 +171,10 @@ jobs:
           set -euo pipefail
           candidate="$RUNNER_TEMP/kmediavlc-macos-aarch64-tested-candidate"
           source_offer="https://github.com/SuvioMedia/KMediaVlc/releases/download/v$CANDIDATE_VERSION/kmedia-vlc-$CANDIDATE_VERSION-corresponding-source.tar.gz"
+          candidate_args=()
+          if [[ "$AUDIT_CANDIDATE" == true ]]; then
+            candidate_args+=(--allow-audit-candidate)
+          fi
           python3 scripts/create_posix_native_inventory.py \
             --root "$GITHUB_WORKSPACE" \
             --staging "$candidate/runtime" \
@@ -163,7 +182,8 @@ jobs:
             --output "$candidate/macos-aarch64-native-inventory.json" \
             --target macos-aarch64 \
             --version "$CANDIDATE_VERSION" \
-            --source-offer "$source_offer"
+            --source-offer "$source_offer" \
+            "${candidate_args[@]}"
           cp runtime-desktop/build/test-results/test/TEST-io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest.xml \
             "$candidate/test-results.xml"
           (

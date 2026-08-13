@@ -386,8 +386,19 @@ def verify_policy(root: Path) -> None:
     ]
     if not all(marker in audit_workflow for marker in native_validation_markers):
         fail("The source-built VLC payload lacks mandatory native Windows validation.")
-    if "--allow-audit-candidate" in audit_workflow:
-        fail("The approved Windows source audit must execute in release mode.")
+    windows_candidate_markers = [
+        "audit_candidate:",
+        "default: false",
+        "AUDIT_CANDIDATE: ${{ inputs.audit_candidate }}",
+        "$candidateArgs += '--allow-audit-candidate'",
+        "$stagingEvidence.auditCandidate -ne $true",
+        "$stagingEvidence.auditCandidate -ne $false",
+        "if ($env:AUDIT_CANDIDATE -ne 'true')",
+    ]
+    if "--allow-audit-candidate" in audit_workflow and not all(
+        marker in audit_workflow for marker in windows_candidate_markers
+    ):
+        fail("Windows audit-candidate mode must be explicit and default to release mode.")
     windows_stager = (root / "scripts/stage_vlc_windows_runtime.py").read_text(
         encoding="utf-8"
     )
@@ -1726,8 +1737,18 @@ def verify_macos_transport_contract(root: Path) -> None:
     ]
     if any(marker in source_audit for marker in forbidden_source_audit_markers):
         fail("The macOS source audit must remain manual and secret-free.")
-    if "--allow-audit-candidate" in source_audit:
-        fail("The approved macOS source audit must execute in release mode.")
+    macos_candidate_markers = [
+        "audit_candidate:",
+        "default: false",
+        "AUDIT_CANDIDATE: ${{ inputs.audit_candidate }}",
+        "candidate_args+=(--allow-audit-candidate)",
+        'test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = true',
+        'test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = false',
+    ]
+    if "--allow-audit-candidate" in source_audit and not all(
+        marker in source_audit for marker in macos_candidate_markers
+    ):
+        fail("macOS audit-candidate mode must be explicit and default to release mode.")
 
     desktop_build = (root / "runtime-desktop/build.gradle.kts").read_text(encoding="utf-8")
     if (
@@ -2524,8 +2545,18 @@ def verify_linux_runtime_contract(root: Path) -> None:
     ]
     if not all(marker in workflow for marker in workflow_markers):
         fail("Linux validation does not cover both native architectures and real CPU playback.")
-    if "--allow-audit-candidate" in workflow:
-        fail("The approved Linux source audit must execute in release mode.")
+    linux_candidate_markers = [
+        "audit_candidate:",
+        "default: false",
+        "AUDIT_CANDIDATE:",
+        "candidate_args+=(--allow-audit-candidate)",
+        'test "$(jq -r .auditCandidate "$report")" = true',
+        'test "$(jq -r .auditCandidate "$report")" = false',
+    ]
+    if "--allow-audit-candidate" in workflow and not all(
+        marker in workflow for marker in linux_candidate_markers
+    ):
+        fail("Linux audit-candidate mode must be explicit and default to release mode.")
     if "contents: write" in workflow or "${{ secrets." in workflow:
         fail("Linux candidate validation must remain read-only and secret-free.")
 

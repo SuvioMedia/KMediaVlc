@@ -14,6 +14,11 @@ on:
         required: true
         default: 0.1.0-rc.1
         type: string
+      audit_candidate:
+        description: Build and test policies whose manual review is still pending
+        required: true
+        default: false
+        type: boolean
   push:
     branches:
       - codex/linux-bundled-runtime
@@ -54,6 +59,7 @@ jobs:
     env:
       TESTED_COMMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.tested_commit || github.sha }}
       CANDIDATE_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.candidate_version || '0.0.0-ci' }}
+      AUDIT_CANDIDATE: ${{ github.event_name == 'workflow_dispatch' && inputs.audit_candidate || false }}
     steps:
       - name: Check out KMediaVlc
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -179,15 +185,24 @@ jobs:
           mkdir "$candidate"
           stage="$candidate/runtime"
           report="$candidate/${{ matrix.target }}-audit.json"
+          candidate_args=()
+          if [[ "$AUDIT_CANDIDATE" == true ]]; then
+            candidate_args+=(--allow-audit-candidate)
+          fi
           python3 scripts/stage_vlc_linux_runtime.py \
             --root "$GITHUB_WORKSPACE" \
             --install "$install" \
             --bridge "$bridge" \
             --target "${{ matrix.target }}" \
             --output "$stage" \
-            --report "$report"
+            --report "$report" \
+            "${candidate_args[@]}"
           test "$(jq -r .selectedPluginCount "$report")" = 85
-          test "$(jq -r .auditCandidate "$report")" = false
+          if [[ "$AUDIT_CANDIDATE" == true ]]; then
+            test "$(jq -r .auditCandidate "$report")" = true
+          else
+            test "$(jq -r .auditCandidate "$report")" = false
+          fi
           LD_LIBRARY_PATH="$stage/bin" bash ./gradlew :runtime-desktop:test \
             -PkmediaVlcDesktopOnly=true \
             -PkmediaVlcNativeBridgePath="$stage/bin/libkmediavlc_bridge.so" \
@@ -202,6 +217,10 @@ jobs:
           set -euo pipefail
           candidate="$RUNNER_TEMP/kmediavlc-${{ matrix.target }}-tested-candidate"
           source_offer="https://github.com/SuvioMedia/KMediaVlc/releases/download/v$CANDIDATE_VERSION/kmedia-vlc-$CANDIDATE_VERSION-corresponding-source.tar.gz"
+          candidate_args=()
+          if [[ "$AUDIT_CANDIDATE" == true ]]; then
+            candidate_args+=(--allow-audit-candidate)
+          fi
           python3 scripts/create_posix_native_inventory.py \
             --root "$GITHUB_WORKSPACE" \
             --staging "$candidate/runtime" \
@@ -209,7 +228,8 @@ jobs:
             --output "$candidate/${{ matrix.target }}-native-inventory.json" \
             --target "${{ matrix.target }}" \
             --version "$CANDIDATE_VERSION" \
-            --source-offer "$source_offer"
+            --source-offer "$source_offer" \
+            "${candidate_args[@]}"
           cp runtime-desktop/build/test-results/test/TEST-io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest.xml \
             "$candidate/test-results.xml"
           (
