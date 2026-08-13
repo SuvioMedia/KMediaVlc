@@ -355,8 +355,9 @@ def verify_policy(root: Path) -> None:
         "hardware HDR evidence remains mandatory",
         ".vlc-source/contrib/python-venv",
         'rm -f "$stamp"',
-        "llvm-ucrt-lgpl-playback-20260611225331-v5",
+        "vlc-e439692079a75cacb5f07310d1ec2dc20bfd1fe0-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1",
         "EXACT_CACHE_HIT",
+        "if: steps.source_build.outcome == 'success' && steps.contrib_cache.outputs.cache-hit != 'true'",
         ".vlc-source/contrib/x86_64-w64-mingw32ucrt",
         "runtime_sha256: ${{ steps.package.outputs.runtime_sha256 }}",
         "EXPECTED_RUNTIME_SHA256",
@@ -386,6 +387,8 @@ def verify_policy(root: Path) -> None:
     ]
     if not all(marker in audit_workflow for marker in native_validation_markers):
         fail("The source-built VLC payload lacks mandatory native Windows validation.")
+    if "restore-keys:" in audit_workflow:
+        fail("Windows source-build caches must not fall back across VLC revisions.")
     windows_candidate_markers = [
         "audit_candidate:",
         "default: false",

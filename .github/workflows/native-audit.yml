@@ -142,12 +142,7 @@ jobs:
             .vlc-source/contrib/python-venv
             .vlc-source/extras/tools/build
             .vlc-source/win64-ucrt-meson
-          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v5
-          restore-keys: |
-            vlc-b5536cde-windows-x86_64-llvm-ucrt-lgpl-20260611225331-v4
-            vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v3
-            vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v2
-            vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v1
+          key: vlc-e439692079a75cacb5f07310d1ec2dc20bfd1fe0-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1
 
       - name: Prepare the exact playback contrib state
         env:
@@ -181,8 +176,8 @@ jobs:
             x86_64 \
             "$RUNNER_TEMP/vlc-install"
 
-      - name: Save source-built VLC state for an exact retry
-        if: always() && steps.contrib_cache.outputs.cache-hit != 'true'
+      - name: Save successful source-built VLC state
+        if: steps.source_build.outcome == 'success' && steps.contrib_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
@@ -192,7 +187,7 @@ jobs:
             .vlc-source/contrib/python-venv
             .vlc-source/extras/tools/build
             .vlc-source/win64-ucrt-meson
-          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v5
+          key: vlc-e439692079a75cacb5f07310d1ec2dc20bfd1fe0-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1
 
       - name: Require a successful source build
         if: steps.source_build.outcome != 'success'
