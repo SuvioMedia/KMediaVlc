@@ -427,12 +427,14 @@ val requireNativePayloadForPublication =
                         .lineSequence()
                         .filter(String::isNotBlank)
                         .toSet()
-                val allowedManifestParserChanges =
+                val allowedJavaOnlyChanges =
                     setOf(
                         "runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifest.java",
+                        "runtime-desktop/src/main/resources/META-INF/native-image/io.github.shusek/" +
+                            "kmedia-vlc-runtime-desktop/reachability-metadata.json",
                         "runtime-desktop/src/test/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifestTest.java",
                     )
-                val unexpectedBehaviorPaths = changedBehaviorPaths - allowedManifestParserChanges
+                val unexpectedBehaviorPaths = changedBehaviorPaths - allowedJavaOnlyChanges
                 require(unexpectedBehaviorPaths.isEmpty()) {
                     "Desktop runtime behavior or packaging policy changed after its source build: " +
                         unexpectedBehaviorPaths.sorted().joinToString()

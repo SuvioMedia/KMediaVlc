@@ -77,6 +77,22 @@ class ReleaseRepositoryPackagerTest(unittest.TestCase):
             extractor.extract(archive, extracted)
             self.assertEqual(5, len(central.base_files(extracted, version, "ios")))
 
+    def test_packages_only_the_desktop_artifact_set(self) -> None:
+        with tempfile.TemporaryDirectory() as value:
+            root = Path(value)
+            staging = root / "staging"
+            staging.mkdir()
+            version = "0.1.0-rc.4"
+            self.create_staging(staging, version, "desktop")
+            archive = root / "desktop.tar.gz"
+
+            release.package(staging, version, 1_700_000_000, archive, "desktop")
+
+            extracted = root / "extracted"
+            extracted.mkdir()
+            extractor.extract(archive, extracted)
+            self.assertEqual(5, len(central.base_files(extracted, version, "desktop")))
+
 
 if __name__ == "__main__":
     unittest.main()
