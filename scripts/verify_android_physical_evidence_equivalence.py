@@ -30,6 +30,7 @@ POLICY_PATH = Path("compliance/policy/android-retained-physical-evidence.json")
 EXPECTED_POLICY_KEYS = {
     "schemaVersion",
     "executionCommit",
+    "vlcRevision",
     "evidence",
     "runtimeLibraries",
     "behaviorPaths",
@@ -188,7 +189,10 @@ def verify(
         fail("Android retained evidence has an invalid digest.")
 
     execution_commit = policy.get("executionCommit")
+    evidence_vlc_revision = policy.get("vlcRevision")
     behavior_paths = policy.get("behaviorPaths")
+    if not COMMIT.fullmatch(str(evidence_vlc_revision)):
+        fail("Android retained evidence VLC revision is invalid.")
     validate_history(root, execution_commit, release_commit, behavior_paths)
 
     acceptance_path = safe_repo_file(root, evidence["acceptancePath"], "Android acceptance evidence")
@@ -213,7 +217,7 @@ def verify(
         set(acceptance) != EXPECTED_ACCEPTANCE_KEYS
         or acceptance.get("schemaVersion") != 1
         or acceptance.get("kmediaVlcCommit") != execution_commit
-        or acceptance.get("vlcRevision") != PINNED_VLC_REVISION
+        or acceptance.get("vlcRevision") != evidence_vlc_revision
         or acceptance.get("libvlcjniRevision") != PINNED_LIBVLCJNI_REVISION
         or acceptance.get("testClass") != TEST_CLASS
         or acceptance.get("testCases") != list(TEST_CASES)

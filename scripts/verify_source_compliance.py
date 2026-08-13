@@ -1042,6 +1042,7 @@ def verify_android_contract(root: Path) -> None:
     expected_retained_policy = {
         "schemaVersion": 1,
         "executionCommit": "6a5d1b6d8c6e13bc7e89a853bf680455d38e7429",
+        "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
         "evidence": retained_evidence,
         "runtimeLibraries": retained_libraries,
         "behaviorPaths": retained_behavior_paths,
@@ -1079,7 +1080,8 @@ def verify_android_contract(root: Path) -> None:
         retained_acceptance.get("schemaVersion") != 1
         or retained_acceptance.get("kmediaVlcCommit")
         != expected_retained_policy["executionCommit"]
-        or retained_acceptance.get("vlcRevision") != PINNED_REVISION
+        or retained_acceptance.get("vlcRevision")
+        != expected_retained_policy["vlcRevision"]
         or retained_acceptance.get("libvlcjniRevision")
         != PINNED_LIBVLCJNI_REVISION
         or retained_acceptance.get("payload", {}).get("runtimeLibraries")

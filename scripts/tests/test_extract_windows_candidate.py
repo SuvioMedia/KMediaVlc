@@ -40,7 +40,7 @@ class ExtractWindowsCandidateTest(unittest.TestCase):
         self.base = Path(self.temporary.name)
         self.staging = self.base / "staging"
         self.inventory = self.base / "inventory.json"
-        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=False)
+        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=True)
         paths = [
             "bin/kmediavlc_bridge.dll",
             "bin/libvlc.dll",
@@ -64,6 +64,7 @@ class ExtractWindowsCandidateTest(unittest.TestCase):
             self.inventory,
             VERSION,
             SOURCE_OFFER,
+            allow_audit_candidate=True,
         )
 
     def tearDown(self) -> None:
@@ -78,12 +79,13 @@ class ExtractWindowsCandidateTest(unittest.TestCase):
                     target.write(path, path.relative_to(staging).as_posix())
         return archive
 
-    def test_extracts_only_hash_bound_approved_candidate(self) -> None:
+    def test_extracts_only_hash_bound_audit_candidate(self) -> None:
         output = self.base / "output"
         EXTRACTOR.extract(
             self.archive("candidate.zip"),
             self.inventory,
             output,
+            allow_audit_candidate=True,
         )
         self.assertEqual(96, len([path for path in output.rglob("*") if path.is_file()]))
         self.assertEqual(

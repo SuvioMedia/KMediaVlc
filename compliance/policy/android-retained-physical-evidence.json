@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "executionCommit": "6a5d1b6d8c6e13bc7e89a853bf680455d38e7429",
+  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
   "evidence": {
     "acceptancePath": "compliance/evidence/android-physical-6a5d1b6/acceptance.json",
     "acceptanceSha256": "d3b57dbd4eed89a11e5a84532273537c1d93eea70d7f5043518c52faa27abf38",
