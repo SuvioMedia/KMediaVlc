@@ -70,13 +70,27 @@ def verify(
     version: str,
     release_commit: str,
     runtime_commit: str,
+    target: str = "desktop-matrix",
 ) -> str:
     root = PACKAGER.real_repository(root, release_commit)
     vlc = PACKAGER.real_repository(vlc, PACKAGER.VLC_REVISION, PACKAGER.VLC_REVISION)
     archive_path = archive_path.resolve(strict=True)
     if archive_path.is_symlink() or not archive_path.is_file():
         fail("Release corresponding-source archive must be a real file.")
-    required = PACKAGER.required_archives(root)
+    if target == "desktop-matrix":
+        policies = PACKAGER.POLICIES
+        targets = [
+            "linux-aarch64",
+            "linux-x86_64",
+            "macos-aarch64",
+            "windows-x86_64",
+        ]
+    elif target == "ios":
+        policies = PACKAGER.IOS_POLICIES
+        targets = ["ios-arm64", "ios-simulator-arm64"]
+    else:
+        fail(f"Unsupported corresponding-source target: {target}")
+    required = PACKAGER.required_archives(root, policies)
     contrib = PACKAGER.source_inputs(contrib_directories, required)
     selected_hashes = {name: PACKAGER.digest(path) for name, path in contrib.items()}
 
@@ -123,17 +137,12 @@ def verify(
                 manifest = json.load(manifest_stream)
             expected_manifest = {
                 "schemaVersion": 1,
-                "target": "desktop-matrix",
+                "target": target,
                 "releaseVersion": version,
                 "releaseCommit": release_commit,
                 "runtimeCommit": runtime_commit,
                 "vlcRevision": PACKAGER.VLC_REVISION,
-                "targets": [
-                    "linux-aarch64",
-                    "linux-x86_64",
-                    "macos-aarch64",
-                    "windows-x86_64",
-                ],
+                "targets": targets,
                 "kmediaVlcFileCount": len(kmedia),
                 "vlcFileCount": len(vlc_files),
                 "selectedContribSha256": selected_hashes,
@@ -159,6 +168,11 @@ def main() -> int:
     parser.add_argument("--version", required=True)
     parser.add_argument("--release-commit", required=True)
     parser.add_argument("--runtime-commit", required=True)
+    parser.add_argument(
+        "--target",
+        choices=("desktop-matrix", "ios"),
+        default="desktop-matrix",
+    )
     arguments = parser.parse_args()
     value = verify(
         arguments.root,
@@ -168,6 +182,7 @@ def main() -> int:
         arguments.version,
         arguments.release_commit,
         arguments.runtime_commit,
+        arguments.target,
     )
     print(f"Verified release corresponding source: {value}")
     return 0

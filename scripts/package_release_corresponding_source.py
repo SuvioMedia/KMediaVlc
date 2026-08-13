@@ -29,6 +29,7 @@ POLICIES = (
     "compliance/policy/linux-binary-components.json",
     "compliance/policy/macos-aarch64-binary-components.json",
 )
+IOS_POLICIES = ("compliance/policy/ios-binary-components.json",)
 
 
 def fail(message: str) -> None:
@@ -102,17 +103,17 @@ def safe_git_members(archive: tarfile.TarFile, prefix: PurePosixPath) -> dict[Pu
     return values
 
 
-def required_archives(root: Path) -> list[str]:
+def required_archives(root: Path, policies: tuple[str, ...] = POLICIES) -> list[str]:
     names: set[str] = set()
-    for relative in POLICIES:
+    for relative in policies:
         policy = json.loads((root / relative).read_text(encoding="utf-8"))
         components = policy.get("components")
         if not isinstance(components, dict) or not components:
-            fail(f"Desktop source policy is incomplete: {relative}")
+            fail(f"Source policy is incomplete: {relative}")
         for component in components.values():
             name = component.get("sourceArchive") if isinstance(component, dict) else None
             if not isinstance(name, str) or PurePosixPath(name).name != name:
-                fail(f"Desktop source policy has an unsafe source archive: {relative}")
+                fail(f"Source policy has an unsafe source archive: {relative}")
             names.add(name)
     return sorted(names)
 
@@ -122,21 +123,21 @@ def source_inputs(directories: list[Path], required: list[str]) -> dict[str, Pat
     for raw in directories:
         directory = raw.resolve(strict=True)
         if raw.is_symlink() or not directory.is_dir():
-            fail("Desktop contrib source input must be a real directory.")
+            fail("Contrib source input must be a real directory.")
         for path in directory.iterdir():
             if path.name == "SHA256SUMS":
                 continue
             if path.is_symlink() or not path.is_file() or path.stat().st_size == 0:
-                fail(f"Desktop contrib source input is unsafe: {path}")
+                fail(f"Contrib source input is unsafe: {path}")
             copies.setdefault(path.name, []).append(path)
     selected: dict[str, Path] = {}
     for name in required:
         candidates = copies.get(name, [])
         if not candidates:
-            fail(f"Desktop corresponding source omits {name}.")
+            fail(f"Corresponding source omits {name}.")
         hashes = {digest(path) for path in candidates}
         if len(hashes) != 1:
-            fail(f"Desktop corresponding source inputs disagree for {name}.")
+            fail(f"Corresponding source inputs disagree for {name}.")
         selected[name] = candidates[0]
     return selected
 
@@ -164,6 +165,7 @@ def package(
     release_commit: str,
     runtime_commit: str,
     epoch: int,
+    target: str = "desktop-matrix",
 ) -> str:
     root = real_repository(root, release_commit)
     vlc = real_repository(vlc, VLC_REVISION, VLC_REVISION)
@@ -176,11 +178,24 @@ def package(
             ["git", "-C", str(root), "merge-base", "--is-ancestor", runtime_commit, release_commit]
         ).returncode != 0
     ):
-        fail("Desktop runtime commit is not an ancestor of the release commit.")
+        fail("Runtime commit is not an ancestor of the release commit.")
     output = output.absolute()
     if output.exists() or output.is_symlink() or not output.parent.is_dir():
         fail("Corresponding-source output must be a new file.")
-    required = required_archives(root)
+    if target == "desktop-matrix":
+        policies = POLICIES
+        targets = [
+            "linux-aarch64",
+            "linux-x86_64",
+            "macos-aarch64",
+            "windows-x86_64",
+        ]
+    elif target == "ios":
+        policies = IOS_POLICIES
+        targets = ["ios-arm64", "ios-simulator-arm64"]
+    else:
+        fail(f"Unsupported corresponding-source target: {target}")
+    required = required_archives(root, policies)
     contrib = source_inputs(contrib_directories, required)
     selected_hashes = {name: digest(path) for name, path in contrib.items()}
 
@@ -195,17 +210,12 @@ def package(
             vlc_members = safe_git_members(vlc_source, ROOT / "vlc")
             manifest = {
                 "schemaVersion": 1,
-                "target": "desktop-matrix",
+                "target": target,
                 "releaseVersion": version,
                 "releaseCommit": release_commit,
                 "runtimeCommit": runtime_commit,
                 "vlcRevision": VLC_REVISION,
-                "targets": [
-                    "linux-aarch64",
-                    "linux-x86_64",
-                    "macos-aarch64",
-                    "windows-x86_64",
-                ],
+                "targets": targets,
                 "kmediaVlcFileCount": len(kmedia_members),
                 "vlcFileCount": len(vlc_members),
                 "selectedContribSha256": selected_hashes,
@@ -272,6 +282,11 @@ def main() -> int:
     parser.add_argument("--release-commit", required=True)
     parser.add_argument("--runtime-commit", required=True)
     parser.add_argument("--epoch", type=int, required=True)
+    parser.add_argument(
+        "--target",
+        choices=("desktop-matrix", "ios"),
+        default="desktop-matrix",
+    )
     arguments = parser.parse_args()
     value = package(
         arguments.root,
@@ -282,6 +297,7 @@ def main() -> int:
         arguments.release_commit,
         arguments.runtime_commit,
         arguments.epoch,
+        arguments.target,
     )
     print(f"{value}  {arguments.output.name}")
     return 0

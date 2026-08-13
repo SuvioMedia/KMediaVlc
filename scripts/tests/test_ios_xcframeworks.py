@@ -124,6 +124,15 @@ class IosXcframeworkTest(unittest.TestCase):
         self.assertIn("SuvioMedia/KMediaVlc/releases/download/v1.2.3", value)
         self.assertIn(":sha256 => '" + "a" * 64 + "'", value)
 
+    def test_generated_podspec_accepts_an_immutable_prerelease(self) -> None:
+        value = podspec(
+            "0.1.0-rc.3",
+            "16.2",
+            "kmedia-vlc-0.1.0-rc.3-ios-xcframeworks.zip",
+            "b" * 64,
+        )
+        self.assertIn("spec.version               = '0.1.0-rc.3'", value)
+
     def test_podspec_verifier_rejects_archive_drift(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

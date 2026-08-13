@@ -17,6 +17,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "KMediaVlc"
 include(":runtime-desktop")
+include(":runtime-ios")
 
 val desktopOnly =
     providers.gradleProperty("kmediaVlcDesktopOnly").orNull?.let { configuredValue ->

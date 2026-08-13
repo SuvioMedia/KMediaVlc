@@ -1541,9 +1541,26 @@ def verify_macos_transport_contract(root: Path) -> None:
         "--disable-gnuv3",
         "--disable-sout",
         "--enable-ad-clauses",
-        *(f"--enable-{package}" for package in selected_contribs),
+        *(
+            f"--enable-{package}"
+            for package in selected_contribs
+            if package != "libplacebo"
+        ),
     }
-    if actual_contrib_options != expected_contrib_options:
+    macos_contrib_match = re.search(
+        r"export VLC_CONTRIB_OPTIONS_MACOSX=\(\n(?P<body>.*?)\n\)",
+        profile,
+        re.DOTALL,
+    )
+    macos_contrib_options = {
+        line.strip()
+        for line in (macos_contrib_match.group("body").splitlines() if macos_contrib_match else [])
+        if line.strip()
+    }
+    if (
+        actual_contrib_options != expected_contrib_options
+        or macos_contrib_options != {"--enable-libplacebo"}
+    ):
         fail("The Apple contrib profile differs from its closed package graph.")
     configure_markers = [
         "--disable-addonmanagermodules",
@@ -1965,6 +1982,11 @@ def verify_ios_runtime_contract(root: Path) -> None:
     ):
         if marker not in profile:
             fail("The Apple VLC profile does not pin its iOS target contract.")
+    if (
+        profile.count("--enable-libplacebo") != 2
+        or profile.count("--disable-libplacebo") != 1
+    ):
+        fail("The Apple VLC profile must keep libplacebo enabled only for macOS.")
     builder = (root / "scripts/build_vlc_ios.sh").read_text(encoding="utf-8")
     builder_markers = [
         'readonly PINNED_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"',
@@ -2133,11 +2155,25 @@ def verify_ios_runtime_contract(root: Path) -> None:
         "84 playback modules",
         "87 dynamic frameworks",
         "XCFramework",
-        "Publication gates still open",
-        "not release-eligible",
+        "Maven artifact",
+        "auditCandidate=true",
+        "Remaining acceptance evidence",
+        "does not claim",
     ]
     if not all(marker in documentation for marker in documentation_markers):
-        fail("The iOS runtime documentation must remain exact and publication-fail-closed.")
+        fail("The iOS runtime documentation must disclose its exact prerelease evidence.")
+
+    ios_publication = (root / "runtime-ios/build.gradle.kts").read_text(encoding="utf-8")
+    ios_publication_markers = [
+        'artifactId = "kmedia-vlc-runtime-ios"',
+        'providers.gradleProperty("kmediaVlcIosXcframeworkArchive")',
+        'providers.gradleProperty("kmediaVlcIosCorrespondingSourceArchive")',
+        'extension = "zip"',
+        'classifier = "corresponding-source"',
+        "validateIosPublication",
+    ]
+    if not all(marker in ios_publication for marker in ios_publication_markers):
+        fail("The Maven iOS XCFramework publication is incomplete.")
 
 
 def verify_linux_runtime_contract(root: Path) -> None:
@@ -2769,10 +2805,12 @@ def verify_multiplatform_release_contract(root: Path) -> None:
     if (
         '"kmedia-vlc-runtime-android"' not in central
         or '"kmedia-vlc-runtime-desktop"' not in central
+        or '"kmedia-vlc-runtime-ios"' not in central
         or '"primaryExtension": "aar"' not in central
+        or '"primaryExtension": "zip"' not in central
         or '"android-ndk-source", "tar.gz"' not in central
     ):
-        fail("The Maven Central bundle does not close both public coordinates.")
+        fail("The Maven Central bundle does not close every public coordinate set.")
 
     android_audit = (root / ".github/workflows/android-release-audit.yml").read_text(
         encoding="utf-8"

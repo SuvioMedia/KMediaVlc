@@ -35,7 +35,12 @@ from stage_vlc_ios_frameworks import (  # noqa: E402
 )
 
 
-SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
+SEMVER_NUMBER = r"(?:0|[1-9][0-9]*)"
+SEMVER_PRERELEASE_IDENTIFIER = r"(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
+SEMVER = re.compile(
+    rf"{SEMVER_NUMBER}\.{SEMVER_NUMBER}\.{SEMVER_NUMBER}"
+    rf"(?:-{SEMVER_PRERELEASE_IDENTIFIER}(?:\.{SEMVER_PRERELEASE_IDENTIFIER})*)?"
+)
 REVISION = re.compile(r"^[0-9a-f]{40}$")
 EXPECTED_SELECTED_PLUGIN_COUNT = 84
 EXPECTED_FRAMEWORK_COUNT = EXPECTED_SELECTED_PLUGIN_COUNT + len(FIXED_FRAMEWORKS)
@@ -445,8 +450,8 @@ def podspec(
     archive_name: str,
     archive_sha256: str,
 ) -> str:
-    if not SEMVER.fullmatch(version):
-        fail("iOS CocoaPod version must be a stable semantic version")
+    if not SEMVER.fullmatch(version) or "SNAPSHOT" in version.upper():
+        fail("iOS CocoaPod version must be immutable non-SNAPSHOT SemVer")
     if len(archive_sha256) != 64 or any(
         character not in "0123456789abcdef" for character in archive_sha256
     ):
@@ -536,7 +541,11 @@ def assemble(
     allow_audit_candidate: bool,
 ) -> None:
     expected_archive = f"kmedia-vlc-{version}-ios-xcframeworks.zip"
-    if not SEMVER.fullmatch(version) or not REVISION.fullmatch(revision):
+    if (
+        not SEMVER.fullmatch(version)
+        or "SNAPSHOT" in version.upper()
+        or not REVISION.fullmatch(revision)
+    ):
         fail("iOS assembly version or revision is invalid")
     if archive.name != expected_archive or podspec_output.name != "KMediaVlc.podspec":
         fail("iOS assembly output names are not release-canonical")

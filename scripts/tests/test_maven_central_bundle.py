@@ -17,9 +17,15 @@ SPEC.loader.exec_module(CENTRAL)
 
 
 class MavenCentralBundleTest(unittest.TestCase):
-    def create_staging(self, root: Path, version: str) -> Path:
+    def create_staging(
+        self,
+        root: Path,
+        version: str,
+        artifact_set: str = "multiplatform",
+    ) -> Path:
         first: Path | None = None
-        for artifact, contract in CENTRAL.ARTIFACTS.items():
+        for artifact in CENTRAL.selected_artifacts(artifact_set):
+            contract = CENTRAL.ARTIFACTS[artifact]
             directory = root / CENTRAL.GROUP / artifact / version
             directory.mkdir(parents=True)
             first = first or directory
@@ -43,7 +49,7 @@ class MavenCentralBundleTest(unittest.TestCase):
             version = "0.1.0-rc.1"
             directory = self.create_staging(root, version)
             generated = []
-            for artifact in CENTRAL.ARTIFACTS:
+            for artifact in CENTRAL.selected_artifacts("multiplatform"):
                 artifact_root = root / CENTRAL.GROUP / artifact
                 prefix = f"{artifact}-{version}"
                 module = artifact_root / version / f"{prefix}.module"
@@ -89,6 +95,31 @@ class MavenCentralBundleTest(unittest.TestCase):
             with zipfile.ZipFile(output) as archive:
                 self.assertEqual(44, len(archive.namelist()))
                 self.assertTrue(all(name.startswith("io/github/shusek/") for name in archive.namelist()))
+
+    def test_packages_the_ios_coordinate_as_an_independent_deployment(self) -> None:
+        with tempfile.TemporaryDirectory() as value:
+            root = Path(value)
+            version = "0.1.0-rc.3"
+            self.create_staging(root, version, "ios")
+            bases = CENTRAL.base_files(root, version, "ios")
+            self.assertEqual(5, len(bases))
+            for path in bases:
+                path.with_name(path.name + ".asc").write_bytes(b"signature")
+            arguments = type(
+                "Arguments",
+                (),
+                {"staging": root, "version": version, "artifact_set": "ios"},
+            )()
+            CENTRAL.checksums(arguments)
+            output = root / "central-ios.zip"
+            arguments.output = output
+            arguments.epoch = 1_700_000_000
+            CENTRAL.package(arguments)
+            with zipfile.ZipFile(output) as archive:
+                self.assertEqual(20, len(archive.namelist()))
+                self.assertTrue(
+                    all("kmedia-vlc-runtime-ios" in name for name in archive.namelist())
+                )
 
     def test_rejects_snapshot_extra_file_and_missing_signature(self) -> None:
         with tempfile.TemporaryDirectory() as value:
