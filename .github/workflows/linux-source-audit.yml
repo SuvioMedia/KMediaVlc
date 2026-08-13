@@ -66,7 +66,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           repository: videolan/vlc
-          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          ref: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
           path: .vlc-source
           fetch-depth: 1
           persist-credentials: false
@@ -80,7 +80,7 @@ jobs:
           [[ "$CANDIDATE_VERSION" =~ $semver ]]
           [[ "${CANDIDATE_VERSION^^}" != *SNAPSHOT* ]]
           test "$(git rev-parse HEAD)" = "$TESTED_COMMIT"
-          test "$(git -C .vlc-source rev-parse HEAD)" = b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          test "$(git -C .vlc-source rev-parse HEAD)" = e439692079a75cacb5f07310d1ec2dc20bfd1fe0
           test -z "$(git status --porcelain --untracked-files=no)"
           test -z "$(git -C .vlc-source status --porcelain --untracked-files=no)"
           python3 scripts/verify_source_compliance.py --root .

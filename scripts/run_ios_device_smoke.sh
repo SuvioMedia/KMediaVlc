@@ -5,7 +5,7 @@ set -euo pipefail
 
 readonly BUNDLE_ID="io.github.shusek.kmediavlc.smoke"
 readonly PLAYBACK_FIXTURE_SHA256="f9cee3480b4619e2d94979a30b40f19cbb417289d3453e7bbb890a871c6f9718"
-readonly VLC_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+readonly VLC_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 
 if [[ $# -ne 4 ]]; then
     echo "usage: $0 <signed-device-app> <new-absolute-work-directory> <device-identifier> <tested-commit>" >&2

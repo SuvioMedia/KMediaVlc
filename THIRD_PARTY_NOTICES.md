@@ -9,7 +9,7 @@ their upstream terms.
 
 ## VideoLAN VLC / libVLC
 
-The Windows runtime and Apple audit candidates are built from VideoLAN VLC revision `b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`. VLC/libVLC and the selected playback modules are distributed under LGPL-2.1-or-later except for the additional direct-source terms recorded in each closed module policy. The LGPL-2.1 text is included as `LICENSES/LGPL-2.1.txt`.
+The Windows runtime and Apple audit candidates are pinned to VideoLAN VLC revision `e439692079a75cacb5f07310d1ec2dc20bfd1fe0`. VLC/libVLC and the selected playback modules are distributed under LGPL-2.1-or-later except for the additional direct-source terms recorded in each closed module policy. The LGPL-2.1 text is included as `LICENSES/LGPL-2.1.txt`.
 
 Official source: https://code.videolan.org/videolan/vlc
 
@@ -54,14 +54,14 @@ SPDX inventory as the effective aggregate conclusion.
 
 ## Windows x86_64 playback dependency inventory
 
-The following closed inventory is derived from the pinned contrib inputs and is bound to the exact
-runtime commit by the automatic release checks.
+The following candidate inventory is derived from the pinned contrib inputs. Its pending source
+and link audits must pass before the automatic release checks can approve a runtime.
 
-| Component | Version | SPDX license | Reviewed source input | Included notice/terms |
+| Component | Version | SPDX license | Pinned source input | Included notice/terms |
 | --- | --- | --- | --- | --- |
-| ffmpeg | 8.1.2 | LGPL-2.1-or-later | `ffmpeg-8.1.2.tar.xz` | `LICENSES/FFmpeg-LICENSE.txt` |
+| ffmpeg | 9.0 | LGPL-2.1-or-later | `ffmpeg-9.0.tar.xz` | `LICENSES/FFmpeg-LICENSE.txt` |
 | flac | 1.5.0 | BSD-3-Clause | `flac-1.5.0.tar.xz` | `LICENSES/FLAC-COPYING-XIPH.txt` |
-| freetype | 2.13.1 | FTL | `freetype-2.13.1.tar.xz` | `LICENSES/FreeType-FTL.txt` |
+| freetype | 2.14.3 | FTL | `freetype-2.14.3.tar.xz` | `LICENSES/FreeType-FTL.txt` |
 | fribidi | 1.0.16 | LGPL-2.1-or-later | `fribidi-1.0.16.tar.xz` | `LICENSES/LGPL-2.1.txt` |
 | gmp | 6.3.0 | LGPL-3.0-or-later | `gmp-6.3.0.tar.xz` | `LICENSES/LGPL-3.0.txt` |
 | gnutls | 3.8.13 | LGPL-2.1-or-later | `gnutls-3.8.13.tar.xz` | `LICENSES/LGPL-2.1.txt` |
@@ -73,7 +73,7 @@ runtime commit by the automatic release checks.
 | libdvbpsi | 1.3.3 | LGPL-2.1-or-later | `libdvbpsi-1.3.3.tar.bz2` | `LICENSES/LGPL-2.1.txt` |
 | libebml | 1.4.6 | LGPL-2.1-or-later | `libebml-1.4.6.tar.xz` | `LICENSES/LGPL-2.1.txt` |
 | libgcrypt | 1.12.2 | LGPL-2.1-or-later | `libgcrypt-1.12.2.tar.bz2` | `LICENSES/LGPL-2.1.txt` |
-| libgpg-error | 1.56 | LGPL-2.1-or-later | `libgpg-error-1.56.tar.bz2` | `LICENSES/LGPL-2.1.txt` |
+| libgpg-error | 1.61 | LGPL-2.1-or-later | `libgpg-error-1.61.tar.bz2` | `LICENSES/LGPL-2.1.txt` |
 | libiconv | 1.18 | LGPL-2.1-or-later | `libiconv-1.18.tar.gz` | `LICENSES/LGPL-2.1.txt` |
 | libjpeg-turbo | 3.1.4.1 | IJG AND Zlib | `libjpeg-turbo-3.1.4.1.tar.gz` | `LICENSES/libjpeg-turbo-LICENSE.txt` |
 | libmatroska | 1.7.2 | LGPL-2.1-or-later | `libmatroska-1.7.2.tar.xz` | `LICENSES/LGPL-2.1.txt` |
@@ -91,20 +91,20 @@ runtime commit by the automatic release checks.
 
 ## macOS arm64 playback dependency inventory
 
-The macOS audit candidate reuses the reviewed rows above for FFmpeg, FLAC,
+The macOS audit candidate reuses the pinned rows above for FFmpeg, FLAC,
 FreeType, FriBidi, GSM, HarfBuzz, libass, libdvbpsi, libebml, libiconv,
 libjpeg-turbo, libmatroska, libogg, libpng, libvorbis, libxml2, OpenJPEG,
 Opus, SoXR, and zlib. Its additional decoder and HDR renderer inputs are:
 
-| Component | Version | SPDX license | Reviewed source input | Included notice/terms |
+| Component | Version | SPDX license | Pinned source input | Included notice/terms |
 | --- | --- | --- | --- | --- |
 | dav1d | 1.5.4 | BSD-2-Clause | `dav1d-1.5.4.tar.xz` | `LICENSES/Dav1d-COPYING.txt` |
 | glad | 2.0.4 | Apache-2.0 AND CC0-1.0 AND MIT | `glad-2.0.4.tar.gz` | `LICENSES/glad-LICENSE.txt` |
-| jinja | 3.1.2 | BSD-3-Clause | `jinja-3.1.2.tar.gz` | `LICENSES/Jinja-LICENSE.txt` |
+| jinja | 3.1.6 | BSD-3-Clause | `jinja-3.1.6.tar.gz` | `LICENSES/Jinja-LICENSE.txt` |
 | libplacebo | 5.264.1 | CC0-1.0 AND LGPL-2.1-or-later | `libplacebo-v5.264.1.tar.gz` | `LICENSES/libplacebo-LICENSE.txt` |
 | libvpx | 1.16.0 | BSD-3-Clause | `libvpx-1.16.0.tar.gz` | `LICENSES/libvpx-LICENSE.txt` |
-| markupsafe | 2.1.1 | BSD-3-Clause | `markupsafe-2.1.1.tar.gz` | `LICENSES/MarkupSafe-LICENSE.txt` |
-| vulkan-headers | 1.3.275 | Apache-2.0 AND MIT | `Vulkan-Headers-1.3.275.tar.gz` | `LICENSES/Vulkan-Headers-LICENSE.txt` |
+| markupsafe | 2.1.5 | BSD-3-Clause | `markupsafe-2.1.5.tar.gz` | `LICENSES/MarkupSafe-LICENSE.txt` |
+| vulkan-headers | 1.4.355 | Apache-2.0 AND MIT | `Vulkan-Headers-1.4.355.tar.gz` | `LICENSES/Vulkan-Headers-LICENSE.txt` |
 
 Jinja and MarkupSafe are native build-time generator inputs only. Vulkan-Headers
 is a header-only input to libplacebo's stub API; the macOS runtime does not
@@ -112,7 +112,7 @@ contain or load Vulkan Loader or glslang.
 
 The macOS candidate is built with Xcode 26.6 (17F113), the macOS 26.5 SDK,
 an arm64-only target, and a minimum deployment version of macOS 14.0. Its
-component and module policies are approved for the retained release candidate.
+component and module policies remain pending until the bumped source is rebuilt and audited.
 
 ## iOS arm64 playback dependency inventory
 
@@ -121,16 +121,15 @@ macOS rows above, but use the system iOS iconv implementation instead of
 shipping libiconv. The local contrib closure also records the header-only
 dependency compiled into libEBML's Matroska path:
 
-| Component | Version | SPDX license | Reviewed source input | Included notice/terms |
+| Component | Version | SPDX license | Pinned source input | Included notice/terms |
 | --- | --- | --- | --- | --- |
 | utfcpp | 3.2.5 | BSL-1.0 | `utfcpp-3.2.5.tar.gz` | `LICENSES/BSL-1.0.txt` |
 
-Both iOS slices are built with Xcode 26.6 (17F113), the iOS 26.5 SDK, arm64,
-and a minimum deployment version of iOS 16.2. The 84 selected VLC plugins,
-their application-private XCFramework graph, and real simulator playback have
-candidate evidence. Device playback plus the source, link-command, and license
-reviews remain open; this inventory does not make the iOS payload
-release-eligible.
+Both iOS slices target Xcode 26.6 (17F113), the iOS 26.5 SDK, arm64, and a
+minimum deployment version of iOS 16.2. The 84 selected VLC plugins and their
+application-private XCFramework graph must be rebuilt for the bumped revision.
+Existing simulator and device evidence belongs to the previous pin and does
+not make this candidate release-eligible.
 
 ## Toolchain runtime inputs
 

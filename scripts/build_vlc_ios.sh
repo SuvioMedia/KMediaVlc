@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-readonly PINNED_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+readonly PINNED_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 
 if [[ $# -lt 3 || $# -gt 4 ]]; then
     echo "usage: $0 <vlc-source> <absolute-build-directory> <iphoneos|iphonesimulator> [jobs]" >&2
@@ -18,7 +18,6 @@ repository_root="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd -P)"
 configuration="$repository_root/build-recipes/vlc-apple.conf"
 source_patch="$repository_root/build-recipes/patches/vlc-ios-meson-native-compiler.patch"
 fribidi_patch="$repository_root/build-recipes/patches/fribidi-meson-native-generator.patch"
-utfcpp_rules="$repository_root/build-recipes/vlc-contrib-utfcpp-rules.mak"
 meson_native_file="$repository_root/build-recipes/vlc-apple-native.ini"
 meson_native_tmpdir="$build_directory/meson-native-tmp"
 
@@ -66,12 +65,13 @@ if [[ ! -f "$fribidi_patch" || -L "$fribidi_patch" ]]; then
     echo "pinned FriBidi source patch is missing or unsafe" >&2
     exit 1
 fi
-if [[ ! -f "$utfcpp_rules" || -L "$utfcpp_rules" ]]; then
-    echo "pinned utf8cpp contrib recipe is missing or unsafe" >&2
-    exit 1
-fi
 if [[ ! -f "$meson_native_file" || -L "$meson_native_file" ]]; then
     echo "pinned Apple Meson native file is missing or unsafe" >&2
+    exit 1
+fi
+if [[ ! -f "$source_directory/contrib/src/utfcpp/rules.mak" ]] ||
+   [[ -L "$source_directory/contrib/src/utfcpp/rules.mak" ]]; then
+    echo "pinned VLC checkout is missing its upstream utf8cpp contrib recipe" >&2
     exit 1
 fi
 
@@ -93,12 +93,6 @@ git -C "$source_directory" apply --check "$source_patch"
 git -C "$source_directory" apply "$source_patch"
 cp "$fribidi_patch" \
     "$source_directory/contrib/src/fribidi/kmediavlc-meson-native-generator.patch"
-if [[ -e "$source_directory/contrib/src/utfcpp" ]]; then
-    echo "VLC source unexpectedly contains an utf8cpp contrib recipe" >&2
-    exit 1
-fi
-mkdir "$source_directory/contrib/src/utfcpp"
-cp "$utfcpp_rules" "$source_directory/contrib/src/utfcpp/rules.mak"
 export KMEDIAVLC_MESON_NATIVE_FILE="$meson_native_file"
 export KMEDIAVLC_MESON_NATIVE_TMPDIR="$meson_native_tmpdir"
 

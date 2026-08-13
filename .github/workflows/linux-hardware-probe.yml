@@ -39,7 +39,7 @@ jobs:
       TESTED_COMMIT: ${{ inputs.tested_commit }}
       RENDER_NODE: ${{ inputs.render_node }}
       RUNNER_ARCHITECTURE: ${{ inputs.architecture }}
-      VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+      VLC_REVISION: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
     steps:
       - name: Check out the exact KMediaVlc revision
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -52,7 +52,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           repository: videolan/vlc
-          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          ref: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
           path: .vlc-source
           fetch-depth: 1
           persist-credentials: false

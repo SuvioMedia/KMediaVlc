@@ -109,6 +109,7 @@ class AndroidPhysicalEvidenceEquivalenceTest(unittest.TestCase):
         policy = {
             "schemaVersion": 1,
             "executionCommit": self.execution_commit,
+            "vlcRevision": EQUIVALENCE.PINNED_VLC_REVISION,
             "evidence": {
                 "acceptancePath": "compliance/evidence/android/acceptance.json",
                 "acceptanceSha256": self.file_digest(acceptance_path),

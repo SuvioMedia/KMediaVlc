@@ -42,7 +42,7 @@
     },
     "vlc": {
       "repository": "https://code.videolan.org/videolan/vlc.git",
-      "revision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+      "revision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
       "tree": "d796ecf4915b8e221bc973babcdbd3404ed3c957",
       "scope": "complete-tree",
       "requiredPaths": [

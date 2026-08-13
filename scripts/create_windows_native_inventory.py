@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 
-PINNED_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 PINNED_VERSION = "4.0.0-dev"
 SEMVER = re.compile(
     r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"

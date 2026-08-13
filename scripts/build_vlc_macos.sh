@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-readonly PINNED_REVISION="b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+readonly PINNED_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 
 if [[ $# -lt 2 || $# -gt 3 ]]; then
     echo "usage: $0 <vlc-source> <absolute-build-directory> [jobs]" >&2

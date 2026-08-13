@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: videolan/vlc
-          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          ref: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
           path: .vlc-source
           sparse-checkout: include
 
@@ -50,7 +50,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: videolan/vlc
-          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          ref: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
           path: .vlc-source
           sparse-checkout: include
 
@@ -94,7 +94,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: videolan/vlc
-          ref: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+          ref: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
           path: .vlc-source
           sparse-checkout: include
 

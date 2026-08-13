@@ -4,8 +4,8 @@
 
 Linux x86-64 and AArch64 are implemented as source-built, unpublished
 libVLC 4 candidates. Both targets use the exact VideoLAN revision
-`b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`, an 85-plugin closed playback
-allowlist, and the reviewed 26-component contrib graph. No Linux native
+`e439692079a75cacb5f07310d1ec2dc20bfd1fe0`, an 85-plugin closed playback
+allowlist, and a 26-component contrib graph pending a fresh source/link audit. No Linux native
 payload is downloaded at runtime or retained by validation CI.
 
 The candidate baseline is glibc 2.39. The six deliberately system-provided

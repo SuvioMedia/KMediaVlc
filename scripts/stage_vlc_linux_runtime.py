@@ -12,7 +12,7 @@ import subprocess
 from pathlib import Path
 
 
-PINNED_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 TARGET_MACHINES = {
     "linux-x86_64": "Advanced Micro Devices X86-64",
     "linux-aarch64": "AArch64",

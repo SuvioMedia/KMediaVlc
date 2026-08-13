@@ -37,7 +37,7 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
         self.base = Path(self.temporary.name)
         self.staging = self.base / "staging"
         self.output = self.base / "inventory.json"
-        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=False)
+        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=True)
         paths = [
             "bin/kmediavlc_bridge.dll",
             "bin/libvlc.dll",
@@ -54,13 +54,14 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def test_creates_packager_valid_approved_inventory(self) -> None:
+    def test_creates_packager_valid_audit_candidate_inventory(self) -> None:
         inventory = INVENTORY.create(
             ROOT,
             self.staging,
             self.output,
             VERSION,
             SOURCE_OFFER,
+            allow_audit_candidate=True,
         )
         self.assertEqual(96, len(inventory["files"]))
         self.assertTrue((self.staging / INVENTORY.AUDIT_NAME).is_file())
@@ -118,6 +119,7 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
                 self.output,
                 VERSION,
                 SOURCE_OFFER,
+                allow_audit_candidate=True,
             )
 
 

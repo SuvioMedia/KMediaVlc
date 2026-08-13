@@ -51,7 +51,7 @@ jobs:
       WINDOWS_AUDIT_RUN_ID: ${{ inputs.windows_audit_run_id }}
       LINUX_AUDIT_RUN_ID: ${{ inputs.linux_audit_run_id }}
       MACOS_AUDIT_RUN_ID: ${{ inputs.macos_audit_run_id }}
-      VLC_REVISION: b5536cdea24b313ba9215eacfbd7fa3295d7f3ee
+      VLC_REVISION: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
     steps:
       - name: Check out the exact hotfix revision
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6

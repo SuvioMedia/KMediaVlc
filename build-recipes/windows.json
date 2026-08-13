@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "videolan-vlc-windows-lgpl",
-  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+  "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
   "publicationTargets": ["windows-x86_64", "windows-aarch64"],
   "auditToolchainImage": "registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331",
   "compiler": "LLVM-MinGW-UCRT",

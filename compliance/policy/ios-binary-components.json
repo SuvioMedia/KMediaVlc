@@ -4,7 +4,7 @@
     "ios-arm64",
     "ios-simulator-arm64"
   ],
-  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+  "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
   "toolchain": {
     "xcodeVersion": "26.6",
     "xcodeBuild": "17F113",
@@ -21,9 +21,9 @@
       "sourceArchive": "dav1d-1.5.4.tar.xz"
     },
     "ffmpeg": {
-      "version": "8.1.2",
+      "version": "9.0",
       "licenseSpdx": ["LGPL-2.1-or-later"],
-      "sourceArchive": "ffmpeg-8.1.2.tar.xz"
+      "sourceArchive": "ffmpeg-9.0.tar.xz"
     },
     "flac": {
       "version": "1.5.0",
@@ -31,9 +31,9 @@
       "sourceArchive": "flac-1.5.0.tar.xz"
     },
     "freetype": {
-      "version": "2.13.1",
+      "version": "2.14.3",
       "licenseSpdx": ["FTL"],
-      "sourceArchive": "freetype-2.13.1.tar.xz"
+      "sourceArchive": "freetype-2.14.3.tar.xz"
     },
     "fribidi": {
       "version": "1.0.16",

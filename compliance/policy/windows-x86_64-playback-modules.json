@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "target": "windows-x86_64",
-  "vlcRevision": "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
-  "reviewStatus": "approved",
+  "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+  "reviewStatus": "pending-meson-dependency-audit",
   "primaryLicenseSpdx": "LGPL-2.1-or-later",
   "additionalDirectSourceLicenses": {
     "mkv": ["MIT"],

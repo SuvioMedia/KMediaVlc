@@ -3,7 +3,7 @@
 # Android bundled libVLC 4
 
 KMediaVlc has a narrow Android AAR boundary for the exact VLC revision
-`b5536cdea24b313ba9215eacfbd7fa3295d7f3ee`. The source-build tooling is pinned
+`e439692079a75cacb5f07310d1ec2dc20bfd1fe0`. The source-build tooling is pinned
 separately to VideoLAN `libvlcjni` revision
 `a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21`.
 
@@ -12,6 +12,10 @@ builds, emulator coverage, and physical ARM64 HDR playback evidence are implemen
 output remains `releaseEligible=false`. The release promoter changes that state only after the
 automatic forbidden-license scan passes and the release-bound source archives verify against
 their exact Git objects and hashes.
+
+The retained device evidence was produced for the previous VLC pin. The bumped
+revision must complete the same source build, emulator, and physical HDR gates
+before it can replace any Maven payload.
 
 ## AAR contract
 

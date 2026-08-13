@@ -20,7 +20,7 @@ cmake_executable="$(cd "$(dirname "$3")" && pwd -P)/$(basename "$3")"
 work_directory="$(cd "$4" && pwd -P)"
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
-[[ "$(git -C "$vlc_source" rev-parse HEAD)" == b5536cdea24b313ba9215eacfbd7fa3295d7f3ee ]] || exit 1
+[[ "$(git -C "$vlc_source" rev-parse HEAD)" == e439692079a75cacb5f07310d1ec2dc20bfd1fe0 ]] || exit 1
 [[ "$(sed -n 's/^Pkg.Revision = //p' "$ndk_directory/source.properties")" == 29.0.14206865 ]] || exit 1
 
 host_tag=darwin-x86_64

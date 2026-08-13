@@ -23,12 +23,12 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.bundling.Jar
 
-private val VLC_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+private val VLC_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 private val LIBVLCJNI_REVISION = "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21"
 private val ANDROID_ABIS = setOf("arm64-v8a", "armeabi-v7a")
 private val ANDROID_LIBRARIES = setOf("libkmediavlc_android.so", "libvlc.so")
 private object AndroidLegalEvidence {
-private const val VLC_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+private const val VLC_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 private const val LLVM_PROJECT_REVISION = "386af4a5c64ab75eaee2448dc38f2e34a40bfed0"
 private const val LLVM_ANDROID_REVISION = "1dab3288f660d43a6cb2479107e2b54b3ab0a2a1"
 private const val NDK_SOURCE_CANDIDATE_STATUS =
@@ -500,7 +500,7 @@ abstract class VerifyVlcAndroidPayload : DefaultTask() {
         val expected =
             linkedMapOf(
                 "schemaVersion" to "1",
-                "vlcRevision" to "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee",
+                "vlcRevision" to "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
                 "libvlcjniRevision" to "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21",
                 "bridgeAbi" to "1",
                 "renderEngine" to "ANATIVEWINDOW",
