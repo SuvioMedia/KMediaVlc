@@ -1,0 +1,24 @@
+{
+  "reflection": [
+    {
+      "type": "io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayer$NativeEventSink",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "onFrameAvailable",
+          "parameterTypes": [
+            "long",
+            "long"
+          ]
+        },
+        {
+          "name": "onPlaybackStateChanged",
+          "parameterTypes": [
+            "int",
+            "long"
+          ]
+        }
+      ]
+    }
+  ]
+}

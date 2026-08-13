@@ -304,6 +304,22 @@ val verifyRuntimeJar =
                         "META-INF/THIRD_PARTY_NOTICES.md",
                     )
                 require(names.containsAll(required)) { "Runtime JAR is missing mandatory legal files." }
+                val graalMetadataPath =
+                    "META-INF/native-image/io.github.shusek/" +
+                        "kmedia-vlc-runtime-desktop/reachability-metadata.json"
+                val graalMetadataEntry = jar.getEntry(graalMetadataPath)
+                require(graalMetadataEntry != null) {
+                    "Runtime JAR is missing GraalVM JNI reachability metadata."
+                }
+                val graalMetadata =
+                    jar.getInputStream(graalMetadataEntry).bufferedReader().use { reader -> reader.readText() }
+                require(
+                    graalMetadata.contains("VlcDesktopPlayer\$NativeEventSink") &&
+                        graalMetadata.contains("onFrameAvailable") &&
+                        graalMetadata.contains("onPlaybackStateChanged"),
+                ) {
+                    "GraalVM JNI reachability metadata is missing the native event callbacks."
+                }
                 val expectedLicenses =
                     rootProject.layout.projectDirectory
                         .dir("LICENSES")

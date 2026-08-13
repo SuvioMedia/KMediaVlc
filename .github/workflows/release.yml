@@ -90,7 +90,7 @@ jobs:
           python3 -m unittest discover -s scripts/tests -p 'test_*.py'
           python3 scripts/verify_fast_release_licenses.py --root .
           git merge-base --is-ancestor "$DESKTOP_RUNTIME_COMMIT" "$TESTED_COMMIT"
-          # A Java-only manifest-parser hotfix may reuse byte-identical retained native payloads.
+          # A Java-only desktop hotfix may reuse byte-identical retained native payloads.
           restricted_changes="$(git diff --name-only "$DESKTOP_RUNTIME_COMMIT..$TESTED_COMMIT" -- \
             native runtime-desktop/src build-recipes patches/vlc gradle/libs.versions.toml \
             compliance/policy/release-policy.json \
@@ -103,7 +103,7 @@ jobs:
             compliance/policy/android-static-components.json \
             scripts/package_native_runtime.py scripts/package_native_runtime_matrix.py)"
           unexpected_restricted_changes="$(printf '%s\n' "$restricted_changes" | sed '/^$/d' | \
-            grep -Ev '^(runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifest.java|runtime-desktop/src/test/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifestTest.java)$' || true)"
+            grep -Ev '^(runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifest.java|runtime-desktop/src/test/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifestTest.java|runtime-desktop/src/main/resources/META-INF/native-image/io\.github\.shusek/kmedia-vlc-runtime-desktop/reachability-metadata\.json)$' || true)"
           test -z "$unexpected_restricted_changes"
 
           tag="v$VERSION"
