@@ -145,11 +145,17 @@ bool publish_test_frame(libvlc_media_player_t* player) {
     const auto expected_transfer = player->hdr
         ? libvlc_video_transfer_func_LINEAR
         : libvlc_video_transfer_func_SRGB;
+    const auto expected_orientation =
+#if defined(__APPLE__)
+        libvlc_video_orient_bottom_left;
+#else
+        libvlc_video_orient_top_left;
+#endif
     if (!updated || !left_context || output_config.u.opengl_format != gl_rgba ||
         !output_config.full_range || output_config.colorspace != libvlc_video_colorspace_BT709 ||
         output_config.primaries != libvlc_video_primaries_BT709 ||
         output_config.transfer != expected_transfer ||
-        output_config.orientation != libvlc_video_orient_top_left) {
+        output_config.orientation != expected_orientation) {
         return false;
     }
     // modules/video_output/vgl.c enters the context again from
