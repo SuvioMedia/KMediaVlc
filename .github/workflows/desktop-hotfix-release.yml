@@ -232,6 +232,8 @@ jobs:
           echo "KMEDIAVLC_NATIVE_MATRIX=$matrix" >> "$GITHUB_ENV"
 
       - name: Assemble and verify complete desktop corresponding source
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -239,19 +241,24 @@ jobs:
           git clone --no-checkout --filter=blob:none https://github.com/videolan/vlc.git "$vlc_source"
           git -C "$vlc_source" fetch --depth=1 origin "$VLC_REVISION"
           git -C "$vlc_source" checkout --detach FETCH_HEAD
-          windows_contrib="$RUNNER_TEMP/audit/windows-contrib"
-          mkdir "$windows_contrib"
-          python3 scripts/prefetch_vlc_archive.py \
-            --checksum-manifest "$vlc_source/contrib/src/speexdsp/SHA512SUMS" \
-            --archive speexdsp-1.2.1.tar.gz \
-            --destination-directory "$windows_contrib" \
-            --url https://downloads.videolan.org/pub/contrib/speexdsp/speexdsp-1.2.1.tar.gz \
-            --url https://ftp.osuosl.org/pub/xiph/releases/speex/speexdsp-1.2.1.tar.gz
+          retained_release="$RUNNER_TEMP/retained-release"
+          retained_contrib="$RUNNER_TEMP/retained-contrib"
+          mkdir "$retained_release" "$retained_contrib"
+          retained_name="kmedia-vlc-0.1.0-rc.2-corresponding-source.tar.gz"
+          gh release download v0.1.0-rc.2 --dir "$retained_release" \
+            --pattern "$retained_name" --pattern SHA256SUMS
+          retained_hash="$(awk -v name="$retained_name" \
+            '$2 == name || $2 == "./" name {print $1}' "$retained_release/SHA256SUMS")"
+          [[ "$retained_hash" =~ ^[0-9a-f]{64}$ ]]
+          test "$retained_hash" = \
+            "$(sha256sum "$retained_release/$retained_name" | awk '{print $1}')"
+          tar -xzf "$retained_release/$retained_name" -C "$retained_contrib" \
+            --strip-components=2 corresponding-source/contrib-tarballs
           source_archive="$RUNNER_TEMP/kmedia-vlc-$VERSION-corresponding-source.tar.gz"
           source_arguments=(
             --root "$GITHUB_WORKSPACE"
             --vlc "$vlc_source"
-            --contrib "$windows_contrib"
+            --contrib "$retained_contrib"
             --contrib "$RUNNER_TEMP/audit/linux-aarch64-source"
             --contrib "$RUNNER_TEMP/audit/linux-x86_64-source"
             --contrib "$RUNNER_TEMP/audit/macos-aarch64-source"
