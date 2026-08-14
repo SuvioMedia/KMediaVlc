@@ -264,13 +264,18 @@ jobs:
           tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
             -czf "$RUNNER_TEMP/audit-assets/kmedia-vlc-corresponding-source-candidate.tar.gz" \
             -C "$RUNNER_TEMP" corresponding-source
+          candidate_args=()
+          if [[ "$AUDIT_CANDIDATE" = true ]]; then
+            candidate_args+=(--allow-audit-candidate)
+          fi
           python3 scripts/package_corresponding_source.py \
             --root "$GITHUB_WORKSPACE" \
             --candidate "$RUNNER_TEMP/audit-assets/kmedia-vlc-corresponding-source-candidate.tar.gz" \
             --output "$RUNNER_TEMP/audit-assets/kmedia-vlc-$CANDIDATE_VERSION-corresponding-source-audit.tar.gz" \
             --tested-commit "$TESTED_COMMIT" \
             --version "$CANDIDATE_VERSION" \
-            --epoch "$epoch"
+            --epoch "$epoch" \
+            "${candidate_args[@]}"
           (
             cd "$RUNNER_TEMP/audit-assets"
             sha256sum \
