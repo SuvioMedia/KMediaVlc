@@ -90,7 +90,16 @@ bool configure_plugin_directory(const char* value, std::string& error) {
         error = "One process cannot use plugin directories from two different VLC runtimes.";
         return false;
     }
-#if defined(_WIN32)
+#if defined(KMEDIAVLC_IOS)
+    // iOS embeds every signed plug-in as a sibling framework. There is no
+    // writable or pre-generated VLC plug-in cache in the application bundle,
+    // so bind discovery to that exact flattened Frameworks directory.
+    if (setenv("VLC_LIB_PATH", path.c_str(), 1) != 0 ||
+        setenv("VLC_PLUGIN_PATH", path.c_str(), 1) != 0) {
+        error = "The verified VLC plugin search paths could not be configured.";
+        return false;
+    }
+#elif defined(_WIN32)
     // Bind both VLC lookup paths to the same verified runtime. The explicit
     // plugin path is required when MinGW-built libVLC is hosted by an MSVC JVM;
     // it also replaces any inherited, unverified plugin search directory.
@@ -601,8 +610,13 @@ kmediavlc_player* kmediavlc_player_create(const kmediavlc_player_config* config)
         "--no-video-title-show",
         "--no-osd",
         "--no-stats",
-        "--no-plugins-scan",
     };
+#if defined(KMEDIAVLC_IOS)
+    arguments.push_back("--no-plugins-cache");
+    arguments.push_back("--plugins-scan");
+#else
+    arguments.push_back("--no-plugins-scan");
+#endif
     const char* debug_callbacks = std::getenv("KMEDIAVLC_DEBUG_CALLBACKS");
     arguments.push_back(
         debug_callbacks != nullptr && std::strcmp(debug_callbacks, "1") == 0

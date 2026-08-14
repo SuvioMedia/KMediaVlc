@@ -112,7 +112,7 @@
   "requiresCorrespondingSource": true,
   "requiresRealLibVlcPlaybackTest": true,
   "stagedPluginCount": 84,
-  "rawSourceBuildPluginCount": 285,
+  "rawSourceBuildPluginCount": 286,
   "frameworkCountPerSlice": 87,
   "pluginDiscovery": "runtime-scan-of-flattened-plugin-frameworks",
   "forbidsStockNightly": true,

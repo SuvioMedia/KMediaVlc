@@ -29,18 +29,19 @@ path. The bridge deliberately excludes JNI and the macOS CGL/IOSurface
 renderer. Requests for `GPU_PUSH` fail closed until a native iOS GPU transport
 and its ownership tests exist.
 
-The candidate selects 84 playback modules from 285 source-built modules. It
+The candidate selects 84 playback modules from 286 source-built modules. It
 includes AudioUnit, VideoToolbox plus software fallback, local and HTTP(S)
 input, Matroska/MP4 demuxing, subtitles, and the conversion modules required by
 CPU pull. The package contains 87 dynamic frameworks per slice: bridge,
 libVLC, core, and the 84 selected plugins.
 
 Revision `e439692079a75cacb5f07310d1ec2dc20bfd1fe0` is the current source-build
-candidate. The retained simulator, device, relocation, and XCFramework evidence
-belongs to the previous VLC pin. All 87 frameworks and both slices must be
-rebuilt and reopened by the independent verifier before this candidate can
-replace the Maven payload. Until then, any assembled archive remains
-`auditCandidate=true`.
+candidate. Device and simulator builds from this pin each produce 286 raw
+plugins; the release payload selects and relocates the same closed set of 84
+playback plugins into 87 frameworks per slice. The independent archive verifier
+reopens both slices and their hash-bound reports. The archive remains
+`auditCandidate=true` while the physical-device acceptance evidence below is
+still open.
 
 ## Reproducing one slice
 
@@ -119,15 +120,15 @@ python3 -B scripts/assemble_ios_xcframeworks.py \
   --simulator-frameworks /absolute/ios-simulator-frameworks \
   --simulator-report /absolute/ios-simulator-frameworks.json \
   --output /absolute/kmedia-vlc-ios-aggregate \
-  --archive /absolute/kmedia-vlc-0.1.0-rc.3-ios-xcframeworks.zip \
+  --archive /absolute/kmedia-vlc-0.1.0-rc.7-ios-xcframeworks.zip \
   --podspec /absolute/KMediaVlc.podspec \
-  --version 0.1.0-rc.3 \
+  --version 0.1.0-rc.7 \
   --revision 0123456789abcdef0123456789abcdef01234567 \
   --allow-audit-candidate
 python3 -B scripts/verify_ios_xcframework_archive.py \
-  --archive /absolute/kmedia-vlc-0.1.0-rc.3-ios-xcframeworks.zip \
+  --archive /absolute/kmedia-vlc-0.1.0-rc.7-ios-xcframeworks.zip \
   --podspec /absolute/KMediaVlc.podspec \
-  --expected-version 0.1.0-rc.3 \
+  --expected-version 0.1.0-rc.7 \
   --expected-revision 0123456789abcdef0123456789abcdef01234567 \
   --allow-audit-candidate
 ```
