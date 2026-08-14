@@ -989,7 +989,7 @@ def verify_android_contract(root: Path) -> None:
             "vlc": {
                 "repository": "https://code.videolan.org/videolan/vlc.git",
                 "revision": PINNED_REVISION,
-                "tree": "d796ecf4915b8e221bc973babcdbd3404ed3c957",
+                "tree": "0c8b5ef401e6475cac55ae6a7ed6f3fb6b89e0b8",
                 "scope": "complete-tree",
                 "requiredPaths": [
                     "COPYING",
