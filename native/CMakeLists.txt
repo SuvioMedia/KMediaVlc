@@ -74,6 +74,7 @@ set_target_properties(kmediavlc_bridge PROPERTIES
 )
 
 if(KMEDIAVLC_IOS)
+    target_compile_definitions(kmediavlc_bridge PRIVATE KMEDIAVLC_IOS=1)
     target_compile_options(kmediavlc_bridge PRIVATE -Wall -Wextra -Wpedantic -Wconversion)
     target_link_libraries(kmediavlc_bridge PRIVATE ${CMAKE_DL_LIBS})
 elseif(MSVC)

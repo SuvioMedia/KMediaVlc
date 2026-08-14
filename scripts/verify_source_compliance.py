@@ -2132,7 +2132,7 @@ def verify_ios_runtime_contract(root: Path) -> None:
         or recipe.get("usesPrebuiltContribs") is not False
         or recipe.get("requiredFrameDeliveryModes") != ["CPU_PULL"]
         or recipe.get("stagedPluginCount") != 84
-        or recipe.get("rawSourceBuildPluginCount") != 285
+        or recipe.get("rawSourceBuildPluginCount") != 286
         or recipe.get("frameworkCountPerSlice") != 87
         or recipe.get("requiresApplicationPrivateRelocation") is not True
         or recipe.get("requiresConsumerCodeSigning") is not True
@@ -2196,7 +2196,7 @@ def verify_ios_runtime_contract(root: Path) -> None:
         'CORE_INSTALL_NAME = f"@rpath/{CORE_FRAMEWORK}.framework/{CORE_FRAMEWORK}"',
         'return f"lib{module}_plugin"',
         'EXPECTED_MINIMUM_IOS = "16.2"',
-        'EXPECTED_RAW_PLUGIN_COUNT = 285',
+        'EXPECTED_RAW_PLUGIN_COUNT = 286',
         '"otoolPlatform": "2"',
         '"otoolPlatform": "7"',
         'if "cmd LC_RPATH" in layout',
@@ -2245,11 +2245,23 @@ def verify_ios_runtime_contract(root: Path) -> None:
     cmake_markers = [
         'CMAKE_SYSTEM_NAME STREQUAL "iOS"',
         "if(NOT KMEDIAVLC_IOS)",
+        "KMEDIAVLC_IOS=1",
         "src/platform_renderer_stub.cpp",
         "target_link_libraries(kmediavlc_bridge PRIVATE ${CMAKE_DL_LIBS})",
     ]
     if not all(marker in cmake for marker in cmake_markers):
         fail("The iOS bridge must exclude JNI and the macOS renderer.")
+    bridge = (root / "native/src/kmediavlc_bridge.cpp").read_text(encoding="utf-8")
+    ios_plugin_discovery_markers = [
+        "#if defined(KMEDIAVLC_IOS)",
+        'setenv("VLC_LIB_PATH", path.c_str(), 1)',
+        'setenv("VLC_PLUGIN_PATH", path.c_str(), 1)',
+        'arguments.push_back("--no-plugins-cache")',
+        'arguments.push_back("--plugins-scan")',
+        'arguments.push_back("--no-plugins-scan")',
+    ]
+    if not all(marker in bridge for marker in ios_plugin_discovery_markers):
+        fail("The iOS bridge must scan only its flattened signed framework graph.")
     smoke_builder = (root / "scripts/build_ios_smoke_app.sh").read_text(encoding="utf-8")
     simulator_smoke = (root / "scripts/run_ios_simulator_smoke.sh").read_text(
         encoding="utf-8"

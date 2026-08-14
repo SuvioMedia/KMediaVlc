@@ -9,7 +9,7 @@ or package VLC binaries.
 
 ```kotlin
 dependencies {
-    implementation("io.github.shusek:kmedia-vlc-runtime-desktop:0.1.0-rc.2")
+    implementation("io.github.shusek:kmedia-vlc-runtime-desktop:0.1.0-rc.6")
 }
 ```
 
@@ -19,7 +19,7 @@ one closed matrix: the desktop JAR must contain Windows x64, Linux x64, Linux
 ARM64, and macOS ARM64, while the Android AAR must contain ARM64 and ARMv7.
 Neither coordinate is published alone when another required target is missing.
 The iOS build-time coordinate is
-`io.github.shusek:kmedia-vlc-runtime-ios:0.1.0-rc.3`. It is a ZIP containing
+`io.github.shusek:kmedia-vlc-runtime-ios:0.1.0-rc.7`. It is a ZIP containing
 device and Apple Silicon simulator XCFramework slices; Gradle resolves it from
 Maven and Xcode embeds and signs the selected frameworks in the application.
 

@@ -121,7 +121,7 @@ class StageVlcIosFrameworksTest(unittest.TestCase):
             {"16.2"}, {target["minimumOs"] for target in recipe["targets"].values()}
         )
         self.assertEqual(84, recipe["stagedPluginCount"])
-        self.assertEqual(285, recipe["rawSourceBuildPluginCount"])
+        self.assertEqual(286, recipe["rawSourceBuildPluginCount"])
         self.assertEqual(87, recipe["frameworkCountPerSlice"])
         self.assertIn("utfcpp", recipe["resolvedContribPackages"])
         self.assertEqual([], recipe["sourceOverlays"])
@@ -130,9 +130,21 @@ class StageVlcIosFrameworksTest(unittest.TestCase):
         cmake = (ROOT / "native/CMakeLists.txt").read_text(encoding="utf-8")
         self.assertIn('CMAKE_SYSTEM_NAME STREQUAL "iOS"', cmake)
         self.assertIn("if(NOT KMEDIAVLC_IOS)", cmake)
+        self.assertIn("KMEDIAVLC_IOS=1", cmake)
         self.assertIn("src/platform_renderer_stub.cpp", cmake)
         ios_branch = cmake.split("if(KMEDIAVLC_IOS)", 2)[1]
         self.assertNotIn("macos_iosurface_renderer.cpp", ios_branch.split("elseif", 1)[0])
+
+    def test_ios_bridge_scans_only_the_flattened_framework_graph(self) -> None:
+        bridge = (ROOT / "native/src/kmediavlc_bridge.cpp").read_text(
+            encoding="utf-8"
+        )
+        ios_branch = bridge.split("#if defined(KMEDIAVLC_IOS)", 1)[1]
+        self.assertIn('setenv("VLC_LIB_PATH", path.c_str(), 1)', ios_branch)
+        self.assertIn('setenv("VLC_PLUGIN_PATH", path.c_str(), 1)', ios_branch)
+        self.assertIn('arguments.push_back("--no-plugins-cache")', bridge)
+        self.assertIn('arguments.push_back("--plugins-scan")', bridge)
+        self.assertIn('arguments.push_back("--no-plugins-scan")', bridge)
 
     def test_bridge_build_script_pins_both_ios_abis(self) -> None:
         builder = (ROOT / "scripts/build_kmediavlc_ios_bridge.sh").read_text(
