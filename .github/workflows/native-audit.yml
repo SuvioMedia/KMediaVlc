@@ -287,6 +287,35 @@ jobs:
           test "$runtime_sha256" != ""
           echo "runtime_sha256=$runtime_sha256" >> "$GITHUB_OUTPUT"
 
+      - name: Stage complete Windows evidence uploads
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_upload="$RUNNER_TEMP/windows-source-audit-upload"
+          link_upload="$RUNNER_TEMP/windows-link-audit-upload"
+          mkdir "$source_upload" "$link_upload"
+          cp \
+            "$RUNNER_TEMP/audit-assets/corresponding-source-SHA256SUMS" \
+            "$RUNNER_TEMP/audit-assets/kmedia-vlc-$CANDIDATE_VERSION-corresponding-source-audit.tar.gz" \
+            "$source_upload/"
+          cp \
+            "$RUNNER_TEMP/audit-assets/toolchain.txt" \
+            "$RUNNER_TEMP/audit-assets/toolchain-static-archives-SHA256SUMS" \
+            "$RUNNER_TEMP/audit-assets/installed-SHA256SUMS" \
+            "$RUNNER_TEMP/audit-assets/contrib-source-SHA256SUMS" \
+            "$RUNNER_TEMP/audit-assets/build.ninja" \
+            "$RUNNER_TEMP/audit-assets/compile_commands.json" \
+            "$RUNNER_TEMP/audit-assets/meson-logs-meson-log.txt" \
+            "$RUNNER_TEMP/audit-assets/ninja-commands.txt" \
+            "$RUNNER_TEMP/audit-assets/ninja-graph.dot" \
+            "$link_upload/"
+          cp -a \
+            "$RUNNER_TEMP/audit-assets/toolchain-licenses" \
+            "$RUNNER_TEMP/audit-assets/meson-info" \
+            "$link_upload/"
+          test "$(find "$source_upload" -maxdepth 1 -type f | wc -l)" -eq 2
+          test "$(find "$link_upload" -mindepth 1 -maxdepth 1 | wc -l)" -eq 11
+
       - name: Upload the runtime for native Windows validation
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -300,9 +329,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: vlc-windows-x86_64-source-audit-${{ inputs.tested_commit }}
-          path: |
-            ${{ runner.temp }}/audit-assets/corresponding-source-SHA256SUMS
-            ${{ runner.temp }}/audit-assets/kmedia-vlc-${{ inputs.candidate_version }}-corresponding-source-audit.tar.gz
+          path: ${{ runner.temp }}/windows-source-audit-upload
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
@@ -311,18 +338,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: vlc-windows-x86_64-link-audit-${{ inputs.tested_commit }}
-          path: |
-            ${{ runner.temp }}/audit-assets/toolchain.txt
-            ${{ runner.temp }}/audit-assets/toolchain-static-archives-SHA256SUMS
-            ${{ runner.temp }}/audit-assets/toolchain-licenses
-            ${{ runner.temp }}/audit-assets/installed-SHA256SUMS
-            ${{ runner.temp }}/audit-assets/contrib-source-SHA256SUMS
-            ${{ runner.temp }}/audit-assets/meson-info
-            ${{ runner.temp }}/audit-assets/build.ninja
-            ${{ runner.temp }}/audit-assets/compile_commands.json
-            ${{ runner.temp }}/audit-assets/meson-logs-meson-log.txt
-            ${{ runner.temp }}/audit-assets/ninja-commands.txt
-            ${{ runner.temp }}/audit-assets/ninja-graph.dot
+          path: ${{ runner.temp }}/windows-link-audit-upload
           if-no-files-found: error
           compression-level: 6
           retention-days: 7
