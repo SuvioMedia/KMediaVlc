@@ -1877,12 +1877,17 @@ def verify_macos_transport_contract(root: Path) -> None:
         "audit_candidate:",
         "default: false",
         "AUDIT_CANDIDATE: ${{ inputs.audit_candidate }}",
-        "candidate_args+=(--allow-audit-candidate)",
+        'candidate_arg=""',
+        "candidate_arg=--allow-audit-candidate",
+        '${candidate_arg:+"$candidate_arg"}',
         'test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = true',
         'test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = false',
     ]
-    if "--allow-audit-candidate" in source_audit and not all(
-        marker in source_audit for marker in macos_candidate_markers
+    macos_optional_argument_markers = macos_candidate_markers[3:6]
+    if "--allow-audit-candidate" in source_audit and (
+        not all(marker in source_audit for marker in macos_candidate_markers)
+        or any(source_audit.count(marker) != 2 for marker in macos_optional_argument_markers)
+        or "candidate_args" in source_audit
     ):
         fail("macOS audit-candidate mode must be explicit and default to release mode.")
 
