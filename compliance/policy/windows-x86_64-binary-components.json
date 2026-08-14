@@ -3,7 +3,7 @@
   "target": "windows-x86_64",
   "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
   "toolchainImage": "registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331",
-  "reviewStatus": "pending-link-command-audit",
+  "reviewStatus": "approved",
   "components": {
     "amf": {"version": "1.5.2", "licenseSpdx": ["MIT"], "sourceArchive": "AMF-1.5.2.tar.gz"},
     "ffmpeg": {"version": "9.0", "licenseSpdx": ["LGPL-2.1-or-later"], "sourceArchive": "ffmpeg-9.0.tar.xz"},

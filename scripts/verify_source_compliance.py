@@ -14,6 +14,11 @@ from pathlib import Path
 PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 PINNED_VERSION = "4.0.0-dev"
 PINNED_LIBVLCJNI_REVISION = "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21"
+DESKTOP_AUDIT_EXECUTION_COMMIT = "afa5f0f794cb2916a8be946eb1a8baa3f7aa9198"
+DESKTOP_AUDIT_BASELINE_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+DESKTOP_AUDIT_ACCEPTANCE_SHA256 = (
+    "0a3d250ce98069be28375dd23da7f4150d2fb247d0a8c9ed379bb8d456fb5a4c"
+)
 ALLOWED_LICENSES = {
     "0BSD",
     "Apache-2.0",
@@ -443,6 +448,90 @@ def verify_policy(root: Path) -> None:
     ]
     if not all(marker in windows_stager for marker in windows_stager_markers):
         fail("The Windows staging report does not distinguish approved release inputs.")
+
+
+def verify_desktop_retained_audit(root: Path) -> None:
+    approved_policy_files = [
+        "compliance/policy/linux-binary-components.json",
+        "compliance/policy/linux-playback-modules.json",
+        "compliance/policy/macos-aarch64-binary-components.json",
+        "compliance/policy/macos-aarch64-playback-modules.json",
+        "compliance/policy/windows-x86_64-binary-components.json",
+        "compliance/policy/windows-x86_64-playback-modules.json",
+    ]
+    separate_hardware_gates = {
+        "linuxGpuPush": "pending-render-node-and-explicit-fence-test",
+        "vrConsumer": "pending-kmediaplayer-projection-acceptance",
+        "physicalHdrDisplayOutput": "not-claimed-by-this-approval",
+    }
+    expected_policy = {
+        "schemaVersion": 1,
+        "executionCommit": DESKTOP_AUDIT_EXECUTION_COMMIT,
+        "vlcBaselineRevision": DESKTOP_AUDIT_BASELINE_REVISION,
+        "vlcRevision": PINNED_REVISION,
+        "evidence": {
+            "acceptancePath": "compliance/evidence/desktop-e439692/acceptance.json",
+            "acceptanceSha256": DESKTOP_AUDIT_ACCEPTANCE_SHA256,
+        },
+        "auditRuns": {
+            "linux": 31781512402,
+            "macos": 31781512186,
+            "windows": 31781512476,
+        },
+        "approvedPolicyFiles": approved_policy_files,
+        "separateHardwareGates": separate_hardware_gates,
+    }
+    policy = load_json(root / "compliance/policy/desktop-retained-audit-e439692.json")
+    if policy != expected_policy:
+        fail("The retained desktop audit policy is not closed.")
+
+    for relative in approved_policy_files:
+        if load_json(root / relative).get("reviewStatus") != "approved":
+            fail(f"The retained desktop audit no longer approves its policy: {relative}")
+
+    acceptance_path = root / policy["evidence"]["acceptancePath"]
+    if (
+        acceptance_path.is_symlink()
+        or not acceptance_path.is_file()
+        or hashlib.sha256(acceptance_path.read_bytes()).hexdigest()
+        != DESKTOP_AUDIT_ACCEPTANCE_SHA256
+    ):
+        fail("The retained desktop audit evidence bytes changed.")
+    acceptance = load_json(acceptance_path)
+    if (
+        acceptance.get("schemaVersion") != 1
+        or acceptance.get("decision")
+        != "approved-source-link-and-runtime-candidate"
+        or acceptance.get("kmediaVlcCommit") != DESKTOP_AUDIT_EXECUTION_COMMIT
+        or acceptance.get("vlcBaselineRevision") != DESKTOP_AUDIT_BASELINE_REVISION
+        or acceptance.get("vlcRevision") != PINNED_REVISION
+        or acceptance.get("upstreamDelta")
+        != {"commitCount": 261, "changedFileCount": 374}
+        or acceptance.get("separateHardwareGates") != separate_hardware_gates
+    ):
+        fail("The retained desktop audit evidence identity is invalid.")
+    source_review = acceptance.get("manualSourceReview", {})
+    if (
+        source_review.get("windowsSelectedSourceFiles") != 487
+        or source_review.get("changedSelectedSourceFiles") != 26
+        or source_review.get("forbiddenLicenseDetected") is not False
+        or source_review.get("nonfreeComponentDetected") is not False
+    ):
+        fail("The retained desktop source-license review is incomplete.")
+    platforms = acceptance.get("platforms")
+    expected_runs = {
+        "linux-aarch64": 31781512402,
+        "linux-x86_64": 31781512402,
+        "macos-aarch64": 31781512186,
+        "windows-x86_64": 31781512476,
+    }
+    if not isinstance(platforms, dict) or set(platforms) != set(expected_runs):
+        fail("The retained desktop platform evidence matrix is incomplete.")
+    for target, run_id in expected_runs.items():
+        evidence = platforms[target]
+        tests = evidence.get("tests", {}) if isinstance(evidence, dict) else {}
+        if evidence.get("runId") != run_id or tests.get("failures") != 0:
+            fail(f"The retained desktop platform evidence is invalid: {target}")
 
 
 def verify_pin_occurrences(root: Path) -> None:
@@ -2969,6 +3058,7 @@ def main() -> None:
     verify_no_native_payload(root)
     verify_platform_project_isolation(root)
     verify_policy(root)
+    verify_desktop_retained_audit(root)
     verify_pin_occurrences(root)
     verify_macos_transport_contract(root)
     verify_ios_runtime_contract(root)

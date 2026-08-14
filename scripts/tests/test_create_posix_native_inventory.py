@@ -163,7 +163,6 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
                     target,
                     VERSION,
                     SOURCE_OFFER,
-                    allow_audit_candidate=True,
                 )
                 self.assertEqual(expected_count, len(inventory["files"]))
                 self.assertTrue((staging / INVENTORY.AUDIT_NAME).is_file())
@@ -202,7 +201,6 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
             "linux-x86_64",
             VERSION,
             SOURCE_OFFER,
-            allow_audit_candidate=True,
         )
         support = next(
             entry
@@ -263,7 +261,6 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
                 "linux-x86_64",
                 VERSION,
                 SOURCE_OFFER,
-                allow_audit_candidate=True,
             )
 
 

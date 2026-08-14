@@ -100,12 +100,31 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
                 "--strip",
                 str(tools / "strip"),
             ]
-            with mock.patch.object(sys, "argv", arguments):
+            pending_root = temporary / "pending-linux-root"
+            statuses = {
+                "linux-playback-modules.json": (
+                    "pending-elf-source-license-and-dmabuf-audit"
+                ),
+                "linux-binary-components.json": (
+                    "pending-link-command-and-license-audit"
+                ),
+            }
+            for filename, pending_status in statuses.items():
+                payload = json.loads(
+                    (ROOT / "compliance/policy" / filename).read_text(encoding="utf-8")
+                )
+                payload["reviewStatus"] = pending_status
+                destination = pending_root / "compliance/policy" / filename
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_text(json.dumps(payload), encoding="utf-8")
+
+            pending_arguments = list(arguments)
+            pending_arguments[2] = str(pending_root)
+            with mock.patch.object(sys, "argv", pending_arguments):
                 with self.assertRaisesRegex(SystemExit, "have not completed review"):
                     STAGER.main()
 
-            candidate_arguments = [*arguments, "--allow-audit-candidate"]
-            with mock.patch.object(sys, "argv", candidate_arguments):
+            with mock.patch.object(sys, "argv", arguments):
                 with mock.patch.object(STAGER, "run_tool", side_effect=self.fake_run_tool):
                     with mock.patch.object(
                         STAGER.subprocess,
@@ -116,15 +135,9 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             evidence = json.loads(report.read_text(encoding="utf-8"))
             self.assertEqual(85, evidence["selectedPluginCount"])
             self.assertEqual(85, evidence["rawPluginCount"])
-            self.assertTrue(evidence["auditCandidate"])
-            self.assertEqual(
-                "pending-elf-source-license-and-dmabuf-audit",
-                evidence["reviewStatus"],
-            )
-            self.assertEqual(
-                "pending-link-command-and-license-audit",
-                evidence["binaryReviewStatus"],
-            )
+            self.assertFalse(evidence["auditCandidate"])
+            self.assertEqual("approved", evidence["reviewStatus"])
+            self.assertEqual("approved", evidence["binaryReviewStatus"])
             self.assertEqual(90, len(evidence["files"]))
             self.assertEqual(89, len(evidence["elf"]))
             self.assertEqual(
