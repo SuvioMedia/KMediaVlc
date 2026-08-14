@@ -59,6 +59,13 @@ vlc_patch_file="$project_root/patches/vlc/0001-android-external-anw-direct-media
     fail "KMediaVlc VLC Android patch is missing"
 
 python3 "$archive_prefetcher" \
+    --checksum-manifest "$vlc_source/extras/tools/SHA512SUMS" \
+    --archive m4-1.4.21.tar.gz \
+    --destination-directory "$vlc_source/extras/tools" \
+    --url https://ftp.gnu.org/gnu/m4/m4-1.4.21.tar.gz \
+    --url https://ftpmirror.gnu.org/gnu/m4/m4-1.4.21.tar.gz
+
+python3 "$archive_prefetcher" \
     --checksum-manifest "$vlc_source/contrib/src/gcrypt/SHA512SUMS" \
     --archive libgcrypt-1.12.2.tar.bz2 \
     --destination-directory "$vlc_source/contrib/tarballs" \
