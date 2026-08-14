@@ -12,6 +12,7 @@ WORKFLOW = ROOT / ".github/workflows/macos-source-audit.yml"
 
 
 class MacosWorkflowShellTest(unittest.TestCase):
+    @unittest.skipUnless(Path("/bin/bash").is_file(), "requires /bin/bash")
     def test_optional_candidate_argument_is_bash_3_2_nounset_safe(self) -> None:
         script = r'''set -u
 candidate_arg=""
