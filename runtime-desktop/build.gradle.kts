@@ -102,7 +102,7 @@ val legacyNativeInputs =
 val legacyNativeConfigured = legacyNativeInputs.all { it } && nativeSourceOffer.isPresent
 val matrixNativeConfigured = nativeMatrix.isPresent && nativeSourceOffer.isPresent
 val nativePackagingConfigured = legacyNativeConfigured || matrixNativeConfigured
-if (nativePackagingConfigured) {
+if (matrixNativeConfigured) {
     tasks.test {
         systemProperty("kmediavlc.test.bundledManifestMatrix", "true")
     }
