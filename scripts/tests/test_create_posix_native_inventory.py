@@ -167,6 +167,22 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
                 )
                 self.assertEqual(expected_count, len(inventory["files"]))
                 self.assertTrue((staging / INVENTORY.AUDIT_NAME).is_file())
+                core = next(
+                    entry
+                    for entry in inventory["files"]
+                    if entry["role"] == "CORE"
+                )
+                self.assertIn("MIT", core["licenseSpdx"])
+                mkv = next(
+                    entry
+                    for entry in inventory["files"]
+                    if entry["path"].endswith(
+                        "libmkv_plugin.dylib"
+                        if target == "macos-aarch64"
+                        else "libmkv_plugin.so"
+                    )
+                )
+                self.assertIn("BSL-1.0", mkv["licenseSpdx"])
                 validated = PACKAGER.validate_inventory(
                     inventory,
                     PACKAGER.load_policy(ROOT),

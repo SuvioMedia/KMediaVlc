@@ -52,6 +52,9 @@ class StageVlcWindowsRuntimeTest(unittest.TestCase):
         self.assertEqual(
             "pending-link-command-audit", binary_policy["reviewStatus"]
         )
+        self.assertEqual(31, len(binary_policy["components"]))
+        self.assertEqual(["amf"], binary_policy["moduleComponents"]["direct3d11"])
+        self.assertIn("utfcpp", binary_policy["moduleComponents"]["mkv"])
         self.assertEqual(90, len(modules))
 
     def test_release_mode_rejects_pending_dependency_review(self) -> None:

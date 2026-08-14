@@ -64,6 +64,12 @@ def load_policies(root: Path, allow_audit_candidate: bool) -> tuple[dict, dict, 
     module_components = binary.get("moduleComponents")
     if not isinstance(components, dict) or not isinstance(module_components, dict):
         fail("Windows binary component policy is empty.")
+    if (
+        playback.get("coreAdditionalDirectSourceLicenses") != ["MIT"]
+        or binary.get("coreAdditionalLicenses")
+        != playback.get("coreAdditionalDirectSourceLicenses")
+    ):
+        fail("Windows core direct-source license policies are incomplete or disagree.")
     if not set(module_components).issubset(modules):
         fail("Windows binary components reference an unselected module.")
     return playback, binary, modules
@@ -164,6 +170,7 @@ def create(
     )
     add("bin/libvlc.dll", "videolan-vlc", BASE_LICENSE, "LIBVLC", "DYNAMIC")
     core_licenses = [BASE_LICENSE]
+    core_licenses.extend(binary["coreAdditionalLicenses"])
     for component_id in binary.get("coreComponents", []):
         core_licenses.extend(binary["components"][component_id]["licenseSpdx"])
     add(

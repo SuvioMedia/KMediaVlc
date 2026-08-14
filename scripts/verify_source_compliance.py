@@ -34,6 +34,7 @@ ALLOWED_LICENSES = {
     "Zlib",
 }
 COMPONENT_NOTICE_FILES = {
+    "amf": "AMF-LICENSE.txt",
     "dav1d": "Dav1d-COPYING.txt",
     "ffmpeg": "FFmpeg-LICENSE.txt",
     "flac": "FLAC-COPYING-XIPH.txt",
@@ -227,6 +228,8 @@ def verify_policy(root: Path) -> None:
     }
     if playback.get("additionalDirectSourceLicenses") != expected_additional:
         fail("Windows playback direct-source license exceptions changed without review.")
+    if playback.get("coreAdditionalDirectSourceLicenses") != ["MIT"]:
+        fail("Windows core direct-source license inventory changed without review.")
 
     binary = load_json(root / "compliance/policy/windows-x86_64-binary-components.json")
     if (
@@ -258,7 +261,7 @@ def verify_policy(root: Path) -> None:
             fail(f"Windows binary component source archive is unsafe: {component_id}")
     module_components = binary.get("moduleComponents")
     expected_component_modules = {
-        "adaptive", "avcodec", "flac", "freetype", "gnutls", "inflate", "jpeg",
+        "adaptive", "avcodec", "direct3d11", "flac", "freetype", "gnutls", "inflate", "jpeg",
         "libass", "mkv", "mp4", "ogg", "opus", "png", "sftp", "soxr",
         "speex_resampler", "swscale", "ts", "vorbis", "xml",
     }
@@ -271,12 +274,31 @@ def verify_policy(root: Path) -> None:
         if any(component_id not in components for component_id in component_ids):
             fail(f"Windows binary module references an unknown component: {module}")
         referenced_components.update(component_ids)
+    expected_windows_link_closures = {
+        "direct3d11": ["amf"],
+        "gnutls": [
+            "gmp", "gnutls", "gnutls-libtasn1", "gnutls-libunistring", "nettle", "zlib",
+        ],
+        "mkv": ["libebml", "libmatroska", "utfcpp", "zlib"],
+        "ogg": ["libogg", "libvorbis"],
+        "soxr": ["ffmpeg", "gsm", "openjpeg", "soxr", "zlib"],
+        "swscale": ["ffmpeg", "zlib"],
+    }
+    if any(
+        module_components.get(module) != component_ids
+        for module, component_ids in expected_windows_link_closures.items()
+    ):
+        fail("Windows audited static link closure changed without review.")
     core_components = binary.get("coreComponents")
     if core_components != sorted(set(core_components or [])) or any(
         component_id not in components for component_id in (core_components or [])
     ):
         fail("Windows core component closure is not canonical.")
     referenced_components.update(core_components)
+    if binary.get("coreAdditionalLicenses") != playback.get(
+        "coreAdditionalDirectSourceLicenses"
+    ):
+        fail("Windows core direct-source license policies disagree.")
     if referenced_components != set(components):
         fail("Windows binary component policy contains unused or missing components.")
     if binary.get("moduleAdditionalLicenses") != expected_additional:
@@ -1418,6 +1440,8 @@ def verify_macos_transport_contract(root: Path) -> None:
     }
     if playback.get("additionalDirectSourceLicenses") != expected_additional:
         fail("macOS playback direct-source license exceptions changed without review.")
+    if playback.get("coreAdditionalDirectSourceLicenses") != ["MIT"]:
+        fail("macOS core direct-source license inventory changed without review.")
 
     binary = load_json(root / "compliance/policy/macos-aarch64-binary-components.json")
     if (
@@ -1448,7 +1472,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         "harfbuzz", "jinja", "libass", "libdvbpsi", "libebml", "libiconv",
         "libjpeg-turbo", "libmatroska", "libogg", "libplacebo", "libpng",
         "libvorbis", "libvpx", "libxml2", "markupsafe", "openjpeg", "opus",
-        "soxr", "vulkan-headers", "zlib",
+        "soxr", "utfcpp", "vulkan-headers", "zlib",
     }
     macos_components = binary.get("components")
     if (
@@ -1492,10 +1516,18 @@ def verify_macos_transport_contract(root: Path) -> None:
         if any(component_id not in macos_components for component_id in component_ids):
             fail(f"macOS binary module references an unknown component: {module}")
         referenced_macos_components.update(component_ids)
+    if macos_module_components.get("mkv") != [
+        "libebml", "libmatroska", "utfcpp", "zlib"
+    ]:
+        fail("macOS audited Matroska link closure changed without review.")
     macos_core_components = binary.get("coreComponents")
     if macos_core_components != ["libiconv"]:
         fail("macOS core component closure changed without review.")
     referenced_macos_components.update(macos_core_components)
+    if binary.get("coreAdditionalLicenses") != playback.get(
+        "coreAdditionalDirectSourceLicenses"
+    ):
+        fail("macOS core direct-source license policies disagree.")
     if referenced_macos_components | set(expected_macos_build_only) != set(macos_components):
         fail("macOS binary component policy contains unused or missing components.")
     if binary.get("moduleAdditionalLicenses") != expected_additional:
@@ -1508,7 +1540,10 @@ def verify_macos_transport_contract(root: Path) -> None:
     ]
     resolved_contribs = sorted(
         selected_contribs +
-        ["glad", "gsm", "iconv", "jinja", "markupsafe", "openjpeg", "vulkan-headers"]
+        [
+            "glad", "gsm", "iconv", "jinja", "markupsafe", "openjpeg",
+            "utfcpp", "vulkan-headers",
+        ]
     )
     recipe = load_json(root / "build-recipes/macos.json")
     expected_build_arguments = [
@@ -2288,6 +2323,8 @@ def verify_linux_runtime_contract(root: Path) -> None:
     }
     if playback.get("additionalDirectSourceLicenses") != expected_additional:
         fail("Linux playback direct-source license exceptions changed without review.")
+    if playback.get("coreAdditionalDirectSourceLicenses") != ["MIT"]:
+        fail("Linux core direct-source license inventory changed without review.")
 
     binary = load_json(root / "compliance/policy/linux-binary-components.json")
     if (
@@ -2325,6 +2362,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "openjpeg",
         "opus",
         "soxr",
+        "utfcpp",
         "zlib",
     }
     components = binary.get("components")
@@ -2395,8 +2433,23 @@ def verify_linux_runtime_contract(root: Path) -> None:
         if any(component_id not in components for component_id in component_ids):
             fail(f"Linux binary module references an unknown component: {module}")
         referenced_components.update(component_ids)
+    expected_linux_link_closures = {
+        "gnutls": [
+            "gmp", "gnutls", "gnutls-libtasn1", "gnutls-libunistring", "nettle", "zlib",
+        ],
+        "mkv": ["libebml", "libmatroska", "utfcpp", "zlib"],
+    }
+    if any(
+        module_components.get(module) != component_ids
+        for module, component_ids in expected_linux_link_closures.items()
+    ):
+        fail("Linux audited static link closure changed without review.")
     if binary.get("coreComponents") != []:
         fail("Linux core component closure changed without review.")
+    if binary.get("coreAdditionalLicenses") != playback.get(
+        "coreAdditionalDirectSourceLicenses"
+    ):
+        fail("Linux core direct-source license policies disagree.")
     expected_support_libraries = {
         "libvlc_pulse.so": {
             "licenseSpdx": ["LGPL-2.1-or-later"],
@@ -2471,7 +2524,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "libpulse",
     ]
     expected_resolved_contribs = sorted(
-        expected_contribs + ["gmp", "gsm", "nettle", "openjpeg"]
+        expected_contribs + ["gmp", "gsm", "nettle", "openjpeg", "utfcpp"]
     )
     if (
         recipe.get("schemaVersion") != 1
@@ -2746,6 +2799,7 @@ def verify_legal_files(root: Path) -> None:
         root / "LICENSES/LGPL-3.0.txt",
         root / "LICENSES/Apache-2.0.txt",
         root / "LICENSES/ISC-kmediavlc-client-api.txt",
+        root / "LICENSES/VLC-Jaro-Winkler-MIT.txt",
         root / "gradle/wrapper/LICENSE",
     ]
     required.extend(root / "LICENSES" / name for name in set(COMPONENT_NOTICE_FILES.values()))
@@ -2773,6 +2827,11 @@ def verify_legal_files(root: Path) -> None:
     )
     if ios_toolchain_notice not in notices:
         fail("Third-party notices omit the pinned iOS toolchain.")
+    if (
+        "src/config/jaro_winkler.c" not in notices
+        or "`LICENSES/VLC-Jaro-Winkler-MIT.txt`" not in notices
+    ):
+        fail("Third-party notices omit the MIT-licensed VLC core source.")
     for component_id, component in components.items():
         licenses = " AND ".join(component["licenseSpdx"])
         row = f"| {component_id} | {component['version']} | {licenses} |"

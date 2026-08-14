@@ -7,6 +7,9 @@
   "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
   "reviewStatus": "pending-elf-source-license-and-dmabuf-audit",
   "primaryLicenseSpdx": "LGPL-2.1-or-later",
+  "coreAdditionalDirectSourceLicenses": [
+    "MIT"
+  ],
   "additionalDirectSourceLicenses": {
     "mkv": [
       "MIT"

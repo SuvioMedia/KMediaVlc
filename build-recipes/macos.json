@@ -74,6 +74,7 @@
     "opus",
     "png",
     "soxr",
+    "utfcpp",
     "vorbis",
     "vpx",
     "vulkan-headers",

@@ -75,6 +75,37 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
             for entry in audit["runtimeFiles"]
             if entry["path"].endswith("libavcodec_plugin.dll")
         ))
+        core = next(
+            entry
+            for entry in audit["runtimeFiles"]
+            if entry["path"].endswith("libvlccore-9.dll")
+        )
+        self.assertIn("MIT", core["licenseSpdx"])
+        expected_closures = {
+            "libdirect3d11_plugin.dll": ["amf"],
+            "libgnutls_plugin.dll": [
+                "gmp",
+                "gnutls",
+                "gnutls-libtasn1",
+                "gnutls-libunistring",
+                "nettle",
+                "zlib",
+            ],
+            "libmkv_plugin.dll": ["libebml", "libmatroska", "utfcpp", "zlib"],
+            "libogg_plugin.dll": ["libogg", "libvorbis"],
+            "libsoxr_plugin.dll": ["ffmpeg", "gsm", "openjpeg", "soxr", "zlib"],
+            "libswscale_plugin.dll": ["ffmpeg", "zlib"],
+        }
+        for filename, components in expected_closures.items():
+            with self.subTest(filename=filename):
+                self.assertEqual(
+                    components,
+                    next(
+                        entry["sourceComponents"]
+                        for entry in audit["runtimeFiles"]
+                        if entry["path"].endswith(filename)
+                    ),
+                )
 
         PACKAGER.inventory_path_global = self.output
         validated = PACKAGER.validate_inventory(

@@ -27,7 +27,8 @@ class StageVlcMacosRuntimeTest(unittest.TestCase):
         self.assertEqual(
             "pending-link-command-and-license-audit", binary["reviewStatus"]
         )
-        self.assertEqual(27, len(binary["components"]))
+        self.assertEqual(28, len(binary["components"]))
+        self.assertIn("utfcpp", binary["moduleComponents"]["mkv"])
         self.assertEqual(89, len(modules))
         self.assertEqual(89, len({name for _, name in modules}))
         self.assertIn(("video_output", "vgl"), modules)

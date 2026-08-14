@@ -100,6 +100,12 @@ def load_policy(root: Path, allow_audit_candidate: bool) -> tuple[dict, dict, li
         fail("Unsupported macOS binary component policy.")
     if binary.get("reviewStatus") != "approved" and not allow_audit_candidate:
         fail("macOS binary link inputs have not completed review.")
+    if (
+        policy.get("coreAdditionalDirectSourceLicenses") != ["MIT"]
+        or binary.get("coreAdditionalLicenses")
+        != policy.get("coreAdditionalDirectSourceLicenses")
+    ):
+        fail("macOS core direct-source license policies are incomplete or disagree.")
     components = binary.get("components")
     module_components = binary.get("moduleComponents")
     core_components = binary.get("coreComponents")
