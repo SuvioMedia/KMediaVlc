@@ -1768,6 +1768,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         "kmediaVlcAllowSoftwareGl=true",
         "releaseEligible:false",
         "autotools-macro-SHA256SUMS",
+        "test \"$(find \"$source_inputs\" -type f -print | awk 'END { print NR + 0 }')\" = 28",
         "path: ${{ runner.temp }}/macos-aarch64-evidence",
         "scripts/create_posix_native_inventory.py",
         'test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = false',
@@ -2604,6 +2605,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         'LD_LIBRARY_PATH="$stage/bin"',
         "pinnedVideoLanFixturePublishesCpuPullFrame",
         "scripts/create_posix_native_inventory.py",
+        'test "$(find "$source_inputs" -type f | wc -l)" = 25',
         "Upload the exact tested Linux candidate",
         "kmediavlc-${{ matrix.target }}-tested-candidate-",
     ]
