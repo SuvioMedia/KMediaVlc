@@ -14,6 +14,11 @@ from pathlib import Path
 PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 PINNED_VERSION = "4.0.0-dev"
 PINNED_LIBVLCJNI_REVISION = "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21"
+DESKTOP_AUDIT_EXECUTION_COMMIT = "afa5f0f794cb2916a8be946eb1a8baa3f7aa9198"
+DESKTOP_AUDIT_BASELINE_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
+DESKTOP_AUDIT_ACCEPTANCE_SHA256 = (
+    "0a3d250ce98069be28375dd23da7f4150d2fb247d0a8c9ed379bb8d456fb5a4c"
+)
 ALLOWED_LICENSES = {
     "0BSD",
     "Apache-2.0",
@@ -34,6 +39,7 @@ ALLOWED_LICENSES = {
     "Zlib",
 }
 COMPONENT_NOTICE_FILES = {
+    "amf": "AMF-LICENSE.txt",
     "dav1d": "Dav1d-COPYING.txt",
     "ffmpeg": "FFmpeg-LICENSE.txt",
     "flac": "FLAC-COPYING-XIPH.txt",
@@ -227,6 +233,8 @@ def verify_policy(root: Path) -> None:
     }
     if playback.get("additionalDirectSourceLicenses") != expected_additional:
         fail("Windows playback direct-source license exceptions changed without review.")
+    if playback.get("coreAdditionalDirectSourceLicenses") != ["MIT"]:
+        fail("Windows core direct-source license inventory changed without review.")
 
     binary = load_json(root / "compliance/policy/windows-x86_64-binary-components.json")
     if (
@@ -258,7 +266,7 @@ def verify_policy(root: Path) -> None:
             fail(f"Windows binary component source archive is unsafe: {component_id}")
     module_components = binary.get("moduleComponents")
     expected_component_modules = {
-        "adaptive", "avcodec", "flac", "freetype", "gnutls", "inflate", "jpeg",
+        "adaptive", "avcodec", "direct3d11", "flac", "freetype", "gnutls", "inflate", "jpeg",
         "libass", "mkv", "mp4", "ogg", "opus", "png", "sftp", "soxr",
         "speex_resampler", "swscale", "ts", "vorbis", "xml",
     }
@@ -271,12 +279,31 @@ def verify_policy(root: Path) -> None:
         if any(component_id not in components for component_id in component_ids):
             fail(f"Windows binary module references an unknown component: {module}")
         referenced_components.update(component_ids)
+    expected_windows_link_closures = {
+        "direct3d11": ["amf"],
+        "gnutls": [
+            "gmp", "gnutls", "gnutls-libtasn1", "gnutls-libunistring", "nettle", "zlib",
+        ],
+        "mkv": ["libebml", "libmatroska", "utfcpp", "zlib"],
+        "ogg": ["libogg", "libvorbis"],
+        "soxr": ["ffmpeg", "gsm", "openjpeg", "soxr", "zlib"],
+        "swscale": ["ffmpeg", "zlib"],
+    }
+    if any(
+        module_components.get(module) != component_ids
+        for module, component_ids in expected_windows_link_closures.items()
+    ):
+        fail("Windows audited static link closure changed without review.")
     core_components = binary.get("coreComponents")
     if core_components != sorted(set(core_components or [])) or any(
         component_id not in components for component_id in (core_components or [])
     ):
         fail("Windows core component closure is not canonical.")
     referenced_components.update(core_components)
+    if binary.get("coreAdditionalLicenses") != playback.get(
+        "coreAdditionalDirectSourceLicenses"
+    ):
+        fail("Windows core direct-source license policies disagree.")
     if referenced_components != set(components):
         fail("Windows binary component policy contains unused or missing components.")
     if binary.get("moduleAdditionalLicenses") != expected_additional:
@@ -355,8 +382,9 @@ def verify_policy(root: Path) -> None:
         "hardware HDR evidence remains mandatory",
         ".vlc-source/contrib/python-venv",
         'rm -f "$stamp"',
-        "llvm-ucrt-lgpl-playback-20260611225331-v5",
+        "vlc-e439692079a75cacb5f07310d1ec2dc20bfd1fe0-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1",
         "EXACT_CACHE_HIT",
+        "if: steps.source_build.outcome == 'success' && steps.contrib_cache.outputs.cache-hit != 'true'",
         ".vlc-source/contrib/x86_64-w64-mingw32ucrt",
         "runtime_sha256: ${{ steps.package.outputs.runtime_sha256 }}",
         "EXPECTED_RUNTIME_SHA256",
@@ -377,6 +405,11 @@ def verify_policy(root: Path) -> None:
         "libclang_rt.builtins-x86_64.a",
         "ninja-commands.txt",
         "ninja-graph.dot",
+        "Stage complete Windows evidence uploads",
+        "windows-source-audit-upload",
+        "windows-link-audit-upload",
+        "path: ${{ runner.temp }}/windows-source-audit-upload",
+        "path: ${{ runner.temp }}/windows-link-audit-upload",
         "vlc-windows-x86_64-link-audit-",
         "candidate_version:",
         "package_corresponding_source.py",
@@ -386,8 +419,24 @@ def verify_policy(root: Path) -> None:
     ]
     if not all(marker in audit_workflow for marker in native_validation_markers):
         fail("The source-built VLC payload lacks mandatory native Windows validation.")
-    if "--allow-audit-candidate" in audit_workflow:
-        fail("The approved Windows source audit must execute in release mode.")
+    if "restore-keys:" in audit_workflow:
+        fail("Windows source-build caches must not fall back across VLC revisions.")
+    windows_candidate_markers = [
+        "audit_candidate:",
+        "default: false",
+        "AUDIT_CANDIDATE: ${{ inputs.audit_candidate }}",
+        "candidate_args=()",
+        'if [[ "$AUDIT_CANDIDATE" = true ]]; then',
+        '"${candidate_args[@]}"',
+        "$candidateArgs += '--allow-audit-candidate'",
+        "$stagingEvidence.auditCandidate -ne $true",
+        "$stagingEvidence.auditCandidate -ne $false",
+        "if ($env:AUDIT_CANDIDATE -ne 'true')",
+    ]
+    if "--allow-audit-candidate" in audit_workflow and not all(
+        marker in audit_workflow for marker in windows_candidate_markers
+    ):
+        fail("Windows audit-candidate mode must be explicit and default to release mode.")
     windows_stager = (root / "scripts/stage_vlc_windows_runtime.py").read_text(
         encoding="utf-8"
     )
@@ -399,6 +448,90 @@ def verify_policy(root: Path) -> None:
     ]
     if not all(marker in windows_stager for marker in windows_stager_markers):
         fail("The Windows staging report does not distinguish approved release inputs.")
+
+
+def verify_desktop_retained_audit(root: Path) -> None:
+    approved_policy_files = [
+        "compliance/policy/linux-binary-components.json",
+        "compliance/policy/linux-playback-modules.json",
+        "compliance/policy/macos-aarch64-binary-components.json",
+        "compliance/policy/macos-aarch64-playback-modules.json",
+        "compliance/policy/windows-x86_64-binary-components.json",
+        "compliance/policy/windows-x86_64-playback-modules.json",
+    ]
+    separate_hardware_gates = {
+        "linuxGpuPush": "pending-render-node-and-explicit-fence-test",
+        "vrConsumer": "pending-kmediaplayer-projection-acceptance",
+        "physicalHdrDisplayOutput": "not-claimed-by-this-approval",
+    }
+    expected_policy = {
+        "schemaVersion": 1,
+        "executionCommit": DESKTOP_AUDIT_EXECUTION_COMMIT,
+        "vlcBaselineRevision": DESKTOP_AUDIT_BASELINE_REVISION,
+        "vlcRevision": PINNED_REVISION,
+        "evidence": {
+            "acceptancePath": "compliance/evidence/desktop-e439692/acceptance.json",
+            "acceptanceSha256": DESKTOP_AUDIT_ACCEPTANCE_SHA256,
+        },
+        "auditRuns": {
+            "linux": 31781512402,
+            "macos": 31781512186,
+            "windows": 31781512476,
+        },
+        "approvedPolicyFiles": approved_policy_files,
+        "separateHardwareGates": separate_hardware_gates,
+    }
+    policy = load_json(root / "compliance/policy/desktop-retained-audit-e439692.json")
+    if policy != expected_policy:
+        fail("The retained desktop audit policy is not closed.")
+
+    for relative in approved_policy_files:
+        if load_json(root / relative).get("reviewStatus") != "approved":
+            fail(f"The retained desktop audit no longer approves its policy: {relative}")
+
+    acceptance_path = root / policy["evidence"]["acceptancePath"]
+    if (
+        acceptance_path.is_symlink()
+        or not acceptance_path.is_file()
+        or hashlib.sha256(acceptance_path.read_bytes()).hexdigest()
+        != DESKTOP_AUDIT_ACCEPTANCE_SHA256
+    ):
+        fail("The retained desktop audit evidence bytes changed.")
+    acceptance = load_json(acceptance_path)
+    if (
+        acceptance.get("schemaVersion") != 1
+        or acceptance.get("decision")
+        != "approved-source-link-and-runtime-candidate"
+        or acceptance.get("kmediaVlcCommit") != DESKTOP_AUDIT_EXECUTION_COMMIT
+        or acceptance.get("vlcBaselineRevision") != DESKTOP_AUDIT_BASELINE_REVISION
+        or acceptance.get("vlcRevision") != PINNED_REVISION
+        or acceptance.get("upstreamDelta")
+        != {"commitCount": 261, "changedFileCount": 374}
+        or acceptance.get("separateHardwareGates") != separate_hardware_gates
+    ):
+        fail("The retained desktop audit evidence identity is invalid.")
+    source_review = acceptance.get("manualSourceReview", {})
+    if (
+        source_review.get("windowsSelectedSourceFiles") != 487
+        or source_review.get("changedSelectedSourceFiles") != 26
+        or source_review.get("forbiddenLicenseDetected") is not False
+        or source_review.get("nonfreeComponentDetected") is not False
+    ):
+        fail("The retained desktop source-license review is incomplete.")
+    platforms = acceptance.get("platforms")
+    expected_runs = {
+        "linux-aarch64": 31781512402,
+        "linux-x86_64": 31781512402,
+        "macos-aarch64": 31781512186,
+        "windows-x86_64": 31781512476,
+    }
+    if not isinstance(platforms, dict) or set(platforms) != set(expected_runs):
+        fail("The retained desktop platform evidence matrix is incomplete.")
+    for target, run_id in expected_runs.items():
+        evidence = platforms[target]
+        tests = evidence.get("tests", {}) if isinstance(evidence, dict) else {}
+        if evidence.get("runId") != run_id or tests.get("failures") != 0:
+            fail(f"The retained desktop platform evidence is invalid: {target}")
 
 
 def verify_pin_occurrences(root: Path) -> None:
@@ -1396,6 +1529,8 @@ def verify_macos_transport_contract(root: Path) -> None:
     }
     if playback.get("additionalDirectSourceLicenses") != expected_additional:
         fail("macOS playback direct-source license exceptions changed without review.")
+    if playback.get("coreAdditionalDirectSourceLicenses") != ["MIT"]:
+        fail("macOS core direct-source license inventory changed without review.")
 
     binary = load_json(root / "compliance/policy/macos-aarch64-binary-components.json")
     if (
@@ -1426,7 +1561,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         "harfbuzz", "jinja", "libass", "libdvbpsi", "libebml", "libiconv",
         "libjpeg-turbo", "libmatroska", "libogg", "libplacebo", "libpng",
         "libvorbis", "libvpx", "libxml2", "markupsafe", "openjpeg", "opus",
-        "soxr", "vulkan-headers", "zlib",
+        "soxr", "utfcpp", "vulkan-headers", "zlib",
     }
     macos_components = binary.get("components")
     if (
@@ -1470,10 +1605,18 @@ def verify_macos_transport_contract(root: Path) -> None:
         if any(component_id not in macos_components for component_id in component_ids):
             fail(f"macOS binary module references an unknown component: {module}")
         referenced_macos_components.update(component_ids)
+    if macos_module_components.get("mkv") != [
+        "libebml", "libmatroska", "utfcpp", "zlib"
+    ]:
+        fail("macOS audited Matroska link closure changed without review.")
     macos_core_components = binary.get("coreComponents")
     if macos_core_components != ["libiconv"]:
         fail("macOS core component closure changed without review.")
     referenced_macos_components.update(macos_core_components)
+    if binary.get("coreAdditionalLicenses") != playback.get(
+        "coreAdditionalDirectSourceLicenses"
+    ):
+        fail("macOS core direct-source license policies disagree.")
     if referenced_macos_components | set(expected_macos_build_only) != set(macos_components):
         fail("macOS binary component policy contains unused or missing components.")
     if binary.get("moduleAdditionalLicenses") != expected_additional:
@@ -1486,7 +1629,10 @@ def verify_macos_transport_contract(root: Path) -> None:
     ]
     resolved_contribs = sorted(
         selected_contribs +
-        ["glad", "gsm", "iconv", "jinja", "markupsafe", "openjpeg", "vulkan-headers"]
+        [
+            "glad", "gsm", "iconv", "jinja", "markupsafe", "openjpeg",
+            "utfcpp", "vulkan-headers",
+        ]
     )
     recipe = load_json(root / "build-recipes/macos.json")
     expected_build_arguments = [
@@ -1517,7 +1663,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         or recipe.get("renderEngine") != "OPENGL"
         or recipe.get("frameTransport") != "IOSURFACE"
         or recipe.get("stagedPluginCount") != 89
-        or recipe.get("rawSourceBuildPluginCount") != 288
+        or recipe.get("rawSourceBuildPluginCount") != 289
         or recipe.get("pluginCacheGeneratedAfterRelocation") is not True
         or recipe.get("relocationSignature") != "adhoc-replaced-by-consuming-app-signature"
         or recipe.get("requiresConsumerCodeSigning") is not True
@@ -1711,6 +1857,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         "kmediaVlcAllowSoftwareGl=true",
         "releaseEligible:false",
         "autotools-macro-SHA256SUMS",
+        "test \"$(find \"$source_inputs\" -type f -print | awk 'END { print NR + 0 }')\" = 28",
         "path: ${{ runner.temp }}/macos-aarch64-evidence",
         "scripts/create_posix_native_inventory.py",
         'test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = false',
@@ -1726,8 +1873,23 @@ def verify_macos_transport_contract(root: Path) -> None:
     ]
     if any(marker in source_audit for marker in forbidden_source_audit_markers):
         fail("The macOS source audit must remain manual and secret-free.")
-    if "--allow-audit-candidate" in source_audit:
-        fail("The approved macOS source audit must execute in release mode.")
+    macos_candidate_markers = [
+        "audit_candidate:",
+        "default: false",
+        "AUDIT_CANDIDATE: ${{ inputs.audit_candidate }}",
+        'candidate_arg=""',
+        "candidate_arg=--allow-audit-candidate",
+        '${candidate_arg:+"$candidate_arg"}',
+        'test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = true',
+        'test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = false',
+    ]
+    macos_optional_argument_markers = macos_candidate_markers[3:6]
+    if "--allow-audit-candidate" in source_audit and (
+        not all(marker in source_audit for marker in macos_candidate_markers)
+        or any(source_audit.count(marker) != 2 for marker in macos_optional_argument_markers)
+        or "candidate_args" in source_audit
+    ):
+        fail("macOS audit-candidate mode must be explicit and default to release mode.")
 
     desktop_build = (root / "runtime-desktop/build.gradle.kts").read_text(encoding="utf-8")
     if (
@@ -2256,6 +2418,8 @@ def verify_linux_runtime_contract(root: Path) -> None:
     }
     if playback.get("additionalDirectSourceLicenses") != expected_additional:
         fail("Linux playback direct-source license exceptions changed without review.")
+    if playback.get("coreAdditionalDirectSourceLicenses") != ["MIT"]:
+        fail("Linux core direct-source license inventory changed without review.")
 
     binary = load_json(root / "compliance/policy/linux-binary-components.json")
     if (
@@ -2293,6 +2457,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "openjpeg",
         "opus",
         "soxr",
+        "utfcpp",
         "zlib",
     }
     components = binary.get("components")
@@ -2363,8 +2528,23 @@ def verify_linux_runtime_contract(root: Path) -> None:
         if any(component_id not in components for component_id in component_ids):
             fail(f"Linux binary module references an unknown component: {module}")
         referenced_components.update(component_ids)
+    expected_linux_link_closures = {
+        "gnutls": [
+            "gmp", "gnutls", "gnutls-libtasn1", "gnutls-libunistring", "nettle", "zlib",
+        ],
+        "mkv": ["libebml", "libmatroska", "utfcpp", "zlib"],
+    }
+    if any(
+        module_components.get(module) != component_ids
+        for module, component_ids in expected_linux_link_closures.items()
+    ):
+        fail("Linux audited static link closure changed without review.")
     if binary.get("coreComponents") != []:
         fail("Linux core component closure changed without review.")
+    if binary.get("coreAdditionalLicenses") != playback.get(
+        "coreAdditionalDirectSourceLicenses"
+    ):
+        fail("Linux core direct-source license policies disagree.")
     expected_support_libraries = {
         "libvlc_pulse.so": {
             "licenseSpdx": ["LGPL-2.1-or-later"],
@@ -2439,7 +2619,7 @@ def verify_linux_runtime_contract(root: Path) -> None:
         "libpulse",
     ]
     expected_resolved_contribs = sorted(
-        expected_contribs + ["gmp", "gsm", "nettle", "openjpeg"]
+        expected_contribs + ["gmp", "gsm", "nettle", "openjpeg", "utfcpp"]
     )
     if (
         recipe.get("schemaVersion") != 1
@@ -2519,13 +2699,24 @@ def verify_linux_runtime_contract(root: Path) -> None:
         'LD_LIBRARY_PATH="$stage/bin"',
         "pinnedVideoLanFixturePublishesCpuPullFrame",
         "scripts/create_posix_native_inventory.py",
+        'test "$(find "$source_inputs" -type f | wc -l)" = 25',
         "Upload the exact tested Linux candidate",
         "kmediavlc-${{ matrix.target }}-tested-candidate-",
     ]
     if not all(marker in workflow for marker in workflow_markers):
         fail("Linux validation does not cover both native architectures and real CPU playback.")
-    if "--allow-audit-candidate" in workflow:
-        fail("The approved Linux source audit must execute in release mode.")
+    linux_candidate_markers = [
+        "audit_candidate:",
+        "default: false",
+        "AUDIT_CANDIDATE:",
+        "candidate_args+=(--allow-audit-candidate)",
+        'test "$(jq -r .auditCandidate "$report")" = true',
+        'test "$(jq -r .auditCandidate "$report")" = false',
+    ]
+    if "--allow-audit-candidate" in workflow and not all(
+        marker in workflow for marker in linux_candidate_markers
+    ):
+        fail("Linux audit-candidate mode must be explicit and default to release mode.")
     if "contents: write" in workflow or "${{ secrets." in workflow:
         fail("Linux candidate validation must remain read-only and secret-free.")
 
@@ -2704,6 +2895,7 @@ def verify_legal_files(root: Path) -> None:
         root / "LICENSES/LGPL-3.0.txt",
         root / "LICENSES/Apache-2.0.txt",
         root / "LICENSES/ISC-kmediavlc-client-api.txt",
+        root / "LICENSES/VLC-Jaro-Winkler-MIT.txt",
         root / "gradle/wrapper/LICENSE",
     ]
     required.extend(root / "LICENSES" / name for name in set(COMPONENT_NOTICE_FILES.values()))
@@ -2731,6 +2923,11 @@ def verify_legal_files(root: Path) -> None:
     )
     if ios_toolchain_notice not in notices:
         fail("Third-party notices omit the pinned iOS toolchain.")
+    if (
+        "src/config/jaro_winkler.c" not in notices
+        or "`LICENSES/VLC-Jaro-Winkler-MIT.txt`" not in notices
+    ):
+        fail("Third-party notices omit the MIT-licensed VLC core source.")
     for component_id, component in components.items():
         licenses = " AND ".join(component["licenseSpdx"])
         row = f"| {component_id} | {component['version']} | {licenses} |"
@@ -2866,6 +3063,7 @@ def main() -> None:
     verify_no_native_payload(root)
     verify_platform_project_isolation(root)
     verify_policy(root)
+    verify_desktop_retained_audit(root)
     verify_pin_occurrences(root)
     verify_macos_transport_contract(root)
     verify_ios_runtime_contract(root)

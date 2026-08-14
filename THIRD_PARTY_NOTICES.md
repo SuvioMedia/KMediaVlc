@@ -59,6 +59,7 @@ and link audits must pass before the automatic release checks can approve a runt
 
 | Component | Version | SPDX license | Pinned source input | Included notice/terms |
 | --- | --- | --- | --- | --- |
+| amf | 1.5.2 | MIT | `AMF-1.5.2.tar.gz` | `LICENSES/AMF-LICENSE.txt` |
 | ffmpeg | 9.0 | LGPL-2.1-or-later | `ffmpeg-9.0.tar.xz` | `LICENSES/FFmpeg-LICENSE.txt` |
 | flac | 1.5.0 | BSD-3-Clause | `flac-1.5.0.tar.xz` | `LICENSES/FLAC-COPYING-XIPH.txt` |
 | freetype | 2.14.3 | FTL | `freetype-2.14.3.tar.xz` | `LICENSES/FreeType-FTL.txt` |
@@ -87,14 +88,19 @@ and link audits must pass before the automatic release checks can approve a runt
 | opus | 1.6.1 | BSD-3-Clause | `opus-1.6.1.tar.gz` | `LICENSES/Opus-COPYING.txt` |
 | soxr | 0.1.3 | LGPL-2.1-or-later | `soxr-0.1.3-Source.tar.xz` | `LICENSES/SoXR-LICENCE.txt` |
 | speexdsp | 1.2.1 | BSD-3-Clause | `speexdsp-1.2.1.tar.gz` | `LICENSES/SpeexDSP-COPYING.txt` |
+| utfcpp | 3.2.5 | BSL-1.0 | `utfcpp-3.2.5.tar.gz` | `LICENSES/BSL-1.0.txt` |
 | zlib | 1.3.2 | Zlib | `zlib-1.3.2.tar.xz` | `LICENSES/zlib-LICENSE.txt` |
+
+AMF is a header-only compile input to the Windows Direct3D 11 plugin. The
+runtime plugin discovers an externally installed AMD AMF implementation; this
+project does not bundle an AMF runtime DLL.
 
 ## macOS arm64 playback dependency inventory
 
 The macOS audit candidate reuses the pinned rows above for FFmpeg, FLAC,
 FreeType, FriBidi, GSM, HarfBuzz, libass, libdvbpsi, libebml, libiconv,
 libjpeg-turbo, libmatroska, libogg, libpng, libvorbis, libxml2, OpenJPEG,
-Opus, SoXR, and zlib. Its additional decoder and HDR renderer inputs are:
+Opus, SoXR, utfcpp, and zlib. Its additional decoder and HDR renderer inputs are:
 
 | Component | Version | SPDX license | Pinned source input | Included notice/terms |
 | --- | --- | --- | --- | --- |
@@ -117,19 +123,22 @@ component and module policies remain pending until the bumped source is rebuilt 
 ## iOS arm64 playback dependency inventory
 
 The iOS device and Apple-silicon simulator candidates reuse the applicable
-macOS rows above, but use the system iOS iconv implementation instead of
-shipping libiconv. The local contrib closure also records the header-only
-dependency compiled into libEBML's Matroska path:
-
-| Component | Version | SPDX license | Pinned source input | Included notice/terms |
-| --- | --- | --- | --- | --- |
-| utfcpp | 3.2.5 | BSL-1.0 | `utfcpp-3.2.5.tar.gz` | `LICENSES/BSL-1.0.txt` |
+macOS rows above, including the header-only utfcpp dependency compiled into
+libEBML's Matroska path, but use the system iOS iconv implementation instead
+of shipping libiconv.
 
 Both iOS slices target Xcode 26.6 (17F113), the iOS 26.5 SDK, arm64, and a
 minimum deployment version of iOS 16.2. The 84 selected VLC plugins and their
 application-private XCFramework graph must be rebuilt for the bumped revision.
 Existing simulator and device evidence belongs to the previous pin and does
 not make this candidate release-eligible.
+
+## VLC core additional direct-source license
+
+The desktop `libvlccore` builds include VLC's
+`src/config/jaro_winkler.c`, which is licensed under MIT in addition to the
+core's primary LGPL-2.1-or-later terms. Its copyright and license terms are
+retained in `LICENSES/VLC-Jaro-Winkler-MIT.txt`.
 
 ## Toolchain runtime inputs
 

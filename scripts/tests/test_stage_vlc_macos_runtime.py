@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -19,15 +20,12 @@ SPEC.loader.exec_module(STAGER)
 
 
 class StageVlcMacosRuntimeTest(unittest.TestCase):
-    def test_loads_exact_audit_candidate_policy(self) -> None:
-        policy, binary, modules = STAGER.load_policy(ROOT, allow_audit_candidate=True)
-        self.assertEqual(
-            "pending-mach-o-and-source-license-audit", policy["reviewStatus"]
-        )
-        self.assertEqual(
-            "pending-link-command-and-license-audit", binary["reviewStatus"]
-        )
-        self.assertEqual(27, len(binary["components"]))
+    def test_loads_exact_approved_policy(self) -> None:
+        policy, binary, modules = STAGER.load_policy(ROOT, allow_audit_candidate=False)
+        self.assertEqual("approved", policy["reviewStatus"])
+        self.assertEqual("approved", binary["reviewStatus"])
+        self.assertEqual(28, len(binary["components"]))
+        self.assertIn("utfcpp", binary["moduleComponents"]["mkv"])
         self.assertEqual(89, len(modules))
         self.assertEqual(89, len({name for _, name in modules}))
         self.assertIn(("video_output", "vgl"), modules)
@@ -35,8 +33,30 @@ class StageVlcMacosRuntimeTest(unittest.TestCase):
         self.assertIn(("misc", "securetransport"), modules)
 
     def test_release_mode_rejects_pending_dependency_review(self) -> None:
-        with self.assertRaises(SystemExit):
-            STAGER.load_policy(ROOT, allow_audit_candidate=False)
+        with tempfile.TemporaryDirectory() as temporary:
+            pending_root = Path(temporary)
+            statuses = {
+                "macos-aarch64-playback-modules.json": (
+                    "pending-mach-o-and-source-license-audit"
+                ),
+                "macos-aarch64-binary-components.json": (
+                    "pending-link-command-and-license-audit"
+                ),
+            }
+            for filename, pending_status in statuses.items():
+                payload = json.loads(
+                    (ROOT / "compliance/policy" / filename).read_text(encoding="utf-8")
+                )
+                payload["reviewStatus"] = pending_status
+                destination = pending_root / "compliance/policy" / filename
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_text(json.dumps(payload), encoding="utf-8")
+            recipe = pending_root / "build-recipes/macos.json"
+            recipe.parent.mkdir(parents=True, exist_ok=True)
+            recipe.write_bytes((ROOT / "build-recipes/macos.json").read_bytes())
+
+            with self.assertRaises(SystemExit):
+                STAGER.load_policy(pending_root, allow_audit_candidate=False)
 
     def test_parses_closed_otool_records(self) -> None:
         output = """/tmp/libvlc.12.dylib:

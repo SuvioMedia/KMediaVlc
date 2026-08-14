@@ -123,6 +123,12 @@ def file_license(entry: dict, playback: dict, binary: dict) -> str:
         if not isinstance(component_licenses, list):
             fail(f"Native component licenses are invalid: {component_id}")
         licenses.extend(component_licenses)
+    if entry.get("role") == "CORE":
+        direct = playback.get("coreAdditionalDirectSourceLicenses")
+        binary_direct = binary.get("coreAdditionalLicenses")
+        if direct != ["MIT"] or binary_direct != direct:
+            fail("Native core direct-source license policies are incomplete or disagree.")
+        licenses.extend(direct)
     module = entry.get("module")
     if module is not None:
         direct = playback.get("additionalDirectSourceLicenses", {}).get(module, [])

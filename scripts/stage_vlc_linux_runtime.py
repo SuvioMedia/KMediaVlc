@@ -182,6 +182,12 @@ def load_policy(
         fail("Unsupported Linux binary component policy.")
     if binary.get("reviewStatus") != "approved" and not allow_audit_candidate:
         fail("Linux binary link inputs have not completed review.")
+    if (
+        playback.get("coreAdditionalDirectSourceLicenses") != ["MIT"]
+        or binary.get("coreAdditionalLicenses")
+        != playback.get("coreAdditionalDirectSourceLicenses")
+    ):
+        fail("Linux core direct-source license policies are incomplete or disagree.")
     components = binary.get("components")
     module_components = binary.get("moduleComponents")
     core_components = binary.get("coreComponents")

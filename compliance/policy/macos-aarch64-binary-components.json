@@ -9,7 +9,7 @@
     "minimumMacos": "14.0",
     "architecture": "arm64"
   },
-  "reviewStatus": "pending-link-command-and-license-audit",
+  "reviewStatus": "approved",
   "buildOnlyContribPackages": ["jinja", "markupsafe"],
   "components": {
     "dav1d": {
@@ -137,6 +137,11 @@
       "licenseSpdx": ["LGPL-2.1-or-later"],
       "sourceArchive": "soxr-0.1.3-Source.tar.xz"
     },
+    "utfcpp": {
+      "version": "3.2.5",
+      "licenseSpdx": ["BSL-1.0"],
+      "sourceArchive": "utfcpp-3.2.5.tar.gz"
+    },
     "vulkan-headers": {
       "version": "1.4.355",
       "licenseSpdx": ["Apache-2.0", "MIT"],
@@ -151,6 +156,7 @@
   "coreComponents": [
     "libiconv"
   ],
+  "coreAdditionalLicenses": ["MIT"],
   "moduleComponents": {
     "avcodec": ["ffmpeg", "gsm", "openjpeg", "zlib"],
     "dav1d": ["dav1d"],
@@ -160,7 +166,7 @@
     "inflate": ["zlib"],
     "jpeg": ["libjpeg-turbo"],
     "libass": ["freetype", "fribidi", "harfbuzz", "libass", "libiconv", "zlib"],
-    "mkv": ["libebml", "libmatroska", "zlib"],
+    "mkv": ["libebml", "libmatroska", "utfcpp", "zlib"],
     "mp4": ["zlib"],
     "ogg": ["libogg", "libvorbis"],
     "opus": ["libogg", "opus"],

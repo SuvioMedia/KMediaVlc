@@ -57,6 +57,7 @@
     "opus",
     "png",
     "soxr",
+    "utfcpp",
     "vorbis",
     "vpx",
     "zlib"

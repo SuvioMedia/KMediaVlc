@@ -37,7 +37,7 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
         self.base = Path(self.temporary.name)
         self.staging = self.base / "staging"
         self.output = self.base / "inventory.json"
-        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=True)
+        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=False)
         paths = [
             "bin/kmediavlc_bridge.dll",
             "bin/libvlc.dll",
@@ -54,14 +54,13 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def test_creates_packager_valid_audit_candidate_inventory(self) -> None:
+    def test_creates_packager_valid_approved_inventory(self) -> None:
         inventory = INVENTORY.create(
             ROOT,
             self.staging,
             self.output,
             VERSION,
             SOURCE_OFFER,
-            allow_audit_candidate=True,
         )
         self.assertEqual(96, len(inventory["files"]))
         self.assertTrue((self.staging / INVENTORY.AUDIT_NAME).is_file())
@@ -75,6 +74,37 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
             for entry in audit["runtimeFiles"]
             if entry["path"].endswith("libavcodec_plugin.dll")
         ))
+        core = next(
+            entry
+            for entry in audit["runtimeFiles"]
+            if entry["path"].endswith("libvlccore-9.dll")
+        )
+        self.assertIn("MIT", core["licenseSpdx"])
+        expected_closures = {
+            "libdirect3d11_plugin.dll": ["amf"],
+            "libgnutls_plugin.dll": [
+                "gmp",
+                "gnutls",
+                "gnutls-libtasn1",
+                "gnutls-libunistring",
+                "nettle",
+                "zlib",
+            ],
+            "libmkv_plugin.dll": ["libebml", "libmatroska", "utfcpp", "zlib"],
+            "libogg_plugin.dll": ["libogg", "libvorbis"],
+            "libsoxr_plugin.dll": ["ffmpeg", "gsm", "openjpeg", "soxr", "zlib"],
+            "libswscale_plugin.dll": ["ffmpeg", "zlib"],
+        }
+        for filename, components in expected_closures.items():
+            with self.subTest(filename=filename):
+                self.assertEqual(
+                    components,
+                    next(
+                        entry["sourceComponents"]
+                        for entry in audit["runtimeFiles"]
+                        if entry["path"].endswith(filename)
+                    ),
+                )
 
         PACKAGER.inventory_path_global = self.output
         validated = PACKAGER.validate_inventory(
@@ -119,7 +149,6 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
                 self.output,
                 VERSION,
                 SOURCE_OFFER,
-                allow_audit_candidate=True,
             )
 
 

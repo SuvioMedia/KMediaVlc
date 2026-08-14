@@ -14,6 +14,11 @@ on:
         required: true
         default: 0.1.0-rc.1
         type: string
+      audit_candidate:
+        description: Build and test policies whose manual review is still pending
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -35,6 +40,7 @@ jobs:
     env:
       TESTED_COMMIT: ${{ inputs.tested_commit }}
       CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+      AUDIT_CANDIDATE: ${{ inputs.audit_candidate }}
       VLC_REVISION: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
       TOOLCHAIN_IMAGE: registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331
     steps:
@@ -136,12 +142,7 @@ jobs:
             .vlc-source/contrib/python-venv
             .vlc-source/extras/tools/build
             .vlc-source/win64-ucrt-meson
-          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v5
-          restore-keys: |
-            vlc-b5536cde-windows-x86_64-llvm-ucrt-lgpl-20260611225331-v4
-            vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v3
-            vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v2
-            vlc-b5536cde-windows-x86_64-llvm-ucrt-20260611225331-v1
+          key: vlc-e439692079a75cacb5f07310d1ec2dc20bfd1fe0-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1
 
       - name: Prepare the exact playback contrib state
         env:
@@ -175,8 +176,8 @@ jobs:
             x86_64 \
             "$RUNNER_TEMP/vlc-install"
 
-      - name: Save source-built VLC state for an exact retry
-        if: always() && steps.contrib_cache.outputs.cache-hit != 'true'
+      - name: Save successful source-built VLC state
+        if: steps.source_build.outcome == 'success' && steps.contrib_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
@@ -186,7 +187,7 @@ jobs:
             .vlc-source/contrib/python-venv
             .vlc-source/extras/tools/build
             .vlc-source/win64-ucrt-meson
-          key: vlc-b5536cde-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v5
+          key: vlc-e439692079a75cacb5f07310d1ec2dc20bfd1fe0-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1
 
       - name: Require a successful source build
         if: steps.source_build.outcome != 'success'
@@ -263,13 +264,18 @@ jobs:
           tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
             -czf "$RUNNER_TEMP/audit-assets/kmedia-vlc-corresponding-source-candidate.tar.gz" \
             -C "$RUNNER_TEMP" corresponding-source
+          candidate_args=()
+          if [[ "$AUDIT_CANDIDATE" = true ]]; then
+            candidate_args+=(--allow-audit-candidate)
+          fi
           python3 scripts/package_corresponding_source.py \
             --root "$GITHUB_WORKSPACE" \
             --candidate "$RUNNER_TEMP/audit-assets/kmedia-vlc-corresponding-source-candidate.tar.gz" \
             --output "$RUNNER_TEMP/audit-assets/kmedia-vlc-$CANDIDATE_VERSION-corresponding-source-audit.tar.gz" \
             --tested-commit "$TESTED_COMMIT" \
             --version "$CANDIDATE_VERSION" \
-            --epoch "$epoch"
+            --epoch "$epoch" \
+            "${candidate_args[@]}"
           (
             cd "$RUNNER_TEMP/audit-assets"
             sha256sum \
@@ -280,6 +286,35 @@ jobs:
             "$RUNNER_TEMP/audit-assets/vlc-windows-x86_64-source-build.tar.gz" | cut -d ' ' -f 1)"
           test "$runtime_sha256" != ""
           echo "runtime_sha256=$runtime_sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Stage complete Windows evidence uploads
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_upload="$RUNNER_TEMP/windows-source-audit-upload"
+          link_upload="$RUNNER_TEMP/windows-link-audit-upload"
+          mkdir "$source_upload" "$link_upload"
+          cp \
+            "$RUNNER_TEMP/audit-assets/corresponding-source-SHA256SUMS" \
+            "$RUNNER_TEMP/audit-assets/kmedia-vlc-$CANDIDATE_VERSION-corresponding-source-audit.tar.gz" \
+            "$source_upload/"
+          cp \
+            "$RUNNER_TEMP/audit-assets/toolchain.txt" \
+            "$RUNNER_TEMP/audit-assets/toolchain-static-archives-SHA256SUMS" \
+            "$RUNNER_TEMP/audit-assets/installed-SHA256SUMS" \
+            "$RUNNER_TEMP/audit-assets/contrib-source-SHA256SUMS" \
+            "$RUNNER_TEMP/audit-assets/build.ninja" \
+            "$RUNNER_TEMP/audit-assets/compile_commands.json" \
+            "$RUNNER_TEMP/audit-assets/meson-logs-meson-log.txt" \
+            "$RUNNER_TEMP/audit-assets/ninja-commands.txt" \
+            "$RUNNER_TEMP/audit-assets/ninja-graph.dot" \
+            "$link_upload/"
+          cp -a \
+            "$RUNNER_TEMP/audit-assets/toolchain-licenses" \
+            "$RUNNER_TEMP/audit-assets/meson-info" \
+            "$link_upload/"
+          test "$(find "$source_upload" -maxdepth 1 -type f | wc -l)" -eq 2
+          test "$(find "$link_upload" -mindepth 1 -maxdepth 1 | wc -l)" -eq 11
 
       - name: Upload the runtime for native Windows validation
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -294,9 +329,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: vlc-windows-x86_64-source-audit-${{ inputs.tested_commit }}
-          path: |
-            ${{ runner.temp }}/audit-assets/corresponding-source-SHA256SUMS
-            ${{ runner.temp }}/audit-assets/kmedia-vlc-${{ inputs.candidate_version }}-corresponding-source-audit.tar.gz
+          path: ${{ runner.temp }}/windows-source-audit-upload
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
@@ -305,18 +338,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: vlc-windows-x86_64-link-audit-${{ inputs.tested_commit }}
-          path: |
-            ${{ runner.temp }}/audit-assets/toolchain.txt
-            ${{ runner.temp }}/audit-assets/toolchain-static-archives-SHA256SUMS
-            ${{ runner.temp }}/audit-assets/toolchain-licenses
-            ${{ runner.temp }}/audit-assets/installed-SHA256SUMS
-            ${{ runner.temp }}/audit-assets/contrib-source-SHA256SUMS
-            ${{ runner.temp }}/audit-assets/meson-info
-            ${{ runner.temp }}/audit-assets/build.ninja
-            ${{ runner.temp }}/audit-assets/compile_commands.json
-            ${{ runner.temp }}/audit-assets/meson-logs-meson-log.txt
-            ${{ runner.temp }}/audit-assets/ninja-commands.txt
-            ${{ runner.temp }}/audit-assets/ninja-graph.dot
+          path: ${{ runner.temp }}/windows-link-audit-upload
           if-no-files-found: error
           compression-level: 6
           retention-days: 7
@@ -329,6 +351,7 @@ jobs:
     env:
       TESTED_COMMIT: ${{ inputs.tested_commit }}
       CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+      AUDIT_CANDIDATE: ${{ inputs.audit_candidate }}
       VLC_REVISION: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
       EXPECTED_RUNTIME_SHA256: ${{ needs.build-windows-x86-64.outputs.runtime_sha256 }}
       KMEDIAVLC_TEST_HTTPS_HDR_MEDIA: https://raw.githubusercontent.com/chromium/chromium/85af8764718f33f0d221e96f31f5d993f364b4a2/media/test/data/bear-1280x720-hevc-10bit-hdr10.mp4
@@ -476,15 +499,24 @@ jobs:
           }
           $candidate = Join-Path $env:RUNNER_TEMP 'windows-x86_64-candidate'
           $report = Join-Path $env:RUNNER_TEMP 'windows-x86_64-staging-report.json'
+          $candidateArgs = @()
+          if ($env:AUDIT_CANDIDATE -eq 'true') {
+            $candidateArgs += '--allow-audit-candidate'
+          }
           python scripts/stage_vlc_windows_runtime.py `
             --root $env:GITHUB_WORKSPACE `
             --install $env:KMEDIAVLC_RAW_INSTALL `
             --bridge $bridge `
             --output $candidate `
-            --report $report
+            --report $report `
+            @candidateArgs
           if ($LASTEXITCODE -ne 0) { throw 'Closed Windows candidate staging failed.' }
           $stagingEvidence = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
-          if ($stagingEvidence.auditCandidate -ne $false) {
+          if ($env:AUDIT_CANDIDATE -eq 'true') {
+            if ($stagingEvidence.auditCandidate -ne $true) {
+              throw 'Windows candidate-mode staging did not retain its pending review state.'
+            }
+          } elseif ($stagingEvidence.auditCandidate -ne $false) {
             throw 'Windows release-mode staging produced an audit candidate.'
           }
           "KMEDIAVLC_TEST_LIBVLC=$(Join-Path $candidate 'bin\libvlc.dll')" >> $env:GITHUB_ENV
@@ -644,42 +676,49 @@ jobs:
           $inventory = Join-Path $env:RUNNER_TEMP 'windows-x86_64-native-inventory.json'
           $sourceOffer = "https://github.com/SuvioMedia/KMediaVlc/releases/download/" +
             "v$env:CANDIDATE_VERSION/kmedia-vlc-$env:CANDIDATE_VERSION-corresponding-source.tar.gz"
+          $candidateArgs = @()
+          if ($env:AUDIT_CANDIDATE -eq 'true') {
+            $candidateArgs += '--allow-audit-candidate'
+          }
           python scripts/create_windows_native_inventory.py `
             --root $env:GITHUB_WORKSPACE `
             --staging $env:KMEDIAVLC_CANDIDATE `
             --output $inventory `
             --version $env:CANDIDATE_VERSION `
-            --source-offer $sourceOffer
+            --source-offer $sourceOffer `
+            @candidateArgs
           if ($LASTEXITCODE -ne 0) { throw 'Candidate component inventory generation failed.' }
-          .\gradlew.bat :runtime-desktop:verifyRuntimeJar :runtime-desktop:test `
-            -PkmediaVlcDesktopOnly=true `
-            "-PpublicationVersion=$env:CANDIDATE_VERSION" `
-            "-PkmediaVlcNativeStagingDirectory=$env:KMEDIAVLC_CANDIDATE" `
-            "-PkmediaVlcNativeInventory=$inventory" `
-            -PkmediaVlcNativeTarget=windows-x86_64 `
-            "-PkmediaVlcSourceOffer=$sourceOffer" `
-            "-PrecipeRevision=$env:TESTED_COMMIT" `
-            -PkmediaVlcTestBundledRuntime=true `
-            --rerun-tasks `
-            --no-daemon --stacktrace --console=plain
-          $bundled = @(
-            Get-ChildItem runtime-desktop\build\test-results\test -Filter 'TEST-*.xml' |
-              ForEach-Object { ([xml](Get-Content -LiteralPath $_.FullName -Raw)).testsuite.testcase } |
-              Where-Object { $_.name -eq 'bundledRuntimeExtractsAndPublishesCpuPullFrame()' }
-          )
-          if ($bundled.Count -ne 1 -or $null -ne $bundled[0].skipped) {
-            throw 'The packaged-JAR extraction and playback test did not execute.'
+          if ($env:AUDIT_CANDIDATE -ne 'true') {
+            .\gradlew.bat :runtime-desktop:verifyRuntimeJar :runtime-desktop:test `
+              -PkmediaVlcDesktopOnly=true `
+              "-PpublicationVersion=$env:CANDIDATE_VERSION" `
+              "-PkmediaVlcNativeStagingDirectory=$env:KMEDIAVLC_CANDIDATE" `
+              "-PkmediaVlcNativeInventory=$inventory" `
+              -PkmediaVlcNativeTarget=windows-x86_64 `
+              "-PkmediaVlcSourceOffer=$sourceOffer" `
+              "-PrecipeRevision=$env:TESTED_COMMIT" `
+              -PkmediaVlcTestBundledRuntime=true `
+              --rerun-tasks `
+              --no-daemon --stacktrace --console=plain
+            $bundled = @(
+              Get-ChildItem runtime-desktop\build\test-results\test -Filter 'TEST-*.xml' |
+                ForEach-Object { ([xml](Get-Content -LiteralPath $_.FullName -Raw)).testsuite.testcase } |
+                Where-Object { $_.name -eq 'bundledRuntimeExtractsAndPublishesCpuPullFrame()' }
+            )
+            if ($bundled.Count -ne 1 -or $null -ne $bundled[0].skipped) {
+              throw 'The packaged-JAR extraction and playback test did not execute.'
+            }
+            $jar = Join-Path $env:GITHUB_WORKSPACE `
+              "runtime-desktop\build\libs\runtime-desktop-$env:CANDIDATE_VERSION.jar"
+            if (-not (Test-Path -LiteralPath $jar -PathType Leaf)) {
+              throw 'Verified candidate runtime JAR is missing.'
+            }
+            "KMEDIAVLC_CANDIDATE_JAR=$jar" >> $env:GITHUB_ENV
           }
           $evidence = Join-Path $env:RUNNER_TEMP 'windows-validation-evidence'
           Copy-Item -LiteralPath 'runtime-desktop\build\test-results\test' `
             -Destination (Join-Path $evidence 'bundled-test-results') -Recurse
-          $jar = Join-Path $env:GITHUB_WORKSPACE `
-            "runtime-desktop\build\libs\runtime-desktop-$env:CANDIDATE_VERSION.jar"
-          if (-not (Test-Path -LiteralPath $jar -PathType Leaf)) {
-            throw 'Verified candidate runtime JAR is missing.'
-          }
           "KMEDIAVLC_CANDIDATE_INVENTORY=$inventory" >> $env:GITHUB_ENV
-          "KMEDIAVLC_CANDIDATE_JAR=$jar" >> $env:GITHUB_ENV
 
       - name: Archive the verified Windows candidate
         shell: pwsh
@@ -689,10 +728,15 @@ jobs:
           Compress-Archive -Path "$env:KMEDIAVLC_CANDIDATE\*" `
             -DestinationPath $archive -CompressionLevel Optimal
           $roundTrip = Join-Path $env:RUNNER_TEMP 'windows-x86_64-candidate-round-trip'
+          $candidateArgs = @()
+          if ($env:AUDIT_CANDIDATE -eq 'true') {
+            $candidateArgs += '--allow-audit-candidate'
+          }
           python scripts/extract_windows_candidate.py `
             --archive $archive `
             --inventory $env:KMEDIAVLC_CANDIDATE_INVENTORY `
-            --output $roundTrip
+            --output $roundTrip `
+            @candidateArgs
           if ($LASTEXITCODE -ne 0) { throw 'Archived Windows candidate did not round-trip.' }
           "KMEDIAVLC_CANDIDATE_ARCHIVE=$archive" >> $env:GITHUB_ENV
 
@@ -706,6 +750,7 @@ jobs:
           retention-days: 7
 
       - name: Upload the exact tested non-release Windows candidate
+        if: inputs.audit_candidate == false
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: kmediavlc-windows-x86_64-tested-candidate-${{ inputs.tested_commit }}
@@ -713,6 +758,18 @@ jobs:
             ${{ env.KMEDIAVLC_CANDIDATE_ARCHIVE }}
             ${{ env.KMEDIAVLC_CANDIDATE_INVENTORY }}
             ${{ env.KMEDIAVLC_CANDIDATE_JAR }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload the exact tested Windows audit candidate
+        if: inputs.audit_candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: kmediavlc-windows-x86_64-tested-candidate-${{ inputs.tested_commit }}
+          path: |
+            ${{ env.KMEDIAVLC_CANDIDATE_ARCHIVE }}
+            ${{ env.KMEDIAVLC_CANDIDATE_INVENTORY }}
           if-no-files-found: error
           compression-level: 0
           retention-days: 7

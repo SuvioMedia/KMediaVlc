@@ -82,6 +82,12 @@ def load_policy(
         fail("Windows binary link inputs have not completed review.")
     if policy.get("primaryLicenseSpdx") != "LGPL-2.1-or-later":
         fail("Windows playback modules must retain their reviewed primary license.")
+    if (
+        policy.get("coreAdditionalDirectSourceLicenses") != ["MIT"]
+        or binary_policy.get("coreAdditionalLicenses")
+        != policy.get("coreAdditionalDirectSourceLicenses")
+    ):
+        fail("Windows core direct-source license policies are incomplete or disagree.")
     families = policy.get("modulesByFamily")
     if not isinstance(families, dict) or set(families) != ALLOWED_FAMILIES:
         fail("Windows playback module families are incomplete or overbroad.")
