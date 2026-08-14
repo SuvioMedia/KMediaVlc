@@ -153,6 +153,7 @@ jobs:
 
           for name in \
             "vlc-windows-x86_64-link-audit-$DESKTOP_RUNTIME_COMMIT" \
+            "vlc-windows-x86_64-source-audit-$DESKTOP_RUNTIME_COMMIT" \
             "kmediavlc-windows-x86_64-tested-candidate-$DESKTOP_RUNTIME_COMMIT" \
             "kmediavlc-windows-x86_64-native-validation-$DESKTOP_RUNTIME_COMMIT"; do
             require_artifact windows "$name"
@@ -192,6 +193,15 @@ jobs:
           run-id: ${{ inputs.windows_audit_run_id }}
           name: kmediavlc-windows-x86_64-native-validation-${{ inputs.desktop_runtime_commit }}
           path: ${{ runner.temp }}/audit/windows-validation
+
+      - name: Download the audited Windows corresponding source
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.windows_audit_run_id }}
+          name: vlc-windows-x86_64-source-audit-${{ inputs.desktop_runtime_commit }}
+          path: ${{ runner.temp }}/audit/windows-source
 
       - name: Download the tested Linux x64 runtime
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -328,14 +338,26 @@ jobs:
           git -C "$vlc_source" fetch --depth=1 origin "$VLC_REVISION"
           git -C "$vlc_source" checkout --detach FETCH_HEAD
 
+          windows_source="$RUNNER_TEMP/audit/windows-source/kmedia-vlc-$VERSION-corresponding-source-audit.tar.gz"
+          test -f "$windows_source"
+          (
+            cd "$RUNNER_TEMP/audit/windows-source"
+            sha256sum -c corresponding-source-SHA256SUMS
+          )
+          python3 scripts/verify_corresponding_source_archive.py \
+            --root "$GITHUB_WORKSPACE" \
+            --archive "$windows_source" \
+            --version "$VERSION" \
+            --tested-commit "$DESKTOP_RUNTIME_COMMIT"
+
           windows_contrib="$RUNNER_TEMP/audit/windows-contrib"
           mkdir "$windows_contrib"
-          python3 scripts/prefetch_vlc_archive.py \
-            --checksum-manifest "$vlc_source/contrib/src/speexdsp/SHA512SUMS" \
-            --archive speexdsp-1.2.1.tar.gz \
-            --destination-directory "$windows_contrib" \
-            --url https://downloads.videolan.org/pub/contrib/speexdsp/speexdsp-1.2.1.tar.gz \
-            --url https://ftp.osuosl.org/pub/xiph/releases/speex/speexdsp-1.2.1.tar.gz
+          tar -xzf "$windows_source" \
+            --directory "$windows_contrib" \
+            --strip-components=2 \
+            corresponding-source/contrib-tarballs
+          test -n "$(find "$windows_contrib" -mindepth 1 -maxdepth 1 -type f -print -quit)"
+          test -z "$(find "$windows_contrib" -mindepth 1 -maxdepth 1 ! -type f -print -quit)"
 
           final="$RUNNER_TEMP/kmedia-vlc-$VERSION-corresponding-source.tar.gz"
           python3 scripts/package_release_corresponding_source.py \
