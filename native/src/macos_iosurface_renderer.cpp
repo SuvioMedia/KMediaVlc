@@ -38,18 +38,22 @@ bool debug_callbacks_enabled() {
 
 void trace_render_config(
     const libvlc_video_render_cfg_t* config,
-    bool request_hdr) {
+    const OutputTargetSnapshot& target) {
     if (!debug_callbacks_enabled()) return;
     if (config == nullptr) {
         std::fprintf(
             stderr,
-            "[KMediaVlc macOS] render-config=null request-hdr=%d\n",
-            request_hdr ? 1 : 0);
+            "[KMediaVlc macOS] render-config=null target=%ux%u generation=%llu request-hdr=%d\n",
+            target.width,
+            target.height,
+            static_cast<unsigned long long>(target.generation),
+            target.request_hdr ? 1 : 0);
     } else {
         std::fprintf(
             stderr,
             "[KMediaVlc macOS] render-config width=%u height=%u bitdepth=%u "
-            "full-range=%d colorspace=%d primaries=%d transfer=%d request-hdr=%d\n",
+            "full-range=%d colorspace=%d primaries=%d transfer=%d target=%ux%u "
+            "generation=%llu request-hdr=%d\n",
             config->width,
             config->height,
             config->bitdepth,
@@ -57,7 +61,10 @@ void trace_render_config(
             static_cast<int>(config->colorspace),
             static_cast<int>(config->primaries),
             static_cast<int>(config->transfer),
-            request_hdr ? 1 : 0);
+            target.width,
+            target.height,
+            static_cast<unsigned long long>(target.generation),
+            target.request_hdr ? 1 : 0);
     }
     std::fflush(stderr);
 }
@@ -405,7 +412,7 @@ private:
             set_error(player_, "The requested macOS IOSurface exceeds the OpenGL texture limit.");
             return false;
         }
-        trace_render_config(config, target.request_hdr);
+        trace_render_config(config, target);
         source_dynamic_range_ = source_dynamic_range(config);
         source_extended_ = source_dynamic_range_ == KMEDIAVLC_SOURCE_DYNAMIC_RANGE_HDR10 ||
             source_dynamic_range_ == KMEDIAVLC_SOURCE_DYNAMIC_RANGE_HLG;
@@ -435,7 +442,9 @@ private:
     bool ensure_surfaces(std::uint32_t width, std::uint32_t height, bool floating_point) {
         if (!surfaces_.empty() && surfaces_.front()->width == width &&
             surfaces_.front()->height == height &&
-            surfaces_.front()->floating_point == floating_point) {
+            surfaces_.front()->floating_point == floating_point && discard_surface_ != nullptr &&
+            discard_surface_->width == width && discard_surface_->height == height &&
+            discard_surface_->floating_point == floating_point) {
             return true;
         }
         std::vector<std::shared_ptr<MacSurface>> replacement;
@@ -445,8 +454,12 @@ private:
             if (!surface) return false;
             replacement.push_back(std::move(surface));
         }
+        auto discard_surface = create_surface(width, height, floating_point);
+        if (!discard_surface) return false;
         current_surface_.reset();
+        discarding_frame_ = false;
         surfaces_ = std::move(replacement);
+        discard_surface_ = std::move(discard_surface);
         return true;
     }
 
@@ -515,11 +528,20 @@ private:
 
     bool bind_writable_surface() {
         current_surface_.reset();
+        discarding_frame_ = false;
         for (const auto& surface : surfaces_) {
             if (surface.use_count() == 1) {
                 current_surface_ = surface;
                 break;
             }
+        }
+        if (!current_surface_) {
+            // TextureView may retain every shareable surface briefly during seek, resize, or
+            // overlay transitions. Returning false from make_current() makes VLC tear down the
+            // video output permanently. Keep the vout alive by rendering that frame into a
+            // private scratch surface and dropping it; the next frame can use a released surface.
+            current_surface_ = discard_surface_;
+            discarding_frame_ = current_surface_ != nullptr;
         }
         if (!current_surface_) return false;
         const auto target = copy_output_target(player_);
@@ -528,6 +550,7 @@ private:
             target.width != current_surface_->width || target.height != current_surface_->height ||
             floating_point != current_surface_->floating_point) {
             current_surface_.reset();
+            discarding_frame_ = false;
             return false;
         }
         current_surface_->output_generation = target.generation;
@@ -593,6 +616,7 @@ private:
     void swap() {
         if (context_ == nullptr) return;
         std::shared_ptr<MacSurface> surface;
+        bool discarded = false;
         {
             std::lock_guard lock(context_->mutex);
             if (!render_lock_held_ || CGLGetCurrentContext() != context_->context) return;
@@ -643,8 +667,15 @@ private:
                     std::fflush(stderr);
                 }
             }
-            surface = std::move(current_surface_);
+            discarded = discarding_frame_;
+            discarding_frame_ = false;
+            if (discarded) {
+                current_surface_.reset();
+            } else {
+                surface = std::move(current_surface_);
+            }
         }
+        if (discarded) return;
         if (!surface) return;
         if (surface->output_generation == 0) return;
         auto frame = std::make_unique<kmediavlc_frame>();
@@ -674,7 +705,9 @@ private:
         if (context_ == nullptr) return;
         std::lock_guard lock(context_->mutex);
         current_surface_.reset();
+        discarding_frame_ = false;
         surfaces_.clear();
+        discard_surface_.reset();
     }
 
     kmediavlc_player* player_ = nullptr;
@@ -682,7 +715,9 @@ private:
     bool installed_ = false;
     std::shared_ptr<MacOpenGlContext> context_;
     std::vector<std::shared_ptr<MacSurface>> surfaces_;
+    std::shared_ptr<MacSurface> discard_surface_;
     std::shared_ptr<MacSurface> current_surface_;
+    bool discarding_frame_ = false;
     bool render_lock_held_ = false;
     CGLContextObj previous_context_ = nullptr;
     kmediavlc_source_dynamic_range source_dynamic_range_ = KMEDIAVLC_SOURCE_DYNAMIC_RANGE_UNKNOWN;
