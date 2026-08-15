@@ -110,15 +110,16 @@ bool publish_test_frame(libvlc_media_player_t* player) {
         player->output.get_proc_address == nullptr) {
         return false;
     }
-    cleanup_output(player);
     void* opaque = player->output.opaque;
-    libvlc_video_setup_device_cfg_t device_config{};
-    libvlc_video_setup_device_info_t device_info{};
-    if (!player->output.setup(&opaque, &device_config, &device_info)) return false;
-    player->output.opaque = opaque;
-    player->output.setup_active = true;
-    if (player->output.window != nullptr) {
-        player->output.window(opaque, nullptr, nullptr, nullptr, nullptr, nullptr);
+    if (!player->output.setup_active) {
+        libvlc_video_setup_device_cfg_t device_config{};
+        libvlc_video_setup_device_info_t device_info{};
+        if (!player->output.setup(&opaque, &device_config, &device_info)) return false;
+        player->output.opaque = opaque;
+        player->output.setup_active = true;
+        if (player->output.window != nullptr) {
+            player->output.window(opaque, nullptr, nullptr, nullptr, nullptr, nullptr);
+        }
     }
     if (player->output.get_proc_address(opaque, "glFlush") == nullptr ||
         !player->output.make_current(opaque, true)) {
@@ -254,8 +255,13 @@ libvlc_media_track_t* libvlc_media_player_get_selected_track(
         delete video;
         return nullptr;
     }
+    video->i_width = 720U;
+    video->i_height = 576U;
+    video->i_sar_num = 16U;
+    video->i_sar_den = 15U;
     video->i_frame_rate_num = 24U;
     video->i_frame_rate_den = 1U;
+    video->i_orientation = libvlc_video_orient_left_bottom;
     track->i_type = libvlc_track_video;
     track->u.video = video;
     track->selected = true;

@@ -214,6 +214,37 @@ void notify_state(kmediavlc_player* player, kmediavlc_playback_state state) {
     }
 }
 
+std::pair<std::uint32_t, std::uint32_t> video_display_dimensions(
+    const libvlc_video_track_t& video) {
+    if (video.i_width == 0U || video.i_height == 0U) return {};
+
+    std::uint64_t width = video.i_width;
+    std::uint64_t height = video.i_height;
+    if (video.i_sar_num != 0U && video.i_sar_den != 0U) {
+        width =
+            (width * static_cast<std::uint64_t>(video.i_sar_num) + video.i_sar_den / 2U) /
+            video.i_sar_den;
+        width = std::max<std::uint64_t>(width, 1U);
+    }
+    switch (video.i_orientation) {
+        case libvlc_video_orient_left_top:
+        case libvlc_video_orient_left_bottom:
+        case libvlc_video_orient_right_top:
+        case libvlc_video_orient_right_bottom:
+            std::swap(width, height);
+            break;
+        default:
+            break;
+    }
+    constexpr auto maximum_java_dimension =
+        static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max());
+    if (width > maximum_java_dimension || height > maximum_java_dimension) return {};
+    return {
+        static_cast<std::uint32_t>(width),
+        static_cast<std::uint32_t>(height),
+    };
+}
+
 kmediavlc_playback_state map_state(libvlc_state_t state) {
     switch (state) {
         case libvlc_NothingSpecial: return KMEDIAVLC_STATE_IDLE;
@@ -823,6 +854,19 @@ bool kmediavlc_player_update_output(kmediavlc_player* player, const kmediavlc_ou
         previous = player->output_target;
         player->output_target = next;
     }
+    if (diagnostic_logging_enabled()) {
+        std::lock_guard lock(g_debug_log_mutex);
+        std::fprintf(
+            stderr,
+            "[KMediaVlc output] generation=%llu %ux%u -> generation=%llu %ux%u\n",
+            static_cast<unsigned long long>(previous.generation),
+            previous.width,
+            previous.height,
+            static_cast<unsigned long long>(next.generation),
+            next.width,
+            next.height);
+        std::fflush(stderr);
+    }
     if (player->renderer) {
         std::string error;
         if (!player->renderer->output_target_changed(next, error)) {
@@ -858,14 +902,18 @@ bool kmediavlc_player_get_snapshot(kmediavlc_player* player, kmediavlc_player_sn
     output->media_generation = player->media_generation.load(std::memory_order_acquire);
     output->position_microseconds = player->position_microseconds.load(std::memory_order_acquire);
     output->duration_microseconds = player->duration_microseconds.load(std::memory_order_acquire);
-    output->video_width = player->video_width.load(std::memory_order_acquire);
-    output->video_height = player->video_height.load(std::memory_order_acquire);
+    output->video_width = 0U;
+    output->video_height = 0U;
     libvlc_media_track_t* selected_video =
         player->api->media_player_get_selected_track(player->media_player, libvlc_track_video);
     if (selected_video != nullptr) {
         if (selected_video->u.video != nullptr) {
-            output->video_frame_rate_num = selected_video->u.video->i_frame_rate_num;
-            output->video_frame_rate_den = selected_video->u.video->i_frame_rate_den;
+            const auto& video = *selected_video->u.video;
+            const auto [display_width, display_height] = video_display_dimensions(video);
+            output->video_width = display_width;
+            output->video_height = display_height;
+            output->video_frame_rate_num = video.i_frame_rate_num;
+            output->video_frame_rate_den = video.i_frame_rate_den;
         }
         player->api->media_track_release(selected_video);
     }

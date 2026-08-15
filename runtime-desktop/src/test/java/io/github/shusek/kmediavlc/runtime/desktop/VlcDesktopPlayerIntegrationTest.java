@@ -3,6 +3,7 @@
 package io.github.shusek.kmediavlc.runtime.desktop;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -10,6 +11,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
@@ -99,7 +101,8 @@ final class VlcDesktopPlayerIntegrationTest {
     }
 
     @Test
-    void fakeLibVlcCpuPullPublishesVisibleDimensionsAndPreservesEndedState() throws Exception {
+    void fakeLibVlcSeparatesSourceDisplayGeometryFromOutputFrameAndPreservesEndedState()
+            throws Exception {
         String bridge = System.getProperty("kmediavlc.test.nativeBridge");
         String fakeLibVlc = System.getProperty("kmediavlc.test.fakeLibVlc");
         Assumptions.assumeTrue(
@@ -158,8 +161,10 @@ final class VlcDesktopPlayerIntegrationTest {
                     () -> timeoutDiagnostics(player, "The fake EOS state did not arrive."));
             var snapshot = player.snapshot();
             assertEquals(VlcPlaybackState.ENDED, snapshot.state());
-            assertEquals(128, snapshot.videoWidth());
-            assertEquals(72, snapshot.videoHeight());
+            // 720x576 at 16:15 SAR is 768x576, then the selected track's
+            // clockwise orientation swaps the display axes.
+            assertEquals(576, snapshot.videoWidth());
+            assertEquals(768, snapshot.videoHeight());
             assertEquals(24, snapshot.videoFrameRateNumerator());
             assertEquals(1, snapshot.videoFrameRateDenominator());
             assertTrue(player.stop());
@@ -573,6 +578,82 @@ final class VlcDesktopPlayerIntegrationTest {
                 assertEquals(frame.stride(), inspection[3]);
                 assertTrue(inspection[4] >= frame.stride() * 54L);
                 assertEquals(frame.fourcc(), inspection[5]);
+            }
+        }
+    }
+
+    @Test
+    void fakeMacIosurfaceBackpressureDropsAFrameWithoutStoppingTheVout() throws Exception {
+        Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase().contains("mac"));
+        String bridge = System.getProperty("kmediavlc.test.nativeBridge");
+        String fakeLibVlc = System.getProperty("kmediavlc.test.fakeLibVlc");
+        Assumptions.assumeTrue(bridge != null && fakeLibVlc != null, "The native macOS fixture is opt-in.");
+        Path fakeLibVlcPath = Path.of(fakeLibVlc).toAbsolutePath();
+        Path plugins = fakeLibVlcPath.getParent();
+        assertNotNull(plugins);
+        var runtime = new VlcDesktopRuntimeResolution(
+                Path.of(bridge).toAbsolutePath(),
+                fakeLibVlcPath,
+                plugins,
+                "fake-libvlc-macos-backpressure-test",
+                new VlcRuntimeCapabilities(
+                        4,
+                        2,
+                        "4.0.0-dev",
+                        "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+                        Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
+                        Set.of(VlcRenderEngine.OPENGL),
+                        false));
+        var signal = new Semaphore(0);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.GPU_PUSH,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        signal.release();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(runtime, config)) {
+            assertTrue(player.updateOutput(new VlcMacOutputTarget(
+                    51,
+                    96,
+                    54,
+                    false,
+                    203f,
+                    203f,
+                    1,
+                    1)));
+            var retainedFrames = new ArrayList<VlcDesktopFrame>();
+            try {
+                assertTrue(player.open("test://macos-iosurface-backpressure", Map.of(), true));
+                for (int index = 0; index < 4; ++index) {
+                    if (index != 0) assertTrue(player.play());
+                    assertTrue(signal.tryAcquire(10, TimeUnit.SECONDS));
+                    retainedFrames.add(player.acquireLatestFrame().orElseThrow());
+                }
+
+                signal.drainPermits();
+                assertTrue(player.play(), "A saturated IOSurface pool must not stop VLC's vout.");
+                assertFalse(
+                        signal.tryAcquire(100, TimeUnit.MILLISECONDS),
+                        "The private scratch render target must not be published to the consumer.");
+
+                retainedFrames.remove(0).close();
+                assertTrue(player.play());
+                assertTrue(
+                        signal.tryAcquire(10, TimeUnit.SECONDS),
+                        "The vout must recover as soon as a shareable IOSurface is released.");
+                try (var recovered = player.acquireLatestFrame().orElseThrow()) {
+                    assertEquals(51, recovered.generation());
+                    assertEquals(96, recovered.width());
+                    assertEquals(54, recovered.height());
+                }
+            } finally {
+                retainedFrames.forEach(VlcDesktopFrame::close);
             }
         }
     }

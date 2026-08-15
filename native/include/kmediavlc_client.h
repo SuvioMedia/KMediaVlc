@@ -135,6 +135,7 @@ typedef struct kmediavlc_player_snapshot {
     uint64_t media_generation;
     int64_t position_microseconds;
     int64_t duration_microseconds;
+    /* Selected source display geometry after sample-aspect ratio and orientation. */
     uint32_t video_width;
     uint32_t video_height;
     uint32_t video_frame_rate_num;

@@ -2,7 +2,11 @@
 
 package io.github.shusek.kmediavlc.runtime.desktop;
 
-/** Lock-free snapshot copied from the native player. Time values use microseconds. */
+/**
+ * Lock-free snapshot copied from the native player. Time values use microseconds. Video dimensions
+ * describe the selected source's display geometry after sample-aspect ratio and orientation, or
+ * zero while no video track is selected.
+ */
 public record VlcPlayerSnapshot(
         VlcPlaybackState state,
         long mediaGeneration,
