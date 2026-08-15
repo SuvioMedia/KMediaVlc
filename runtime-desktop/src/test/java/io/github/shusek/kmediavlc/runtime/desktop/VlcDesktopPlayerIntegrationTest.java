@@ -101,6 +101,161 @@ final class VlcDesktopPlayerIntegrationTest {
     }
 
     @Test
+    void pinnedVideoLanFixturePausesAndResumesRealMedia() throws Exception {
+        String mediaPath = System.getProperty("kmediavlc.test.pauseMedia");
+        Assumptions.assumeTrue(mediaPath != null, "The real pause fixture is opt-in.");
+        var fixture = fixture();
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.CPU_PULL,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {});
+
+        try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
+            assertTrue(player.open(Path.of(mediaPath).toUri().toString(), Map.of(), true));
+            assertTrue(
+                    awaitSnapshot(player, snapshot ->
+                            snapshot.state() == VlcPlaybackState.PLAYING
+                                    && snapshot.positionMicroseconds() >= 500_000),
+                    () -> timeoutDiagnostics(player, "Real media did not start."));
+
+            assertTrue(player.pause());
+            assertTrue(
+                    awaitSnapshot(player, snapshot -> snapshot.state() == VlcPlaybackState.PAUSED),
+                    () -> timeoutDiagnostics(player, "Real media did not enter PAUSED."));
+            TimeUnit.MILLISECONDS.sleep(500);
+            long pausedPosition = player.snapshot().positionMicroseconds();
+            TimeUnit.SECONDS.sleep(2);
+            long positionAfterPause = player.snapshot().positionMicroseconds();
+            assertTrue(
+                    Math.abs(positionAfterPause - pausedPosition) <= 250_000,
+                    () -> "Playback advanced while paused: " + pausedPosition + " -> " + positionAfterPause);
+
+            assertTrue(player.play());
+            assertTrue(
+                    awaitSnapshot(player, snapshot ->
+                            snapshot.state() == VlcPlaybackState.PLAYING
+                                    && snapshot.positionMicroseconds() >= positionAfterPause + 500_000),
+                    () -> timeoutDiagnostics(player, "Real media did not resume."));
+        }
+    }
+
+    @Test
+    void pinnedVideoLanFixtureStopsGpuFramesWhileRealMediaIsPaused() throws Exception {
+        Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac"));
+        String mediaPath = System.getProperty("kmediavlc.test.pauseMedia");
+        Assumptions.assumeTrue(mediaPath != null, "The real pause fixture is opt-in.");
+        var fixture = fixture();
+        var frames = new Semaphore(0);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.GPU_PUSH,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        frames.release();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
+            assertTrue(player.updateOutput(new VlcMacOutputTarget(
+                    901,
+                    3840,
+                    2160,
+                    false,
+                    203f,
+                    203f,
+                    1,
+                    1)));
+            assertTrue(player.open(Path.of(mediaPath).toUri().toString(), Map.of(), true));
+            assertTrue(
+                    awaitSnapshot(player, snapshot ->
+                            snapshot.state() == VlcPlaybackState.PLAYING
+                                    && snapshot.positionMicroseconds() >= 500_000),
+                    () -> timeoutDiagnostics(player, "Real GPU media did not start."));
+            assertTrue(
+                    frames.tryAcquire(15, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "Real GPU media published no IOSurface frame."));
+            player.acquireLatestFrame().ifPresent(VlcDesktopFrame::close);
+
+            long playingSeekTarget = player.snapshot().positionMicroseconds() + 30_000_000;
+            assertTrue(player.seek(playingSeekTarget, false));
+            assertTrue(
+                    awaitSnapshot(player, snapshot ->
+                            snapshot.state() == VlcPlaybackState.PLAYING
+                                    && Math.abs(snapshot.positionMicroseconds() - playingSeekTarget) <= 750_000),
+                    () -> timeoutDiagnostics(player, "Real GPU media did not complete the playing seek."));
+            assertTrue(
+                    awaitSnapshot(player, snapshot ->
+                            snapshot.positionMicroseconds() >= playingSeekTarget + 500_000),
+                    () -> timeoutDiagnostics(player, "Real GPU media did not advance after the playing seek."));
+            frames.drainPermits();
+            player.acquireLatestFrame().ifPresent(VlcDesktopFrame::close);
+
+            assertTrue(player.pause());
+            assertTrue(
+                    awaitSnapshot(player, snapshot -> snapshot.state() == VlcPlaybackState.PAUSED),
+                    () -> timeoutDiagnostics(player, "Real GPU media did not enter PAUSED."));
+            TimeUnit.MILLISECONDS.sleep(500);
+            player.acquireLatestFrame().ifPresent(VlcDesktopFrame::close);
+            frames.drainPermits();
+
+            TimeUnit.SECONDS.sleep(2);
+            int framesWhilePaused = frames.drainPermits();
+            player.acquireLatestFrame().ifPresent(VlcDesktopFrame::close);
+            assertEquals(0, framesWhilePaused, "libVLC published GPU frames after PAUSED settled.");
+
+            long pausedSeekTarget = player.snapshot().positionMicroseconds() + 30_000_000;
+            assertTrue(player.seek(pausedSeekTarget, false));
+            boolean pausedSeekFramePublished = false;
+            long pausedSeekDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+            while (!pausedSeekFramePublished && System.nanoTime() < pausedSeekDeadline) {
+                player.snapshot();
+                pausedSeekFramePublished = frames.tryAcquire(50, TimeUnit.MILLISECONDS);
+            }
+            assertTrue(
+                    pausedSeekFramePublished,
+                    () -> timeoutDiagnostics(player, "A paused seek published no replacement GPU frame."));
+            try (var seekFrame = player.acquireLatestFrame().orElseThrow()) {
+                assertTrue(
+                        Math.abs(seekFrame.ptsMicroseconds() - pausedSeekTarget) <= 750_000,
+                        () -> "Paused seek exported a stale frame at " + seekFrame.ptsMicroseconds());
+            }
+            TimeUnit.MILLISECONDS.sleep(500);
+            long pausedSeekPosition = player.snapshot().positionMicroseconds();
+            TimeUnit.SECONDS.sleep(2);
+            long positionAfterPausedSeek = player.snapshot().positionMicroseconds();
+            assertTrue(
+                    Math.abs(positionAfterPausedSeek - pausedSeekPosition) <= 250_000,
+                    () -> "Playback advanced after a paused seek: "
+                            + pausedSeekPosition + " -> " + positionAfterPausedSeek);
+            assertEquals(0, frames.drainPermits(), "A paused seek resumed continuous GPU frames.");
+            assertEquals(VlcPlaybackState.PAUSED, player.snapshot().state());
+
+            // Resume immediately after another paused seek. Completion of the
+            // seek runs on libVLC's callback thread and must not deliver a late
+            // internal re-pause after this newer play command.
+            long resumeDuringPausedSeekTarget = pausedSeekTarget + 30_000_000;
+            frames.drainPermits();
+            assertTrue(player.seek(resumeDuringPausedSeekTarget, false));
+            assertTrue(player.play());
+            assertTrue(
+                    frames.tryAcquire(15, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "Real GPU media published no frame after resume."));
+            assertTrue(
+                    awaitSnapshot(player, snapshot ->
+                            snapshot.state() == VlcPlaybackState.PLAYING
+                                    && snapshot.positionMicroseconds()
+                                            >= resumeDuringPausedSeekTarget + 1_000_000),
+                    () -> timeoutDiagnostics(
+                            player, "A delayed paused-seek completion stopped resumed playback."));
+        }
+    }
+
+    @Test
     void fakeLibVlcSeparatesSourceDisplayGeometryFromOutputFrameAndPreservesEndedState()
             throws Exception {
         String bridge = System.getProperty("kmediavlc.test.nativeBridge");
@@ -816,6 +971,17 @@ final class VlcDesktopPlayerIntegrationTest {
             }
             frame.close();
         }
+    }
+
+    private static boolean awaitSnapshot(
+            VlcDesktopPlayer player,
+            java.util.function.Predicate<VlcPlayerSnapshot> predicate) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        while (System.nanoTime() < deadline) {
+            if (predicate.test(player.snapshot())) return true;
+            TimeUnit.MILLISECONDS.sleep(50);
+        }
+        return false;
     }
 
     private static VlcDesktopFrame awaitMacHdrFrame(
