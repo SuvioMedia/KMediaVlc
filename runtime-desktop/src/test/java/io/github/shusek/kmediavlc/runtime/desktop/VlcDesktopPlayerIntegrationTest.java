@@ -256,6 +256,67 @@ final class VlcDesktopPlayerIntegrationTest {
     }
 
     @Test
+    void pausedGpuSeekRepausesEvenWhenNoReplacementSurfaceCanBePublished() throws Exception {
+        Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac"));
+        String mediaPath = System.getProperty("kmediavlc.test.pauseMedia");
+        Assumptions.assumeTrue(mediaPath != null, "The real pause fixture is opt-in.");
+        var fixture = fixture();
+        var frames = new Semaphore(0);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.GPU_PUSH,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        frames.release();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
+            assertTrue(player.updateOutput(new VlcMacOutputTarget(
+                    902,
+                    3840,
+                    2160,
+                    false,
+                    203f,
+                    203f,
+                    1,
+                    1)));
+            assertTrue(player.open(Path.of(mediaPath).toUri().toString(), Map.of(), true));
+            assertTrue(
+                    awaitSnapshot(player, snapshot ->
+                            snapshot.state() == VlcPlaybackState.PLAYING
+                                    && snapshot.positionMicroseconds() >= 500_000),
+                    () -> timeoutDiagnostics(player, "Real GPU media did not start."));
+            assertTrue(frames.tryAcquire(15, TimeUnit.SECONDS));
+            player.acquireLatestFrame().ifPresent(VlcDesktopFrame::close);
+
+            assertTrue(player.pause());
+            assertTrue(
+                    awaitSnapshot(player, snapshot -> snapshot.state() == VlcPlaybackState.PAUSED),
+                    () -> timeoutDiagnostics(player, "Real GPU media did not enter PAUSED."));
+            assertTrue(player.updateOutput(new VlcUnavailableOutputTarget(903)));
+
+            long target = player.snapshot().positionMicroseconds() + 30_000_000;
+            assertTrue(player.seek(target, false));
+            assertTrue(
+                    awaitSnapshot(player, snapshot ->
+                            snapshot.state() == VlcPlaybackState.PAUSED
+                                    && Math.abs(snapshot.positionMicroseconds() - target) <= 750_000),
+                    () -> timeoutDiagnostics(player, "Paused seek did not reach its target without an output."));
+            long settledPosition = player.snapshot().positionMicroseconds();
+            TimeUnit.SECONDS.sleep(2);
+            long positionAfterSettle = player.snapshot().positionMicroseconds();
+            assertTrue(
+                    Math.abs(positionAfterSettle - settledPosition) <= 250_000,
+                    () -> "Playback kept advancing after a surface-less paused seek: "
+                            + settledPosition + " -> " + positionAfterSettle);
+        }
+    }
+
+    @Test
     void fakeLibVlcSeparatesSourceDisplayGeometryFromOutputFrameAndPreservesEndedState()
             throws Exception {
         String bridge = System.getProperty("kmediavlc.test.nativeBridge");

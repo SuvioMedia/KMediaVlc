@@ -152,6 +152,7 @@ struct kmediavlc_player final {
     bool continuous_frame_delivery = false;
     std::uint32_t paused_frame_budget = 0;
     std::int64_t paused_seek_target_microseconds = -1;
+    std::int64_t paused_seek_start_microseconds = -1;
     bool paused_seek_repause_pending = false;
     std::uint64_t paused_seek_transport_generation = 0;
     std::unique_ptr<kmediavlc_frame> paused_seek_candidate_frame;
