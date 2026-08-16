@@ -163,8 +163,8 @@ final class VlcDesktopPlayerIntegrationTest {
         try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
             assertTrue(player.updateOutput(new VlcMacOutputTarget(
                     901,
-                    3840,
-                    2160,
+                    2400,
+                    1520,
                     false,
                     203f,
                     203f,
@@ -180,6 +180,26 @@ final class VlcDesktopPlayerIntegrationTest {
                     frames.tryAcquire(15, TimeUnit.SECONDS),
                     () -> timeoutDiagnostics(player, "Real GPU media published no IOSurface frame."));
             player.acquireLatestFrame().ifPresent(VlcDesktopFrame::close);
+
+            frames.drainPermits();
+            assertTrue(player.updateOutput(new VlcMacOutputTarget(
+                    901,
+                    3840,
+                    2160,
+                    false,
+                    203f,
+                    203f,
+                    1,
+                    1)));
+            try (var resizedFrame = awaitFrame(
+                    player,
+                    frames,
+                    901,
+                    3840,
+                    2160,
+                    "Real GPU media stalled after its TextureView target changed size.")) {
+                assertEquals(VlcNativeHandleType.IOSURFACE, resizedFrame.handleType());
+            }
 
             long playingSeekTarget = player.snapshot().positionMicroseconds() + 30_000_000;
             assertTrue(player.seek(playingSeekTarget, false));
