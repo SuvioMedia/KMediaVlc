@@ -439,6 +439,14 @@ private:
             set_error(player_, "No writable IOSurface is available for the libVLC producer.");
             return false;
         }
+        if (current_surface_ != nullptr) {
+            // output_target_changed() can allocate and bind an SDR surface before
+            // libVLC supplies the first render configuration. Refresh the metadata
+            // on that already-bound surface so its first exported frame describes
+            // the decoded source rather than retaining UNKNOWN.
+            current_surface_->source_dynamic_range = source_dynamic_range_;
+            current_surface_->source_extended = source_extended_;
+        }
 
         player_->video_width.store(target.width, std::memory_order_release);
         player_->video_height.store(target.height, std::memory_order_release);

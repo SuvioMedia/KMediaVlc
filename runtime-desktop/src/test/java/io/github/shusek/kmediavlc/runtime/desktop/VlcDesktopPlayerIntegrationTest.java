@@ -276,6 +276,86 @@ final class VlcDesktopPlayerIntegrationTest {
     }
 
     @Test
+    void pinnedVideoLanFixturePublishesTargetFramesAfterTwoAndFiveMinuteGpuSeeks() throws Exception {
+        Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac"));
+        String mediaPath = System.getProperty("kmediavlc.test.pauseMedia");
+        Assumptions.assumeTrue(mediaPath != null, "The real seek fixture is opt-in.");
+        var fixture = fixture();
+        var frames = new Semaphore(0);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.GPU_PUSH,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        frames.release();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
+            assertTrue(player.updateOutput(new VlcMacOutputTarget(
+                    903,
+                    960,
+                    540,
+                    false,
+                    203f,
+                    203f,
+                    1,
+                    1)));
+            assertTrue(player.open(Path.of(mediaPath).toUri().toString(), Map.of(), true));
+            assertTrue(
+                    awaitSnapshot(player, snapshot ->
+                            snapshot.state() == VlcPlaybackState.PLAYING
+                                    && snapshot.positionMicroseconds() >= 500_000),
+                    () -> timeoutDiagnostics(player, "Real GPU media did not start."));
+            assertTrue(frames.tryAcquire(15, TimeUnit.SECONDS));
+            player.acquireLatestFrame().ifPresent(VlcDesktopFrame::close);
+
+            for (long target : new long[] {120_000_000L, 300_000_000L}) {
+                frames.drainPermits();
+                player.acquireLatestFrame().ifPresent(VlcDesktopFrame::close);
+                assertTrue(player.seek(target, false));
+                assertTrue(
+                        awaitSnapshot(player, snapshot ->
+                                snapshot.state() == VlcPlaybackState.PLAYING
+                                        && Math.abs(snapshot.positionMicroseconds() - target) <= 750_000),
+                        () -> timeoutDiagnostics(player, "Real GPU media did not settle at " + target + '.'));
+                try (var frame = awaitFrameNearPosition(player, frames, target)) {
+                    assertEquals(903, frame.generation());
+                    assertEquals(VlcNativeHandleType.IOSURFACE, frame.handleType());
+                }
+                assertTrue(
+                        awaitSnapshot(player, snapshot -> snapshot.positionMicroseconds() >= target + 500_000),
+                        () -> timeoutDiagnostics(player, "Real GPU media did not advance after " + target + '.'));
+            }
+
+            long rapidSeekTarget = player.snapshot().positionMicroseconds();
+            for (int index = 0; index < 8; index++) {
+                rapidSeekTarget += 2_000_000L;
+                assertTrue(player.seek(rapidSeekTarget, false));
+                TimeUnit.MILLISECONDS.sleep(35);
+            }
+            final long expectedRapidSeekTarget = rapidSeekTarget;
+            assertTrue(
+                    awaitSnapshot(player, snapshot ->
+                            Math.abs(snapshot.positionMicroseconds() - expectedRapidSeekTarget) <= 750_000),
+                    () -> timeoutDiagnostics(player, "Real GPU media did not settle after rapid seeks."));
+
+            assertTrue(player.pause());
+            assertTrue(
+                    awaitSnapshot(player, snapshot -> snapshot.state() == VlcPlaybackState.PAUSED),
+                    () -> timeoutDiagnostics(player, "Real GPU media did not pause after rapid seeks."));
+            TimeUnit.MILLISECONDS.sleep(500);
+            player.acquireLatestFrame().ifPresent(VlcDesktopFrame::close);
+            frames.drainPermits();
+            TimeUnit.SECONDS.sleep(2);
+            assertEquals(0, frames.drainPermits(), "Rapid seeks left continuous GPU delivery running after pause.");
+        }
+    }
+
+    @Test
     void pausedGpuSeekRepausesEvenWhenNoReplacementSurfaceCanBePublished() throws Exception {
         Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac"));
         String mediaPath = System.getProperty("kmediavlc.test.pauseMedia");
@@ -1048,6 +1128,27 @@ final class VlcDesktopPlayerIntegrationTest {
             if (candidate.isEmpty()) continue;
             var frame = candidate.orElseThrow();
             if (frame.generation() == generation && frame.width() == width && frame.height() == height) {
+                return frame;
+            }
+            frame.close();
+        }
+    }
+
+    private static VlcDesktopFrame awaitFrameNearPosition(
+            VlcDesktopPlayer player,
+            Semaphore signal,
+            long targetMicroseconds) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        while (true) {
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0 || !signal.tryAcquire(remaining, TimeUnit.NANOSECONDS)) {
+                throw new AssertionError(timeoutDiagnostics(
+                        player, "No GPU frame reached seek target " + targetMicroseconds + '.'));
+            }
+            var candidate = player.acquireLatestFrame();
+            if (candidate.isEmpty()) continue;
+            var frame = candidate.orElseThrow();
+            if (Math.abs(frame.ptsMicroseconds() - targetMicroseconds) <= 1_500_000) {
                 return frame;
             }
             frame.close();
