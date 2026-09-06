@@ -88,6 +88,10 @@ void set_error(::kmediavlc_player* player, std::string message);
 OutputTargetSnapshot copy_output_target(::kmediavlc_player* player);
 std::int64_t current_position_microseconds(::kmediavlc_player* player) noexcept;
 void publish_frame(::kmediavlc_player* player, std::unique_ptr<::kmediavlc_frame> frame);
+void publish_paused_seek_candidate_if_ready(
+    ::kmediavlc_player* player,
+    std::int64_t position_microseconds);
+bool paused_seek_decode_in_progress(::kmediavlc_player* player);
 
 } // namespace kmediavlc
 
@@ -131,12 +135,27 @@ struct kmediavlc_player final {
     std::atomic<bool> seekable{false};
     std::atomic<std::uint64_t> next_serial{1};
 
+    // Serialize public transport commands with the internal resume/re-pause
+    // used to render one frame after a seek while paused. Without this lock a
+    // delayed internal re-pause can overtake a newer play command and leave
+    // libVLC stopped even though the client requested playback.
+    std::recursive_mutex transport_mutex;
+    std::atomic<bool> play_when_ready{false};
+    std::atomic<std::uint64_t> transport_generation{0};
+
     std::mutex output_mutex;
     kmediavlc::OutputTargetSnapshot output_target;
     libvlc_video_output_resize_cb report_resize = nullptr;
     void* report_resize_opaque = nullptr;
 
     std::mutex frame_mutex;
+    bool continuous_frame_delivery = false;
+    std::uint32_t paused_frame_budget = 0;
+    std::int64_t paused_seek_target_microseconds = -1;
+    std::int64_t paused_seek_start_microseconds = -1;
+    bool paused_seek_repause_pending = false;
+    std::uint64_t paused_seek_transport_generation = 0;
+    std::unique_ptr<kmediavlc_frame> paused_seek_candidate_frame;
     std::unique_ptr<kmediavlc_frame> pending_frame;
 
     std::mutex error_mutex;

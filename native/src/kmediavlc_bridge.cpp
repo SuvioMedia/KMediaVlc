@@ -28,6 +28,8 @@ constexpr std::uint32_t kBridgeAbi = KMEDIAVLC_BRIDGE_ABI_VERSION;
 constexpr std::size_t kCpuAlignment = 64;
 constexpr std::uint32_t kMaximumCpuDimension = 16'384;
 constexpr std::size_t kMaximumCpuFrameBytes = 512U * 1024U * 1024U;
+constexpr std::int64_t kPausedSeekFrameToleranceMicroseconds = 750'000;
+constexpr std::int64_t kPausedSeekMaximumOvershootMicroseconds = 5'000'000;
 
 std::mutex g_api_mutex;
 std::mutex g_debug_log_mutex;
@@ -262,6 +264,10 @@ void on_state_changed(void* opaque, libvlc_state_t state) {
     auto* player = static_cast<kmediavlc_player*>(opaque);
     if (player == nullptr) return;
     const auto mapped = map_state(state);
+    if ((mapped == KMEDIAVLC_STATE_PLAYING || mapped == KMEDIAVLC_STATE_BUFFERING) &&
+        kmediavlc::paused_seek_decode_in_progress(player)) {
+        return;
+    }
     if (mapped == KMEDIAVLC_STATE_STOPPED) {
         const auto current = player->state.load(std::memory_order_acquire);
         // VLC reports the semantic stop reason separately, then may emit a
@@ -286,6 +292,7 @@ void on_buffering_changed(void* opaque, float buffering) {
     player->buffered_permille.store(
         static_cast<std::uint32_t>(std::lround(bounded * 1000.0F)),
         std::memory_order_release);
+    if (kmediavlc::paused_seek_decode_in_progress(player)) return;
     if (bounded < 1.0F) {
         if (current != KMEDIAVLC_STATE_BUFFERING) {
             player->state_before_buffering.store(current, std::memory_order_release);
@@ -302,7 +309,12 @@ void on_buffering_changed(void* opaque, float buffering) {
 void on_position_changed(void* opaque, libvlc_time_t time, double) {
     auto* player = static_cast<kmediavlc_player*>(opaque);
     if (player != nullptr) {
-        player->position_microseconds.store(std::max<libvlc_time_t>(0, time), std::memory_order_release);
+        const auto position = std::max<libvlc_time_t>(0, time);
+        if (player->play_when_ready.load(std::memory_order_acquire) ||
+            kmediavlc::paused_seek_decode_in_progress(player)) {
+            player->position_microseconds.store(position, std::memory_order_release);
+            kmediavlc::publish_paused_seek_candidate_if_ready(player, position);
+        }
     }
 }
 
@@ -577,14 +589,33 @@ std::int64_t current_position_microseconds(kmediavlc_player* player) noexcept {
 
 void publish_frame(kmediavlc_player* player, std::unique_ptr<kmediavlc_frame> frame) {
     if (player == nullptr || !frame) return;
-    frame->info.struct_size = sizeof(kmediavlc_frame_info);
-    frame->info.bridge_abi_version = kBridgeAbi;
-    frame->info.serial = player->next_serial.fetch_add(1, std::memory_order_acq_rel);
-    const auto serial = frame->info.serial;
-    const auto generation = frame->info.output_generation;
+    std::uint64_t serial = 0;
+    std::uint64_t generation = 0;
     std::unique_ptr<kmediavlc_frame> superseded;
     {
         std::lock_guard lock(player->frame_mutex);
+        if (!player->continuous_frame_delivery) {
+            if (player->paused_frame_budget == 0) return;
+            if (player->paused_seek_target_microseconds >= 0 &&
+                player->paused_seek_repause_pending) {
+                // A paused seek briefly lets libVLC decode internally while the
+                // bridge remains logically paused. Retain only the newest real
+                // rendered surface; the polling/event path re-pauses and publishes
+                // it once both the frame and public clock have reached the target.
+                player->paused_seek_candidate_frame = std::move(frame);
+                return;
+            }
+            --player->paused_frame_budget;
+            if (player->paused_frame_budget == 0) {
+                player->paused_seek_target_microseconds = -1;
+                player->paused_seek_candidate_frame.reset();
+            }
+        }
+        frame->info.struct_size = sizeof(kmediavlc_frame_info);
+        frame->info.bridge_abi_version = kBridgeAbi;
+        frame->info.serial = player->next_serial.fetch_add(1, std::memory_order_acq_rel);
+        serial = frame->info.serial;
+        generation = frame->info.output_generation;
         superseded = std::move(player->pending_frame);
         player->pending_frame = std::move(frame);
     }
@@ -592,6 +623,103 @@ void publish_frame(kmediavlc_player* player, std::unique_ptr<kmediavlc_frame> fr
     if (player->frame_available != nullptr) {
         player->frame_available(player->callback_opaque, serial, generation);
     }
+}
+
+void publish_paused_seek_candidate_if_ready(
+    kmediavlc_player* player,
+    std::int64_t position_microseconds) {
+    if (player == nullptr) return;
+    // The internal re-pause must be ordered with newer public play/pause/open
+    // commands. In particular, never let completion of an old paused seek
+    // pause a player after the caller has resumed it.
+    std::lock_guard transport_lock(player->transport_mutex);
+    const auto transport_generation =
+        player->transport_generation.load(std::memory_order_acquire);
+    if (player->play_when_ready.load(std::memory_order_acquire)) return;
+    std::uint64_t serial = 0;
+    std::uint64_t generation = 0;
+    std::unique_ptr<kmediavlc_frame> superseded;
+    bool published = false;
+    bool repause = false;
+    {
+        std::lock_guard lock(player->frame_mutex);
+        if (player->continuous_frame_delivery || player->paused_frame_budget == 0 ||
+            player->paused_seek_target_microseconds < 0 ||
+            player->paused_seek_transport_generation != transport_generation) {
+            return;
+        }
+        const auto target = player->paused_seek_target_microseconds;
+        const auto start = player->paused_seek_start_microseconds;
+        const auto distance = std::abs(position_microseconds - target);
+        const bool crossed_target =
+            (start < target && position_microseconds >= target &&
+             position_microseconds - target <= kPausedSeekMaximumOvershootMicroseconds) ||
+            (start > target && position_microseconds <= target &&
+             target - position_microseconds <= kPausedSeekMaximumOvershootMicroseconds);
+        if (distance > kPausedSeekFrameToleranceMicroseconds && !crossed_target) {
+            return;
+        }
+        repause = player->paused_seek_repause_pending;
+        if (!repause) return;
+        player->paused_seek_repause_pending = false;
+        player->paused_seek_transport_generation = 0;
+        player->paused_seek_start_microseconds = -1;
+        player->paused_seek_target_microseconds = -1;
+        player->paused_frame_budget = 0;
+        auto frame = std::move(player->paused_seek_candidate_frame);
+        if (frame) {
+            // The external GPU callbacks do not carry a presentation timestamp.
+            // The bridge samples libVLC's public clock for each surface, which can
+            // lag the decoded frame during a seek. Completion is driven by the
+            // authoritative clock above; stamp the retained final surface with it.
+            frame->info.pts_microseconds = position_microseconds;
+            frame->info.struct_size = sizeof(kmediavlc_frame_info);
+            frame->info.bridge_abi_version = kBridgeAbi;
+            frame->info.serial = player->next_serial.fetch_add(1, std::memory_order_acq_rel);
+            serial = frame->info.serial;
+            generation = frame->info.output_generation;
+            superseded = std::move(player->pending_frame);
+            player->pending_frame = std::move(frame);
+            published = true;
+        }
+    }
+    if (repause) player->api->media_player_set_pause(player->media_player, 1);
+    if (!published || !player->callbacks_enabled.load(std::memory_order_acquire)) return;
+    if (player->frame_available != nullptr) {
+        player->frame_available(player->callback_opaque, serial, generation);
+    }
+}
+
+void set_frame_delivery(
+    kmediavlc_player* player,
+    bool continuous,
+    std::uint32_t paused_frame_budget = 0,
+    std::int64_t paused_seek_target_microseconds = -1) {
+    if (player == nullptr) return;
+    std::unique_ptr<kmediavlc_frame> retired;
+    std::unique_ptr<kmediavlc_frame> retired_seek_candidate;
+    {
+        std::lock_guard lock(player->frame_mutex);
+        player->continuous_frame_delivery = continuous;
+        player->paused_frame_budget = continuous ? 0 : paused_frame_budget;
+        player->paused_seek_target_microseconds =
+            continuous || paused_frame_budget == 0 ? -1 : paused_seek_target_microseconds;
+        player->paused_seek_start_microseconds = -1;
+        player->paused_seek_repause_pending = false;
+        player->paused_seek_transport_generation = 0;
+        retired_seek_candidate = std::move(player->paused_seek_candidate_frame);
+        if (!continuous) retired = std::move(player->pending_frame);
+    }
+}
+
+bool paused_seek_decode_in_progress(kmediavlc_player* player) {
+    if (player == nullptr) return false;
+    if (player->play_when_ready.load(std::memory_order_acquire)) return false;
+    const auto transport_generation =
+        player->transport_generation.load(std::memory_order_acquire);
+    std::lock_guard lock(player->frame_mutex);
+    return player->paused_seek_repause_pending && player->paused_seek_target_microseconds >= 0 &&
+        player->paused_seek_transport_generation == transport_generation;
 }
 
 } // namespace kmediavlc
@@ -713,10 +841,16 @@ bool kmediavlc_player_open(
         header_entry_count % 2U != 0 || (header_entry_count != 0 && headers_utf8 == nullptr)) {
         return false;
     }
+    std::lock_guard transport_lock(player->transport_mutex);
+    player->play_when_ready.store(autoplay, std::memory_order_release);
+    player->transport_generation.fetch_add(1, std::memory_order_acq_rel);
+    kmediavlc::set_frame_delivery(player, false);
     libvlc_media_t* media = is_probable_path(uri_utf8)
         ? player->api->media_new_path(uri_utf8)
         : player->api->media_new_location(uri_utf8);
     if (media == nullptr) {
+        player->play_when_ready.store(false, std::memory_order_release);
+        player->transport_generation.fetch_add(1, std::memory_order_acq_rel);
         capture_vlc_error(player, "libVLC could not create the requested media.");
         return false;
     }
@@ -739,6 +873,8 @@ bool kmediavlc_player_open(
     }
     if (!options_valid) {
         player->api->media_release(media);
+        player->play_when_ready.store(false, std::memory_order_release);
+        player->transport_generation.fetch_add(1, std::memory_order_acq_rel);
         return false;
     }
     player->api->media_player_set_media(player->media_player, media);
@@ -750,27 +886,67 @@ bool kmediavlc_player_open(
     player->buffered_permille.store(0, std::memory_order_release);
     player->state_before_buffering.store(KMEDIAVLC_STATE_IDLE, std::memory_order_release);
     notify_state(player, KMEDIAVLC_STATE_IDLE);
-    if (!autoplay) return true;
+    if (!autoplay) {
+        kmediavlc::set_frame_delivery(player, false, 1);
+        return true;
+    }
+    kmediavlc::set_frame_delivery(player, true);
     if (player->api->media_player_play(player->media_player) == 0) return true;
+    player->play_when_ready.store(false, std::memory_order_release);
+    player->transport_generation.fetch_add(1, std::memory_order_acq_rel);
+    kmediavlc::set_frame_delivery(player, false);
     capture_vlc_error(player, "libVLC rejected autoplay.");
     return false;
 }
 
 bool kmediavlc_player_play(kmediavlc_player* player) {
     if (!valid_player(player)) return false;
-    if (player->api->media_player_play(player->media_player) == 0) return true;
+    std::lock_guard transport_lock(player->transport_mutex);
+    const bool completing_paused_seek = kmediavlc::paused_seek_decode_in_progress(player);
+    player->play_when_ready.store(true, std::memory_order_release);
+    player->transport_generation.fetch_add(1, std::memory_order_acq_rel);
+    kmediavlc::set_frame_delivery(player, true);
+    if (player->api->media_player_play(player->media_player) == 0) {
+        if (completing_paused_seek) {
+            // The seek's internal resume may already have put libVLC in PLAYING,
+            // so libvlc_media_player_play can be a successful no-op with no new
+            // state callback. Publish the newer public transport intent instead
+            // of leaving the bridge's snapshot stuck at PAUSED.
+            player->state_before_buffering.store(KMEDIAVLC_STATE_PLAYING, std::memory_order_release);
+            notify_state(player, KMEDIAVLC_STATE_PLAYING);
+        }
+        return true;
+    }
+    player->play_when_ready.store(false, std::memory_order_release);
+    player->transport_generation.fetch_add(1, std::memory_order_acq_rel);
+    kmediavlc::set_frame_delivery(player, false);
     capture_vlc_error(player, "libVLC rejected play.");
     return false;
 }
 
 bool kmediavlc_player_pause(kmediavlc_player* player) {
     if (!valid_player(player)) return false;
+    std::lock_guard transport_lock(player->transport_mutex);
+    const auto position = player->api->media_player_get_time(player->media_player);
+    if (position >= 0) {
+        player->position_microseconds.store(position, std::memory_order_release);
+    }
+    player->play_when_ready.store(false, std::memory_order_release);
+    player->transport_generation.fetch_add(1, std::memory_order_acq_rel);
+    // libVLC 4 may keep invoking external GPU output callbacks after it has
+    // entered PAUSED. Stop exporting those surfaces immediately so consumers
+    // retain the last presented frame instead of displaying decoder run-ahead.
+    kmediavlc::set_frame_delivery(player, false);
     player->api->media_player_set_pause(player->media_player, 1);
     return true;
 }
 
 bool kmediavlc_player_stop(kmediavlc_player* player) {
     if (!valid_player(player)) return false;
+    std::lock_guard transport_lock(player->transport_mutex);
+    player->play_when_ready.store(false, std::memory_order_release);
+    player->transport_generation.fetch_add(1, std::memory_order_acq_rel);
+    kmediavlc::set_frame_delivery(player, false);
     const auto current = player->state.load(std::memory_order_acquire);
     if (current == KMEDIAVLC_STATE_ENDED || current == KMEDIAVLC_STATE_STOPPED) {
         player->state_before_buffering.store(KMEDIAVLC_STATE_STOPPED, std::memory_order_release);
@@ -784,7 +960,32 @@ bool kmediavlc_player_stop(kmediavlc_player* player) {
 
 bool kmediavlc_player_seek(kmediavlc_player* player, int64_t time_microseconds, bool fast) {
     if (!valid_player(player) || time_microseconds < 0) return false;
-    if (player->api->media_player_set_time(player->media_player, time_microseconds, fast) == 0) return true;
+    std::lock_guard transport_lock(player->transport_mutex);
+    const bool paused = !player->play_when_ready.load(std::memory_order_acquire);
+    const auto transport_generation =
+        player->transport_generation.load(std::memory_order_acquire);
+    // Arm paused frame delivery before entering libVLC: set_time may render the
+    // replacement frame synchronously. Filter out any in-flight pre-seek frame
+    // so it cannot consume the single replacement-frame budget.
+    if (paused) {
+        kmediavlc::set_frame_delivery(player, false, 1, time_microseconds);
+        std::lock_guard lock(player->frame_mutex);
+        player->paused_seek_start_microseconds =
+            player->position_microseconds.load(std::memory_order_acquire);
+        player->paused_seek_repause_pending = true;
+        player->paused_seek_transport_generation = transport_generation;
+    }
+    if (player->api->media_player_set_time(player->media_player, time_microseconds, fast) == 0) {
+        if (paused) {
+            // libVLC 4 can update its public clock without scheduling a vout
+            // frame while paused. Resume decoding internally; state callbacks
+            // remain masked as PAUSED until the real target surface is retained,
+            // at which point publish_paused_seek_candidate_if_ready re-pauses.
+            player->api->media_player_set_pause(player->media_player, 0);
+        }
+        return true;
+    }
+    if (paused) kmediavlc::set_frame_delivery(player, false);
     capture_vlc_error(player, "libVLC rejected seek.");
     return false;
 }
@@ -893,9 +1094,17 @@ bool kmediavlc_player_update_output(kmediavlc_player* player, const kmediavlc_ou
 bool kmediavlc_player_get_snapshot(kmediavlc_player* player, kmediavlc_player_snapshot* output) {
     if (!valid_player(player) || output == nullptr || output->struct_size != sizeof(kmediavlc_player_snapshot) ||
         output->bridge_abi_version != kBridgeAbi) return false;
-    const auto position = player->api->media_player_get_time(player->media_player);
+    const bool track_position =
+        player->play_when_ready.load(std::memory_order_acquire) ||
+        kmediavlc::paused_seek_decode_in_progress(player);
+    const auto position = track_position
+        ? player->api->media_player_get_time(player->media_player)
+        : static_cast<libvlc_time_t>(-1);
     const auto duration = player->api->media_player_get_length(player->media_player);
-    if (position >= 0) player->position_microseconds.store(position, std::memory_order_release);
+    if (position >= 0) {
+        player->position_microseconds.store(position, std::memory_order_release);
+        kmediavlc::publish_paused_seek_candidate_if_ready(player, position);
+    }
     if (duration >= 0) player->duration_microseconds.store(duration, std::memory_order_release);
     player->seekable.store(player->api->media_player_is_seekable(player->media_player), std::memory_order_release);
     output->state = player->state.load(std::memory_order_acquire);

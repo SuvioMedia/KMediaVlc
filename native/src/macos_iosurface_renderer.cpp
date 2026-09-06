@@ -321,7 +321,24 @@ public:
             error = "The macOS IOSurface producer target is incomplete.";
             return false;
         }
-        return true;
+        if (context_ == nullptr) {
+            error = "The macOS OpenGL producer context is unavailable.";
+            return false;
+        }
+        ScopedCurrentContext current(context_);
+        if (!current) {
+            error = "The macOS OpenGL producer context could not be made current.";
+            return false;
+        }
+        // The TextureView host is initially sized to the window and can switch
+        // to the decoded source dimensions as soon as metadata arrives. Resize
+        // the rotating IOSurface set before the next make-current callback;
+        // returning a mismatched framebuffer there makes libVLC tear down its
+        // vout permanently after the first frame.
+        return ensure_surfaces(
+            target.width,
+            target.height,
+            target.request_hdr && source_extended_);
     }
 
     bool resize(std::uint32_t width, std::uint32_t height) override {
@@ -421,6 +438,14 @@ private:
         if (render_lock_held_ && current_surface_ == nullptr && !bind_writable_surface()) {
             set_error(player_, "No writable IOSurface is available for the libVLC producer.");
             return false;
+        }
+        if (current_surface_ != nullptr) {
+            // output_target_changed() can allocate and bind an SDR surface before
+            // libVLC supplies the first render configuration. Refresh the metadata
+            // on that already-bound surface so its first exported frame describes
+            // the decoded source rather than retaining UNKNOWN.
+            current_surface_->source_dynamic_range = source_dynamic_range_;
+            current_surface_->source_extended = source_extended_;
         }
 
         player_->video_width.store(target.width, std::memory_order_release);
