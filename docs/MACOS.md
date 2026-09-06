@@ -20,7 +20,8 @@ license-closed, relocatable, and accepted by the real Metal consumer.
   shared-library entry point and a `--disable-all` contrib profile;
 - a 27-package resolved contrib graph with stream-output encoders, GPL, and
   GNUv3 packages disabled;
-- a closed 89-plugin playback candidate selected from 289 built modules;
+- a closed 90-plugin playback candidate selected from 289 built modules, including the
+  adaptive demux required for direct HLS playback;
 - application-private `@loader_path` relocation, arm64/macOS 14 validation,
   system-only Mach-O dependency validation, ad-hoc re-signing, and plugin-cache
   generation after relocation;
@@ -61,7 +62,7 @@ allocation-only regression cannot satisfy the gate.
 
 ## Publication gates still open
 
-1. Complete source/license and static-link review for the 89 selected modules
+1. Complete source/license and static-link review for the 90 selected modules
    and every contrib actually folded into them; produce the per-binary legal
    inventory, notices, corresponding-source archive, and relinking material.
 2. Run the manually dispatched `macOS libVLC source audit` for the exact

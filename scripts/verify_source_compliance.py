@@ -1503,6 +1503,7 @@ def verify_macos_transport_contract(root: Path) -> None:
             fail(f"macOS playback module family is not a closed sorted list: {family}")
         macos_modules.extend(names)
     required_macos_modules = {
+        "adaptive",
         "auhal",
         "avcodec",
         "cvpx",
@@ -1520,12 +1521,12 @@ def verify_macos_transport_contract(root: Path) -> None:
         "vmem",
     }
     if (
-        len(macos_modules) != 89
-        or len(set(macos_modules)) != 89
+        len(macos_modules) != 90
+        or len(set(macos_modules)) != 90
         or not required_macos_modules.issubset(macos_modules)
         or any(not isinstance(name, str) or not re.fullmatch(r"[a-z0-9_]+", name) for name in macos_modules)
     ):
-        fail("macOS playback allowlist must contain its 89 unique transport modules.")
+        fail("macOS playback allowlist must contain its 90 unique transport modules.")
     expected_additional = {
         "mkv": ["MIT"],
         "opus": ["BSD-3-Clause"],
@@ -1666,7 +1667,7 @@ def verify_macos_transport_contract(root: Path) -> None:
         or recipe.get("resolvedContribPackages") != resolved_contribs
         or recipe.get("renderEngine") != "OPENGL"
         or recipe.get("frameTransport") != "IOSURFACE"
-        or recipe.get("stagedPluginCount") != 89
+        or recipe.get("stagedPluginCount") != 90
         or recipe.get("rawSourceBuildPluginCount") != 289
         or recipe.get("pluginCacheGeneratedAfterRelocation") is not True
         or recipe.get("relocationSignature") != "adhoc-replaced-by-consuming-app-signature"

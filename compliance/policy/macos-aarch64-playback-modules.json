@@ -54,6 +54,7 @@
       "webvtt"
     ],
     "demux": [
+      "adaptive",
       "asf",
       "avi",
       "es",

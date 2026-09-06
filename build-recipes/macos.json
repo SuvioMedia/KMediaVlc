@@ -87,6 +87,7 @@
     "GPU_PUSH"
   ],
   "requiredPlaybackCapabilities": [
+    "adaptive-hls",
     "audio-output",
     "file-input",
     "http-input",
@@ -99,7 +100,7 @@
   "requiresClosedPluginInventory": true,
   "requiresClosedMachOGraph": true,
   "requiresApplicationPrivateRelocation": true,
-  "stagedPluginCount": 89,
+  "stagedPluginCount": 90,
   "rawSourceBuildPluginCount": 289,
   "pluginCacheGeneratedAfterRelocation": true,
   "relocationSignature": "adhoc-replaced-by-consuming-app-signature",
