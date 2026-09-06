@@ -150,7 +150,7 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
         expected_counts = {
             "linux-x86_64": 91,
             "linux-aarch64": 91,
-            "macos-aarch64": 94,
+            "macos-aarch64": 95,
         }
         for target, expected_count in expected_counts.items():
             with self.subTest(target=target):

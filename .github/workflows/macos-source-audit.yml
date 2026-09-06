@@ -138,9 +138,9 @@ jobs:
             --report "$candidate/macos-aarch64-audit.json" \
             ${candidate_arg:+"$candidate_arg"}
           test "$(jq -r .target "$candidate/macos-aarch64-audit.json")" = macos-aarch64
-          test "$(jq -r .selectedPluginCount "$candidate/macos-aarch64-audit.json")" = 89
-          test "$(jq -r '.files | length' "$candidate/macos-aarch64-audit.json")" = 93
-          test "$(jq -r '.machO | length' "$candidate/macos-aarch64-audit.json")" = 92
+          test "$(jq -r .selectedPluginCount "$candidate/macos-aarch64-audit.json")" = 90
+          test "$(jq -r '.files | length' "$candidate/macos-aarch64-audit.json")" = 94
+          test "$(jq -r '.machO | length' "$candidate/macos-aarch64-audit.json")" = 93
           if [[ "$AUDIT_CANDIDATE" == true ]]; then
             test "$(jq -r .auditCandidate "$candidate/macos-aarch64-audit.json")" = true
           else
