@@ -146,4 +146,17 @@ if(KMEDIAVLC_BUILD_TEST_FIXTURES)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(kmediavlc_fake_libvlc PRIVATE -Wall -Wextra -Wpedantic -Wconversion)
     endif()
+    if(NOT WIN32)
+        enable_testing()
+        add_executable(kmediavlc_paused_seek_test tests/paused_seek_test.cpp)
+        target_compile_features(kmediavlc_paused_seek_test PRIVATE cxx_std_20)
+        target_include_directories(kmediavlc_paused_seek_test PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src"
+            "${KMEDIAVLC_VLC_SOURCE_DIR}/include"
+        )
+        target_link_libraries(kmediavlc_paused_seek_test PRIVATE kmediavlc_bridge)
+        add_test(NAME paused_seek_frame_delivery COMMAND kmediavlc_paused_seek_test
+            $<TARGET_FILE:kmediavlc_fake_libvlc>)
+    endif()
 endif()

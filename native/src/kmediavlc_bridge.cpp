@@ -636,6 +636,9 @@ void publish_paused_seek_candidate_if_ready(
     const auto transport_generation =
         player->transport_generation.load(std::memory_order_acquire);
     if (player->play_when_ready.load(std::memory_order_acquire)) return;
+    const bool can_deliver_frame = player->video_width.load(std::memory_order_acquire) > 0 &&
+        (player->delivery_mode == KMEDIAVLC_CPU_PULL ||
+         copy_output_target(player).type != KMEDIAVLC_OUTPUT_UNAVAILABLE);
     std::uint64_t serial = 0;
     std::uint64_t generation = 0;
     std::unique_ptr<kmediavlc_frame> superseded;
@@ -661,6 +664,10 @@ void publish_paused_seek_candidate_if_ready(
         }
         repause = player->paused_seek_repause_pending;
         if (!repause) return;
+        // A seek updates libVLC's clock before its decoder produces a surface.
+        // Keep decoding until that surface exists; otherwise an early clock
+        // callback consumes the one-frame budget and freezes the old image.
+        if (!player->paused_seek_candidate_frame && can_deliver_frame) return;
         player->paused_seek_repause_pending = false;
         player->paused_seek_transport_generation = 0;
         player->paused_seek_start_microseconds = -1;
