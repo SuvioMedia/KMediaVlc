@@ -459,10 +459,10 @@ jobs:
       - name: Fetch the immutable Chromium HDR10 fixture
         shell: pwsh
         run: |
-          $uri = 'https://chromium.googlesource.com/chromium/src/media/%2B/refs/heads/main/test/data/bear-1280x720-hevc-10bit-hdr10.mp4?format=TEXT'
+          $uri = $env:KMEDIAVLC_TEST_HTTPS_HDR_MEDIA
           $fixture = Join-Path $env:RUNNER_TEMP 'bear-1280x720-hevc-10bit-hdr10.mp4'
-          $encoded = (Invoke-WebRequest -Uri $uri -UseBasicParsing).Content
-          [System.IO.File]::WriteAllBytes($fixture, [Convert]::FromBase64String($encoded))
+          Invoke-WebRequest -Uri $uri -OutFile $fixture -UseBasicParsing `
+            -MaximumRetryCount 3 -RetryIntervalSec 5
           $expected = '49b960ac28ae13153ba8e62e3fceb50408564c21f25fc38936e7c8a06b61f2db'
           $actual = (Get-FileHash -LiteralPath $fixture -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actual -ne $expected) { throw "Chromium HDR10 fixture digest mismatch: $actual" }
