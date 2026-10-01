@@ -463,6 +463,8 @@ jobs:
 
       - name: Set up Android SDK for AAR verification
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install the Android publication SDK
         shell: bash
