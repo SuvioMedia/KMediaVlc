@@ -413,6 +413,31 @@ void reset_video_format(AndroidPlayer* player) {
     player->video_height.store(0, std::memory_order_release);
 }
 
+void refresh_video_dimensions(AndroidPlayer* player) {
+    // Direct MediaCodec output may invoke update_anw only with a 1x1 setup format.
+    // The selected ES owns the decoded geometry even when no software vout update follows.
+    libvlc_media_tracklist_t* tracks =
+        libvlc_media_player_get_tracklist(player->media_player, libvlc_track_video, true);
+    if (tracks == nullptr) return;
+    for (std::size_t index = 0; index < libvlc_media_tracklist_count(tracks); ++index) {
+        const libvlc_media_track_t* track = libvlc_media_tracklist_at(tracks, index);
+        if (track == nullptr || track->i_type != libvlc_track_video || track->u.video == nullptr) continue;
+        const libvlc_video_track_t* video = track->u.video;
+        uint64_t width = video->i_width;
+        uint64_t height = video->i_height;
+        if (video->i_sar_num > 0 && video->i_sar_den > 0) {
+            width = (width * video->i_sar_num + video->i_sar_den / 2) / video->i_sar_den;
+        }
+        if (video->i_orientation >= libvlc_video_orient_left_top &&
+            video->i_orientation <= libvlc_video_orient_right_bottom) std::swap(width, height);
+        if (width == 0 || height == 0 || width > kMaximumDimension || height > kMaximumDimension) continue;
+        player->video_width.store(static_cast<unsigned>(width), std::memory_order_release);
+        player->video_height.store(static_cast<unsigned>(height), std::memory_order_release);
+        break;
+    }
+    libvlc_media_tracklist_delete(tracks);
+}
+
 bool recreate_media_player(AndroidPlayer* player) {
     if (player == nullptr || player->media_player == nullptr || player->current_media == nullptr) {
         return false;
@@ -805,6 +830,7 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_snapshot(
     JNIEnv* environment, jclass, jlong handle) {
     auto* player = player_from(handle);
     if (!valid_player(player)) return nullptr;
+    refresh_video_dimensions(player);
     if (player->volume_pending &&
         libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {
         player->volume_pending = false;
