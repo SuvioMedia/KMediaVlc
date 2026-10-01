@@ -866,7 +866,7 @@ final class VlcDesktopPlayerIntegrationTest {
                     96,
                     54,
                     true,
-                    203f,
+                    100f,
                     1_000f,
                     1,
                     1)));
@@ -877,6 +877,8 @@ final class VlcDesktopPlayerIntegrationTest {
                 assertEquals(VlcNativeHandleType.IOSURFACE, frame.handleType());
                 assertEquals(VlcPixelFormat.RGBA16F_LINEAR_SRGB, frame.pixelFormat());
                 assertEquals(VlcSourceDynamicRange.HDR10, frame.sourceDynamicRange());
+                assertEquals(203f, frame.sdrWhiteNits(),
+                        "Linear libplacebo pixels retain their physical white independently of display settings.");
                 assertEquals(32, frame.generation());
                 assertEquals(96, frame.width());
                 assertEquals(54, frame.height());

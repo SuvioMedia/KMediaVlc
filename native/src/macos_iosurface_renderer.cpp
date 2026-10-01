@@ -27,6 +27,9 @@ namespace kmediavlc {
 namespace {
 
 constexpr std::size_t kSurfaceCount = 4;
+// libplacebo's linear output is normalized to PL_COLOR_SDR_WHITE, independently
+// of the presentation surface's requested SDR white. Do not relabel absolute HDR.
+constexpr float kLibplaceboLinearReferenceWhiteNits = 203.0F;
 
 bool debug_callbacks_enabled() {
     static const bool enabled = [] {
@@ -574,7 +577,8 @@ private:
             return false;
         }
         current_surface_->output_generation = target.generation;
-        current_surface_->sdr_white_nits = target.sdr_white_nits;
+        current_surface_->sdr_white_nits = floating_point
+            ? kLibplaceboLinearReferenceWhiteNits : target.sdr_white_nits;
         current_surface_->display_peak_nits = target.display_peak_nits;
         current_surface_->source_dynamic_range = source_dynamic_range_;
         current_surface_->source_extended = source_extended_;
