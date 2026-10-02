@@ -9,6 +9,7 @@ the acquired buffer without estimating media position from a system clock.
 
 The caller installs the callback before opening media, supplies an immutable
 source generation, and keeps its opaque data alive until player teardown.
+Only a consumed decoder buffer publishes timing; repeated paused redraws do not.
 Untimed/software output intentionally supplies no timing proof. This is a
 private source-built extension; older libVLC runtimes have no matching symbol.
 
@@ -70,47 +71,60 @@ index 64af8b1..d685163 100644
  bool libvlc_video_set_output_callbacks(libvlc_media_player_t *mp,
                                         libvlc_video_engine_t engine,
                                         libvlc_video_output_setup_cb setup_cb,
-diff --git a/modules/video_output/android/display.c b/modules/video_output/android/display.c
-index ca50379..1f2921a 100644
---- a/modules/video_output/android/display.c
-+++ b/modules/video_output/android/display.c
-@@ -125,6 +125,9 @@ struct subpicture
- struct sys
- {
-     AWindowHandler *awh;
-+    void (*frame_cb)(void *, uint64_t, int64_t, int64_t);
-+    void *frame_opaque;
-+    uint64_t frame_generation;
-     bool can_set_video_layout;
-     android_video_context_t *avctx;
-     struct subpicture sub;
-@@ -520,7 +523,16 @@ static void Prepare(vout_display_t *vd, picture_t *picture,
-     assert(picture->context);
-     assert(sys->asc.sc == NULL);
-     if (sys->avctx->render_ts != NULL)
-+    {
-+        /* Record before releasing the decoder buffer: its Surface consumer can
-+         * acquire it immediately. Repeated redraws keep the same producer key.
-+         * date is a system clock value; picture->date is the decoded media PTS. */
-+        if (sys->frame_cb != NULL && picture->date != VLC_TICK_INVALID &&
-+            date > 0 && date <= INT64_MAX / 1000)
-+            sys->frame_cb(sys->frame_opaque, sys->frame_generation,
-+                US_FROM_VLC_TICK(picture->date - VLC_TICK_0), NS_FROM_VLC_TICK(date));
-         sys->avctx->render_ts(picture->context, date);
-+    }
+diff --git a/modules/codec/omxil/mediacodec.c b/modules/codec/omxil/mediacodec.c
+index 4b8023d..9fde759 100644
+--- a/modules/codec/omxil/mediacodec.c
++++ b/modules/codec/omxil/mediacodec.c
+@@ -77,6 +77,7 @@ struct asurface_picture_ctx
+     picture_context_t s;
+     atomic_uint refs;
+     atomic_int index;
++    vlc_tick_t media_pts;
+ };
  
-     if (sys->sub.window != NULL)
-         subpicture_Prepare(vd, subpicture);
-@@ -712,6 +724,9 @@ static int Open(vout_display_t *vd,
-         return VLC_ENOMEM;
+ typedef struct decoder_sys_t
+@@ -129,6 +130,9 @@ typedef struct decoder_sys_t
+         {
+             vlc_video_context *ctx;
+             struct asurface_picture_ctx apic_ctxs[MAX_PIC];
++            void (*frame_cb)(void *, uint64_t, int64_t, int64_t);
++            void *frame_opaque;
++            uint64_t frame_generation;
+             void *p_surface;
+             unsigned i_angle;
+             unsigned i_input_offset_x, i_input_offset_y;
+@@ -686,6 +690,13 @@ static bool PictureContextRenderPicTs(struct picture_context_t *ctx,
+             vlc_video_context_GetPrivate(ctx->vctx, VLC_VIDEO_CONTEXT_AWINDOW);
+         decoder_sys_t *p_sys = avctx->dec_opaque;
  
-     sys->awh = awh;
-+    sys->frame_cb = var_InheritAddress(vd, "kmedia-anw-frame-cb");
-+    sys->frame_opaque = var_InheritAddress(vd, "kmedia-anw-frame-opaque");
-+    sys->frame_generation = var_InheritInteger(vd, "kmedia-anw-frame-generation");
-     sys->can_set_video_layout = can_set_video_layout;
-     sys->asc.sc = NULL;
-     sys->avctx = vlc_video_context_GetPrivate(context, VLC_VIDEO_CONTEXT_AWINDOW);
++        /* Only the thread consuming the decoder index publishes timing. Vout
++         * may prepare the same paused picture repeatedly after index becomes -1.
++         * Publish before release, since the Surface may acquire immediately. */
++        if (p_sys->video.frame_cb != NULL && apctx->media_pts != VLC_TICK_INVALID &&
++            ts > 0 && ts <= INT64_MAX / 1000)
++            p_sys->video.frame_cb(p_sys->video.frame_opaque, p_sys->video.frame_generation,
++                US_FROM_VLC_TICK(apctx->media_pts - VLC_TICK_0), NS_FROM_VLC_TICK(ts));
+         p_sys->api.release_out_ts(&p_sys->api, index, ts * INT64_C(1000));
+         return true;
+     }
+@@ -1295,6 +1306,9 @@ static int OpenDecoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
+         vlc_cond_init(&p_sys->video.air_cond);
+         p_sys->video.use_air = false;
+         p_sys->video.air_waiting_count = 0;
++        p_sys->video.frame_cb = var_InheritAddress(p_dec, "kmedia-anw-frame-cb");
++        p_sys->video.frame_opaque = var_InheritAddress(p_dec, "kmedia-anw-frame-opaque");
++        p_sys->video.frame_generation = var_InheritInteger(p_dec, "kmedia-anw-frame-generation");
+ 
+         switch (p_dec->fmt_in->i_codec)
+         {
+@@ -1577,6 +1591,7 @@ static int Video_ProcessOutput(decoder_t *p_dec, mc_api_out *p_out,
+                     GetPictureContext(p_dec,p_out->buf.i_index);
+                 assert(apctx);
+                 assert(apctx->s.vctx);
++                apctx->media_pts = p_pic->date;
+                 vlc_video_context_Hold(apctx->s.vctx);
+                 p_pic->context = &apctx->s;
+                 *pp_out_pic = p_pic;
 diff --git a/modules/video_output/android/utils.c b/modules/video_output/android/utils.c
 index ef277c1..ace5400 100644
 --- a/modules/video_output/android/utils.c

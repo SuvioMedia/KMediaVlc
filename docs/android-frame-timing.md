@@ -6,8 +6,9 @@ timestamp may be the scheduled **system** time passed to MediaCodec; it must not
 PTS, or estimated from the UI playback position.
 
 The source patch adds the private, versioned `libvlc_kmedia_set_anw_frame_callback_v1` symbol.
-The Android display records the picture's decoded PTS (microseconds, without `VLC_TICK_0`) and
-the exact timestamp passed to timed MediaCodec release, before making that buffer available.
+The MediaCodec picture context retains the decoded PTS (microseconds, without `VLC_TICK_0`).
+The thread atomically consuming the decoder buffer index records it with the exact timestamp
+passed to timed MediaCodec release, before making that buffer available.
 These are decoder timestamps; no approximation or normalization against the player UI clock occurs.
 The native bridge installs its callback before opening media and associates it with an immutable
 media generation. Processing source replacement also replaces the decoder Surface/output.
@@ -25,6 +26,13 @@ transport. Ordinary native playback and synchronous GPU filters do not require t
 Surface replacement now uses explicit Play/Pause/Stop intent. A successful asynchronous Stop may
 still report the previous PAUSED/PLAYING state; that stale observation must not restart the old media
 while the application is attaching the next input Surface.
+
+The first full-film diagnostic exposed an important distinction: the display's Prepare callback
+can run repeatedly on a paused picture whose decoder buffer has already been released. Recording
+each such redraw filled the 128-entry ring with producer timestamps that never reached the Surface,
+retiring the real acquired buffer's mapping. Recording inside the actual decoder-index consumption
+prevents these nonexistent frames from entering the lookup. The bounded diagnostic confirmed that
+symbol discovery, callback registration, generation and exact Surface keys otherwise matched.
 
 Validation is in progress. The host timing test covers signed PTS, exact lookup, source isolation,
 bounded retirement and concurrent producer/consumer access. Both Android JNI ABI compilations and
