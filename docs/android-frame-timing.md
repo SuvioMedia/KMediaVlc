@@ -50,13 +50,23 @@ arriving with first=true, waiting=false, paused=true after buffering completes. 
 flag previously depended on waiting=true, so this asynchronous completion could use normal clocked
 presentation while paused. The source correction forces the first paused picture even after
 buffering completes. All diagnostic logging and the rejected wakeup change are removed; the same
-repeated-video regression must pass on this candidate before acceptance. The retained traces contain
+five-seek real-film regression now passes in 10.895 seconds on this candidate. The retained traces contain
 numeric state/PTS only, never media URIs, headers or payloads.
 
-Validation is in progress. The host timing test covers signed PTS, exact lookup, source isolation,
-bounded retirement and concurrent producer/consumer access. Both Android JNI ABI compilations and
-the Java runtime check pass. Full source-built runtime playback, paused seek/source replacement,
-matched AAR provenance and real-video ONNX acceptance are still required before publication.
+The host timing test covers signed PTS, exact lookup, source isolation, bounded retirement and
+concurrent producer/consumer access. Both complete Android ABI builds and AAR verification pass;
+link audits include 308/306 modules and 377/375 static archives, respectively, with a hash-bound
+55-component legal inventory. The immutable private candidate `0.1.0-processing-android-20261002-timing6`
+uses source `985947572dec837a21fe4357f58decf4796ce8b0` and remains `releaseEligible=false`.
+
+The matched player passes five consecutive paused seeks, native-Surface fallback, 18 GLES/color/async
+cases, 12 host cases and the full actual-video ONNX probe. The final CPU-emulator measurement advances
+20.132 media seconds in 20.086 wall seconds but presents zero new processed results within 250 ms.
+Exact-frame comparison at PTS 21,916,666 µs verifies 160,110 changed pixels and unchanged background;
+a separate actual player screenshot shows all three processed faces. This is functional flat-SDR
+acceptance, not real-time, physical-device/HDR or released/default-bundle acceptance. Source/APK/AAR
+hashes, raw failed/passing traces and an independent verifier are in the
+[player evidence](https://github.com/SuvioMedia/KMediaPlayer/blob/codex/video-processing-plugins/docs/validation/android-onnx-libvlc-20261002/README.md).
 
 `native/android/tests/transport_test.cpp` exercises the actual JNI bridge against a libVLC fixture
 with delayed pause capability and delayed Stop notification. It runs as an Android executable
