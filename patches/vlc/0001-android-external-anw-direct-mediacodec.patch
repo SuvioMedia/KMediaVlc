@@ -141,3 +141,21 @@ index ef277c1..ace5400 100644
  
      awh->views[AWindow_Video].p_anw = video;
      ANativeWindow_acquire(video);
+diff --git a/src/input/input.c b/src/input/input.c
+index a9fcf5d..9b9328a 100644
+--- a/src/input/input.c
++++ b/src/input/input.c
+@@ -752,7 +752,13 @@ static void MainLoop( input_thread_t *p_input, bool b_interactive )
+             if( Control( p_input, i_type, param ) )
+             {
+                 if( ControlIsSeekRequest( i_type ) )
++                {
+                     i_last_seek_mdate = vlc_tick_now();
++                    /* A paused clock can have no next wakeup. Re-enter demux
++                     * after the seek resets buffering, before waiting for more
++                     * controls; otherwise the requested paused frame starves. */
++                    i_wakeup = 0;
++                }
+                 i_intf_update = 0;
+             }
+ 

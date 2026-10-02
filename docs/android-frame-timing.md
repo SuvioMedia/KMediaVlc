@@ -40,6 +40,14 @@ retiring the real acquired buffer's mapping. Recording inside the actual decoder
 prevents these nonexistent frames from entering the lookup. The bounded diagnostic confirmed that
 symbol discovery, callback registration, generation and exact Surface keys otherwise matched.
 
+A separate paused-seek failure was reproduced without ONNX and survived serializing Pause/Seek in
+the client: native state was PAUSED, the input was seekable, and the seek had been sent. A matching
+symbolized native backtrace placed the input thread in ControlPop's indefinite wait with both
+decoder queues idle. The input loop retained an indefinite paused-clock wakeup after the seek reset
+buffering. The source candidate forces the demux loop to run again after a successful seek, so it can
+fill the requested paused frame before waiting for another control. Repeated real-video verification
+of this wakeup change is pending.
+
 Validation is in progress. The host timing test covers signed PTS, exact lookup, source isolation,
 bounded retirement and concurrent producer/consumer access. Both Android JNI ABI compilations and
 the Java runtime check pass. Full source-built runtime playback, paused seek/source replacement,
