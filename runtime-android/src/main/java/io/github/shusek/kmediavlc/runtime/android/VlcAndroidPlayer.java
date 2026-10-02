@@ -47,6 +47,16 @@ public final class VlcAndroidPlayer implements AutoCloseable {
         return decodeMode;
     }
 
+    /**
+     * Exact decoded PTS associated with a SurfaceTexture producer timestamp and media generation.
+     * Returns Long.MIN_VALUE when the matching runtime hook/frame is unavailable or retired.
+     * The timestamp supplied by SurfaceTexture is a system-clock key, not a media position.
+     */
+    public synchronized long framePresentationTimeUs(long generation, long producerTimestampNs) {
+        requireOpen();
+        return NativeBridge.framePresentationTimeUs(nativeHandle, generation, producerTimestampNs);
+    }
+
     public synchronized void attachSurface(Surface video, int width, int height) {
         attachSurfaces(video, null, width, height);
     }

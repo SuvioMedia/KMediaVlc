@@ -111,10 +111,126 @@ index 059c7d6..2d4eaf9 100644
      if (sys->gl == NULL)
          goto error;
 diff --git a/modules/video_output/opengl/sampler.c b/modules/video_output/opengl/sampler.c
-index 25f7683..6444fc2 100644
 --- a/modules/video_output/opengl/sampler.c
 +++ b/modules/video_output/opengl/sampler.c
-@@ -862,8 +862,27 @@ opengl_fragment_shader_init(struct vlc_gl_sampler *sampler, bool expose_planes)
+@@ -117,18 +117,6 @@
+     free(sampler->sys);
+ }
+ 
+-static const float MATRIX_COLOR_RANGE_LIMITED[4*3] = {
+-    255.0/219,         0,         0, -255.0/219 *  16.0/255,
+-            0, 255.0/224,         0, -255.0/224 * 128.0/255,
+-            0,         0, 255.0/224, -255.0/224 * 128.0/255,
+-};
+-
+-static const float MATRIX_COLOR_RANGE_FULL[4*3] = {
+-    1, 0, 0,          0,
+-    0, 1, 0, -128.0/255,
+-    0, 0, 1, -128.0/255,
+-};
+-
+ /*
+  * Construct the transformation matrix from the luma weight of the red and blue
+  * component (the green component is deduced).
+@@ -162,7 +150,8 @@
+ static void
+ init_conv_matrix(float conv_matrix_out[],
+                  video_color_space_t color_space,
+-                 video_color_range_t color_range)
++                 video_color_range_t color_range,
++                 unsigned sample_bits, unsigned storage_bits, unsigned sample_shift)
+ {
+     const float *space_matrix;
+     switch (color_space) {
+@@ -180,9 +169,21 @@
+      * column-major order by default, and OpenGL ES does not support row-major
+      * order at all). */
+ 
+-    const float *range_matrix = color_range == COLOR_RANGE_FULL
+-                              ? MATRIX_COLOR_RANGE_FULL
+-                              : MATRIX_COLOR_RANGE_LIMITED;
++    /* Decode the actual stored code values, not an 8-bit approximation. P010/P012
++     * samples are MSB-aligned UNORM16; planar 10/12-bit samples are LSB-aligned.
++     * In particular, neutral P010 chroma is 32768/65535, not 128/255. */
++    const double storage_max = (1u << storage_bits) - 1u;
++    const double sample_max = (1u << sample_bits) - 1u;
++    const double sample_step = 1u << (sample_bits - 8);
++    const double alignment = 1u << sample_shift;
++    const bool full = color_range == COLOR_RANGE_FULL;
++    const double y_range = full ? sample_max : 219.0 * sample_step;
++    const double c_range = full ? sample_max : 224.0 * sample_step;
++    const double range_matrix[4*3] = {
++        storage_max / (alignment * y_range), 0, 0, full ? 0 : -16.0 / 219.0,
++        0, storage_max / (alignment * c_range), 0, -128.0 * sample_step / c_range,
++        0, 0, storage_max / (alignment * c_range), -128.0 * sample_step / c_range,
++    };
+     /* Multiply the matrices on CPU once for all */
+     for (int x = 0; x < 4; ++x)
+     {
+@@ -214,49 +215,23 @@
+ {
+     struct sampler_priv *priv = PRIV(sampler);
+ 
+-    /* The current implementation always converts from limited to full range. */
+-    const video_color_range_t range = COLOR_RANGE_LIMITED;
++    const video_color_range_t range = sampler->fmt_in.color_range;
+     float *matrix = priv->conv_matrix;
+-    init_conv_matrix(matrix, yuv_space, range);
+-
+-    /* If using half_float, we multiply the conversion matrix by 255.  Reason:
+-     * half-float YUV planes store values in [0..1]. Multiplying by 255
+-     * compensates for that.
+-     */
++    const bool packed16 = desc->fcc == VLC_CODEC_Y210 || desc->fcc == VLC_CODEC_Y212;
++    const bool msb_aligned = packed16 || desc->fcc == VLC_CODEC_P010 ||
++                            desc->fcc == VLC_CODEC_P012 || desc->fcc == VLC_CODEC_P016;
++    const bool planar16 = desc->plane_count > 1 && desc->pixel_size == 2;
++    const unsigned storage_bits = planar16 || msb_aligned ? 16 : 8;
++    const unsigned sample_bits = desc->fcc == VLC_CODEC_Y210 ? 10 :
++                                 desc->fcc == VLC_CODEC_Y212 ? 12 :
++                                 planar16 ? desc->pixel_bits : 8;
++    init_conv_matrix(matrix, yuv_space, range, sample_bits, storage_bits,
++                     msb_aligned ? storage_bits - sample_bits : 0);
++
++    /* Preserve the existing half-float upload convention. */
+     if (sampler->half_float)
+         for (int i = 0; i < 4*3; ++i)
+             matrix[i] *= 255;
+-
+-    if (desc->pixel_size == 2)
+-    {
+-        if (desc->fcc != VLC_CODEC_P010 && desc->fcc != VLC_CODEC_P012
+-         && desc->fcc != VLC_CODEC_P016) {
+-            /* Do a bit shift if samples are stored on LSB. */
+-            float yuv_range_correction = (float)((1 << 16) - 1)
+-                                         / ((1 << desc->pixel_bits) - 1);
+-            /* We want to transform the input color (y, u, v, 1) to
+-             * (r*y, r*u, r*v, 1), where r = yuv_range_correction.
+-             *
+-             * This can be done by left-multiplying the color vector by a
+-             * matrix R:
+-             *
+-             *                 R
+-             *  / r*y \   / r 0 0 0 \   / y \
+-             *  | r*u | = | 0 r 0 0 | * | u |
+-             *  | r*v |   | 0 0 r 0 |   | v |
+-             *  \  1  /   \ 0 0 0 1 /   \ 1 /
+-             *
+-             * Combine this transformation with the color conversion matrix:
+-             *
+-             *     matrix := matrix * R
+-             *
+-             * This is equivalent to multipying the 3 first rows by r
+-             * (yuv_range_conversion).
+-             */
+-            for (int i = 0; i < 4*3; ++i)
+-                matrix[i] *= yuv_range_correction;
+-        }
+-    }
+ 
+     priv->yuv_color = true;
+ 
+@@ -862,8 +837,27 @@
  
          struct pl_color_space src_space = vlc_placebo_ColorSpace(fmt);
          struct pl_color_space dst_space = pl_color_space_unknown;
@@ -144,20 +260,15 @@ index 25f7683..6444fc2 100644
  
          char *lut_file = var_InheritString(priv->gl, "gl-lut-file");
          struct pl_custom_lut *lut = LoadCustomLUT(sampler, lut_file);
-@@ -1187,7 +1206,8 @@ opengl_fragment_shader_init(struct vlc_gl_sampler *sampler, bool expose_planes)
-     priv->pl_sh_res = NULL;
-     priv->pl_log = vlc_placebo_CreateLog(VLC_OBJECT(sampler->gl));
+@@ -1189,6 +1183,7 @@
  
      const struct pl_opengl_params gl_params =
      {
 +        .allow_software = var_InheritBool(priv->gl, "kmediavlc-gl-allow-sw"),
          /* Libplacebo won't control whether the context is current or not.
           * This is the default but we also want to ensure that the struct is
-@@ -1252,10 +1272,14 @@ opengl_fragment_shader_init(struct vlc_gl_sampler *sampler, bool expose_planes)
- vlc_module_begin()
-     set_shortname("glsampler")
-     set_description("OpenGL built-in sampler")
-     set_callback_opengl_sampler(Open)
+          * properly initialized even if PL_API_VER < 215. */
+@@ -1256,6 +1251,10 @@
      set_capability("opengl sampler", 1)
      set_subcategory(SUBCAT_VIDEO_VOUT)
  #ifdef HAVE_LIBPLACEBO_GL

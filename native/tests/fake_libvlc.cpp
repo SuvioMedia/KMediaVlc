@@ -11,6 +11,7 @@ struct libvlc_instance_t final {};
 struct libvlc_media_t final {
     bool hdr = false;
     bool eos_sequence = false;
+    bool resize_between_render_and_swap = false;
 };
 
 struct FakeOutputCallbacks final {
@@ -43,6 +44,7 @@ struct libvlc_media_player_t final {
     FakeVmemCallbacks vmem;
     bool hdr = false;
     bool eos_sequence = false;
+    bool resize_between_render_and_swap = false;
 };
 
 namespace {
@@ -141,6 +143,18 @@ bool publish_test_frame(libvlc_media_player_t* player) {
         : libvlc_video_transfer_func_SRGB;
     libvlc_video_output_cfg_t output_config{};
     const bool updated = player->output.update_output(opaque, &render_config, &output_config);
+    if (updated && player->resize_between_render_and_swap) {
+        using ClearBuffer = void (*)(unsigned, int, const float*);
+        const auto clear = reinterpret_cast<ClearBuffer>(
+            player->output.get_proc_address(opaque, "glClearBufferfv"));
+        if (clear == nullptr) {
+            player->output.make_current(opaque, false);
+            return false;
+        }
+        constexpr unsigned gl_color = 0x1800;
+        constexpr float red[4]{1.0F, 0.0F, 0.0F, 1.0F};
+        clear(gl_color, 0, red);
+    }
     const bool left_context = player->output.make_current(opaque, false);
     constexpr int gl_rgba = 0x1908;
     const auto expected_transfer = player->hdr
@@ -158,6 +172,12 @@ bool publish_test_frame(libvlc_media_player_t* player) {
         output_config.transfer != expected_transfer ||
         output_config.orientation != expected_orientation) {
         return false;
+    }
+    // Let the Java fixture resize deterministically between rendering and
+    // presentation, just as an independent TextureView metadata poll can.
+    if (player->resize_between_render_and_swap && player->callbacks != nullptr &&
+        player->callbacks->on_state_changed != nullptr) {
+        player->callbacks->on_state_changed(player->callbacks_opaque, libvlc_Playing);
     }
     // modules/video_output/vgl.c enters the context again from
     // VglSwapBuffers before invoking the external swap callback.
@@ -202,6 +222,7 @@ void libvlc_media_player_set_media(libvlc_media_player_t* player, libvlc_media_t
     if (player == nullptr) return;
     player->hdr = media != nullptr && media->hdr;
     player->eos_sequence = media != nullptr && media->eos_sequence;
+    player->resize_between_render_and_swap = media != nullptr && media->resize_between_render_and_swap;
 }
 
 int libvlc_media_player_play(libvlc_media_player_t* player) {
@@ -284,6 +305,7 @@ libvlc_media_t* libvlc_media_new_location(const char* location) {
         const std::string_view value(location);
         media->hdr = value.find("hdr") != std::string_view::npos;
         media->eos_sequence = value.find("eos-terminal") != std::string_view::npos;
+        media->resize_between_render_and_swap = value.find("resize-between-render-and-swap") != std::string_view::npos;
     }
     return media;
 }

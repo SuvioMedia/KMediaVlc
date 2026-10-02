@@ -19,6 +19,8 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -864,7 +866,7 @@ final class VlcDesktopPlayerIntegrationTest {
                     96,
                     54,
                     true,
-                    203f,
+                    100f,
                     1_000f,
                     1,
                     1)));
@@ -875,6 +877,8 @@ final class VlcDesktopPlayerIntegrationTest {
                 assertEquals(VlcNativeHandleType.IOSURFACE, frame.handleType());
                 assertEquals(VlcPixelFormat.RGBA16F_LINEAR_SRGB, frame.pixelFormat());
                 assertEquals(VlcSourceDynamicRange.HDR10, frame.sourceDynamicRange());
+                assertEquals(203f, frame.sdrWhiteNits(),
+                        "Linear libplacebo pixels retain their physical white independently of display settings.");
                 assertEquals(32, frame.generation());
                 assertEquals(96, frame.width());
                 assertEquals(54, frame.height());
@@ -894,6 +898,59 @@ final class VlcDesktopPlayerIntegrationTest {
                 assertEquals(frame.stride(), inspection[3]);
                 assertTrue(inspection[4] >= frame.stride() * 54L);
                 assertEquals(frame.fourcc(), inspection[5]);
+            }
+        }
+    }
+
+    @Test
+    void fakeMacResizeBetweenRenderAndSwapPreservesTheRenderedPixels() {
+        Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac"));
+        String bridge = System.getProperty("kmediavlc.test.nativeBridge");
+        String fakeLibVlc = System.getProperty("kmediavlc.test.fakeLibVlc");
+        Assumptions.assumeTrue(bridge != null && fakeLibVlc != null, "The native macOS fixture is opt-in.");
+        Path fakePath = Path.of(fakeLibVlc).toAbsolutePath();
+        var runtime = new VlcDesktopRuntimeResolution(
+                Path.of(bridge).toAbsolutePath(), fakePath, fakePath.getParent(),
+                "fake-libvlc-macos-resize-test",
+                new VlcRuntimeCapabilities(
+                        4, 2, "4.0.0-dev", "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+                        Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
+                        Set.of(VlcRenderEngine.OPENGL), false));
+        var reference = new AtomicReference<VlcDesktopPlayer>();
+        var resized = new AtomicBoolean();
+        var resizeAccepted = new AtomicBoolean();
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.GPU_PUSH, false, 203f, 203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onPlaybackStateChanged(VlcPlaybackState state, long mediaGeneration) {
+                        if (state == VlcPlaybackState.PLAYING && resized.compareAndSet(false, true)) {
+                            resizeAccepted.set(reference.get().updateOutput(
+                                    new VlcMacOutputTarget(92, 160, 90, false, 203f, 203f, 1, 1)));
+                        }
+                    }
+                });
+        try (var player = VlcDesktopPlayer.create(runtime, config)) {
+            reference.set(player);
+            assertTrue(player.updateOutput(new VlcMacOutputTarget(91, 96, 54, false, 203f, 203f, 1, 1)));
+            assertTrue(player.open("test://resize-between-render-and-swap", Map.of(), true));
+            assertTrue(resizeAccepted.get());
+            try (var frame = player.acquireLatestFrame().orElseThrow()) {
+                assertEquals(91, frame.generation(), "An in-flight frame retains its original target.");
+                assertEquals(96, frame.width());
+                assertEquals(54, frame.height());
+                float[] pixels = NativeBridge.inspectMacIosurfacePixels(frame.platformHandle());
+                assertNotNull(pixels);
+                assertTrue(pixels[2] > 0.9f, "Resize must preserve the rendered red surface.");
+            }
+            assertTrue(player.play());
+            try (var frame = player.acquireLatestFrame().orElseThrow()) {
+                assertEquals(92, frame.generation());
+                assertEquals(160, frame.width());
+                assertEquals(90, frame.height());
+                float[] pixels = NativeBridge.inspectMacIosurfacePixels(frame.platformHandle());
+                assertNotNull(pixels);
+                assertTrue(pixels[2] > 0.9f, "The next frame must render into the resized pool.");
             }
         }
     }
