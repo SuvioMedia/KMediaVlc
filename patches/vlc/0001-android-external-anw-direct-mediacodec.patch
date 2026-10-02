@@ -10,6 +10,8 @@ the acquired buffer without estimating media position from a system clock.
 The caller installs the callback before opening media, supplies an immutable
 source generation, and keeps its opaque data alive until player teardown.
 Only a consumed decoder buffer publishes timing; repeated paused redraws do not.
+A paused seek also forces its first decoded picture after ES buffering has
+finished; asynchronous decoder completion must not depend on the buffering race.
 Untimed/software output intentionally supplies no timing proof. This is a
 private source-built extension; older libVLC runtimes have no matching symbol.
 
@@ -141,21 +143,19 @@ index ef277c1..ace5400 100644
  
      awh->views[AWindow_Video].p_anw = video;
      ANativeWindow_acquire(video);
-diff --git a/src/input/input.c b/src/input/input.c
-index a9fcf5d..9b9328a 100644
---- a/src/input/input.c
-+++ b/src/input/input.c
-@@ -752,7 +752,13 @@ static void MainLoop( input_thread_t *p_input, bool b_interactive )
-             if( Control( p_input, i_type, param ) )
-             {
-                 if( ControlIsSeekRequest( i_type ) )
-+                {
-                     i_last_seek_mdate = vlc_tick_now();
-+                    /* A paused clock can have no next wakeup. Re-enter demux
-+                     * after the seek resets buffering, before waiting for more
-+                     * controls; otherwise the requested paused frame starves. */
-+                    i_wakeup = 0;
-+                }
-                 i_intf_update = 0;
-             }
+diff --git a/src/input/decoder.c b/src/input/decoder.c
+index 706530b..fa0af14 100644
+--- a/src/input/decoder.c
++++ b/src/input/decoder.c
+@@ -1519,7 +1519,10 @@ static int ModuleThread_PlayVideo( vlc_input_decoder_t *p_owner, picture_t *p_pi
+             return VLC_ENOENT;
+     }
  
+-    if( p_owner->b_first && p_owner->b_waiting )
++    /* A paused seek may finish ES buffering before an asynchronous decoder
++     * returns its first picture. Still display that picture immediately: there
++     * is no running presentation clock to schedule it against while paused. */
++    if( p_owner->b_first && (p_owner->b_waiting || p_owner->paused) )
+     {
+         msg_Dbg( p_dec, "Received first picture" );
+         p_owner->b_first = false;

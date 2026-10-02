@@ -40,13 +40,18 @@ retiring the real acquired buffer's mapping. Recording inside the actual decoder
 prevents these nonexistent frames from entering the lookup. The bounded diagnostic confirmed that
 symbol discovery, callback registration, generation and exact Surface keys otherwise matched.
 
-A separate paused-seek failure was reproduced without ONNX and survived serializing Pause/Seek in
-the client: native state was PAUSED, the input was seekable, and the seek had been sent. A matching
-symbolized native backtrace placed the input thread in ControlPop's indefinite wait with both
-decoder queues idle. The input loop retained an indefinite paused-clock wakeup after the seek reset
-buffering. The source candidate forces the demux loop to run again after a successful seek, so it can
-fill the requested paused frame before waiting for another control. Repeated real-video verification
-of this wakeup change is pending.
+A separate paused-seek failure is reproducible without ONNX and survives serializing Pause/Seek
+in the client. The native state is PAUSED and seekable, with the requested target still pending.
+A matching symbolized native backtrace places the input and decoder threads in their idle waits.
+Forcing the demux loop to re-enter after a successful seek did not fix it; that candidate is rejected
+and removed from the working patch. A bounded native trace rules out a later Surface replacement
+and confirms successful control enqueue, consume and demux seek. The decoder trace then shows the requested picture
+arriving with first=true, waiting=false, paused=true after buffering completes. The first-picture
+flag previously depended on waiting=true, so this asynchronous completion could use normal clocked
+presentation while paused. The source correction forces the first paused picture even after
+buffering completes. All diagnostic logging and the rejected wakeup change are removed; the same
+repeated-video regression must pass on this candidate before acceptance. The retained traces contain
+numeric state/PTS only, never media URIs, headers or payloads.
 
 Validation is in progress. The host timing test covers signed PTS, exact lookup, source isolation,
 bounded retirement and concurrent producer/consumer access. Both Android JNI ABI compilations and
