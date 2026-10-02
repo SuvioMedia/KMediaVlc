@@ -77,6 +77,7 @@ struct AndroidPlayer final {
     int volume_percent = 100;
     float playback_rate = 1.0F;
     bool volume_pending = false;
+    bool pause_pending = false; // Serialized Java commands/snapshot polling only, never callbacks.
     kmediavlc::FrameTiming frame_timing;
 
     std::mutex surface_mutex;
@@ -465,6 +466,16 @@ void refresh_video_dimensions(AndroidPlayer* player) {
     libvlc_media_tracklist_delete(tracks);
 }
 
+void apply_pending_pause(AndroidPlayer* player) {
+    // libVLC set_pause stops an input whose pause capability is not known yet.
+    // Surface recreation starts a fresh asynchronous input; preserve Pause intent
+    // until its capabilities arrive instead of accidentally turning it into Stop.
+    if (player->pause_pending && libvlc_media_player_can_pause(player->media_player)) {
+        player->pause_pending = false;
+        libvlc_media_player_set_pause(player->media_player, 1);
+    }
+}
+
 bool recreate_media_player(AndroidPlayer* player) {
     if (player == nullptr || player->media_player == nullptr || player->current_media == nullptr) {
         return false;
@@ -477,6 +488,7 @@ bool recreate_media_player(AndroidPlayer* player) {
     // stop_async can still report PAUSED/PLAYING while a replacement Surface is attached.
     // Only explicit transport intent may restart the old source during that replacement.
     const bool resume_paused = intent == TransportIntent::paused;
+    player->pause_pending = resume_playback && resume_paused;
     const libvlc_time_t reported_time = libvlc_media_player_get_time(player->media_player);
     const libvlc_time_t resume_time = reported_time >= 0
         ? reported_time
@@ -516,7 +528,7 @@ bool recreate_media_player(AndroidPlayer* player) {
     if (resume_time > 0) {
         (void)libvlc_media_player_set_time(player->media_player, resume_time, false);
     }
-    if (resume_paused) libvlc_media_player_set_pause(player->media_player, 1);
+    apply_pending_pause(player);
     if (libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {
         player->volume_pending = false;
     }
@@ -744,6 +756,7 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_open(
     }
 
     player->media_generation.fetch_add(1, std::memory_order_acq_rel);
+    player->pause_pending = false;
     player->transport_intent.store(autoplay == JNI_TRUE ? TransportIntent::playing : TransportIntent::stopped,
         std::memory_order_release);
     install_frame_timing(player);
@@ -767,6 +780,7 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_play(
     auto* player = player_from(handle);
     if (!valid_player(player)) return JNI_FALSE;
     if (libvlc_media_player_play(player->media_player) == 0) {
+        player->pause_pending = false;
         player->transport_intent.store(TransportIntent::playing, std::memory_order_release);
         if (player->volume_pending &&
             libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {
@@ -783,8 +797,9 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_pause(
     JNIEnv*, jclass, jlong handle) {
     auto* player = player_from(handle);
     if (!valid_player(player)) return JNI_FALSE;
-    libvlc_media_player_set_pause(player->media_player, 1);
     player->transport_intent.store(TransportIntent::paused, std::memory_order_release);
+    if (player->pause_pending) apply_pending_pause(player);
+    else libvlc_media_player_set_pause(player->media_player, 1);
     return JNI_TRUE;
 }
 
@@ -795,12 +810,14 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_stop(
     if (!valid_player(player)) return JNI_FALSE;
     const auto current = player->state.load(std::memory_order_acquire);
     if (current == kStateEnded || current == kStateStopped) {
+        player->pause_pending = false;
         player->transport_intent.store(TransportIntent::stopped, std::memory_order_release);
         player->state_before_buffering.store(kStateStopped, std::memory_order_release);
         player->state.store(kStateStopped, std::memory_order_release);
         return JNI_TRUE;
     }
     if (libvlc_media_player_stop_async(player->media_player) == 0) {
+        player->pause_pending = false;
         player->transport_intent.store(TransportIntent::stopped, std::memory_order_release);
         return JNI_TRUE;
     }
@@ -865,6 +882,7 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_snapshot(
     JNIEnv* environment, jclass, jlong handle) {
     auto* player = player_from(handle);
     if (!valid_player(player)) return nullptr;
+    apply_pending_pause(player);
     refresh_video_dimensions(player);
     if (player->volume_pending &&
         libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {

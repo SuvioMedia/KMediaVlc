@@ -69,3 +69,12 @@ target_link_options(
     PRIVATE -Wl,--no-undefined -Wl,-z,max-page-size=16384 -Wl,--gc-sections
 )
 target_link_libraries(kmediavlc_android PRIVATE ${kmediavlc_libvlc_target} android log dl)
+
+if(KMEDIAVLC_ANDROID_FAKE_LIBVLC)
+    add_executable(kmediavlc_android_transport_test tests/transport_test.cpp)
+    target_include_directories(kmediavlc_android_transport_test PRIVATE "${KMEDIAVLC_VLC_SOURCE_DIR}/include")
+    target_compile_features(kmediavlc_android_transport_test PRIVATE cxx_std_20)
+    target_compile_options(kmediavlc_android_transport_test PRIVATE -Wall -Wextra -Werror -Wpedantic -UNDEBUG)
+    target_link_options(kmediavlc_android_transport_test PRIVATE -Wl,-z,max-page-size=16384)
+    target_link_libraries(kmediavlc_android_transport_test PRIVATE ${kmediavlc_libvlc_target} android log dl)
+endif()

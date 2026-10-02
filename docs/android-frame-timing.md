@@ -26,6 +26,12 @@ transport. Ordinary native playback and synchronous GPU filters do not require t
 Surface replacement now uses explicit Play/Pause/Stop intent. A successful asynchronous Stop may
 still report the previous PAUSED/PLAYING state; that stale observation must not restart the old media
 while the application is attaching the next input Surface.
+The replacement input also defers Pause until `libvlc_media_player_can_pause` succeeds. Pinned
+libVLC implements an early `set_pause` as Stop when this capability is not yet available, which
+can leave a new Surface empty indefinitely. Regular snapshot polling applies the pending command;
+explicit Play, Stop or new media cancels it. Deferral applies to replacing a previously paused
+Surface; an explicit Pause on a genuinely unpausable source retains libVLC's existing behavior.
+No callback reenters libVLC.
 
 The first full-film diagnostic exposed an important distinction: the display's Prepare callback
 can run repeatedly on a paused picture whose decoder buffer has already been released. Recording
@@ -38,3 +44,10 @@ Validation is in progress. The host timing test covers signed PTS, exact lookup,
 bounded retirement and concurrent producer/consumer access. Both Android JNI ABI compilations and
 the Java runtime check pass. Full source-built runtime playback, paused seek/source replacement,
 matched AAR provenance and real-video ONNX acceptance are still required before publication.
+
+`native/android/tests/transport_test.cpp` exercises the actual JNI bridge against a libVLC fixture
+with delayed pause capability and delayed Stop notification. It runs as an Android executable
+from a fake-library build (both ABIs compile). On the ARM64 emulator it checks paused Surface
+replacement with retained position, Play/Stop cancellation, stale observed state and an unpausable source.
+A separate guard-removal negative control aborts at the paused-replacement assertion; the guarded code
+passes. The fixture does not replace the real-video acceptance test.
