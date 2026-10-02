@@ -32,6 +32,8 @@ final class NativeBridge {
 
     static native long[] snapshot(long handle);
 
+    static native long framePresentationTimeUs(long handle, long generation, long producerTimestampNs);
+
     static native byte[] lastErrorUtf8(long handle);
 
     static native int bridgeAbiVersion();

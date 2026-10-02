@@ -68,4 +68,4 @@ target_link_options(
     kmediavlc_android
     PRIVATE -Wl,--no-undefined -Wl,-z,max-page-size=16384 -Wl,--gc-sections
 )
-target_link_libraries(kmediavlc_android PRIVATE ${kmediavlc_libvlc_target} android log)
+target_link_libraries(kmediavlc_android PRIVATE ${kmediavlc_libvlc_target} android log dl)
