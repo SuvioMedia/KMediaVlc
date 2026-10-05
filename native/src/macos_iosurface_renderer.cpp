@@ -27,6 +27,9 @@ namespace kmediavlc {
 namespace {
 
 constexpr std::size_t kSurfaceCount = 4;
+// libplacebo's linear output is normalized to PL_COLOR_SDR_WHITE, independently
+// of the presentation surface's requested SDR white. Do not relabel absolute HDR.
+constexpr float kLibplaceboLinearReferenceWhiteNits = 203.0F;
 
 bool debug_callbacks_enabled() {
     static const bool enabled = [] {
@@ -330,15 +333,11 @@ public:
             error = "The macOS OpenGL producer context could not be made current.";
             return false;
         }
-        // The TextureView host is initially sized to the window and can switch
-        // to the decoded source dimensions as soon as metadata arrives. Resize
-        // the rotating IOSurface set before the next make-current callback;
-        // returning a mismatched framebuffer there makes libVLC tear down its
-        // vout permanently after the first frame.
-        return ensure_surfaces(
-            target.width,
-            target.height,
-            target.request_hdr && source_extended_);
+        // The host can resize between VLC's render and swap callbacks. Replacing
+        // the pool here would discard the rendered surface; the swap's separate
+        // make-current entry would then publish a newly cleared, black surface.
+        // Allocate only when starting the next frame in make_current().
+        return true;
     }
 
     bool resize(std::uint32_t width, std::uint32_t height) override {
@@ -435,7 +434,7 @@ private:
             source_dynamic_range_ == KMEDIAVLC_SOURCE_DYNAMIC_RANGE_HLG;
         const bool hdr_output = target.request_hdr && source_extended_;
         if (!ensure_surfaces(target.width, target.height, hdr_output)) return false;
-        if (render_lock_held_ && current_surface_ == nullptr && !bind_writable_surface()) {
+        if (render_lock_held_ && current_surface_ == nullptr && !bind_writable_surface(target)) {
             set_error(player_, "No writable IOSurface is available for the libVLC producer.");
             return false;
         }
@@ -551,7 +550,7 @@ private:
         return result;
     }
 
-    bool bind_writable_surface() {
+    bool bind_writable_surface(const OutputTargetSnapshot& target) {
         current_surface_.reset();
         discarding_frame_ = false;
         for (const auto& surface : surfaces_) {
@@ -569,7 +568,6 @@ private:
             discarding_frame_ = current_surface_ != nullptr;
         }
         if (!current_surface_) return false;
-        const auto target = copy_output_target(player_);
         const bool floating_point = target.request_hdr && source_extended_;
         if (target.type != KMEDIAVLC_OUTPUT_MACOS_IOSURFACE || target.generation == 0 ||
             target.width != current_surface_->width || target.height != current_surface_->height ||
@@ -579,7 +577,8 @@ private:
             return false;
         }
         current_surface_->output_generation = target.generation;
-        current_surface_->sdr_white_nits = target.sdr_white_nits;
+        current_surface_->sdr_white_nits = floating_point
+            ? kLibplaceboLinearReferenceWhiteNits : target.sdr_white_nits;
         current_surface_->display_peak_nits = target.display_peak_nits;
         current_surface_->source_dynamic_range = source_dynamic_range_;
         current_surface_->source_extended = source_extended_;
@@ -630,7 +629,10 @@ private:
         // entry: selecting and clearing a new writable surface here would erase
         // the completed frame immediately before swap_callback publishes it.
         if (current_surface_ != nullptr && rebind_current_surface()) return true;
-        if (bind_writable_surface()) return true;
+        const auto target = copy_output_target(player_);
+        if (target.type == KMEDIAVLC_OUTPUT_MACOS_IOSURFACE && target.generation != 0 &&
+            ensure_surfaces(target.width, target.height, target.request_hdr && source_extended_) &&
+            bind_writable_surface(target)) return true;
         CGLSetCurrentContext(previous_context_);
         previous_context_ = nullptr;
         render_lock_held_ = false;

@@ -20,6 +20,12 @@ cmake_executable="$(cd "$(dirname "$3")" && pwd -P)/$(basename "$3")"
 work_directory="$(cd "$4" && pwd -P)"
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
+# This bounded lookup is platform-independent; exercise retirement, source isolation and concurrency.
+c++ -std=c++20 -Wall -Wextra -Werror -pthread \
+    "$project_root/native/android/tests/frame_timing_test.cpp" \
+    -o "$work_directory/frame-timing-test"
+"$work_directory/frame-timing-test"
+
 [[ "$(git -C "$vlc_source" rev-parse HEAD)" == e439692079a75cacb5f07310d1ec2dc20bfd1fe0 ]] || exit 1
 [[ "$(sed -n 's/^Pkg.Revision = //p' "$ndk_directory/source.properties")" == 29.0.14206865 ]] || exit 1
 

@@ -31,6 +31,9 @@ struct libvlc_media_player_t final {
 
 namespace {
 
+bool pause_ready = true;
+bool deferred_stop = false;
+
 void cleanup_output(libvlc_media_player_t* player) {
     if (player->active_opaque != nullptr && player->cleanup != nullptr) {
         player->cleanup(player->active_opaque);
@@ -75,6 +78,14 @@ void state_changed(libvlc_media_player_t* player, libvlc_state_t state) {
 }
 
 }  // namespace
+
+extern "C" __attribute__((visibility("default"))) void kmediavlc_fake_pause_ready(bool ready) {
+    pause_ready = ready;
+}
+
+extern "C" __attribute__((visibility("default"))) void kmediavlc_fake_deferred_stop(bool deferred) {
+    deferred_stop = deferred;
+}
 
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM*, void*) {
     return JNI_VERSION_1_2;
@@ -200,11 +211,21 @@ extern "C" int libvlc_media_player_play(libvlc_media_player_t* player) {
 }
 
 extern "C" void libvlc_media_player_set_pause(libvlc_media_player_t* player, int pause) {
+    // Match pinned libVLC: pausing before CanPause stops the input.
+    if (player != nullptr && pause != 0 && !pause_ready) {
+        libvlc_media_player_stop_async(player);
+        return;
+    }
     if (player != nullptr) state_changed(player, pause == 0 ? libvlc_Playing : libvlc_Paused);
+}
+
+extern "C" bool libvlc_media_player_can_pause(libvlc_media_player_t* player) {
+    return player != nullptr && pause_ready;
 }
 
 extern "C" int libvlc_media_player_stop_async(libvlc_media_player_t* player) {
     if (player == nullptr) return -1;
+    if (deferred_stop) return 0;
     player->playing = false;
     cleanup_output(player);
     if (player->callbacks.on_media_stopping != nullptr) {
