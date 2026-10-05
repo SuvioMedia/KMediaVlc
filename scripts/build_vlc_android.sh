@@ -72,6 +72,16 @@ python3 "$archive_prefetcher" \
     --url https://mirrors.dotsrc.org/gcrypt/libgcrypt/libgcrypt-1.12.2.tar.bz2 \
     --url https://www.mirrorservice.org/sites/ftp.gnupg.org/gcrypt/libgcrypt/libgcrypt-1.12.2.tar.bz2
 
+# VideoLAN's generated v0.2.20 archive changed bytes and its contrib mirror
+# does not retain that version. Recover the original from our published source
+# closure, still requiring VLC's unchanged SHA-512 before building.
+python3 "$archive_prefetcher" \
+    --checksum-manifest "$vlc_source/contrib/src/librist/SHA512SUMS" \
+    --archive librist-v0.2.20.tar.gz \
+    --destination-directory "$vlc_source/contrib/tarballs" \
+    --source-bundle-url https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.11/kmedia-vlc-0.1.0-rc.11-android-corresponding-source.tar.gz \
+    --source-bundle-member android-corresponding-source/sources/vlc-contrib-tarballs/librist-v0.2.20.tar.gz
+
 patched_libvlcjni="$work_directory/libvlcjni-kmediavlc"
 audit_directory="$work_directory/link-audits"
 [[ ! -e "$patched_libvlcjni" && ! -e "$audit_directory" ]] ||

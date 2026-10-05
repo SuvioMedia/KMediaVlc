@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import io
+import shutil
+import tarfile
 import tempfile
 import unittest
 from pathlib import Path
@@ -82,6 +85,54 @@ class PrefetchVlcArchiveTest(unittest.TestCase):
         ):
             with self.subTest(url=url), self.assertRaisesRegex(ValueError, "HTTPS"):
                 self.prefetch([url])
+
+    def bundle_prefetch(self, payload: bytes, *, duplicate: bool = False, symbolic: bool = False) -> Path:
+        member_name = f"source/contrib/{self.archive}"
+        bundle = self.root / "bundle.tar.gz"
+        with tarfile.open(bundle, "w:gz") as target:
+            member = tarfile.TarInfo(member_name)
+            member.size = len(payload)
+            if symbolic:
+                member.type = tarfile.SYMTYPE
+                member.linkname = "/outside"
+                member.size = 0
+            target.addfile(member, io.BytesIO(payload))
+            if duplicate:
+                target.addfile(member, io.BytesIO(payload))
+
+        def download(url: str, output: Path) -> bool:
+            shutil.copyfile(bundle, output)
+            return True
+
+        with mock.patch.object(PREFETCH, "download", side_effect=download):
+            return PREFETCH.prefetch(
+                manifest=self.manifest, archive=self.archive,
+                destination_directory=self.destination, urls=[],
+                bundle_url="https://example.invalid/source-bundle.tar.gz",
+                bundle_member=member_name,
+            )
+
+    def test_recovers_original_archive_from_corresponding_source_bundle(self) -> None:
+        self.assertEqual(self.payload, self.bundle_prefetch(self.payload).read_bytes())
+        self.assertEqual([self.archive], [p.name for p in self.destination.iterdir()])
+
+    def test_rejects_changed_archive_inside_source_bundle(self) -> None:
+        with self.assertRaisesRegex(ValueError, "pinned SHA-512"):
+            self.bundle_prefetch(b"changed archive")
+        self.assertEqual([], list(self.destination.iterdir()))
+
+    def test_rejects_duplicate_or_symbolic_bundle_member(self) -> None:
+        for option in ("duplicate", "symbolic"):
+            with self.subTest(option=option), self.assertRaisesRegex(ValueError, "regular file"):
+                self.bundle_prefetch(self.payload, **{option: True})
+            self.assertEqual([], list(self.destination.iterdir()))
+
+    def test_rejects_missing_bundle_member(self) -> None:
+        bundle = self.root / "empty.tar.gz"
+        with tarfile.open(bundle, "w:gz"):
+            pass
+        with self.assertRaisesRegex(ValueError, "exact pinned archive"):
+            PREFETCH.extract_bundle_member(bundle, "absent.tar.gz", self.root / "out")
 
 
 if __name__ == "__main__":
