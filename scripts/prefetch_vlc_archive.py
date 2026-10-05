@@ -9,8 +9,9 @@ import os
 import re
 import shutil
 import subprocess
+import tarfile
 import tempfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit
 
 
@@ -86,14 +87,15 @@ def download(url: str, output: Path) -> bool:
 
 
 def prefetch(
-    *, manifest: Path, archive: str, destination_directory: Path, urls: list[str]
+    *, manifest: Path, archive: str, destination_directory: Path, urls: list[str],
+    bundle_url: str | None = None, bundle_member: str | None = None,
 ) -> Path:
     if not ARCHIVE.fullmatch(archive) or Path(archive).name != archive:
         fail("VLC archive name must be one safe basename.")
     if (
         destination_directory.is_symlink()
         or not destination_directory.is_dir()
-        or not urls
+        or not (urls or bundle_url)
     ):
         fail("VLC archive destination must be a real directory with at least one mirror.")
     if shutil.which("curl") is None:
@@ -102,6 +104,17 @@ def prefetch(
     destination_directory = destination_directory.resolve(strict=True)
     expected = expected_digest(manifest.resolve(strict=True), archive)
     mirrors = [validate_url(url) for url in urls]
+    if (bundle_url is None) != (bundle_member is None):
+        fail("A source bundle requires both its HTTPS URL and exact member path.")
+    if bundle_url is not None:
+        validate_url(bundle_url)
+        member_path = PurePosixPath(bundle_member)
+        if (
+            member_path.is_absolute() or ".." in member_path.parts
+            or member_path.as_posix() != bundle_member
+            or member_path.name != archive
+        ):
+            fail("Source bundle member must be a canonical relative archive path.")
     destination = destination_directory / archive
     if destination.is_symlink():
         fail(f"Existing VLC archive is a symlink: {archive}.")
@@ -127,9 +140,42 @@ def prefetch(
             os.replace(temporary, destination)
             print(f"Prefetched checksum-verified VLC archive: {archive}")
             return destination
+        if bundle_url is not None:
+            # The original VLC SHA-512 binds the inner archive, even if the
+            # surrounding source bundle or its hosting service changes.
+            with tempfile.TemporaryDirectory(prefix=".vlc-source-", dir=destination_directory) as work:
+                bundle = Path(work) / "corresponding-source.tar.gz"
+                if not download(bundle_url, bundle):
+                    fail(f"Source bundle download failed for VLC archive: {archive}.")
+                extract_bundle_member(bundle, bundle_member, temporary)
+            if sha512(temporary) != expected:
+                fail(f"Bundled VLC archive failed its pinned SHA-512: {archive}.")
+            temporary.chmod(0o644)
+            os.replace(temporary, destination)
+            print(f"Recovered checksum-verified VLC archive from source bundle: {archive}")
+            return destination
         fail(f"Every HTTPS mirror failed for VLC archive: {archive}.")
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def extract_bundle_member(bundle: Path, member_name: str, output: Path) -> None:
+    matches = 0
+    with tarfile.open(bundle, mode="r|gz") as source:
+        for member in source:
+            if member.name != member_name:
+                continue
+            matches += 1
+            if matches != 1 or not member.isfile() or member.size > 256 * 1024 * 1024:
+                fail("Source bundle archive member must be one bounded regular file.")
+            reader = source.extractfile(member)
+            if reader is None:
+                fail("Source bundle archive member is unreadable.")
+            # Never extract paths, symlinks or permissions from the outer bundle.
+            with reader, output.open("wb") as target:
+                shutil.copyfileobj(reader, target, length=1024 * 1024)
+    if matches != 1:
+        fail("Source bundle does not contain the exact pinned archive member.")
 
 
 def main() -> None:
@@ -139,7 +185,9 @@ def main() -> None:
     parser.add_argument("--checksum-manifest", type=Path, required=True)
     parser.add_argument("--archive", required=True)
     parser.add_argument("--destination-directory", type=Path, required=True)
-    parser.add_argument("--url", action="append", required=True)
+    parser.add_argument("--url", action="append", default=[])
+    parser.add_argument("--source-bundle-url")
+    parser.add_argument("--source-bundle-member")
     arguments = parser.parse_args()
     try:
         prefetch(
@@ -147,8 +195,10 @@ def main() -> None:
             archive=arguments.archive,
             destination_directory=arguments.destination_directory,
             urls=arguments.url,
+            bundle_url=arguments.source_bundle_url,
+            bundle_member=arguments.source_bundle_member,
         )
-    except (OSError, UnicodeError, ValueError) as error:
+    except (OSError, UnicodeError, ValueError, tarfile.TarError) as error:
         parser.error(str(error))
 
 
