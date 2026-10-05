@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
+
 # Android decoded-frame timing candidate
 
 The optional `VlcAndroidPlayer.framePresentationTimeUs(generation, producerTimestampNs)` query
