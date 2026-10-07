@@ -332,11 +332,12 @@ def verify_policy(root: Path) -> None:
     arguments = recipe.get("libVlcBuildArguments")
     if not isinstance(arguments, list) or not all(flag in arguments for flag in ["-r", "-u", "-z", "-g", "l", "-m"]):
         fail("Windows VLC recipe is missing required release/UCRT/headless/GPL-disabled flags.")
-    if recipe.get("contribBuildArguments") != ["--disable-sout", "--enable-shout"]:
+    if recipe.get("contribBuildArguments") != ["--disable-sout", "--enable-shout", "--disable-lua"]:
         fail("Windows playback recipe must exclude encoders while retaining upstream libshout.")
     if recipe.get("mesonBuildArguments") != [
         "-Dstream_outputs=false",
         "-Dvideolan_manager=false",
+        "-Dlua=disabled",
     ]:
         fail("Windows Meson recipe must disable stream outputs and their VLM consumer.")
     if recipe.get("usesPrebuiltContribs") is not False:
@@ -356,8 +357,8 @@ def verify_policy(root: Path) -> None:
         '--strip',
         'win64-ucrt-meson',
         'winarm64-ucrt-meson',
-        'export CONTRIBFLAGS="--disable-sout --enable-shout"',
-        'export MCONFIGFLAGS="-Dstream_outputs=false -Dvideolan_manager=false"',
+        'export CONTRIBFLAGS="--disable-sout --enable-shout --disable-lua"',
+        'export MCONFIGFLAGS="-Dstream_outputs=false -Dvideolan_manager=false -Dlua=disabled"',
         'VLC source build produced an empty install payload',
     ]
     if not all(marker in builder for marker in install_markers):
