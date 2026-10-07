@@ -118,7 +118,12 @@ class AndroidDeviceSmokeResultsTest(unittest.TestCase):
     def test_rejects_symbolic_payload_member(self) -> None:
         target = self.payload / RESULTS.REQUIRED_LIBRARIES[0]
         target.unlink()
-        target.symlink_to(self.payload / RESULTS.REQUIRED_LIBRARIES[1])
+        try:
+            target.symlink_to(self.payload / RESULTS.REQUIRED_LIBRARIES[1])
+        except OSError as error:
+            if getattr(error, "winerror", None) == 1314:
+                self.skipTest("Windows symlink privilege is unavailable")
+            raise
         with self.assertRaisesRegex(ValueError, "symbolic"):
             self.verify()
 

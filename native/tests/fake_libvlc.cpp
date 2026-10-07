@@ -49,6 +49,8 @@ struct libvlc_media_player_t final {
 
 namespace {
 
+int last_scaling_mode = 0;
+
 void cleanup_output(libvlc_media_player_t* player) {
     if (player == nullptr || !player->output.setup_active) return;
     if (player->output.cleanup != nullptr) player->output.cleanup(player->output.opaque);
@@ -190,9 +192,24 @@ bool publish_test_frame(libvlc_media_player_t* player) {
 
 extern "C" {
 
-libvlc_instance_t* libvlc_new(int, const char* const*) {
+libvlc_instance_t* libvlc_new(int count, const char* const* arguments) {
+    last_scaling_mode = 0;
+    constexpr std::string_view modes[] = {"", "linear", "point", "processor", "super"};
+    constexpr std::string_view prefix = "--d3d11-upscale-mode=";
+    for (int index = 0; index < count; ++index) {
+        const std::string_view option(arguments[index]);
+        if (!option.starts_with(prefix)) continue;
+        for (int mode = 1; mode <= 4; ++mode) {
+            if (option.substr(prefix.size()) == modes[mode]) last_scaling_mode = mode;
+        }
+    }
     return new (std::nothrow) libvlc_instance_t();
 }
+
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int kmediavlc_fake_last_scaling_mode() { return last_scaling_mode; }
 
 void libvlc_release(libvlc_instance_t* instance) { delete instance; }
 
@@ -359,8 +376,9 @@ bool libvlc_video_set_output_callbacks(
     cleanup_output(player);
     player->output = {};
     if (engine == libvlc_video_engine_disable) return true;
-    if (engine != libvlc_video_engine_opengl || setup == nullptr || update_output == nullptr ||
-        swap == nullptr || make_current == nullptr || get_proc_address == nullptr) {
+    if ((engine != libvlc_video_engine_opengl && engine != libvlc_video_engine_d3d11) ||
+        setup == nullptr || update_output == nullptr || swap == nullptr || make_current == nullptr ||
+        (engine == libvlc_video_engine_opengl && get_proc_address == nullptr)) {
         return false;
     }
     player->output.engine = engine;

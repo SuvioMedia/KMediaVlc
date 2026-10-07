@@ -136,18 +136,26 @@ install(TARGETS kmediavlc_bridge
 )
 
 if(KMEDIAVLC_BUILD_TEST_FIXTURES)
+    enable_testing()
     add_library(kmediavlc_fake_libvlc SHARED tests/fake_libvlc.cpp)
     target_compile_features(kmediavlc_fake_libvlc PRIVATE cxx_std_20)
     target_include_directories(kmediavlc_fake_libvlc PRIVATE "${KMEDIAVLC_VLC_SOURCE_DIR}/include")
     set_target_properties(kmediavlc_fake_libvlc PROPERTIES
         CXX_EXTENSIONS OFF
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
         OUTPUT_NAME "kmediavlc_fake_libvlc"
     )
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(kmediavlc_fake_libvlc PRIVATE -Wall -Wextra -Wpedantic -Wconversion)
     endif()
-    if(NOT WIN32)
-        enable_testing()
+    if(WIN32)
+        add_executable(kmediavlc_windows_scaling_option_test tests/windows_scaling_option_test.cpp)
+        target_compile_features(kmediavlc_windows_scaling_option_test PRIVATE cxx_std_20)
+        target_include_directories(kmediavlc_windows_scaling_option_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+        target_link_libraries(kmediavlc_windows_scaling_option_test PRIVATE kmediavlc_bridge)
+        add_test(NAME windows_instance_scaling_options COMMAND kmediavlc_windows_scaling_option_test
+            $<TARGET_FILE:kmediavlc_fake_libvlc>)
+    else()
         add_executable(kmediavlc_paused_seek_test tests/paused_seek_test.cpp)
         target_compile_features(kmediavlc_paused_seek_test PRIVATE cxx_std_20)
         target_include_directories(kmediavlc_paused_seek_test PRIVATE

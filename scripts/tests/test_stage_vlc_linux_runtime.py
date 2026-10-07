@@ -52,7 +52,12 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
                 STAGER.require_plugin(root, first.name)
             duplicate.unlink()
             first.unlink()
-            first.symlink_to(root / "outside.so")
+            try:
+                first.symlink_to(root / "outside.so")
+            except OSError as error:
+                if getattr(error, "winerror", None) == 1314:
+                    self.skipTest("Windows symlink privilege is unavailable")
+                raise
             self.write_file(root / "outside.so")
             with self.assertRaisesRegex(SystemExit, "unsafe"):
                 STAGER.require_plugin(root, first.name)

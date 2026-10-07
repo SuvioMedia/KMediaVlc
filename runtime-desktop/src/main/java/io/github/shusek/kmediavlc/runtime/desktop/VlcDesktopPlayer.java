@@ -30,8 +30,20 @@ public final class VlcDesktopPlayer implements AutoCloseable {
 
     public static VlcDesktopPlayer create(
             VlcDesktopRuntimeResolution runtime, VlcDesktopPlayerConfig config) {
+        return create(runtime, config, 0);
+    }
+
+    /** Selects the Windows GPU resampler before creating the libVLC instance.
+     * 0 default, 1 linear, 2 point, 3 video processor, 4 vendor super resolution. */
+    public static VlcDesktopPlayer create(
+            VlcDesktopRuntimeResolution runtime, VlcDesktopPlayerConfig config, int scalingMode) {
         Objects.requireNonNull(runtime, "runtime");
         Objects.requireNonNull(config, "config");
+        if (scalingMode < 0 || scalingMode > 4) throw new IllegalArgumentException("Unknown video scaling mode.");
+        if (scalingMode != 0 && (config.deliveryMode() != VlcFrameDeliveryMode.GPU_PUSH ||
+                !System.getProperty("os.name", "").startsWith("Windows"))) {
+            throw new IllegalArgumentException("Video scaling requires Windows GPU output.");
+        }
         if (!runtime.capabilities().frameDeliveryModes().contains(config.deliveryMode())) {
             throw new VlcRuntimeException(
                     PLAYER_INITIALIZATION_FAILED,
@@ -39,14 +51,22 @@ public final class VlcDesktopPlayer implements AutoCloseable {
         }
         NativeBridge.load(runtime.bridgePath());
         var sink = new NativeEventSink(config.listener());
-        long handle = NativeBridge.createPlayer(
+        long handle = scalingMode == 0 ? NativeBridge.createPlayer(
                 runtime.libVlcPath().toString(),
                 runtime.pluginDirectory().toString(),
                 config.deliveryMode().nativeValue(),
                 config.requestHdr(),
                 config.sdrWhiteNits(),
                 config.displayPeakNits(),
-                sink);
+                sink) : NativeBridge.createPlayerWithVideoScaling(
+                runtime.libVlcPath().toString(),
+                runtime.pluginDirectory().toString(),
+                config.deliveryMode().nativeValue(),
+                config.requestHdr(),
+                config.sdrWhiteNits(),
+                config.displayPeakNits(),
+                sink,
+                scalingMode);
         if (handle == 0) {
             throw new VlcRuntimeException(
                     PLAYER_INITIALIZATION_FAILED,
@@ -92,6 +112,19 @@ public final class VlcDesktopPlayer implements AutoCloseable {
         return callNative(() -> NativeBridge.setRate(nativePlayer, rate));
     }
     public boolean setLoop(boolean loop) { return callNative(() -> NativeBridge.setLoop(nativePlayer, loop)); }
+    /** Returns true only when this instance was created with the requested mode.
+     * Use create(runtime, config, mode) to select another resampler. */
+    public boolean setVideoScalingMode(int mode) {
+        if (mode < 0 || mode > 4) throw new IllegalArgumentException("Unknown video scaling mode.");
+        if (!System.getProperty("os.name", "").startsWith("Windows")) return false;
+        return callNative(() -> NativeBridge.setVideoScalingMode(nativePlayer, mode));
+    }
+    /** Low byte: supported option bits; next byte: 0 unknown, 1 NVIDIA, 2 Intel, 3 AMD.
+     * Super resolution indicates driver extension support, not confirmed AI activity. */
+    public int videoScalingCapabilities() {
+        if (!System.getProperty("os.name", "").startsWith("Windows")) return 0;
+        return callNative(() -> NativeBridge.videoScalingCapabilities(nativePlayer));
+    }
     public boolean resize(int width, int height) {
         if (width <= 0 || height <= 0) return false;
         return callNative(() -> NativeBridge.resize(nativePlayer, width, height));

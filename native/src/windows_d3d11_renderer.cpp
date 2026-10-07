@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "bridge_internal.hpp"
+#include "windows_scaling_capabilities.hpp"
 
 #include <windows.h>
 #include <d3d11.h>
@@ -245,6 +246,9 @@ private:
             if (SUCCEEDED(candidate->GetDesc1(&description)) && same_luid(description.AdapterLuid, adapter_luid)) {
                 selected = candidate;
                 device_luid_ = description.AdapterLuid;
+                player_->video_scaling_vendor.store(description.VendorId == 0x10de ? 1 :
+                    description.VendorId == 0x8086 ? 2 : description.VendorId == 0x1002 ? 3 : 0,
+                    std::memory_order_release);
                 break;
             }
             candidate->Release();
@@ -308,6 +312,8 @@ private:
             return false;
         }
         ID3D10Multithread* multithread = nullptr;
+        player_->video_scaling_options.store(video_scaling_options(device_, context_,
+            player_->video_scaling_vendor.load(std::memory_order_acquire)), std::memory_order_release);
         if (SUCCEEDED(context_->QueryInterface(__uuidof(ID3D10Multithread), reinterpret_cast<void**>(&multithread)))) {
             multithread->SetMultithreadProtected(TRUE);
             multithread->Release();

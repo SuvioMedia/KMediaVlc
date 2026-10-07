@@ -747,6 +747,11 @@ kmediavlc_frame::~kmediavlc_frame() {
 extern "C" {
 
 kmediavlc_player* kmediavlc_player_create(const kmediavlc_player_config* config) {
+    return kmediavlc_player_create_with_video_scaling(config, 0);
+}
+
+kmediavlc_player* kmediavlc_player_create_with_video_scaling(
+    const kmediavlc_player_config* config, int scaling_mode) {
     if (config == nullptr || config->struct_size != sizeof(kmediavlc_player_config) ||
         config->bridge_abi_version != kBridgeAbi || config->libvlc_path_utf8 == nullptr ||
         config->plugin_directory_utf8 == nullptr ||
@@ -756,7 +761,13 @@ kmediavlc_player* kmediavlc_player_create(const kmediavlc_player_config* config)
         config->display_peak_nits < config->sdr_white_nits) {
         return nullptr;
     }
+    if (scaling_mode < 0 || scaling_mode > 4 ||
+        (scaling_mode != 0 && config->delivery_mode != KMEDIAVLC_GPU_PUSH)) return nullptr;
+#ifndef _WIN32
+    if (scaling_mode != 0) return nullptr;
+#endif
     auto player = std::make_unique<kmediavlc_player>();
+    player->video_scaling_mode.store(scaling_mode, std::memory_order_release);
     player->delivery_mode = config->delivery_mode;
     player->request_hdr = config->request_hdr;
     player->initial_sdr_white_nits = config->sdr_white_nits;
@@ -777,6 +788,14 @@ kmediavlc_player* kmediavlc_player_create(const kmediavlc_player_config* config)
         "--no-osd",
         "--no-stats",
     };
+#ifdef _WIN32
+    // The vout inherits instance options, not per-media input options.
+    static constexpr const char* scaling_options[] = {
+        nullptr, "--d3d11-upscale-mode=linear", "--d3d11-upscale-mode=point",
+        "--d3d11-upscale-mode=processor", "--d3d11-upscale-mode=super"
+    };
+    if (scaling_mode != 0) arguments.push_back(scaling_options[scaling_mode]);
+#endif
 #if defined(KMEDIAVLC_IOS)
     arguments.push_back("--no-plugins-cache");
     arguments.push_back("--plugins-scan");
@@ -904,6 +923,28 @@ bool kmediavlc_player_open(
     kmediavlc::set_frame_delivery(player, false);
     capture_vlc_error(player, "libVLC rejected autoplay.");
     return false;
+}
+
+bool kmediavlc_player_set_video_scaling_mode(kmediavlc_player* player, int mode) {
+#ifdef _WIN32
+    if (!valid_player(player) || player->delivery_mode != KMEDIAVLC_GPU_PUSH || mode < 0 || mode > 4) return false;
+    // A changed mode needs a new libVLC instance; never acknowledge an ignored option.
+    return player->video_scaling_mode.load(std::memory_order_acquire) == mode;
+#else
+    (void)player; (void)mode;
+    return false;
+#endif
+}
+
+int kmediavlc_player_video_scaling_capabilities(kmediavlc_player* player) {
+#ifdef _WIN32
+    if (!valid_player(player) || player->delivery_mode != KMEDIAVLC_GPU_PUSH) return 0;
+    const int vendor = player->video_scaling_vendor.load(std::memory_order_acquire);
+    return (vendor << 8) | player->video_scaling_options.load(std::memory_order_acquire);
+#else
+    (void)player;
+    return 0;
+#endif
 }
 
 bool kmediavlc_player_play(kmediavlc_player* player) {

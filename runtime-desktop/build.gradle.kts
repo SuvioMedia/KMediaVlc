@@ -24,6 +24,7 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 dependencies {
+    providers.gradleProperty("kmediaVlcTestRuntimeJar").orNull?.let { testRuntimeOnly(files(it)) }
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)

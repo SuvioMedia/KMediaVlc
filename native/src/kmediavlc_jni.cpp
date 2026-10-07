@@ -726,17 +726,16 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_inspectLinuxDmaBufF
 #endif
 }
 
-JNIEXPORT jlong JNICALL
-Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_createPlayer(
+static jlong create_player(
     JNIEnv* env,
-    jclass,
     jstring libvlc_path,
     jstring plugin_directory,
     jint delivery_mode,
     jboolean request_hdr,
     jfloat sdr_white_nits,
     jfloat display_peak_nits,
-    jobject event_sink) {
+    jobject event_sink,
+    jint scaling_mode) {
     if (event_sink == nullptr) return 0;
     auto wrapper = std::make_unique<JniPlayer>();
     wrapper->events = std::make_unique<JniEventSink>(env, event_sink);
@@ -755,12 +754,30 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_createPlayer(
     config.frame_available = frame_available_callback;
     config.playback_state_changed = state_changed_callback;
     config.callback_opaque = wrapper->events.get();
-    wrapper->native = kmediavlc_player_create(&config);
+    wrapper->native = kmediavlc_player_create_with_video_scaling(&config, scaling_mode);
     if (wrapper->native == nullptr) {
         wrapper->events->disable_and_release(env);
         return 0;
     }
     return static_cast<jlong>(reinterpret_cast<std::uintptr_t>(wrapper.release()));
+}
+
+JNIEXPORT jlong JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_createPlayer(
+    JNIEnv* env, jclass, jstring libvlc_path, jstring plugin_directory,
+    jint delivery_mode, jboolean request_hdr, jfloat sdr_white_nits,
+    jfloat display_peak_nits, jobject event_sink) {
+    return create_player(env, libvlc_path, plugin_directory, delivery_mode,
+        request_hdr, sdr_white_nits, display_peak_nits, event_sink, 0);
+}
+
+JNIEXPORT jlong JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_createPlayerWithVideoScaling(
+    JNIEnv* env, jclass, jstring libvlc_path, jstring plugin_directory,
+    jint delivery_mode, jboolean request_hdr, jfloat sdr_white_nits,
+    jfloat display_peak_nits, jobject event_sink, jint scaling_mode) {
+    return create_player(env, libvlc_path, plugin_directory, delivery_mode,
+        request_hdr, sdr_white_nits, display_peak_nits, event_sink, scaling_mode);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -841,6 +858,22 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_resize(
     return player != nullptr && player->native != nullptr && width > 0 && height > 0 &&
         kmediavlc_player_resize(player->native, static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(height))
         ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_setVideoScalingMode(
+    JNIEnv*, jclass, jlong player_handle, jint mode) {
+    auto* player = player_from(player_handle);
+    return player != nullptr && player->native != nullptr &&
+        kmediavlc_player_set_video_scaling_mode(player->native, mode) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_videoScalingCapabilities(
+    JNIEnv*, jclass, jlong player_handle) {
+    auto* player = player_from(player_handle);
+    return player != nullptr && player->native != nullptr ?
+        kmediavlc_player_video_scaling_capabilities(player->native) : 0;
 }
 
 JNIEXPORT jboolean JNICALL

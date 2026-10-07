@@ -77,6 +77,15 @@ final class NativeBridge {
             float sdrWhiteNits,
             float displayPeakNits,
             Object eventSink);
+    static native long createPlayerWithVideoScaling(
+            String libVlcPath,
+            String pluginDirectory,
+            int deliveryMode,
+            boolean requestHdr,
+            float sdrWhiteNits,
+            float displayPeakNits,
+            Object eventSink,
+            int scalingMode);
     static native boolean open(long player, String uri, String[] headers, boolean autoplay);
     static native boolean play(long player);
     static native boolean pause(long player);
@@ -85,6 +94,8 @@ final class NativeBridge {
     static native boolean setVolume(long player, float volume);
     static native boolean setRate(long player, float rate);
     static native boolean setLoop(long player, boolean loop);
+    static native boolean setVideoScalingMode(long player, int mode);
+    static native int videoScalingCapabilities(long player);
     static native boolean resize(long player, int width, int height);
     static native boolean updateOutput(
             long player,

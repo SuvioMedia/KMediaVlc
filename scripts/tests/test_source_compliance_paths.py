@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import shutil
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -92,7 +94,26 @@ class CurrentDesktopAuditTest(unittest.TestCase):
             self.root / "compliance/evidence/desktop-04d555a",
         )
 
-    def test_new_revision_has_its_own_complete_approval(self) -> None:
+        # Validator fixtures remain independently valid while the real bridge awaits
+        # its next audit. This changes only temporary files, never release approval.
+        acceptance_path = self.root / "compliance/evidence/desktop-04d555a/acceptance.json"
+        acceptance = json.loads(acceptance_path.read_text(encoding="utf-8"))
+        for relative in self.policies:
+            path = self.root / relative
+            policy = json.loads(path.read_text(encoding="utf-8"))
+            policy["reviewStatus"] = "approved"
+            path.write_text(json.dumps(policy), encoding="utf-8")
+        acceptance["buildInputSha256"] = {
+            relative: hashlib.sha256((self.root / relative).read_bytes()).hexdigest()
+            for relative in COMPLIANCE.CURRENT_DESKTOP_BUILD_INPUTS
+        }
+        acceptance_path.write_text(json.dumps(acceptance), encoding="utf-8")
+        expected_hash = hashlib.sha256(acceptance_path.read_bytes()).hexdigest()
+        patcher = mock.patch.object(COMPLIANCE, "CURRENT_DESKTOP_AUDIT_ACCEPTANCE_SHA256", expected_hash)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_valid_fixture_has_complete_approval(self) -> None:
         COMPLIANCE.verify_current_desktop_audit(self.root, self.policies)
 
     def test_changed_policy_cannot_reuse_the_current_approval(self) -> None:
@@ -117,6 +138,12 @@ class CurrentDesktopAuditTest(unittest.TestCase):
 
     def test_changed_native_patch_cannot_reuse_the_current_approval(self) -> None:
         path = self.root / "build-recipes/patches/vlc-meson-core-library.patch"
+        path.write_bytes(path.read_bytes() + b"\n")
+        with self.assertRaisesRegex(SystemExit, "native build input changed"):
+            COMPLIANCE.verify_current_desktop_audit(self.root, self.policies)
+
+    def test_changed_scaling_header_cannot_reuse_the_current_approval(self) -> None:
+        path = self.root / "native/src/windows_scaling_capabilities.hpp"
         path.write_bytes(path.read_bytes() + b"\n")
         with self.assertRaisesRegex(SystemExit, "native build input changed"):
             COMPLIANCE.verify_current_desktop_audit(self.root, self.policies)

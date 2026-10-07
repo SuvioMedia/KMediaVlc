@@ -39,6 +39,7 @@ CURRENT_DESKTOP_BUILD_INPUTS = (
     "native/src/linux_dmabuf_inspector.hpp", "native/src/linux_dmabuf_renderer.cpp",
     "native/src/macos_iosurface_renderer.cpp", "native/src/platform_renderer_stub.cpp",
     "native/src/windows_d3d11_renderer.cpp",
+    "native/src/windows_scaling_capabilities.hpp",
 )
 ALLOWED_LICENSES = {
     "0BSD",

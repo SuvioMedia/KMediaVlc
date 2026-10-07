@@ -124,6 +124,9 @@ struct kmediavlc_player final {
 
     std::atomic<bool> callbacks_enabled{true};
     std::atomic<bool> loop{false};
+    std::atomic<int> video_scaling_mode{0};
+    std::atomic<int> video_scaling_vendor{0};
+    std::atomic<int> video_scaling_options{7};
     std::atomic<kmediavlc_playback_state> state{KMEDIAVLC_STATE_IDLE};
     std::atomic<kmediavlc_playback_state> state_before_buffering{KMEDIAVLC_STATE_IDLE};
     std::atomic<std::uint64_t> media_generation{0};

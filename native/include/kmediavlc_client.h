@@ -161,6 +161,12 @@ typedef struct kmediavlc_player_config {
 /* Creates a player without loading a child NSView, HWND, GTK widget, or subsurface. */
 KMEDIAVLC_API kmediavlc_player *kmediavlc_player_create(const kmediavlc_player_config *config);
 
+/* Windows GPU resampler, fixed for this player's lifetime: 0 default, 1 linear,
+ * 2 point, 3 video processor, 4 vendor super resolution. Other platforms accept 0.
+ * Separate entry point preserves the original config structure and bridge ABI. */
+KMEDIAVLC_API kmediavlc_player *kmediavlc_player_create_with_video_scaling(
+    const kmediavlc_player_config *config, int mode);
+
 /* All strings are UTF-8. Headers are alternating name/value entries. */
 KMEDIAVLC_API bool kmediavlc_player_open(
     kmediavlc_player *player,
@@ -176,6 +182,11 @@ KMEDIAVLC_API bool kmediavlc_player_seek(kmediavlc_player *player, int64_t time_
 KMEDIAVLC_API bool kmediavlc_player_set_volume(kmediavlc_player *player, float volume);
 KMEDIAVLC_API bool kmediavlc_player_set_rate(kmediavlc_player *player, float rate);
 KMEDIAVLC_API bool kmediavlc_player_set_loop(kmediavlc_player *player, bool loop);
+/* Windows D3D11 only. Confirms the mode chosen at creation; returns false for
+ * a changed mode, which requires create_with_video_scaling(). */
+KMEDIAVLC_API bool kmediavlc_player_set_video_scaling_mode(kmediavlc_player *player, int mode);
+/* Low byte: available option bits. High byte: vendor (0 unknown, 1 NVIDIA, 2 Intel, 3 AMD). */
+KMEDIAVLC_API int kmediavlc_player_video_scaling_capabilities(kmediavlc_player *player);
 
 /* Updates the producer target and the output luminance negotiation. */
 KMEDIAVLC_API bool kmediavlc_player_resize(kmediavlc_player *player, uint32_t width, uint32_t height);
