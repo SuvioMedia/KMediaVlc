@@ -63,8 +63,10 @@ trap restore_vlc_source EXIT
 # recipe enables its playback-relevant module even in a headless build.
 # Prebuilt contribs are intentionally not requested; the release inventory
 # still audits every resulting binary.
-export CONTRIBFLAGS="--disable-sout --enable-shout"
-export MCONFIGFLAGS="-Dstream_outputs=false -Dvideolan_manager=false"
+# Lua interfaces are outside the closed playback policy. Disabling Lua in both
+# graphs also avoids requiring a native luac while cross-compiling the runtime.
+export CONTRIBFLAGS="--disable-sout --enable-shout --disable-lua"
+export MCONFIGFLAGS="-Dstream_outputs=false -Dvideolan_manager=false -Dlua=disabled"
 cd "$source_directory"
 ./extras/package/win32/build.sh \
     -r \
