@@ -3,8 +3,8 @@
 
 set -euo pipefail
 
-readonly PINNED_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
-readonly PINNED_MESON_VERSION="1.10.0"
+readonly PINNED_REVISION="04d555a9d391f009d4f510f508fef58c39bdf810"
+readonly PINNED_MESON_VERSION="1.12.0"
 
 if [[ $# -lt 2 || $# -gt 3 ]]; then
     echo "usage: $0 <vlc-source> <absolute-build-directory> [jobs]" >&2
@@ -93,6 +93,22 @@ case "$architecture:$host_triplet" in
         ;;
 esac
 
+# The pinned Meson core target repeats link_args and drops its Windows ABI suffix.
+# Apply the recorded compatibility fix and restore the exact source on exit.
+recipe_patch="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd -P)/build-recipes/patches/vlc-meson-core-library.patch"
+git -C "$source_directory" apply --check "$recipe_patch"
+git -C "$source_directory" apply "$recipe_patch"
+restore_vlc_source() {
+    local status=$?
+    trap - EXIT
+    if ! git -C "$source_directory" apply --reverse "$recipe_patch"; then
+        echo "Failed to restore the pinned VLC Meson source" >&2
+        status=1
+    fi
+    exit "$status"
+}
+trap restore_vlc_source EXIT
+
 mkdir "$build_directory"
 readonly tools_directory="$build_directory/tools"
 readonly contrib_build_directory="$build_directory/contrib-build"
@@ -102,7 +118,7 @@ readonly install_directory="$build_directory/vlc-linux-$architecture"
 mkdir "$tools_directory" "$contrib_build_directory"
 
 # Build the exact helper-tool graph recorded by the pinned VLC checkout. In
-# particular, this supplies Meson 1.10.0 even when the host distribution ships
+# particular, this supplies Meson 1.12.0 even when the host distribution ships
 # another version. The source checkout remains the authority for tool hashes.
 make -C "$source_directory/extras/tools" \
     -f "$source_directory/extras/tools/tools.mak" \

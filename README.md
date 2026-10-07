@@ -28,6 +28,11 @@ plugins and dependencies, and a stable KMediaVlc bridge. It never downloads
 native code at runtime. Native payloads are release inputs and are never
 committed to this repository.
 
+The current source-build candidate pins VideoLAN commit
+`04d555a9d391f009d4f510f508fef58c39bdf810`. Native binaries, inventories and
+source/link approvals must be rebuilt for this revision. Retained runtime
+evidence applies only to the source revision recorded in each report.
+
 ## License and private-consumer boundary
 
 KMediaVlc's project-authored runtime clients, native bridges, build recipes,
@@ -48,6 +53,9 @@ release, UCRT, headless, GPL-disabled mode. It permits the reviewed LGPLv3
 dependencies required for HTTPS/TLS and intentionally does not consume
 prebuilt contrib archives. Its output is still not publishable until
 every selected DLL and plugin passes the per-file inventory packager.
+The recorded Meson source patch combines duplicate core link arguments and
+preserves the private `libvlccore-9.dll` filename. Staging selects the current
+root-level DLLs and nested plugin inputs into the existing runtime layout.
 The Windows binaries are compiled by the pinned LLVM/MinGW UCRT cross-toolchain;
 Wine is used only for Meson's tiny cross-executable sanity probe. The resulting
 DLLs and the MSVC-built KMediaVlc bridge are then loaded and integration-tested

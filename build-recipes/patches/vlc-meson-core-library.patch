@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# Preserve core link flags and the private Windows core ABI filename.
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -498,7 +498,7 @@
+ endif
+ 
+ libvlccore_kwargs = {}
+-if vlc_lib_versioning
++if vlc_lib_versioning or host_system == 'windows'
+     libvlccore_kwargs += {'version': '9.0.0'}
+ endif
+ 
+@@ -507,9 +507,8 @@
+     libvlccore_sources, vlc_about, fourcc, rev_target,
+     include_directories: vlc_include_dirs,
+     c_args: vlccore_cargs,
+-    link_args: libvlccore_link_args,
++    link_args: [libvlccore_link_args, gc_sections_linkargs],
+     link_with: [vlc_libcompat],
+-    link_args: gc_sections_linkargs,
+     dependencies: libvlccore_deps,
+     install: true,
+     install_dir: libdir_path,

@@ -35,13 +35,13 @@ input, Matroska/MP4 demuxing, subtitles, and the conversion modules required by
 CPU pull. The package contains 87 dynamic frameworks per slice: bridge,
 libVLC, core, and the 84 selected plugins.
 
-Revision `e439692079a75cacb5f07310d1ec2dc20bfd1fe0` is the current source-build
-candidate. Device and simulator builds from this pin each produce 286 raw
-plugins; the release payload selects and relocates the same closed set of 84
-playback plugins into 87 frameworks per slice. The independent archive verifier
-reopens both slices and their hash-bound reports. The archive remains
-`auditCandidate=true` while the physical-device acceptance evidence below is
-still open.
+Revision `04d555a9d391f009d4f510f508fef58c39bdf810` is the current source-build
+candidate. Device and simulator binaries and their archive reports must be
+rebuilt for this pin. The 84-plugin allowlist and 87-framework payload contract
+remain in place; previous raw-plugin counts and playback evidence describe
+the earlier source revision. The archive remains `auditCandidate=true` while
+the new source, link and archive checks are open. Physical-device evidence is
+tracked separately below.
 
 ## Reproducing one slice
 

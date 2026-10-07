@@ -4,10 +4,11 @@
     "linux-x86_64",
     "linux-aarch64"
   ],
-  "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
+  "sourcePatches": ["build-recipes/patches/vlc-meson-core-library.patch"],
   "vlcSource": "https://code.videolan.org/videolan/vlc.git",
   "buildSystem": "meson",
-  "mesonVersion": "1.10.0",
+  "mesonVersion": "1.12.0",
   "minimumGlibc": "2.39",
   "buildMode": "shared",
   "usesPrebuiltContribs": false,

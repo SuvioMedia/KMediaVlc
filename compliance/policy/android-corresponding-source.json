@@ -42,8 +42,8 @@
     },
     "vlc": {
       "repository": "https://code.videolan.org/videolan/vlc.git",
-      "revision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
-      "tree": "0c8b5ef401e6475cac55ae6a7ed6f3fb6b89e0b8",
+      "revision": "04d555a9d391f009d4f510f508fef58c39bdf810",
+      "tree": "ddbabe13960b990e2d725ac3ecdfcae1e4d86d18",
       "scope": "complete-tree",
       "requiredPaths": [
         "COPYING",

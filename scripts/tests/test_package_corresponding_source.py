@@ -11,6 +11,9 @@ import unittest
 from pathlib import Path
 
 
+from policy_fixtures import approved_policy_fixture
+
+
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location(
     "package_corresponding_source", ROOT / "scripts/package_corresponding_source.py"
@@ -25,8 +28,9 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.base = Path(self.temporary.name)
+        self.root = approved_policy_fixture(self.base / "approved-root")
         self.candidate = self.base / "candidate.tar.gz"
-        policy, archives = PACKAGER.load_policy(ROOT, allow_audit_candidate=False)
+        policy, archives = PACKAGER.load_policy(self.root, allow_audit_candidate=False)
         self.assertEqual("approved", policy["reviewStatus"])
         files = {
             "corresponding-source/kmediavlc/build.gradle.kts": b"plugins { base }\n",
@@ -59,7 +63,7 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
         first = self.base / "first.tar.gz"
         second = self.base / "second.tar.gz"
         first_hash = PACKAGER.package(
-            ROOT,
+            self.root,
             self.candidate,
             first,
             COMMIT,
@@ -67,7 +71,7 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
             1_700_000_000,
         )
         second_hash = PACKAGER.package(
-            ROOT,
+            self.root,
             self.candidate,
             second,
             COMMIT,
@@ -88,7 +92,7 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
 
     def test_release_mode_rejects_pending_binary_review(self) -> None:
         pending_root = self.base / "pending-windows-root"
-        source = ROOT / "compliance/policy/windows-x86_64-binary-components.json"
+        source = self.root / "compliance/policy/windows-x86_64-binary-components.json"
         payload = json.loads(source.read_text(encoding="utf-8"))
         payload["reviewStatus"] = "pending-link-command-audit"
         destination = (
@@ -116,7 +120,7 @@ class PackageCorrespondingSourceTest(unittest.TestCase):
             archive.addfile(info)
         with self.assertRaises(ValueError):
             PACKAGER.package(
-                ROOT,
+                self.root,
                 unsafe,
                 self.base / "unsafe-output.tar.gz",
                 COMMIT,

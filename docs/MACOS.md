@@ -7,6 +7,10 @@ native payload yet. This distinction is deliberate: a working renderer does
 not by itself prove that a complete libVLC distribution is reproducible,
 license-closed, relocatable, and accepted by the real Metal consumer.
 
+The current recipe pins `04d555a9d391f009d4f510f508fef58c39bdf810` and requires
+new native binaries and source/link reports. Retained plugin counts and
+playback evidence below describe the earlier source revision.
+
 ## Implemented
 
 - exact pinned libVLC 4 OpenGL callback ABI;
@@ -16,7 +20,7 @@ license-closed, relocatable, and accepted by the real Metal consumer.
 - producer flush before notification and generation-safe latest-frame delivery;
 - `macos-aarch64` runtime selection and exact `OPENGL` manifest policy;
 - a hermetic Java/JNI/callback/OpenGL/IOSurface integration test;
-- a source build of pinned VLC commit `e4396920` using the upstream Apple
+- a source-build recipe for pinned VLC commit `04d555a9` using the upstream Apple
   shared-library entry point and a `--disable-all` contrib profile;
 - a 27-package resolved contrib graph with stream-output encoders, GPL, and
   GNUv3 packages disabled;

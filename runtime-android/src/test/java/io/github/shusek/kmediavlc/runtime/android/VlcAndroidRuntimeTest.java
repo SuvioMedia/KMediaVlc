@@ -17,7 +17,7 @@ final class VlcAndroidRuntimeTest {
         assertEquals(1, VlcAndroidRuntime.BRIDGE_ABI_VERSION);
         assertEquals("4.0.0-dev", VlcAndroidRuntime.VLC_VERSION);
         assertEquals(
-                "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+                "04d555a9d391f009d4f510f508fef58c39bdf810",
                 VlcAndroidRuntime.VLC_REVISION);
         assertEquals(
                 "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21",
@@ -44,7 +44,7 @@ final class VlcAndroidRuntimeTest {
                         1,
                         "arm64-v8a",
                         "4.0.0-dev Vetinari",
-                        "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+                        "04d555a9d391f009d4f510f508fef58c39bdf810",
                         VlcAndroidRuntime.VLC_REVISION,
                         "kmediavlc-android-anw-abi1");
         assertEquals(1, report.getBridgeAbiVersion());

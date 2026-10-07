@@ -11,6 +11,9 @@ import unittest
 from pathlib import Path
 
 
+from policy_fixtures import approved_policy_fixture
+
+
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location(
     "stage_vlc_windows_runtime", ROOT / "scripts/stage_vlc_windows_runtime.py"
@@ -24,29 +27,38 @@ class StageVlcWindowsRuntimeTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.base = Path(self.temporary.name)
+        self.root = approved_policy_fixture(self.base / "approved-root")
         self.install = self.base / "install"
         self.bridge = self.base / "kmediavlc_bridge.dll"
         self.output = self.base / "output"
         self.report = self.base / "report.json"
-        for relative in ("bin/libvlc.dll", "bin/libvlccore-9.dll"):
+        for relative in ("libvlc.dll", "libvlccore-9.dll"):
             path = self.install / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(relative.encode("ascii"))
         self.bridge.write_bytes(b"bridge")
-        _, _, modules = STAGER.load_policy(ROOT, allow_audit_candidate=False)
-        for _, name in modules:
-            path = self.install / "lib/vlc/plugins" / f"lib{name}_plugin.dll"
+        _, _, modules = STAGER.load_policy(self.root, allow_audit_candidate=False)
+        for family, name in modules:
+            path = self.install / "plugins" / family / f"lib{name}_plugin.dll"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(name.encode("ascii"))
-        extra = self.install / "lib/vlc/plugins/libstream_out_dummy_plugin.dll"
+        extra = self.install / "plugins/libstream_out_dummy_plugin.dll"
         extra.write_bytes(b"forbidden release extra")
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
+    def test_rejects_duplicate_installed_plugins(self) -> None:
+        plugins = self.install / "plugins"
+        duplicate = plugins / "duplicate/libmkv_plugin.dll"
+        duplicate.parent.mkdir()
+        duplicate.write_bytes(b"duplicate")
+        with self.assertRaisesRegex(SystemExit, "ambiguous"):
+            STAGER.require_plugin(plugins, duplicate.name)
+
     def test_stages_only_the_approved_policy(self) -> None:
         policy, binary_policy, modules = STAGER.load_policy(
-            ROOT, allow_audit_candidate=False
+            self.root, allow_audit_candidate=False
         )
         self.assertEqual("approved", policy["reviewStatus"])
         self.assertEqual("approved", binary_policy["reviewStatus"])
@@ -63,7 +75,7 @@ class StageVlcWindowsRuntimeTest(unittest.TestCase):
         }
         for filename, pending_status in statuses.items():
             payload = json.loads(
-                (ROOT / "compliance/policy" / filename).read_text(encoding="utf-8")
+                (self.root / "compliance/policy" / filename).read_text(encoding="utf-8")
             )
             payload["reviewStatus"] = pending_status
             destination = pending_root / "compliance/policy" / filename
@@ -79,13 +91,13 @@ class StageVlcWindowsRuntimeTest(unittest.TestCase):
         self.assertEqual(6, result["size"])
         self.assertEqual(64, len(result["sha256"]))
 
-    def test_current_report_is_approved(self) -> None:
+    def test_approved_fixture_report(self) -> None:
         result = subprocess.run(
             [
                 sys.executable,
                 str(ROOT / "scripts/stage_vlc_windows_runtime.py"),
                 "--root",
-                str(ROOT),
+                str(self.root),
                 "--install",
                 str(self.install),
                 "--bridge",
@@ -112,7 +124,7 @@ class StageVlcWindowsRuntimeTest(unittest.TestCase):
             "windows-x86_64-binary-components.json": "pending-link-command-audit",
         }.items():
             policy = json.loads(
-                (ROOT / "compliance/policy" / filename).read_text(encoding="utf-8")
+                (self.root / "compliance/policy" / filename).read_text(encoding="utf-8")
             )
             policy["reviewStatus"] = pending_status
             destination = pending_root / "compliance/policy" / filename

@@ -437,7 +437,7 @@ final class VlcDesktopPlayerIntegrationTest {
                         4,
                         2,
                         "4.0.0-dev",
-                        "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+                        "04d555a9d391f009d4f510f508fef58c39bdf810",
                         Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
                         Set.of(VlcRenderEngine.OPENGL),
                         false));
@@ -810,7 +810,7 @@ final class VlcDesktopPlayerIntegrationTest {
                         4,
                         2,
                         "4.0.0-dev",
-                        "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+                        "04d555a9d391f009d4f510f508fef58c39bdf810",
                         Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
                         Set.of(VlcRenderEngine.OPENGL),
                         false));
@@ -913,7 +913,7 @@ final class VlcDesktopPlayerIntegrationTest {
                 Path.of(bridge).toAbsolutePath(), fakePath, fakePath.getParent(),
                 "fake-libvlc-macos-resize-test",
                 new VlcRuntimeCapabilities(
-                        4, 2, "4.0.0-dev", "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+                        4, 2, "4.0.0-dev", "04d555a9d391f009d4f510f508fef58c39bdf810",
                         Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
                         Set.of(VlcRenderEngine.OPENGL), false));
         var reference = new AtomicReference<VlcDesktopPlayer>();
@@ -973,7 +973,7 @@ final class VlcDesktopPlayerIntegrationTest {
                         4,
                         2,
                         "4.0.0-dev",
-                        "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+                        "04d555a9d391f009d4f510f508fef58c39bdf810",
                         Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
                         Set.of(VlcRenderEngine.OPENGL),
                         false));
@@ -1147,7 +1147,7 @@ final class VlcDesktopPlayerIntegrationTest {
                         4,
                         2,
                         "4.0.0-dev",
-                        "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+                        "04d555a9d391f009d4f510f508fef58c39bdf810",
                         Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
                         renderEngines,
                         true));

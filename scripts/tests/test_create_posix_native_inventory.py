@@ -11,6 +11,9 @@ import unittest
 from pathlib import Path
 
 
+from policy_fixtures import approved_policy_fixture
+
+
 ROOT = Path(__file__).resolve().parents[2]
 VERSION = "0.1.0-rc.1"
 SOURCE_OFFER = (
@@ -38,6 +41,7 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.base = Path(self.temporary.name)
+        self.root = approved_policy_fixture(self.base / "approved-root")
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -49,8 +53,9 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
     def candidate(
         self,
         target: str,
-        root: Path = ROOT,
+        root: Path | None = None,
     ) -> tuple[Path, Path, Path, dict]:
+        root = self.root if root is None else root
         staging = self.base / f"{target}-runtime"
         report_path = self.base / f"{target}-report.json"
         output = self.base / f"{target}-inventory.json"
@@ -156,7 +161,7 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
             with self.subTest(target=target):
                 staging, report, output, _ = self.candidate(target)
                 inventory = INVENTORY.create(
-                    ROOT,
+                    self.root,
                     staging,
                     report,
                     output,
@@ -184,7 +189,7 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
                 self.assertIn("BSL-1.0", mkv["licenseSpdx"])
                 validated = PACKAGER.validate_inventory(
                     inventory,
-                    PACKAGER.load_policy(ROOT),
+                    PACKAGER.load_policy(self.root),
                     target,
                     staging,
                     output,
@@ -194,7 +199,7 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
     def test_maps_support_library_to_dynamic_dependency(self) -> None:
         staging, report, output, _ = self.candidate("linux-x86_64")
         inventory = INVENTORY.create(
-            ROOT,
+            self.root,
             staging,
             report,
             output,
@@ -223,7 +228,7 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
             ),
         }
         for relative, pending_status in files.items():
-            source = ROOT / relative
+            source = self.root / relative
             destination = pending_root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             if pending_status is None:
@@ -254,7 +259,7 @@ class CreatePosixNativeInventoryTest(unittest.TestCase):
         report.write_text(json.dumps(payload), encoding="utf-8")
         with self.assertRaises(ValueError):
             INVENTORY.create(
-                ROOT,
+                self.root,
                 staging,
                 report,
                 output,

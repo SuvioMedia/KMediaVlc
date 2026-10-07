@@ -4,7 +4,7 @@
 
 Linux x86-64 and AArch64 are implemented as source-built, unpublished
 libVLC 4 candidates. Both targets use the exact VideoLAN revision
-`e439692079a75cacb5f07310d1ec2dc20bfd1fe0`, an 85-plugin closed playback
+`04d555a9d391f009d4f510f508fef58c39bdf810`, an 85-plugin closed playback
 allowlist, and a 26-component contrib graph pending a fresh source/link audit. No Linux native
 payload is downloaded at runtime or retained by validation CI.
 
@@ -40,16 +40,18 @@ system-library exception. The dependency is directional: the `pulse` plugin
 must have exactly one edge to this helper, and no unrelated plugin is allowed
 to acquire it.
 
-The pinned prerelease Meson graph installs libVLC as the unversioned
-`libvlc.so`. Staging deliberately renames that input to the application-private
-`libvlc.so.12` contract and writes the matching SONAME and `$ORIGIN` RUNPATH;
-the source install is never mistaken for an already versioned upstream ABI.
-For libvlccore, the stager copies the real `libvlccore.so.9.0.0` input and
-normalizes it to `libvlccore.so.9`; it verifies but never follows the upstream
-`.9` symlink.
-Meson likewise installs plugin binaries in one flat directory. The stager
-selects their globally unique filenames there, while retaining each logical
-module family in the inventory and audit report.
+The pinned Meson graph installs libVLC as the regular `libvlc.so.12.0.0` file,
+with `.so` and `.so.12` symlinks. Staging reads only the regular file and
+normalizes it to the application-private `libvlc.so.12` contract. The same
+rule applies to the real `libvlccore.so.9.0.0` input and its private
+`libvlccore.so.9` output.
+Meson installs plugins in family subdirectories. The stager requires exactly
+one regular input for each selected filename, rejects ambiguous matches, and
+flattens the closed payload while retaining its logical module families.
+
+The source recipe uses upstream's Meson 1.12.0 helper. Its recorded core-library
+patch combines the link arguments duplicated by the pinned upstream target;
+it preserves both the existing core flags and section stripping.
 
 In this prerelease tree, Meson defines `vlc-cache-gen` only when the full VLC
 application is enabled. The build wrapper compiles the exact upstream

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "target": "android-arm",
-  "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
   "ndkRevision": "29.0.14206865",
   "reviewStatus": "source-mapped-license-and-notice-review-pending",
   "contribComponents": {
-    "aom": {"version": "3.14.1", "sourceArchives": ["libaom-3.14.1.tar.gz"]},
+    "aom": {"version": "3.15.0", "sourceArchives": ["libaom-3.15.0.tar.gz"]},
     "dav1d": {"version": "1.5.4", "sourceArchives": ["dav1d-1.5.4.tar.xz"]},
     "ffmpeg": {"version": "9.0", "sourceArchives": ["ffmpeg-9.0.tar.xz"]},
     "flac": {"version": "1.5.0", "sourceArchives": ["flac-1.5.0.tar.xz"]},
@@ -43,7 +43,7 @@
     "libtasn1": {"version": "4.21.0", "sourceArchives": ["libtasn1-4.21.0.tar.gz"]},
     "libtheora": {"version": "git-fb92ede9ba5162d0b8134cd1ff57751df6f3dbe6", "sourceArchives": ["libtheora-fb92ede9ba5162d0b8134cd1ff57751df6f3dbe6.tar.xz"]},
     "libvorbis": {"version": "1.3.7", "sourceArchives": ["libvorbis-1.3.7.tar.xz"]},
-    "libvpx": {"version": "1.16.0", "sourceArchives": ["libvpx-1.16.0.tar.gz"]},
+    "libvpx": {"version": "1.17.0", "sourceArchives": ["libvpx-1.17.0.tar.gz"]},
     "libxml2": {"version": "2.15.3", "sourceArchives": ["libxml2-2.15.3.tar.xz"]},
     "mpg123": {"version": "1.33.6", "sourceArchives": ["mpg123-1.33.6.tar.bz2"]},
     "openapv": {"version": "0.3.0.0", "sourceArchives": ["openapv-0.3.0.0.tar.gz"]},
@@ -55,10 +55,10 @@
     "soxr": {"version": "0.1.3", "sourceArchives": ["soxr-0.1.3-Source.tar.xz"]},
     "spatialaudio": {"version": "0.3.0", "sourceArchives": ["spatialaudio-0.3.0.tar.bz2"]},
     "speex": {"version": "1.2.1", "sourceArchives": ["speex-1.2.1.tar.gz"]},
-    "taglib": {"version": "2.3", "sourceArchives": ["taglib-2.3.tar.gz", "utfcpp-3.2.5.tar.gz"]},
+    "taglib": {"version": "2.3.2", "sourceArchives": ["taglib-2.3.2.tar.gz", "utfcpp-3.2.5.tar.gz"]},
     "twolame": {"version": "0.4.0", "sourceArchives": ["twolame-0.4.0.tar.gz"]},
     "zlib": {"version": "1.3.2", "sourceArchives": ["zlib-1.3.2.tar.xz"]},
-    "zvbi": {"version": "0.2.44", "sourceArchives": ["zvbi-0.2.44.tar.gz"]}
+    "zvbi": {"version": "0.2.45", "sourceArchives": ["zvbi-0.2.45.tar.gz"]}
   },
   "candidateLicenseSpdx": {
     "aom": ["BSD-2-Clause", "BSD-3-Clause", "MIT"],
@@ -128,7 +128,7 @@
     "gsm-1.0-pl22.tar.gz": ["COPYRIGHT"],
     "harfbuzz-14.2.1.tar.xz": ["COPYING"],
     "lame-3.100.tar.gz": ["COPYING", "LICENSE"],
-    "libaom-3.14.1.tar.gz": ["LICENSE", "PATENTS", "third_party/fastfeat/LICENSE", "third_party/vector/LICENSE"],
+    "libaom-3.15.0.tar.gz": ["LICENSE", "PATENTS", "third_party/fastfeat/LICENSE", "third_party/vector/LICENSE"],
     "libarchive-3.8.9.tar.xz": ["COPYING", "libarchive/archive_blake2s_ref.c", "libarchive/archive_ppmd7.c"],
     "libaribcaption-1.1.1.tar.gz": ["LICENSE", "src/base/md5.c", "src/base/tinyxml2.cpp"],
     "libass-0.17.5.tar.xz": ["COPYING"],
@@ -154,7 +154,7 @@
     "libtasn1-4.21.0.tar.gz": ["COPYING.LESSERv2"],
     "libtheora-fb92ede9ba5162d0b8134cd1ff57751df6f3dbe6.tar.xz": ["COPYING", "LICENSE"],
     "libvorbis-1.3.7.tar.xz": ["COPYING"],
-    "libvpx-1.16.0.tar.gz": ["LICENSE", "PATENTS"],
+    "libvpx-1.17.0.tar.gz": ["LICENSE", "PATENTS"],
     "libxml2-2.15.3.tar.xz": ["Copyright"],
     "microdns-0.2.0.tar.xz": ["COPYING"],
     "mpg123-1.33.6.tar.bz2": ["COPYING", "doc/PATENTS"],
@@ -167,11 +167,11 @@
     "soxr-0.1.3-Source.tar.xz": ["COPYING.LGPL", "LICENCE"],
     "spatialaudio-0.3.0.tar.bz2": ["LICENSE", "source/kiss_fft/kiss_fft.c"],
     "speex-1.2.1.tar.gz": ["COPYING"],
-    "taglib-2.3.tar.gz": ["COPYING.LGPL", "COPYING.MPL"],
+    "taglib-2.3.2.tar.gz": ["COPYING.LGPL", "COPYING.MPL"],
     "twolame-0.4.0.tar.gz": ["COPYING"],
     "utfcpp-3.2.5.tar.gz": ["LICENSE"],
     "zlib-1.3.2.tar.xz": ["LICENSE"],
-    "zvbi-0.2.44.tar.gz": ["COPYING.md"]
+    "zvbi-0.2.45.tar.gz": ["COPYING.md"]
   },
   "contribArchives": {
     "vlc-contrib/lib/libFLAC.a": "flac",

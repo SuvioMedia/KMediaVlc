@@ -12,6 +12,9 @@ import zipfile
 from pathlib import Path
 
 
+from policy_fixtures import approved_policy_fixture
+
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -38,9 +41,10 @@ class ExtractWindowsCandidateTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.base = Path(self.temporary.name)
+        self.root = approved_policy_fixture(self.base / "approved-root")
         self.staging = self.base / "staging"
         self.inventory = self.base / "inventory.json"
-        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=False)
+        _, _, modules = INVENTORY.load_policies(self.root, allow_audit_candidate=False)
         paths = [
             "bin/kmediavlc_bridge.dll",
             "bin/libvlc.dll",
@@ -59,7 +63,7 @@ class ExtractWindowsCandidateTest(unittest.TestCase):
                 checksums.append(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {relative}\n")
         (self.staging / "SHA256SUMS").write_text("".join(checksums), encoding="ascii")
         INVENTORY.create(
-            ROOT,
+            self.root,
             self.staging,
             self.inventory,
             VERSION,
@@ -99,7 +103,7 @@ class ExtractWindowsCandidateTest(unittest.TestCase):
         }
         for filename, pending_status in statuses.items():
             payload = json.loads(
-                (ROOT / "compliance/policy" / filename).read_text(encoding="utf-8")
+                (self.root / "compliance/policy" / filename).read_text(encoding="utf-8")
             )
             payload["reviewStatus"] = pending_status
             destination = pending_root / "compliance/policy" / filename

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
   "libvlcjniRevision": "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21",
   "vlcSource": "https://code.videolan.org/videolan/vlc.git",
   "libvlcjniSource": "https://code.videolan.org/videolan/libvlcjni.git",
@@ -47,7 +47,8 @@
   "vlcPatch": "patches/vlc/0001-android-external-anw-direct-mediacodec.patch",
   "libvlcjniPatch": "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch",
   "disabledVlcFeatures": [
-    "bluray"
+    "bluray",
+    "ndi"
   ],
   "usesPrebuiltContribs": false,
   "usesPublishedLibVlcAar": false,

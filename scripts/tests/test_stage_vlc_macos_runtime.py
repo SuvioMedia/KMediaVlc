@@ -10,6 +10,9 @@ from pathlib import Path
 from unittest import mock
 
 
+from policy_fixtures import approved_policy_fixture
+
+
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location(
     "stage_vlc_macos_runtime", ROOT / "scripts/stage_vlc_macos_runtime.py"
@@ -20,8 +23,13 @@ SPEC.loader.exec_module(STAGER)
 
 
 class StageVlcMacosRuntimeTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = approved_policy_fixture(Path(self.temporary.name) / "approved-root")
+
     def test_loads_exact_approved_policy(self) -> None:
-        policy, binary, modules = STAGER.load_policy(ROOT, allow_audit_candidate=False)
+        policy, binary, modules = STAGER.load_policy(self.root, allow_audit_candidate=False)
         self.assertEqual("approved", policy["reviewStatus"])
         self.assertEqual("approved", binary["reviewStatus"])
         self.assertEqual(28, len(binary["components"]))
@@ -46,7 +54,7 @@ class StageVlcMacosRuntimeTest(unittest.TestCase):
             }
             for filename, pending_status in statuses.items():
                 payload = json.loads(
-                    (ROOT / "compliance/policy" / filename).read_text(encoding="utf-8")
+                    (self.root / "compliance/policy" / filename).read_text(encoding="utf-8")
                 )
                 payload["reviewStatus"] = pending_status
                 destination = pending_root / "compliance/policy" / filename
@@ -54,7 +62,7 @@ class StageVlcMacosRuntimeTest(unittest.TestCase):
                 destination.write_text(json.dumps(payload), encoding="utf-8")
             recipe = pending_root / "build-recipes/macos.json"
             recipe.parent.mkdir(parents=True, exist_ok=True)
-            recipe.write_bytes((ROOT / "build-recipes/macos.json").read_bytes())
+            recipe.write_bytes((self.root / "build-recipes/macos.json").read_bytes())
 
             with self.assertRaises(SystemExit):
                 STAGER.load_policy(pending_root, allow_audit_candidate=False)

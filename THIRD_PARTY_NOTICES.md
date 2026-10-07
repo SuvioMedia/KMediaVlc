@@ -9,7 +9,7 @@ their upstream terms.
 
 ## VideoLAN VLC / libVLC
 
-The Windows runtime and Apple audit candidates are pinned to VideoLAN VLC revision `e439692079a75cacb5f07310d1ec2dc20bfd1fe0`. VLC/libVLC and the selected playback modules are distributed under LGPL-2.1-or-later except for the additional direct-source terms recorded in each closed module policy. The LGPL-2.1 text is included as `LICENSES/LGPL-2.1.txt`.
+The Windows runtime and Apple audit candidates are pinned to VideoLAN VLC revision `04d555a9d391f009d4f510f508fef58c39bdf810`. VLC/libVLC and the selected playback modules are distributed under LGPL-2.1-or-later except for the additional direct-source terms recorded in each closed module policy. The LGPL-2.1 text is included as `LICENSES/LGPL-2.1.txt`.
 
 Official source: https://code.videolan.org/videolan/vlc
 
@@ -105,10 +105,10 @@ Opus, SoXR, utfcpp, and zlib. Its additional decoder and HDR renderer inputs are
 | Component | Version | SPDX license | Pinned source input | Included notice/terms |
 | --- | --- | --- | --- | --- |
 | dav1d | 1.5.4 | BSD-2-Clause | `dav1d-1.5.4.tar.xz` | `LICENSES/Dav1d-COPYING.txt` |
-| glad | 2.0.4 | Apache-2.0 AND CC0-1.0 AND MIT | `glad-2.0.4.tar.gz` | `LICENSES/glad-LICENSE.txt` |
+| glad | 2.0.8 | Apache-2.0 AND CC0-1.0 AND MIT | `glad-2.0.8.tar.gz` | `LICENSES/glad-LICENSE.txt` |
 | jinja | 3.1.6 | BSD-3-Clause | `jinja-3.1.6.tar.gz` | `LICENSES/Jinja-LICENSE.txt` |
 | libplacebo | 5.264.1 | CC0-1.0 AND LGPL-2.1-or-later | `libplacebo-v5.264.1.tar.gz` | `LICENSES/libplacebo-LICENSE.txt` |
-| libvpx | 1.16.0 | BSD-3-Clause | `libvpx-1.16.0.tar.gz` | `LICENSES/libvpx-LICENSE.txt` |
+| libvpx | 1.17.0 | BSD-3-Clause | `libvpx-1.17.0.tar.gz` | `LICENSES/libvpx-LICENSE.txt` |
 | markupsafe | 2.1.5 | BSD-3-Clause | `markupsafe-2.1.5.tar.gz` | `LICENSES/MarkupSafe-LICENSE.txt` |
 | vulkan-headers | 1.4.355 | Apache-2.0 AND MIT | `Vulkan-Headers-1.4.355.tar.gz` | `LICENSES/Vulkan-Headers-LICENSE.txt` |
 

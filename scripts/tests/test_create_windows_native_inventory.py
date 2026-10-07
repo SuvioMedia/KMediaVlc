@@ -9,6 +9,9 @@ import unittest
 from pathlib import Path
 
 
+from policy_fixtures import approved_policy_fixture
+
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -35,9 +38,10 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.base = Path(self.temporary.name)
+        self.root = approved_policy_fixture(self.base / "approved-root")
         self.staging = self.base / "staging"
         self.output = self.base / "inventory.json"
-        _, _, modules = INVENTORY.load_policies(ROOT, allow_audit_candidate=False)
+        _, _, modules = INVENTORY.load_policies(self.root, allow_audit_candidate=False)
         paths = [
             "bin/kmediavlc_bridge.dll",
             "bin/libvlc.dll",
@@ -56,7 +60,7 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
 
     def test_creates_packager_valid_approved_inventory(self) -> None:
         inventory = INVENTORY.create(
-            ROOT,
+            self.root,
             self.staging,
             self.output,
             VERSION,
@@ -109,7 +113,7 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
         PACKAGER.inventory_path_global = self.output
         validated = PACKAGER.validate_inventory(
             inventory,
-            PACKAGER.load_policy(ROOT),
+            PACKAGER.load_policy(self.root),
             "windows-x86_64",
             self.staging,
         )
@@ -123,7 +127,7 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
         }
         for filename, pending_status in statuses.items():
             payload = json.loads(
-                (ROOT / "compliance/policy" / filename).read_text(encoding="utf-8")
+                (self.root / "compliance/policy" / filename).read_text(encoding="utf-8")
             )
             payload["reviewStatus"] = pending_status
             destination = pending_root / "compliance/policy" / filename
@@ -144,7 +148,7 @@ class CreateWindowsNativeInventoryTest(unittest.TestCase):
         extra.write_bytes(b"forbidden player executable")
         with self.assertRaises(ValueError):
             INVENTORY.create(
-                ROOT,
+                self.root,
                 self.staging,
                 self.output,
                 VERSION,

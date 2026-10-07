@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 
 
 PINNED_VERSION = "4.0.0-dev"
-PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
+PINNED_REVISION = "04d555a9d391f009d4f510f508fef58c39bdf810"
 BRIDGE_ABI_VERSION = 2
 ALLOWED_TARGETS = {
     "windows-x86_64": {"D3D11"},

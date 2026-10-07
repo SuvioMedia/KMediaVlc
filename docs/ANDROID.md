@@ -3,7 +3,7 @@
 # Android bundled libVLC 4
 
 KMediaVlc has a narrow Android AAR boundary for the exact VLC revision
-`e439692079a75cacb5f07310d1ec2dc20bfd1fe0`. The source-build tooling is pinned
+`04d555a9d391f009d4f510f508fef58c39bdf810`. The source-build tooling is pinned
 separately to VideoLAN `libvlcjni` revision
 `a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21`.
 

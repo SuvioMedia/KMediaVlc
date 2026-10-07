@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "target": "macos-aarch64",
-  "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
   "vlcSource": "https://code.videolan.org/videolan/vlc.git",
   "upstreamBuildScript": "extras/package/apple/build.sh",
   "upstreamBuildConfiguration": "build-recipes/vlc-apple.conf",
