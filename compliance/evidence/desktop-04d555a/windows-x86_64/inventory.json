@@ -1,0 +1,788 @@
+{
+  "files": [
+    {
+      "component": "kmediavlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "bin/kmediavlc_bridge.dll",
+      "role": "BRIDGE",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "bin/libvlc.dll",
+      "role": "LIBVLC",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later AND MIT",
+      "linkage": "DYNAMIC",
+      "path": "bin/libvlccore-9.dll",
+      "role": "CORE",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libaccess_mms_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libadaptive_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libadummy_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libasf_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libaudio_format_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "BSD-2-Clause AND LGPL-2.1-or-later AND TU-Berlin-1.0 AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libavcodec_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libavi_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libcache_read_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libchain_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libconsole_logger_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libd3d11va_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libdata_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later AND MIT",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libdirect3d11_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libdirect3d11_filters_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libes_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libfilesystem_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "BSD-3-Clause AND LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libflac_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libfloat_mixer_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "FTL AND LGPL-2.1-or-later AND Libpng-2.0 AND MIT AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libfreetype_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libftp_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later AND LGPL-3.0-or-later AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libgnutls_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libh26x_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libhttp_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libhttps_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libi420_nv12_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libi420_rgb_sse2_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libimage_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libinflate_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libinteger_mixer_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "IJG AND LGPL-2.1-or-later AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libjpeg_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "FTL AND ISC AND LGPL-2.1-or-later AND Libpng-2.0 AND MIT AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/liblibass_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libmemory_keystore_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libmft_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "BSL-1.0 AND LGPL-2.1-or-later AND MIT AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libmkv_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libmmdevice_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libmp4_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "BSD-3-Clause AND LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libogg_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "BSD-3-Clause AND LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libopus_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/liborient_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_a52_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_av1_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_copy_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_dts_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_flac_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_h264_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_hevc_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_mjpeg_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_mlp_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_mpeg4audio_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_mpeg4video_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_mpegaudio_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_mpegvideo_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpacketizer_vc1_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libplaylist_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later AND Libpng-2.0 AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libpng_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libprefetch_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libps_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/librawvideo_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/librecord_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/librv32_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "BSD-3-Clause AND LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libsftp_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libsimple_channel_mixer_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libskiptags_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "BSD-2-Clause AND LGPL-2.1-or-later AND TU-Berlin-1.0 AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libsoxr_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libspdif_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "BSD-3-Clause AND LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libspeex_resampler_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libsubsdec_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libsubstx3g_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libsubtitle_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later AND Zlib",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libswscale_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libtcp_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libtdummy_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libtospdif_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libtrivial_channel_mixer_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "BSD-3-Clause AND LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libts_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libudp_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libvmem_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "BSD-3-Clause AND LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libvorbis_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libwasapi_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libwav_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libwdummy_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libwebdav_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libwebvtt_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libwextern_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libwin32_window_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libwinhibit_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later AND MIT",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libxml_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libyuvp_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libyuy2_i420_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "DYNAMIC",
+      "path": "lib/vlc/plugins/libyuy2_i422_plugin.dll",
+      "role": "PLUGIN",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "videolan-vlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "NONE",
+      "path": "lib/vlc/plugins/plugins.dat",
+      "role": "DATA",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "kmediavlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "NONE",
+      "path": "SHA256SUMS",
+      "role": "DATA",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    },
+    {
+      "component": "kmediavlc",
+      "licenseSpdx": "LGPL-2.1-or-later",
+      "linkage": "NONE",
+      "path": "BINARY-COMPONENTS.json",
+      "role": "LEGAL",
+      "source": "https://github.com/SuvioMedia/KMediaVlc/releases/download/v0.1.0-rc.13/kmedia-vlc-0.1.0-rc.13-corresponding-source.tar.gz"
+    }
+  ],
+  "frameDeliveryModes": [
+    "GPU_PUSH",
+    "CPU_PULL"
+  ],
+  "gplComponents": false,
+  "hdr10Metadata": true,
+  "libvlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
+  "libvlcVersion": "4.0.0-dev",
+  "nonfreeComponents": false,
+  "pluginDirectory": "lib/vlc/plugins",
+  "provenance": "source-build",
+  "renderEngines": [
+    "D3D11"
+  ],
+  "schemaVersion": 1,
+  "target": "windows-x86_64"
+}

@@ -28,10 +28,12 @@ plugins and dependencies, and a stable KMediaVlc bridge. It never downloads
 native code at runtime. Native payloads are release inputs and are never
 committed to this repository.
 
-The current source-build candidate pins VideoLAN commit
-`04d555a9d391f009d4f510f508fef58c39bdf810`. Native binaries, inventories and
-source/link approvals must be rebuilt for this revision. Retained runtime
-evidence applies only to the source revision recorded in each report.
+The current source build pins VideoLAN commit
+`04d555a9d391f009d4f510f508fef58c39bdf810`. Its automatic desktop source-license
+and native playback approval is retained in
+`compliance/evidence/desktop-04d555a/acceptance.json`. The approval binds the
+current policies, recipes, source scan, runtime inventories, and test results.
+Release workflows rebuild and test the exact approved publication commit.
 
 Apple-hosted VLC source recipes require Homebrew GNU Make 4.4 or newer
 (`brew install make`). They select its FIFO jobserver so parallel Make and

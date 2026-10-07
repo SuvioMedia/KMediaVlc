@@ -150,7 +150,7 @@
   },
   "moduleAdditionalLicenses": {
     "mkv": ["MIT"],
-    "opus": ["BSD-3-Clause"],
-    "ts": ["BSD-3-Clause"]
+    "opus": ["BSD-2-Clause"],
+    "ts": ["BSD-2-Clause"]
   }
 }

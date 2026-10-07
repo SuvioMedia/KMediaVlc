@@ -2,14 +2,18 @@
 
 # macOS bundled-runtime status
 
-The Apple-silicon desktop transport is implemented but is not a published
-native payload yet. This distinction is deliberate: a working renderer does
-not by itself prove that a complete libVLC distribution is reproducible,
-license-closed, relocatable, and accepted by the real Metal consumer.
+The Apple-silicon desktop runtime is included in multiplatform releases.
+Its private libVLC package is built from pinned sources and checked for
+relocation, dependency closure, and real IOSurface playback.
 
-The current recipe pins `04d555a9d391f009d4f510f508fef58c39bdf810` and requires
-new native binaries and source/link reports. Retained plugin counts and
-playback evidence below describe the earlier source revision.
+The current recipe pins `04d555a9d391f009d4f510f508fef58c39bdf810`.
+Fresh automatic approval is retained in
+`compliance/evidence/desktop-04d555a/acceptance.json`: 90 selected plugins,
+three hosted native playback tests, and the same three tests on a local Mac.
+An additional local HLS regression delays one segment by 25 seconds, verifies
+midstream buffering with a paused media timestamp, and requires playback to
+resume and reach the end. Its result is retained as `macos-aarch64/hls-rebuffer.json`.
+Earlier evidence below remains scoped to its original source revision.
 
 ## Implemented
 
@@ -64,7 +68,7 @@ upstream 8-bit BT.709/sRGB default. The real HDR10 integration test is retained
 alongside the hermetic fake-libVLC ownership test so a metadata-only or
 allocation-only regression cannot satisfy the gate.
 
-## Publication gates still open
+## Publication checks
 
 1. Complete source/license and static-link review for the 90 selected modules
    and every contrib actually folded into them; produce the per-binary legal
@@ -73,20 +77,22 @@ allocation-only regression cannot satisfy the gate.
    candidate commit and retain its path-free relocation report, contrib list,
    bound autotools-macro hashes, and three-test JUnit evidence. The build binds
    Homebrew gettext/iconv and pkgconf M4 providers into VLC's bootstrapped
-   aclocal path, rebuilds from clean inputs, and never uploads the
-   still-unapproved native payload.
-3. Run the remaining real pinned-VLC MKV/MP4, audio, subtitles, VideoToolbox,
-   HTTPS, seek, long-lifecycle, and display-replacement regressions on macOS
-   hardware.
-4. Retain commit-bound SDR and HDR physical-display evidence from the final
-   release candidate and promote the two reviewed policy states to `approved`.
-5. Rerun the source audit from that approved commit before adding its exact
+   aclocal path and rebuilds from clean inputs. Pending inputs remain explicitly
+   marked as audit candidates.
+3. Retain the automatic source-license and hosted native playback evidence,
+   bind its hashes to the exact policies and source recipe, and promote both
+   desktop policy states to `approved`.
+4. Rerun the source audit from that approved commit before adding its exact
    runtime and inventory to the publication matrix.
+
+Physical-display, VideoToolbox, long-lifecycle, and application-specific Metal
+acceptance remain separate hardware/product regressions. The automatic desktop
+approval records its actual test scope and does not claim those results.
 
 The ad-hoc signature used to validate the relocated candidate is not a release
 signature. The consuming application must sign every nested Mach-O as part of
 its normal hardened-runtime signing flow.
 
-Until all gates pass, no `macos-aarch64` resource is placed in the Maven
-artifact. `VlcDesktopRuntime` recognizes the target but returns a fail-closed
+Until all publication checks pass, no new `macos-aarch64` resource is placed in the Maven
+artifact. If a payload is missing, `VlcDesktopRuntime` returns its fail-closed
 missing-payload result.

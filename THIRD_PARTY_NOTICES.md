@@ -54,8 +54,10 @@ SPDX inventory as the effective aggregate conclusion.
 
 ## Windows x86_64 playback dependency inventory
 
-The following candidate inventory is derived from the pinned contrib inputs. Its pending source
-and link audits must pass before the automatic release checks can approve a runtime.
+The following inventory is derived from the pinned contrib inputs. Current
+desktop approval retains the exact source inputs, source-license scan, link
+metadata, runtime inventories, and executed native tests. Publication checks
+rebuild and verify the approved revision.
 
 | Component | Version | SPDX license | Pinned source input | Included notice/terms |
 | --- | --- | --- | --- | --- |
@@ -116,9 +118,10 @@ Jinja and MarkupSafe are native build-time generator inputs only. Vulkan-Headers
 is a header-only input to libplacebo's stub API; the macOS runtime does not
 contain or load Vulkan Loader or glslang.
 
-The macOS candidate is built with Xcode 26.6 (17F113), the macOS 26.5 SDK,
+The macOS candidate is built with Xcode 16.4 (16F6), the macOS 15.5 SDK,
 an arm64-only target, and a minimum deployment version of macOS 14.0. Its
-component and module policies remain pending until the bumped source is rebuilt and audited.
+component and module policies bind the retained automatic desktop approval for
+this source revision.
 
 ## iOS arm64 playback dependency inventory
 
@@ -134,6 +137,11 @@ Existing simulator and device evidence belongs to the previous pin and does
 not make this candidate release-eligible.
 
 ## VLC core additional direct-source license
+
+The VLC Opus header parser compiled into the `opus` and `ts` plugins uses
+BSD-2-Clause. Its original Xiph.Org copyright and two-clause terms are retained
+in `LICENSES/VLC-Opus-Header-BSD-2-Clause.txt`. The separate libopus contrib
+library retains its BSD-3-Clause license recorded in the component inventory.
 
 The desktop `libvlccore` builds include VLC's
 `src/config/jaro_winkler.c`, which is licensed under MIT in addition to the

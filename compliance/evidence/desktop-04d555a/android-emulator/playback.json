@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
+  "androidSourceAuditRunId": 37606358849,
+  "candidateCommit": "5e142b059a90a9d64b8ce3e7ffbef5e7c137317e",
+  "abi": "arm64-v8a",
+  "pageSize": 16384,
+  "testCount": 2,
+  "failures": 0,
+  "tests": {
+    "softwareDecodeAvoidsMediaCodecAndSurvivesSurfaceLifecycle": "passed",
+    "automaticDecodeUsesMediaCodecAndSurvivesSurfaceLifecycle": "passed"
+  },
+  "scope": [
+    "MediaCodec",
+    "software-decoding",
+    "seeks",
+    "surface-replacement",
+    "stop-close-lifecycle"
+  ],
+  "physicalHdrDisplayOutput": "not-claimed",
+  "nativeLibraries": {
+    "libvlc.so": "9efc5f9740d1bd2e2688fa52056f0f7aaffc63c666cfebd1921e5f0689ddc7cf",
+    "libkmediavlc_android.so": "1abcf9d4317ad8e58b359facbb65aa1eb8b855c49c8c28cd5e7a6e9b7364c835"
+  },
+  "instrumentationSha256": "8c3c8cd7310f936b843702a7d634c322027dd0f88531e4899a4f69c4299810e0"
+}

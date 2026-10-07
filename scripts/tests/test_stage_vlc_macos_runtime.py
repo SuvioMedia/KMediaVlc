@@ -88,11 +88,21 @@ class StageVlcMacosRuntimeTest(unittest.TestCase):
   cmdsize 32
  platform 1
     minos 14.0
-      sdk 26.5
+      sdk 15.5
    ntools 1
      tool 3
 """
-        self.assertEqual([("1", "14.0")], STAGER.parse_build_versions(output))
+        self.assertEqual([("1", "14.0", "15.5")], STAGER.parse_build_versions(output))
+
+    def test_runtime_rejects_an_sdk_different_from_the_audited_toolchain(self) -> None:
+        outputs = [
+            "arm64", "file:\n@rpath/libkmediavlc_bridge.dylib\n",
+            "file:\n\t@rpath/libkmediavlc_bridge.dylib (compatibility version 0.0.0, current version 0.0.0)\n",
+            "cmd LC_BUILD_VERSION\nplatform 1\nminos 14.0\nsdk 26.5\n",
+        ]
+        with mock.patch.object(STAGER, "run_tool", side_effect=outputs):
+            with self.assertRaisesRegex(SystemExit, "SDK differs"):
+                STAGER.audit_macho(Path("/tmp/bridge.dylib"), "BRIDGE", Path("/usr/bin/otool"), Path("/usr/bin/lipo"))
 
     def test_relocation_uses_only_loader_relative_core_paths(self) -> None:
         plugin = Path("/tmp/libpng_plugin.dylib")

@@ -1,0 +1,2902 @@
+{
+  "auditCandidate": true,
+  "binaryReviewStatus": "pending-link-command-and-license-audit",
+  "components": {
+    "dav1d": {
+      "licenseSpdx": [
+        "BSD-2-Clause"
+      ],
+      "sourceArchive": "dav1d-1.5.4.tar.xz",
+      "version": "1.5.4"
+    },
+    "ffmpeg": {
+      "licenseSpdx": [
+        "LGPL-2.1-or-later"
+      ],
+      "sourceArchive": "ffmpeg-9.0.tar.xz",
+      "version": "9.0"
+    },
+    "flac": {
+      "licenseSpdx": [
+        "BSD-3-Clause"
+      ],
+      "sourceArchive": "flac-1.5.0.tar.xz",
+      "version": "1.5.0"
+    },
+    "freetype": {
+      "licenseSpdx": [
+        "FTL"
+      ],
+      "sourceArchive": "freetype-2.14.3.tar.xz",
+      "version": "2.14.3"
+    },
+    "fribidi": {
+      "licenseSpdx": [
+        "LGPL-2.1-or-later"
+      ],
+      "sourceArchive": "fribidi-1.0.16.tar.xz",
+      "version": "1.0.16"
+    },
+    "gmp": {
+      "licenseSpdx": [
+        "LGPL-3.0-or-later"
+      ],
+      "sourceArchive": "gmp-6.3.0.tar.xz",
+      "version": "6.3.0"
+    },
+    "gnutls": {
+      "licenseSpdx": [
+        "LGPL-2.1-or-later"
+      ],
+      "sourceArchive": "gnutls-3.8.13.tar.xz",
+      "version": "3.8.13"
+    },
+    "gnutls-libtasn1": {
+      "licenseSpdx": [
+        "LGPL-2.1-or-later"
+      ],
+      "sourceArchive": "gnutls-3.8.13.tar.xz",
+      "version": "bundled-3.8.13"
+    },
+    "gnutls-libunistring": {
+      "licenseSpdx": [
+        "LGPL-3.0-or-later"
+      ],
+      "sourceArchive": "gnutls-3.8.13.tar.xz",
+      "version": "bundled-3.8.13"
+    },
+    "gsm": {
+      "licenseSpdx": [
+        "TU-Berlin-1.0"
+      ],
+      "sourceArchive": "gsm-1.0-pl22.tar.gz",
+      "version": "1.0-pl22"
+    },
+    "harfbuzz": {
+      "licenseSpdx": [
+        "MIT"
+      ],
+      "sourceArchive": "harfbuzz-14.2.1.tar.xz",
+      "version": "14.2.1"
+    },
+    "libass": {
+      "licenseSpdx": [
+        "ISC"
+      ],
+      "sourceArchive": "libass-0.17.5.tar.xz",
+      "version": "0.17.5"
+    },
+    "libdvbpsi": {
+      "licenseSpdx": [
+        "LGPL-2.1-or-later"
+      ],
+      "sourceArchive": "libdvbpsi-1.3.3.tar.bz2",
+      "version": "1.3.3"
+    },
+    "libebml": {
+      "licenseSpdx": [
+        "LGPL-2.1-or-later"
+      ],
+      "sourceArchive": "libebml-1.4.6.tar.xz",
+      "version": "1.4.6"
+    },
+    "libjpeg-turbo": {
+      "licenseSpdx": [
+        "IJG",
+        "Zlib"
+      ],
+      "sourceArchive": "libjpeg-turbo-3.1.4.1.tar.gz",
+      "version": "3.1.4.1"
+    },
+    "libmatroska": {
+      "licenseSpdx": [
+        "LGPL-2.1-or-later"
+      ],
+      "sourceArchive": "libmatroska-1.7.2.tar.xz",
+      "version": "1.7.2"
+    },
+    "libogg": {
+      "licenseSpdx": [
+        "BSD-3-Clause"
+      ],
+      "sourceArchive": "libogg-1.3.6.tar.xz",
+      "version": "1.3.6"
+    },
+    "libpng": {
+      "licenseSpdx": [
+        "Libpng-2.0"
+      ],
+      "sourceArchive": "libpng-1.6.58.tar.xz",
+      "version": "1.6.58"
+    },
+    "libvorbis": {
+      "licenseSpdx": [
+        "BSD-3-Clause"
+      ],
+      "sourceArchive": "libvorbis-1.3.7.tar.xz",
+      "version": "1.3.7"
+    },
+    "libvpx": {
+      "licenseSpdx": [
+        "BSD-3-Clause"
+      ],
+      "sourceArchive": "libvpx-1.17.0.tar.gz",
+      "version": "1.17.0"
+    },
+    "libxml2": {
+      "licenseSpdx": [
+        "MIT"
+      ],
+      "sourceArchive": "libxml2-2.15.3.tar.xz",
+      "version": "2.15.3"
+    },
+    "nettle": {
+      "licenseSpdx": [
+        "LGPL-3.0-or-later"
+      ],
+      "sourceArchive": "nettle-3.10.2.tar.gz",
+      "version": "3.10.2"
+    },
+    "openjpeg": {
+      "licenseSpdx": [
+        "BSD-2-Clause"
+      ],
+      "sourceArchive": "openjpeg-2.5.4.tar.gz",
+      "version": "2.5.4"
+    },
+    "opus": {
+      "licenseSpdx": [
+        "BSD-3-Clause"
+      ],
+      "sourceArchive": "opus-1.6.1.tar.gz",
+      "version": "1.6.1"
+    },
+    "soxr": {
+      "licenseSpdx": [
+        "LGPL-2.1-or-later"
+      ],
+      "sourceArchive": "soxr-0.1.3-Source.tar.xz",
+      "version": "0.1.3"
+    },
+    "utfcpp": {
+      "licenseSpdx": [
+        "BSL-1.0"
+      ],
+      "sourceArchive": "utfcpp-3.2.5.tar.gz",
+      "version": "3.2.5"
+    },
+    "zlib": {
+      "licenseSpdx": [
+        "Zlib"
+      ],
+      "sourceArchive": "zlib-1.3.2.tar.xz",
+      "version": "1.3.2"
+    }
+  },
+  "elf": {
+    "bin/libkmediavlc_bridge.so": {
+      "buildId": "4b8b54335784017cc92ffd01384e4b0d7dae35fc",
+      "dependencies": [
+        "libEGL.so.1",
+        "libGLESv2.so.2",
+        "libgbm.so.1",
+        "libdrm.so.2",
+        "libstdc++.so.6",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": "1.3.9",
+        "GLIBC": "2.34",
+        "GLIBCXX": "3.4.31"
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN",
+      "soname": "libkmediavlc_bridge.so"
+    },
+    "bin/libvlc.so.12": {
+      "buildId": "35f0a69c40958e74d15d406cc4b1b8cdbaae5eff",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN",
+      "soname": "libvlc.so.12"
+    },
+    "bin/libvlc_pulse.so": {
+      "buildId": "c450c5cf453a4ff77ff615dd4efcfacb102c8756",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libpulse.so.0",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN",
+      "soname": "libvlc_pulse.so"
+    },
+    "bin/libvlccore.so.9": {
+      "buildId": "77a75245c2286140eca55607d15ede2b49746338",
+      "dependencies": [
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN",
+      "soname": "libvlccore.so.9"
+    },
+    "lib/vlc/plugins/libaccess_mms_plugin.so": {
+      "buildId": "73a99088f916739db7c603b9b04bcff65ab03eb5",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libaccess_mms_plugin.so"
+    },
+    "lib/vlc/plugins/libadummy_plugin.so": {
+      "buildId": "a8e0a8eb03e1e2def461854d5560f7035ebc6c12",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libadummy_plugin.so"
+    },
+    "lib/vlc/plugins/libasf_plugin.so": {
+      "buildId": "c425d6113ba2bed59efb4aecf015d4acddb009e5",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libasf_plugin.so"
+    },
+    "lib/vlc/plugins/libaudio_format_plugin.so": {
+      "buildId": "10aaf2a9728a7671e7129bebcc5187e467829ce7",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libaudio_format_plugin.so"
+    },
+    "lib/vlc/plugins/libavcodec_plugin.so": {
+      "buildId": "863f20e3b4bd38e5381df8791c4a67858f10a68a",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libdrm.so.2",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libavcodec_plugin.so"
+    },
+    "lib/vlc/plugins/libavi_plugin.so": {
+      "buildId": "bbb3b7fe9360bebe1af0c8caaa7305b9dc61a538",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libavi_plugin.so"
+    },
+    "lib/vlc/plugins/libcache_read_plugin.so": {
+      "buildId": "1033721ed8c6a418b40c5be0cb524c0b8e66ddd2",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libcache_read_plugin.so"
+    },
+    "lib/vlc/plugins/libcc_plugin.so": {
+      "buildId": "779e760dbe6db3f5719147bcddb9e1d94b43c5a3",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libcc_plugin.so"
+    },
+    "lib/vlc/plugins/libchain_plugin.so": {
+      "buildId": "8c839e40250c4e1384fba05fe35e9141df5ad204",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libchain_plugin.so"
+    },
+    "lib/vlc/plugins/libconsole_logger_plugin.so": {
+      "buildId": "9ebf1a3050e4a6d7d2301108b76040acd502435b",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libconsole_logger_plugin.so"
+    },
+    "lib/vlc/plugins/libdata_plugin.so": {
+      "buildId": "fd652bb087c80b988847370e9256100c863cd83b",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libdata_plugin.so"
+    },
+    "lib/vlc/plugins/libdav1d_plugin.so": {
+      "buildId": "cbf04bbaa203c606ddacd98850744e6738a6c0bd",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.34",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libdav1d_plugin.so"
+    },
+    "lib/vlc/plugins/libes_plugin.so": {
+      "buildId": "042e59cbe0f1546563bd8aced0abb53dc8dd2470",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libes_plugin.so"
+    },
+    "lib/vlc/plugins/libfilesystem_plugin.so": {
+      "buildId": "8174cb461241604b81ca1e44e931bb73ca5d80e7",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libfilesystem_plugin.so"
+    },
+    "lib/vlc/plugins/libflac_plugin.so": {
+      "buildId": "aaa2228623b739d1c5d6eeca3871958111c9493b",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libflac_plugin.so"
+    },
+    "lib/vlc/plugins/libfloat_mixer_plugin.so": {
+      "buildId": "58e85c74f2c28addb861d33d6973e2bc98da733a",
+      "dependencies": [
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libfloat_mixer_plugin.so"
+    },
+    "lib/vlc/plugins/libfreetype_plugin.so": {
+      "buildId": "fa0a4481b4d929ece8f1ff1f1172a9587a79b77f",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libfontconfig.so.1",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libfreetype_plugin.so"
+    },
+    "lib/vlc/plugins/libftp_plugin.so": {
+      "buildId": "6ee557edf3daed68327e53c393197149f9f0b4ca",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libftp_plugin.so"
+    },
+    "lib/vlc/plugins/libgles2_plugin.so": {
+      "buildId": "20a494c6a6689c73f9af2483e4ca374b66a2b8b4",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libgles2_plugin.so"
+    },
+    "lib/vlc/plugins/libglinterop_sw_plugin.so": {
+      "buildId": "91981903a1c1cb25d52f8fd3cb1783148887818c",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libglinterop_sw_plugin.so"
+    },
+    "lib/vlc/plugins/libglsampler_builtin_plugin.so": {
+      "buildId": "7235cb15c3f567fc528f562f3819417de8a92d13",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libglsampler_builtin_plugin.so"
+    },
+    "lib/vlc/plugins/libgnutls_plugin.so": {
+      "buildId": "43ca88752607115c36c31d29a4b14cda13458068",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libgnutls_plugin.so"
+    },
+    "lib/vlc/plugins/libh26x_plugin.so": {
+      "buildId": "a0c6b97973820e36af279a04aa7dd3c3cb2bcafa",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libh26x_plugin.so"
+    },
+    "lib/vlc/plugins/libhttp_plugin.so": {
+      "buildId": "02b34e6e39b43cb6658ad4af33d4e6c23cffd5d5",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libhttp_plugin.so"
+    },
+    "lib/vlc/plugins/libhttps_plugin.so": {
+      "buildId": "90e118dd276d355ea0680749e6c36345c28f3548",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libhttps_plugin.so"
+    },
+    "lib/vlc/plugins/libi420_nv12_plugin.so": {
+      "buildId": "1a04f5e9dd411d99715afa81579b1d6f001ae605",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libi420_nv12_plugin.so"
+    },
+    "lib/vlc/plugins/libi420_rgb_plugin.so": {
+      "buildId": "b6dd41ba288e8d82ea5f2949abd321220ac6a088",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libi420_rgb_plugin.so"
+    },
+    "lib/vlc/plugins/libimage_plugin.so": {
+      "buildId": "7a8d9984f459414e41cdcbda6e6112e5d14cd50c",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libimage_plugin.so"
+    },
+    "lib/vlc/plugins/libinflate_plugin.so": {
+      "buildId": "8c82f2170336d5888f7076b239cc78e31214d689",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libinflate_plugin.so"
+    },
+    "lib/vlc/plugins/libinteger_mixer_plugin.so": {
+      "buildId": "f0595732d5675dfd9f1aa3cf97b19caad60aeabf",
+      "dependencies": [
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libinteger_mixer_plugin.so"
+    },
+    "lib/vlc/plugins/libjpeg_plugin.so": {
+      "buildId": "2fdad3e4a95aac28a8f5c0dd39b08a7d2a55df8c",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libjpeg_plugin.so"
+    },
+    "lib/vlc/plugins/liblibass_plugin.so": {
+      "buildId": "00753be7a5da0ecdf56cc12bf79da1c250496afa",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libfontconfig.so.1",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "liblibass_plugin.so"
+    },
+    "lib/vlc/plugins/libmemory_keystore_plugin.so": {
+      "buildId": "522c5d59f71562b9ea1fff282e85c82676acfaaf",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libmemory_keystore_plugin.so"
+    },
+    "lib/vlc/plugins/libmkv_plugin.so": {
+      "buildId": "ebfcd9553de4db6fc5ed1e8a0571f6cefd7c794b",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libstdc++.so.6",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": "1.3.9",
+        "GLIBC": "2.38",
+        "GLIBCXX": "3.4.32"
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libmkv_plugin.so"
+    },
+    "lib/vlc/plugins/libmp4_plugin.so": {
+      "buildId": "9262f1bef0266a1d570569a60b68be1ebcf7e023",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libmp4_plugin.so"
+    },
+    "lib/vlc/plugins/libogg_plugin.so": {
+      "buildId": "f774f78be18e7ae085cedc15ea04dba4d6ceed22",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libogg_plugin.so"
+    },
+    "lib/vlc/plugins/libopus_plugin.so": {
+      "buildId": "7584d9997fe52357556e1e6edc4db5cf04dc7e8c",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.29",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libopus_plugin.so"
+    },
+    "lib/vlc/plugins/liborient_plugin.so": {
+      "buildId": "ea4b49190a0ec68b2c7e5222d0048a6e70203f62",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "liborient_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_a52_plugin.so": {
+      "buildId": "8b7dd3df68f3f2873318541ff2d9c2ae9034fc4d",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_a52_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_av1_plugin.so": {
+      "buildId": "895e7ac9de56111d0b7d9c86db418e4d23c5184e",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_av1_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_avparser_plugin.so": {
+      "buildId": "110a594f9a6d0109e5edb341700a1e648cce847c",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libdrm.so.2",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_avparser_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_copy_plugin.so": {
+      "buildId": "d8feeb8fdac7e63ff4bf6f03d2562e024f012dfb",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_copy_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_dts_plugin.so": {
+      "buildId": "f3f911588ef8a54eb4092f4e92713b55d3adb92c",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_dts_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_flac_plugin.so": {
+      "buildId": "0c9cc680750b8b868e88afd6ef25b53dc3000ac3",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_flac_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_h264_plugin.so": {
+      "buildId": "674d785fbe0c3bf6f4613e7c6998c5c305dd13e1",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_h264_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_hevc_plugin.so": {
+      "buildId": "ed3dc54fc4bc31290ce8cbfe91a87b11a906880b",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_hevc_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_mjpeg_plugin.so": {
+      "buildId": "2e0b48591b74c1e49435f1f5a05e7117a9763233",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_mjpeg_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_mlp_plugin.so": {
+      "buildId": "9377be640e0e2a160455fa599ee9027d7c44bac7",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_mlp_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_mpeg4audio_plugin.so": {
+      "buildId": "c8e00ff1a352a7e6f715daf027837a099374309a",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_mpeg4audio_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_mpeg4video_plugin.so": {
+      "buildId": "1749eb170c3446d5a363d869cbab2edd5b1096e8",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_mpeg4video_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_mpegaudio_plugin.so": {
+      "buildId": "c1486b04fe947a0b08c88d79d23ea6bc358e45e2",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_mpegaudio_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_mpegvideo_plugin.so": {
+      "buildId": "1bd8eb352624bd457ae8d71c08de1d913d7774e4",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_mpegvideo_plugin.so"
+    },
+    "lib/vlc/plugins/libpacketizer_vc1_plugin.so": {
+      "buildId": "f76dded38f4cdeb42c3bdf20ab46d77fef94f216",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpacketizer_vc1_plugin.so"
+    },
+    "lib/vlc/plugins/libplaylist_plugin.so": {
+      "buildId": "0e796f6bc718d964134337fda81dcc1c554ebbc0",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libplaylist_plugin.so"
+    },
+    "lib/vlc/plugins/libpng_plugin.so": {
+      "buildId": "c70ff27b71b3d3324f18aa1d16ddec3969522aa6",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.29",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpng_plugin.so"
+    },
+    "lib/vlc/plugins/libprefetch_plugin.so": {
+      "buildId": "792b7446caee71a5f9ec39a9c34ed25a3b9dc9cc",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libprefetch_plugin.so"
+    },
+    "lib/vlc/plugins/libps_plugin.so": {
+      "buildId": "90f083b6657823009a4919d728d258f0fcfbbd74",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libps_plugin.so"
+    },
+    "lib/vlc/plugins/libpulse_plugin.so": {
+      "buildId": "9c1ff775f012cf2a3892caf14b74d44601c8c342",
+      "dependencies": [
+        "libvlc_pulse.so",
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libpulse.so.0",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [
+        "libvlc_pulse.so"
+      ],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libpulse_plugin.so"
+    },
+    "lib/vlc/plugins/librawvideo_plugin.so": {
+      "buildId": "c54caa636664b0aca755610316d1e31498455a05",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "librawvideo_plugin.so"
+    },
+    "lib/vlc/plugins/librecord_plugin.so": {
+      "buildId": "1e1a3ab660a4d03b0cf894f255d7fa77c8c746f6",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "librecord_plugin.so"
+    },
+    "lib/vlc/plugins/librv32_plugin.so": {
+      "buildId": "ceceaf9484d480efbf8d5c9d14a62a28ee5aadd8",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "librv32_plugin.so"
+    },
+    "lib/vlc/plugins/libsimple_channel_mixer_plugin.so": {
+      "buildId": "f10a6aa02e495e3a9078ada48b8874c51414279d",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libsimple_channel_mixer_plugin.so"
+    },
+    "lib/vlc/plugins/libskiptags_plugin.so": {
+      "buildId": "f7f1341b170ff1847c1fd6ae6083b4b81f5455fb",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libskiptags_plugin.so"
+    },
+    "lib/vlc/plugins/libsoxr_plugin.so": {
+      "buildId": "7c8d2bcffa8d3e49b61f7c674738205df4a641ef",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libsoxr_plugin.so"
+    },
+    "lib/vlc/plugins/libspdif_plugin.so": {
+      "buildId": "d52c78207d241e99322ec6de6cadf899c9a0c1a6",
+      "dependencies": [
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libspdif_plugin.so"
+    },
+    "lib/vlc/plugins/libsubsdec_plugin.so": {
+      "buildId": "860a302f4241769ffa502fd6fec2bc73e101d617",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libsubsdec_plugin.so"
+    },
+    "lib/vlc/plugins/libsubstx3g_plugin.so": {
+      "buildId": "2095418a1d57ac900e7187965e86dfabc991daeb",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libsubstx3g_plugin.so"
+    },
+    "lib/vlc/plugins/libsubtitle_plugin.so": {
+      "buildId": "6f74f43cf9d26df155f7106763dbf2eaa5e8b7ad",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libsubtitle_plugin.so"
+    },
+    "lib/vlc/plugins/libswscale_plugin.so": {
+      "buildId": "532ba0ad0f31945133661af8fa0113d75c1a4561",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libdrm.so.2",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libswscale_plugin.so"
+    },
+    "lib/vlc/plugins/libtdummy_plugin.so": {
+      "buildId": "5a0408266644c7d10b80d5f59421e4ed8893199b",
+      "dependencies": [
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libtdummy_plugin.so"
+    },
+    "lib/vlc/plugins/libtospdif_plugin.so": {
+      "buildId": "32846a600f2742956da7fcabcf8c596c5f68791c",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libtospdif_plugin.so"
+    },
+    "lib/vlc/plugins/libtrivial_channel_mixer_plugin.so": {
+      "buildId": "062de2f48d01e2801ff649a60224d48fa104062e",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libtrivial_channel_mixer_plugin.so"
+    },
+    "lib/vlc/plugins/libts_plugin.so": {
+      "buildId": "6fe5a8723920e4a57b9ef78da1d617cf957b3e19",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libts_plugin.so"
+    },
+    "lib/vlc/plugins/libvgl_plugin.so": {
+      "buildId": "0d2d4023de0b6a5eeea21301e4dfbf2009d8d0f3",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libvgl_plugin.so"
+    },
+    "lib/vlc/plugins/libvmem_plugin.so": {
+      "buildId": "c9ddd35bb7ea4af89e576e06202378ecd69839e6",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libvmem_plugin.so"
+    },
+    "lib/vlc/plugins/libvorbis_plugin.so": {
+      "buildId": "81d141f01f854b2dff532eb6df6dbab420d010ca",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.29",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libvorbis_plugin.so"
+    },
+    "lib/vlc/plugins/libvpx_plugin.so": {
+      "buildId": "367e765deb1b91fb9edc2545169bcf250d5384ed",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.34",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libvpx_plugin.so"
+    },
+    "lib/vlc/plugins/libwav_plugin.so": {
+      "buildId": "bcc1ec60399f8712447ce46490f55dbe6715e8dc",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libwav_plugin.so"
+    },
+    "lib/vlc/plugins/libwdummy_plugin.so": {
+      "buildId": "718d55c9d4b336eb14536ed775009f524bc63453",
+      "dependencies": [
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libwdummy_plugin.so"
+    },
+    "lib/vlc/plugins/libwebdav_plugin.so": {
+      "buildId": "9fa93496333f845db3a02c81e073b474766254a4",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libwebdav_plugin.so"
+    },
+    "lib/vlc/plugins/libwebvtt_plugin.so": {
+      "buildId": "2c5fac33249c19e65a29608e9855b4135db35bc1",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.38",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libwebvtt_plugin.so"
+    },
+    "lib/vlc/plugins/libxml_plugin.so": {
+      "buildId": "fd3ee730b3862b42e900033bd7de207f6852bea6",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.34",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libxml_plugin.so"
+    },
+    "lib/vlc/plugins/libyuvp_plugin.so": {
+      "buildId": "b0d2b589e6e2d196956b35d6133a8915e9eb7496",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libyuvp_plugin.so"
+    },
+    "lib/vlc/plugins/libyuy2_i420_plugin.so": {
+      "buildId": "4eafdee48d997d0af434b51366db0b2f5158eced",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libyuy2_i420_plugin.so"
+    },
+    "lib/vlc/plugins/libyuy2_i422_plugin.so": {
+      "buildId": "ec9c6bf28a2b956791eda989f11eaa8029ff632a",
+      "dependencies": [
+        "libvlccore.so.9",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "elfClass": "ELF64",
+      "executableStack": false,
+      "gnuRelro": true,
+      "machine": "AArch64",
+      "maximumSymbolVersions": {
+        "CXXABI": null,
+        "GLIBC": "2.17",
+        "GLIBCXX": null
+      },
+      "requiredPrivateDependencies": [],
+      "runpath": "$ORIGIN/../../../bin",
+      "soname": "libyuy2_i422_plugin.so"
+    }
+  },
+  "excludedPluginCount": 219,
+  "files": [
+    {
+      "path": "bin/libvlc.so.12",
+      "role": "LIBVLC",
+      "sha256": "bf36711694319a2d4f8dbbca74c30dac12e4b5c0e081716f1126d7705c93dee7",
+      "size": 214617,
+      "sourceComponents": []
+    },
+    {
+      "path": "bin/libvlccore.so.9",
+      "role": "CORE",
+      "sha256": "41f7212d9f026b38ba3dd93ac45e9ba80fab49741342d8aab5edd928e7c8f960",
+      "size": 1214553,
+      "sourceComponents": []
+    },
+    {
+      "path": "bin/libkmediavlc_bridge.so",
+      "role": "BRIDGE",
+      "sha256": "46c5367a0afbdf70741801de9ca0889cbb902f61f850d4917547073bb4867229",
+      "size": 207169,
+      "sourceComponents": []
+    },
+    {
+      "licenseSpdx": [
+        "LGPL-2.1-or-later"
+      ],
+      "path": "bin/libvlc_pulse.so",
+      "requiredByModules": [
+        "pulse"
+      ],
+      "role": "SUPPORT",
+      "sha256": "af7fa37ff8e10bc8ce3c937783bb6ef72d92d3dc4d2ee1c6bd3e712469218f36",
+      "size": 134289,
+      "sourceComponents": [],
+      "sourceFiles": [
+        "modules/audio_output/vlcpulse.c"
+      ]
+    },
+    {
+      "family": "access",
+      "module": "access_mms",
+      "path": "lib/vlc/plugins/libaccess_mms_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "08da2e74555be28c5fd9ebe3f883876d05a1995e49328bb2012f80ac78e2eee4",
+      "size": 134657,
+      "sourceComponents": []
+    },
+    {
+      "family": "access",
+      "module": "data",
+      "path": "lib/vlc/plugins/libdata_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "d17d8e481844ba4edb93e44778c202371a07dd39f56c934882de56c0d2c42272",
+      "size": 132809,
+      "sourceComponents": []
+    },
+    {
+      "family": "access",
+      "module": "filesystem",
+      "path": "lib/vlc/plugins/libfilesystem_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "629e2d5ba46a4ee81593382615363aa458c9a4e4a9caba3477be076beb2dda21",
+      "size": 133705,
+      "sourceComponents": []
+    },
+    {
+      "family": "access",
+      "module": "ftp",
+      "path": "lib/vlc/plugins/libftp_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "fb93edece20cd48bbaadd999b120ac2191310ab3c166a6d7c7f60ae07fbfdcfa",
+      "size": 134489,
+      "sourceComponents": []
+    },
+    {
+      "family": "access",
+      "module": "http",
+      "path": "lib/vlc/plugins/libhttp_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "2ea035d4fc954b53f433f25719250c2778f2b96914687f54b353be488b8832dc",
+      "size": 134233,
+      "sourceComponents": []
+    },
+    {
+      "family": "access",
+      "module": "https",
+      "path": "lib/vlc/plugins/libhttps_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "aa3bd706c219cd9e00b56f202a9645824b6c1094a1637d90ad370ba1609b7328",
+      "size": 199329,
+      "sourceComponents": []
+    },
+    {
+      "family": "access",
+      "module": "webdav",
+      "path": "lib/vlc/plugins/libwebdav_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "d4d8ea72dfc299aad66cfcb11c9cef535255467649cd052edd5bf9ab6a7a7573",
+      "size": 133817,
+      "sourceComponents": []
+    },
+    {
+      "family": "audio_filter",
+      "module": "audio_format",
+      "path": "lib/vlc/plugins/libaudio_format_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "b011fc796b0f891dc51054a052c55b9fc3d5776db44f1ac60a066ecda90220ea",
+      "size": 132641,
+      "sourceComponents": []
+    },
+    {
+      "family": "audio_filter",
+      "module": "simple_channel_mixer",
+      "path": "lib/vlc/plugins/libsimple_channel_mixer_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "1c19dbd775d7794917c8e59a511e5d4215e2996213d22a82d06bdf9581ee6368",
+      "size": 132505,
+      "sourceComponents": []
+    },
+    {
+      "family": "audio_filter",
+      "module": "soxr",
+      "path": "lib/vlc/plugins/libsoxr_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "7a79533e18b61b8f2db2e913176a50f1c97eeb690cc301107e78ec78123886c9",
+      "size": 801289,
+      "sourceComponents": [
+        "ffmpeg",
+        "gsm",
+        "openjpeg",
+        "soxr",
+        "zlib"
+      ]
+    },
+    {
+      "family": "audio_filter",
+      "module": "tospdif",
+      "path": "lib/vlc/plugins/libtospdif_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "c1534dc47d43d05e3d0d684838ba22940faacd2b90e399ba8c966665a0210c14",
+      "size": 132649,
+      "sourceComponents": []
+    },
+    {
+      "family": "audio_filter",
+      "module": "trivial_channel_mixer",
+      "path": "lib/vlc/plugins/libtrivial_channel_mixer_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "13c5dcd4d24ec4cb1019010c521c1a583984c4f2190ebec9b1f9f1ad6119858c",
+      "size": 132625,
+      "sourceComponents": []
+    },
+    {
+      "family": "audio_mixer",
+      "module": "float_mixer",
+      "path": "lib/vlc/plugins/libfloat_mixer_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "dcc5ee435f19b4b38141be105843ed8070b0fca165b93dc41f1b4d3b50ae2b97",
+      "size": 132345,
+      "sourceComponents": []
+    },
+    {
+      "family": "audio_mixer",
+      "module": "integer_mixer",
+      "path": "lib/vlc/plugins/libinteger_mixer_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "e27fbb34c046f3f361c705a2a91725280b2535c1a7cbe7877da9af9a761b1eb8",
+      "size": 132409,
+      "sourceComponents": []
+    },
+    {
+      "family": "audio_output",
+      "module": "adummy",
+      "path": "lib/vlc/plugins/libadummy_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "6f9c223afb5a1213f511f1fb7405dd4f0649bc8ef42e19824961a942be1042ef",
+      "size": 132513,
+      "sourceComponents": []
+    },
+    {
+      "family": "audio_output",
+      "module": "pulse",
+      "path": "lib/vlc/plugins/libpulse_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "71c5caf9217d9ee5557aee8993b62de4e7a78eac6dabd15edb2e286cc0a58176",
+      "size": 136417,
+      "sourceComponents": []
+    },
+    {
+      "family": "codec",
+      "module": "avcodec",
+      "path": "lib/vlc/plugins/libavcodec_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "ccfab61c6335d4dfe1ef6e3703864c0a3265c2644f85c99e100c3096a662288a",
+      "size": 13835073,
+      "sourceComponents": [
+        "ffmpeg",
+        "gsm",
+        "openjpeg",
+        "zlib"
+      ]
+    },
+    {
+      "family": "codec",
+      "module": "cc",
+      "path": "lib/vlc/plugins/libcc_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "ed8bd76295d663b0009a5429ba4ec08fdd303b93193b58a000b5b37ece25bde0",
+      "size": 133297,
+      "sourceComponents": []
+    },
+    {
+      "family": "codec",
+      "module": "dav1d",
+      "path": "lib/vlc/plugins/libdav1d_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "aa414d1423724003cfea2397a60a9a608fb2df677f0123d79e4f227b98f4ad9e",
+      "size": 985369,
+      "sourceComponents": [
+        "dav1d"
+      ]
+    },
+    {
+      "family": "codec",
+      "module": "flac",
+      "path": "lib/vlc/plugins/libflac_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "061260a7b3b80ca8e4c75225dd28222bf67c6b65b49d085f40aa9013ba1c1337",
+      "size": 211513,
+      "sourceComponents": [
+        "flac",
+        "libogg"
+      ]
+    },
+    {
+      "family": "codec",
+      "module": "jpeg",
+      "path": "lib/vlc/plugins/libjpeg_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "bb4bde281ec98a64f5526fd476b95a9d4808c30d2b1526992dff44fd83c44142",
+      "size": 798081,
+      "sourceComponents": [
+        "libjpeg-turbo"
+      ]
+    },
+    {
+      "family": "codec",
+      "module": "libass",
+      "path": "lib/vlc/plugins/liblibass_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "8c82b8bf27cd69c1749b04cda83c1a37db31002d2c2a147f19f2930c83a7f621",
+      "size": 2457953,
+      "sourceComponents": [
+        "freetype",
+        "fribidi",
+        "harfbuzz",
+        "libass",
+        "zlib"
+      ]
+    },
+    {
+      "family": "codec",
+      "module": "opus",
+      "path": "lib/vlc/plugins/libopus_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "1078b97b3e7c148585e5cedb304d918bd61f9fb97571a37a6ef6cee05a190379",
+      "size": 330681,
+      "sourceComponents": [
+        "libogg",
+        "opus"
+      ]
+    },
+    {
+      "family": "codec",
+      "module": "png",
+      "path": "lib/vlc/plugins/libpng_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "42ce94399254a6663d8e84a8037d629f596248a5885648552a197177dfc7d8c7",
+      "size": 408513,
+      "sourceComponents": [
+        "libpng",
+        "zlib"
+      ]
+    },
+    {
+      "family": "codec",
+      "module": "rawvideo",
+      "path": "lib/vlc/plugins/librawvideo_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "0ec5a8eb9c1bcd0ddf923645ba280664334a66cbce913ee88b337595423a6e33",
+      "size": 132881,
+      "sourceComponents": []
+    },
+    {
+      "family": "codec",
+      "module": "spdif",
+      "path": "lib/vlc/plugins/libspdif_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "e610c87070b93ef2b7b6af209d722229079c9afa3e5f850b2a55a603f92bc983",
+      "size": 132337,
+      "sourceComponents": []
+    },
+    {
+      "family": "codec",
+      "module": "subsdec",
+      "path": "lib/vlc/plugins/libsubsdec_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "9ccb0d6482e7d05b2afa7c7b7eec4fe81763fda510cd8020be7d0b53a0a60a99",
+      "size": 133857,
+      "sourceComponents": []
+    },
+    {
+      "family": "codec",
+      "module": "substx3g",
+      "path": "lib/vlc/plugins/libsubstx3g_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "54ac40590b41ccb0958c968536b873f1ba5567e58d2a3f612247b8bc7a290e67",
+      "size": 133105,
+      "sourceComponents": []
+    },
+    {
+      "family": "codec",
+      "module": "vorbis",
+      "path": "lib/vlc/plugins/libvorbis_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "e81e712c763a879bb4f57d5c242239bbde19cd87c68b29dbf1ff9cde916b4181",
+      "size": 268225,
+      "sourceComponents": [
+        "libogg",
+        "libvorbis"
+      ]
+    },
+    {
+      "family": "codec",
+      "module": "vpx",
+      "path": "lib/vlc/plugins/libvpx_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "460988ca35b423646cf68daa4ae1345989f4b3736687c53dbaa46abe9fdbab8c",
+      "size": 945393,
+      "sourceComponents": [
+        "libvpx"
+      ]
+    },
+    {
+      "family": "codec",
+      "module": "webvtt",
+      "path": "lib/vlc/plugins/libwebvtt_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "634c3c40df61e916cc39aef14c6380705007b07e7d652388681ebc7c496567cd",
+      "size": 200537,
+      "sourceComponents": []
+    },
+    {
+      "family": "demux",
+      "module": "asf",
+      "path": "lib/vlc/plugins/libasf_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "65e555fbce98565095f9a315abf897eaf093a88046e12bfc97ab8f3ba46a01a7",
+      "size": 133761,
+      "sourceComponents": []
+    },
+    {
+      "family": "demux",
+      "module": "avi",
+      "path": "lib/vlc/plugins/libavi_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "64bfd09b977b244bdb757ae524a9b97a18b02838092db698f35aa1b917199864",
+      "size": 200049,
+      "sourceComponents": []
+    },
+    {
+      "family": "demux",
+      "module": "es",
+      "path": "lib/vlc/plugins/libes_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "392fd1de55698684e487f1107a75a77ad67eff8c53ef7781049b0904f5f9bd3f",
+      "size": 134273,
+      "sourceComponents": []
+    },
+    {
+      "family": "demux",
+      "module": "h26x",
+      "path": "lib/vlc/plugins/libh26x_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "e547c19b71a1be63d604b46d0e25f68576bf1f5d785454b823192334c2bd4656",
+      "size": 133321,
+      "sourceComponents": []
+    },
+    {
+      "family": "demux",
+      "module": "image",
+      "path": "lib/vlc/plugins/libimage_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "1ab9a147ff81fb0e626891706fe92bf4d7cf8552b5f016abae6341ad4e96eb6f",
+      "size": 133697,
+      "sourceComponents": []
+    },
+    {
+      "family": "demux",
+      "module": "mkv",
+      "path": "lib/vlc/plugins/libmkv_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "3f90be1ee87e9d6295cbb3cd469fa6f17f8b06b7442e0267ac49c84e4688db96",
+      "size": 1145177,
+      "sourceComponents": [
+        "libebml",
+        "libmatroska",
+        "utfcpp",
+        "zlib"
+      ]
+    },
+    {
+      "family": "demux",
+      "module": "mp4",
+      "path": "lib/vlc/plugins/libmp4_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "2e46340497c6c289e61ea99406ac027f28777f659d13414e8409f788037244bd",
+      "size": 331113,
+      "sourceComponents": [
+        "zlib"
+      ]
+    },
+    {
+      "family": "demux",
+      "module": "ogg",
+      "path": "lib/vlc/plugins/libogg_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "f7d2655663b200a20f0c92f2deb112cda7ece9d6cbed96d2cfd914c7bd3c3155",
+      "size": 335281,
+      "sourceComponents": [
+        "libogg",
+        "libvorbis"
+      ]
+    },
+    {
+      "family": "demux",
+      "module": "playlist",
+      "path": "lib/vlc/plugins/libplaylist_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "088a9069f525958ac418578404eb28000b220c85fcc9fe76f4a2d4c46e022ceb",
+      "size": 200817,
+      "sourceComponents": []
+    },
+    {
+      "family": "demux",
+      "module": "ps",
+      "path": "lib/vlc/plugins/libps_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "31e739ba794120e2f43811f7caad5b9f61180046613956af0ea07c5d99796989",
+      "size": 133225,
+      "sourceComponents": []
+    },
+    {
+      "family": "demux",
+      "module": "subtitle",
+      "path": "lib/vlc/plugins/libsubtitle_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "5281e5da13cd856164829fb64db255113e4e451abd050daf971b959bf47e039b",
+      "size": 134241,
+      "sourceComponents": []
+    },
+    {
+      "family": "demux",
+      "module": "ts",
+      "path": "lib/vlc/plugins/libts_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "99576cc3e6a94773b1194c42ca83b291212100cbd9234bbccfb0f433bfdfa345",
+      "size": 334569,
+      "sourceComponents": [
+        "libdvbpsi"
+      ]
+    },
+    {
+      "family": "demux",
+      "module": "wav",
+      "path": "lib/vlc/plugins/libwav_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "1cbec2fbce6601dcc4a8a7d672d2e01326be12c66340bd8bf080e2af3c21d1c6",
+      "size": 133121,
+      "sourceComponents": []
+    },
+    {
+      "family": "keystore",
+      "module": "memory_keystore",
+      "path": "lib/vlc/plugins/libmemory_keystore_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "6e10db280407c95bc5c03bb0ebbe193c33e1efa94be9e54eb1127e4622056881",
+      "size": 132777,
+      "sourceComponents": []
+    },
+    {
+      "family": "logger",
+      "module": "console_logger",
+      "path": "lib/vlc/plugins/libconsole_logger_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "8c95ce66b112a19c4a61b74148aae6ed8ccc289b721e0649c880f21a2cc7ff31",
+      "size": 132777,
+      "sourceComponents": []
+    },
+    {
+      "family": "misc",
+      "module": "gnutls",
+      "path": "lib/vlc/plugins/libgnutls_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "557a833ae71d423f0f3150eab22cdd4fc684571ddb6ab269ced2a3a034e81097",
+      "size": 3238521,
+      "sourceComponents": [
+        "gmp",
+        "gnutls",
+        "gnutls-libtasn1",
+        "gnutls-libunistring",
+        "nettle",
+        "zlib"
+      ]
+    },
+    {
+      "family": "misc",
+      "module": "xml",
+      "path": "lib/vlc/plugins/libxml_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "073bb13fcda7db71cfe977e9ad23dd02256fd51608a58cd91f54bdfd1c75108f",
+      "size": 749433,
+      "sourceComponents": [
+        "libxml2"
+      ]
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_a52",
+      "path": "lib/vlc/plugins/libpacketizer_a52_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "59c57968a40b1aac4888f6d1d73ead70f9ce8f3cc4ca3b0e9ad1fbc72d8a4a85",
+      "size": 132737,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_av1",
+      "path": "lib/vlc/plugins/libpacketizer_av1_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "56b1918209413c8d557a4ca71c66f6b701838c159807803d212913e9ba7e40aa",
+      "size": 132777,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_avparser",
+      "path": "lib/vlc/plugins/libpacketizer_avparser_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "40de90ec8dd6f8904fe8bf789d3cce45cba5a9514c54ebf4cb19ab28a40a3677",
+      "size": 13834441,
+      "sourceComponents": [
+        "ffmpeg",
+        "gsm",
+        "openjpeg",
+        "zlib"
+      ]
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_copy",
+      "path": "lib/vlc/plugins/libpacketizer_copy_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "a7b0c672f0dfcf05b38a2a4cf07fb2213902db1fb39cb0d6449d0c7ada1cb5d3",
+      "size": 132609,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_dts",
+      "path": "lib/vlc/plugins/libpacketizer_dts_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "c19a3a1d9a1ea651b56162ddfa785c62e400d2b667eb9700bcf3a015635456ec",
+      "size": 132705,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_flac",
+      "path": "lib/vlc/plugins/libpacketizer_flac_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "1f416c22b75cb82bea046e8764ce058e2c8d5cec32fd5df8e34ef4fdaf6dea57",
+      "size": 132809,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_h264",
+      "path": "lib/vlc/plugins/libpacketizer_h264_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "64e6b028793d3ed375da19d8aec3c5dfdc6c292c171e9a41bc9529e8c679c236",
+      "size": 132953,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_hevc",
+      "path": "lib/vlc/plugins/libpacketizer_hevc_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "b5dbd981f4bd5b35063a1d8ce6d8361011b939c31cc7f2cc2b3082af3145241a",
+      "size": 133025,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mjpeg",
+      "path": "lib/vlc/plugins/libpacketizer_mjpeg_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "0f3cbf53b19ec00ac098d5baf05143a9c651a47a91734faea10402b74cc11c12",
+      "size": 132697,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mlp",
+      "path": "lib/vlc/plugins/libpacketizer_mlp_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "0cadd7e20f9994424c4d363ec243bdce233e6b1a6a177f8a91364d74d5255c7e",
+      "size": 132737,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mpeg4audio",
+      "path": "lib/vlc/plugins/libpacketizer_mpeg4audio_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "bfa439bcfcf56f6025936fbcb943770e2342bf26acef7ab896082392a3ca64da",
+      "size": 132873,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mpeg4video",
+      "path": "lib/vlc/plugins/libpacketizer_mpeg4video_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "00ee0b5a1be731e6cece95d2233122313e692b4050264e42a45493d1033b9015",
+      "size": 132737,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mpegaudio",
+      "path": "lib/vlc/plugins/libpacketizer_mpegaudio_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "6611900b6e5482fd3902b723abdcab8f5dd656df77c76261fff574fdc6687560",
+      "size": 132745,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mpegvideo",
+      "path": "lib/vlc/plugins/libpacketizer_mpegvideo_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "bd6597d8a31ff99fb32e546e81819046e91c43fd92a15600ff91379e5d2da2c1",
+      "size": 132905,
+      "sourceComponents": []
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_vc1",
+      "path": "lib/vlc/plugins/libpacketizer_vc1_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "d83c596d72acfc104e02869ab6a37c359247547cbb3886658da05e67671df4e3",
+      "size": 132961,
+      "sourceComponents": []
+    },
+    {
+      "family": "stream_filter",
+      "module": "cache_read",
+      "path": "lib/vlc/plugins/libcache_read_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "e847f1dad30703924ef4d314aa0569e8a714b0b1c25e938712812e50b59a8b33",
+      "size": 132705,
+      "sourceComponents": []
+    },
+    {
+      "family": "stream_filter",
+      "module": "inflate",
+      "path": "lib/vlc/plugins/libinflate_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "681f112d98644d647996b2179d65931914a99925090105a00b725be564f7db26",
+      "size": 133201,
+      "sourceComponents": [
+        "zlib"
+      ]
+    },
+    {
+      "family": "stream_filter",
+      "module": "prefetch",
+      "path": "lib/vlc/plugins/libprefetch_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "76d9bc0af8adf2dc6f43f4531c110cce339f724cf00c2865b3947433fce471e4",
+      "size": 133361,
+      "sourceComponents": []
+    },
+    {
+      "family": "stream_filter",
+      "module": "record",
+      "path": "lib/vlc/plugins/librecord_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "9e10f99147865c2ae890095e4a5ef572fa7d065bb5c82d5a53eb667a66c001b6",
+      "size": 132977,
+      "sourceComponents": []
+    },
+    {
+      "family": "stream_filter",
+      "module": "skiptags",
+      "path": "lib/vlc/plugins/libskiptags_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "210e56fef275fc6e094b3386014221c5bfbb8ab1d06f7ee4fc8619972fbf068c",
+      "size": 132761,
+      "sourceComponents": []
+    },
+    {
+      "family": "text_renderer",
+      "module": "freetype",
+      "path": "lib/vlc/plugins/libfreetype_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "903dbff19aa0f8780488969c2020f65878bcfe17bb5ba21f73b75142edd77428",
+      "size": 2321481,
+      "sourceComponents": [
+        "freetype",
+        "fribidi",
+        "harfbuzz",
+        "zlib"
+      ]
+    },
+    {
+      "family": "text_renderer",
+      "module": "tdummy",
+      "path": "lib/vlc/plugins/libtdummy_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "ed200d22c0ad3720c2dfab2a7bd74f8174fe62ecc36048ce91261faac6aaa7b3",
+      "size": 132345,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_chroma",
+      "module": "chain",
+      "path": "lib/vlc/plugins/libchain_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "7f71a6e2445fe5ea7c8234b7ac98096d5636bf9a87906d0d4c090954e48b8cef",
+      "size": 133785,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_chroma",
+      "module": "i420_nv12",
+      "path": "lib/vlc/plugins/libi420_nv12_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "504b8ca3132ecfd0cbb043963d05d90e8abae2cb176cf764a1671200073f55a1",
+      "size": 132689,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_chroma",
+      "module": "i420_rgb",
+      "path": "lib/vlc/plugins/libi420_rgb_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "b8d86ef294d6be6dac6c0edffeb0fb2a08422153a6b0b30cf4bf7da4cc4b6410",
+      "size": 132737,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_chroma",
+      "module": "orient",
+      "path": "lib/vlc/plugins/liborient_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "a41fc504e9f753f860569a4a20211d590dab2e223588ff9a3c411bf96e0d68af",
+      "size": 132985,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_chroma",
+      "module": "rv32",
+      "path": "lib/vlc/plugins/librv32_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "dadaaad0444c70af624ed14a9165de2d91bf38110f0265392750b9da01cc221c",
+      "size": 132609,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_chroma",
+      "module": "swscale",
+      "path": "lib/vlc/plugins/libswscale_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "204698bc1f86e7db0713b04ef161cde60d62502876860820a8626ab5f4c31e15",
+      "size": 1876257,
+      "sourceComponents": [
+        "ffmpeg",
+        "zlib"
+      ]
+    },
+    {
+      "family": "video_chroma",
+      "module": "yuvp",
+      "path": "lib/vlc/plugins/libyuvp_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "61e923466260ef41a9509e92f668e16d77e748ddc9cfb1b72c459b0c42a25ea6",
+      "size": 132649,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_chroma",
+      "module": "yuy2_i420",
+      "path": "lib/vlc/plugins/libyuy2_i420_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "f546b0322b06e3af1efd71654381f09eeda952b3c324038cf9aed41da2da2301",
+      "size": 132617,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_chroma",
+      "module": "yuy2_i422",
+      "path": "lib/vlc/plugins/libyuy2_i422_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "aebe4b1d4e41f22b5bb26008ddae004a8a88c4fadf2faf58729b21b3de41eb70",
+      "size": 132617,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_output",
+      "module": "gles2",
+      "path": "lib/vlc/plugins/libgles2_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "4b7e68c44abb7791e9578af826d51e037b71f66bac90f1968391d404cd4632d3",
+      "size": 134193,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_output",
+      "module": "glinterop_sw",
+      "path": "lib/vlc/plugins/libglinterop_sw_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "3453324ed7b4da434cfd1fbc5d35084c34e222e7019339c2d44e1152ea73c621",
+      "size": 133929,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_output",
+      "module": "glsampler_builtin",
+      "path": "lib/vlc/plugins/libglsampler_builtin_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "a475c3fd58d3312d2f3eaca3f08d327552c453b9a30057c7f2a9c17aa3944e92",
+      "size": 133033,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_output",
+      "module": "vgl",
+      "path": "lib/vlc/plugins/libvgl_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "c004a05388bda9d9c2f708f847611b3b041092821d8c9121ce36a46987500c2c",
+      "size": 132481,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_output",
+      "module": "vmem",
+      "path": "lib/vlc/plugins/libvmem_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "43c560fb2a5405c3abcbe076a56f5a7ac50b7a6f88c9ef0b8ebbd4a149e5b12e",
+      "size": 132777,
+      "sourceComponents": []
+    },
+    {
+      "family": "video_output",
+      "module": "wdummy",
+      "path": "lib/vlc/plugins/libwdummy_plugin.so",
+      "role": "PLUGIN",
+      "sha256": "4244571c8952a3522bae08bfd4f557723db6e825281e2247d653924ed7774ac6",
+      "size": 132345,
+      "sourceComponents": []
+    },
+    {
+      "path": "lib/vlc/plugins/plugins.dat",
+      "role": "DATA",
+      "sha256": "a25a4db99514eb4de6a9a5d96be3d9031953c5d94df7afdd34935af30d65291b",
+      "size": 39389,
+      "sourceComponents": []
+    }
+  ],
+  "frameTransport": "DMA_BUF",
+  "gpuPushEvidence": "pending-render-node-and-explicit-fence-test",
+  "rawPluginCount": 304,
+  "reviewStatus": "pending-elf-source-license-and-dmabuf-audit",
+  "schemaVersion": 1,
+  "selectedPluginCount": 85,
+  "target": "linux-aarch64",
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
+  "vrConsumerEvidence": "pending-kmediaplayer-projection-acceptance"
+}

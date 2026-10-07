@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-07T10:59:35.853Z" time="9.556">
+  <properties />
+  <testcase name="pinnedVideoLanFixturePublishesCpuPullFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="8.36" />
+  <testcase name="pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.858" />
+  <testcase name="pinnedHdr10FixturePublishesFp16MacIosurfaceFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.334" />
+  </testsuite>

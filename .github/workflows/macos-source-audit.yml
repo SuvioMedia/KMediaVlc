@@ -38,6 +38,7 @@ jobs:
       CANDIDATE_VERSION: ${{ inputs.candidate_version }}
       AUDIT_CANDIDATE: ${{ inputs.audit_candidate }}
       VLC_REVISION: 04d555a9d391f009d4f510f508fef58c39bdf810
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
     steps:
       - name: Check out the exact KMediaVlc revision
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -70,6 +71,20 @@ jobs:
           test -z "$(git -C .vlc-source status --porcelain --untracked-files=no)"
           test "$(uname -m)" = arm64
           python3 scripts/verify_source_compliance.py --root .
+
+      - name: Verify the exact Apple toolchain
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          policy = json.loads(Path('compliance/policy/macos-aarch64-binary-components.json').read_text())['toolchain']
+          xcode = subprocess.check_output(['xcodebuild', '-version'], text=True).splitlines()
+          sdk = subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-version'], text=True).strip()
+          actual = {'xcodeVersion': xcode[0].removeprefix('Xcode '), 'xcodeBuild': xcode[1].removeprefix('Build version '), 'sdkVersion': sdk}
+          assert actual == {key: policy[key] for key in actual}, 'Apple toolchain differs from its audited policy'
+          print(json.dumps(actual, sort_keys=True))
+          PY
 
       - name: Set up Java 21
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5

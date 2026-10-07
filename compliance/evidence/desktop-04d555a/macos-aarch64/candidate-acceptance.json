@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "testedCommit": "89d5816926986a1cbab2508ef0697797e98688e0",
+  "candidateVersion": "0.1.0-rc.13",
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
+  "auditSha256": "e384cdc2220b044b1fe281d35bfdec0a17ed9264062f93d780d61d61d02868fb",
+  "testSha256": "8ea1770ce0309f0b7c540c4c7bf5350ea12c73bbedb28e42986d410cfce63d94",
+  "releaseEligible": false
+}

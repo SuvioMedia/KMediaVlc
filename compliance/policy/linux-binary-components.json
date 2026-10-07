@@ -5,7 +5,7 @@
     "linux-aarch64"
   ],
   "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
-  "reviewStatus": "pending-link-command-and-license-audit",
+  "reviewStatus": "approved",
   "buildOnlyContribPackages": [],
   "runtimeSupportLibraries": {
     "libvlc_pulse.so": {
@@ -183,8 +183,8 @@
   },
   "moduleAdditionalLicenses": {
     "mkv": ["MIT"],
-    "opus": ["BSD-3-Clause"],
-    "ts": ["BSD-3-Clause"]
+    "opus": ["BSD-2-Clause"],
+    "ts": ["BSD-2-Clause"]
   },
   "allowedSystemDependencies": [
     "libEGL.so.1",

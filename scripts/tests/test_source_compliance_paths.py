@@ -52,6 +52,11 @@ class RetainedDesktopAuditTest(unittest.TestCase):
             destination = self.root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / relative, destination)
+        for relative in policy["approvedPolicyFiles"]:
+            path = self.root / relative
+            current = json.loads(path.read_text(encoding="utf-8"))
+            current["reviewStatus"] = "pending-test-fixture"
+            path.write_text(json.dumps(current), encoding="utf-8")
 
     def test_historical_evidence_survives_a_new_pending_source_pin(self) -> None:
         COMPLIANCE.verify_desktop_retained_audit(self.root)
@@ -64,6 +69,57 @@ class RetainedDesktopAuditTest(unittest.TestCase):
         path.write_text(json.dumps(policy), encoding="utf-8")
         with self.assertRaisesRegex(SystemExit, "cannot inherit"):
             COMPLIANCE.verify_desktop_retained_audit(self.root)
+
+
+class CurrentDesktopAuditTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        historical = json.loads((ROOT / "compliance/policy/desktop-retained-audit-e439692.json").read_text())
+        self.policies = historical["approvedPolicyFiles"]
+        for relative in self.policies:
+            path = self.root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / relative, path)
+        shutil.copytree(ROOT / "build-recipes", self.root / "build-recipes")
+        for relative in COMPLIANCE.CURRENT_DESKTOP_BUILD_INPUTS:
+            path = self.root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / relative, path)
+        shutil.copytree(
+            ROOT / "compliance/evidence/desktop-04d555a",
+            self.root / "compliance/evidence/desktop-04d555a",
+        )
+
+    def test_new_revision_has_its_own_complete_approval(self) -> None:
+        COMPLIANCE.verify_current_desktop_audit(self.root, self.policies)
+
+    def test_changed_policy_cannot_reuse_the_current_approval(self) -> None:
+        path = self.root / self.policies[0]
+        policy = json.loads(path.read_text())
+        policy["coreAdditionalLicenses"] = ["GPL-2.0-only"]
+        path.write_text(json.dumps(policy))
+        with self.assertRaisesRegex(SystemExit, "policy content changed"):
+            COMPLIANCE.verify_current_desktop_audit(self.root, self.policies)
+
+    def test_changed_evidence_cannot_reuse_the_current_approval(self) -> None:
+        path = self.root / "compliance/evidence/desktop-04d555a/macos-aarch64/tests.xml"
+        path.write_bytes(path.read_bytes() + b"\n")
+        with self.assertRaisesRegex(SystemExit, "evidence file changed"):
+            COMPLIANCE.verify_current_desktop_audit(self.root, self.policies)
+
+    def test_changed_recipe_cannot_reuse_the_current_approval(self) -> None:
+        path = self.root / "build-recipes/windows.json"
+        path.write_bytes(path.read_bytes() + b"\n")
+        with self.assertRaisesRegex(SystemExit, "source recipe changed"):
+            COMPLIANCE.verify_current_desktop_audit(self.root, self.policies)
+
+    def test_changed_native_patch_cannot_reuse_the_current_approval(self) -> None:
+        path = self.root / "build-recipes/patches/vlc-meson-core-library.patch"
+        path.write_bytes(path.read_bytes() + b"\n")
+        with self.assertRaisesRegex(SystemExit, "native build input changed"):
+            COMPLIANCE.verify_current_desktop_audit(self.root, self.policies)
 
 
 if __name__ == "__main__":
