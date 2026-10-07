@@ -12,7 +12,7 @@ import subprocess
 from pathlib import Path
 
 
-PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
+PINNED_REVISION = "04d555a9d391f009d4f510f508fef58c39bdf810"
 MODULE_NAME = re.compile(r"[a-z0-9_]+")
 ALLOWED_FAMILIES = {
     "access",

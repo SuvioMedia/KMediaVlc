@@ -12,7 +12,7 @@ import subprocess
 from pathlib import Path
 
 
-PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
+PINNED_REVISION = "04d555a9d391f009d4f510f508fef58c39bdf810"
 TARGET_MACHINES = {
     "linux-x86_64": "Advanced Micro Devices X86-64",
     "linux-aarch64": "AArch64",
@@ -76,6 +76,13 @@ def resolve_tool(value: Path, label: str) -> Path:
     if not path.is_file():
         fail(f"Required Linux runtime tool is missing or unsafe: {label}")
     return path
+
+
+def require_plugin(root: Path, filename: str) -> Path:
+    matches = list(root.rglob(filename))
+    if len(matches) != 1:
+        fail(f"Required Linux plugin is missing or ambiguous: {filename}")
+    return require_plain_file(root, matches[0].relative_to(root).as_posix())
 
 
 def run_tool(command: list[str], timeout_seconds: int = 180) -> str:
@@ -408,7 +415,7 @@ def main() -> None:
     copied: list[dict] = []
     elf_files: list[tuple[Path, str, set[str]]] = []
     fixed_files = [
-        (require_plain_file(install, "lib/libvlc.so"), "bin/libvlc.so.12", "LIBVLC"),
+        (require_plain_file(install, "lib/libvlc.so.12.0.0"), "bin/libvlc.so.12", "LIBVLC"),
         (
             require_plain_file(install, "lib/libvlccore.so.9.0.0"),
             "bin/libvlccore.so.9",
@@ -444,7 +451,7 @@ def main() -> None:
     selected_names: list[str] = []
     for family, name in modules:
         filename = f"lib{name}_plugin.so"
-        source = require_plain_file(plugin_root, filename)
+        source = require_plugin(plugin_root, filename)
         relative = f"lib/vlc/plugins/{filename}"
         destination = plugin_destination / filename
         result = copy_file(source, destination)

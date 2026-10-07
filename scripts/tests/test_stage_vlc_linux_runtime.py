@@ -11,6 +11,9 @@ from pathlib import Path
 from unittest import mock
 
 
+from policy_fixtures import approved_policy_fixture
+
+
 ROOT = Path(__file__).resolve().parents[2]
 MODULE_PATH = ROOT / "scripts/stage_vlc_linux_runtime.py"
 SPEC = importlib.util.spec_from_file_location("stage_vlc_linux_runtime", MODULE_PATH)
@@ -20,6 +23,11 @@ SPEC.loader.exec_module(STAGER)
 
 
 class LinuxRuntimeStagerTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = approved_policy_fixture(Path(self.temporary.name) / "approved-root")
+
     def test_symbol_versions_use_numeric_family_maxima(self) -> None:
         parsed = STAGER.parse_symbol_versions(
             "GLIBC_2.9 GLIBC_2.39 GLIBCXX_3.4.9 GLIBCXX_3.4.33 CXXABI_1.3.15"
@@ -31,6 +39,23 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
         self.assertTrue(STAGER.version_at_most("2.39", "2.39"))
         self.assertTrue(STAGER.version_at_most("3.4.9", "3.4.33"))
         self.assertFalse(STAGER.version_at_most("2.40", "2.39"))
+
+    def test_rejects_duplicate_or_symlinked_plugins_in_family_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as value:
+            root = Path(value)
+            first = root / "demux/libmkv_plugin.so"
+            self.write_file(first)
+            self.assertEqual(first, STAGER.require_plugin(root, first.name))
+            duplicate = root / "other" / first.name
+            self.write_file(duplicate)
+            with self.assertRaisesRegex(SystemExit, "ambiguous"):
+                STAGER.require_plugin(root, first.name)
+            duplicate.unlink()
+            first.unlink()
+            first.symlink_to(root / "outside.so")
+            self.write_file(root / "outside.so")
+            with self.assertRaisesRegex(SystemExit, "unsafe"):
+                STAGER.require_plugin(root, first.name)
 
     def test_dynamic_parser_rejects_legacy_rpath(self) -> None:
         valid = """
@@ -60,19 +85,19 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             report = temporary / "report.json"
             tools = temporary / "tools"
             tools.mkdir()
-            self.write_file(install / "lib/libvlc.so")
+            self.write_file(install / "lib/libvlc.so.12.0.0")
             self.write_file(install / "lib/libvlccore.so.9.0.0")
             self.write_file(install / "lib/libvlc_pulse.so")
             self.write_file(bridge)
 
             policy = json.loads(
-                (ROOT / "compliance/policy/linux-playback-modules.json").read_text(
+                (self.root / "compliance/policy/linux-playback-modules.json").read_text(
                     encoding="utf-8"
                 )
             )
             for family, names in policy["modulesByFamily"].items():
                 for name in names:
-                    self.write_file(install / f"lib/vlc/plugins/lib{name}_plugin.so")
+                    self.write_file(install / f"lib/vlc/plugins/{family}/lib{name}_plugin.so")
 
             cache_generator = install / "libexec/vlc/vlc-cache-gen"
             self.write_file(cache_generator)
@@ -82,7 +107,7 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             arguments = [
                 "stage_vlc_linux_runtime.py",
                 "--root",
-                str(ROOT),
+                str(self.root),
                 "--install",
                 str(install),
                 "--bridge",
@@ -111,7 +136,7 @@ class LinuxRuntimeStagerTest(unittest.TestCase):
             }
             for filename, pending_status in statuses.items():
                 payload = json.loads(
-                    (ROOT / "compliance/policy" / filename).read_text(encoding="utf-8")
+                    (self.root / "compliance/policy" / filename).read_text(encoding="utf-8")
                 )
                 payload["reviewStatus"] = pending_status
                 destination = pending_root / "compliance/policy" / filename

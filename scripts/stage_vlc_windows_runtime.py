@@ -10,7 +10,7 @@ import shutil
 from pathlib import Path
 
 
-PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
+PINNED_REVISION = "04d555a9d391f009d4f510f508fef58c39bdf810"
 MODULE_NAME = re.compile(r"[a-z0-9_]+")
 ALLOWED_FAMILIES = {
     "access",
@@ -108,6 +108,13 @@ def load_policy(
     return policy, binary_policy, modules
 
 
+def require_plugin(root: Path, filename: str) -> Path:
+    matches = list(root.rglob(filename))
+    if len(matches) != 1:
+        fail(f"Required Windows plugin is missing or ambiguous: {filename}")
+    return require_plain_file(root, matches[0].relative_to(root).as_posix())
+
+
 def copy_file(source: Path, destination: Path) -> dict:
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, destination)
@@ -143,26 +150,26 @@ def main() -> None:
     policy, binary_policy, modules = load_policy(root, args.allow_audit_candidate)
     copied: list[dict] = []
     fixed_files = [
-        (require_plain_file(install, "bin/libvlc.dll"), "bin/libvlc.dll", "LIBVLC"),
-        (require_plain_file(install, "bin/libvlccore-9.dll"), "bin/libvlccore-9.dll", "CORE"),
+        (require_plain_file(install, "libvlc.dll"), "bin/libvlc.dll", "LIBVLC"),
+        (require_plain_file(install, "libvlccore-9.dll"), "bin/libvlccore-9.dll", "CORE"),
         (bridge, "bin/kmediavlc_bridge.dll", "BRIDGE"),
     ]
     for source, relative, role in fixed_files:
         result = copy_file(source, output.joinpath(*relative.split("/")))
         copied.append({**result, "path": relative, "role": role})
 
-    plugin_source = install / "lib/vlc/plugins"
+    plugin_source = install / "plugins"
     plugin_destination = output / "lib/vlc/plugins"
     selected_names: list[str] = []
     for family, name in modules:
         filename = f"lib{name}_plugin.dll"
-        source = require_plain_file(plugin_source, filename)
+        source = require_plugin(plugin_source, filename)
         relative = f"lib/vlc/plugins/{filename}"
         result = copy_file(source, plugin_destination / filename)
         copied.append({**result, "path": relative, "role": "PLUGIN", "family": family, "module": name})
         selected_names.append(name)
 
-    raw_plugins = list(plugin_source.glob("lib*_plugin.dll"))
+    raw_plugins = list(plugin_source.rglob("lib*_plugin.dll"))
     if len(raw_plugins) < len(selected_names):
         fail("The source-build plugin set is smaller than the closed playback policy.")
     report.parent.mkdir(parents=True, exist_ok=True)

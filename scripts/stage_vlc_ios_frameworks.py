@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Iterable
 
 
-PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
+PINNED_REVISION = "04d555a9d391f009d4f510f508fef58c39bdf810"
 EXPECTED_MINIMUM_IOS = "16.2"
 EXPECTED_RAW_PLUGIN_COUNT = 286
 MODULE_NAME = re.compile(r"[a-z0-9_]+")

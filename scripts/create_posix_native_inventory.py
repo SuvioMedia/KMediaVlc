@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 
 
-PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
+PINNED_REVISION = "04d555a9d391f009d4f510f508fef58c39bdf810"
 PINNED_VERSION = "4.0.0-dev"
 BASE_LICENSE = "LGPL-2.1-or-later"
 AUDIT_NAME = "BINARY-COMPONENTS.json"

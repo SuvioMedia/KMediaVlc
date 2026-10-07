@@ -1,7 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "videolan-vlc-windows-lgpl",
-  "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
+  "sourcePatches": ["build-recipes/patches/vlc-meson-core-library.patch"],
   "publicationTargets": ["windows-x86_64", "windows-aarch64"],
   "auditToolchainImage": "registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331",
   "compiler": "LLVM-MinGW-UCRT",

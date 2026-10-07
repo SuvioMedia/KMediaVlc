@@ -11,9 +11,10 @@ import re
 from pathlib import Path
 
 
-PINNED_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
+PINNED_REVISION = "04d555a9d391f009d4f510f508fef58c39bdf810"
 PINNED_VERSION = "4.0.0-dev"
 PINNED_LIBVLCJNI_REVISION = "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21"
+DESKTOP_AUDIT_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
 DESKTOP_AUDIT_EXECUTION_COMMIT = "afa5f0f794cb2916a8be946eb1a8baa3f7aa9198"
 DESKTOP_AUDIT_BASELINE_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
 DESKTOP_AUDIT_ACCEPTANCE_SHA256 = (
@@ -312,6 +313,8 @@ def verify_policy(root: Path) -> None:
     recipe = load_json(root / "build-recipes/windows.json")
     if recipe.get("vlcRevision") != PINNED_REVISION:
         fail("Windows build recipe does not match the pinned VLC revision.")
+    if recipe.get("sourcePatches") != ["build-recipes/patches/vlc-meson-core-library.patch"]:
+        fail("Windows build recipe must retain the pinned Meson core compatibility patch.")
     if recipe.get("publicationTargets") != ["windows-x86_64", "windows-aarch64"]:
         fail("The initial publication target matrix must remain Windows-only.")
     if recipe.get("auditToolchainImage") != (
@@ -344,6 +347,9 @@ def verify_policy(root: Path) -> None:
         fail("Windows release recipe weakened the inventory or nightly prohibition.")
     builder = (root / "scripts/build_vlc_windows.sh").read_text(encoding="utf-8")
     install_markers = [
+        "build-recipes/patches/vlc-meson-core-library.patch",
+        'git -C "$source_directory" apply --check "$recipe_patch"',
+        'git -C "$source_directory" apply --reverse "$recipe_patch"',
         'meson_executable="$source_directory/extras/tools/build/bin/meson"',
         '"$meson_executable" install',
         '--tags runtime',
@@ -382,7 +388,7 @@ def verify_policy(root: Path) -> None:
         "hardware HDR evidence remains mandatory",
         ".vlc-source/contrib/python-venv",
         'rm -f "$stamp"',
-        "vlc-e439692079a75cacb5f07310d1ec2dc20bfd1fe0-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1",
+        "vlc-04d555a9d391f009d4f510f508fef58c39bdf810-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1",
         "EXACT_CACHE_HIT",
         "if: steps.source_build.outcome == 'success' && steps.contrib_cache.outputs.cache-hit != 'true'",
         ".vlc-source/contrib/x86_64-w64-mingw32ucrt",
@@ -468,7 +474,7 @@ def verify_desktop_retained_audit(root: Path) -> None:
         "schemaVersion": 1,
         "executionCommit": DESKTOP_AUDIT_EXECUTION_COMMIT,
         "vlcBaselineRevision": DESKTOP_AUDIT_BASELINE_REVISION,
-        "vlcRevision": PINNED_REVISION,
+        "vlcRevision": DESKTOP_AUDIT_REVISION,
         "evidence": {
             "acceptancePath": "compliance/evidence/desktop-e439692/acceptance.json",
             "acceptanceSha256": DESKTOP_AUDIT_ACCEPTANCE_SHA256,
@@ -486,8 +492,12 @@ def verify_desktop_retained_audit(root: Path) -> None:
         fail("The retained desktop audit policy is not closed.")
 
     for relative in approved_policy_files:
-        if load_json(root / relative).get("reviewStatus") != "approved":
-            fail(f"The retained desktop audit no longer approves its policy: {relative}")
+        current_policy = load_json(root / relative)
+        if current_policy.get("vlcRevision") == DESKTOP_AUDIT_REVISION:
+            if current_policy.get("reviewStatus") != "approved":
+                fail(f"The retained desktop audit no longer approves its policy: {relative}")
+        elif current_policy.get("reviewStatus") == "approved":
+            fail(f"A newer VLC revision cannot inherit the retained desktop approval: {relative}")
 
     acceptance_path = root / policy["evidence"]["acceptancePath"]
     if (
@@ -504,7 +514,7 @@ def verify_desktop_retained_audit(root: Path) -> None:
         != "approved-source-link-and-runtime-candidate"
         or acceptance.get("kmediaVlcCommit") != DESKTOP_AUDIT_EXECUTION_COMMIT
         or acceptance.get("vlcBaselineRevision") != DESKTOP_AUDIT_BASELINE_REVISION
-        or acceptance.get("vlcRevision") != PINNED_REVISION
+        or acceptance.get("vlcRevision") != DESKTOP_AUDIT_REVISION
         or acceptance.get("upstreamDelta")
         != {"commitCount": 261, "changedFileCount": 374}
         or acceptance.get("separateHardwareGates") != separate_hardware_gates
@@ -625,7 +635,7 @@ def verify_android_contract(root: Path) -> None:
         != "patches/vlc/0001-android-external-anw-direct-mediacodec.patch"
         or recipe.get("libvlcjniPatch")
         != "patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"
-        or recipe.get("disabledVlcFeatures") != ["bluray"]
+        or recipe.get("disabledVlcFeatures") != ["bluray", "ndi"]
     ):
         fail("The Android playback module, disabled feature, or source patch policy changed.")
     required_true = [
@@ -989,7 +999,7 @@ def verify_android_contract(root: Path) -> None:
             "vlc": {
                 "repository": "https://code.videolan.org/videolan/vlc.git",
                 "revision": PINNED_REVISION,
-                "tree": "0c8b5ef401e6475cac55ae6a7ed6f3fb6b89e0b8",
+                "tree": "ddbabe13960b990e2d725ac3ecdfcae1e4d86d18",
                 "scope": "complete-tree",
                 "requiredPaths": [
                     "COPYING",
@@ -1413,6 +1423,8 @@ def verify_android_contract(root: Path) -> None:
     patch_markers = [
         "LC_ALL=C sort",
         "    --disable-bluray",
+        "    --disable-libnoidea",
+        "    --disable-ndi",
         "sed -i.bak",
         'rm -f "$pcfile.bak"',
         'find "$1" -name "$2"',
@@ -1735,7 +1747,7 @@ def verify_macos_transport_contract(root: Path) -> None:
 
     builder = (root / "scripts/build_vlc_macos.sh").read_text(encoding="utf-8")
     builder_markers = [
-        'readonly PINNED_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"',
+        'readonly PINNED_REVISION="04d555a9d391f009d4f510f508fef58c39bdf810"',
         "--arch=arm64",
         "--sdk=macosx",
         "--enable-shared",
@@ -2158,7 +2170,7 @@ def verify_ios_runtime_contract(root: Path) -> None:
         fail("The Apple VLC profile must keep libplacebo enabled only for macOS.")
     builder = (root / "scripts/build_vlc_ios.sh").read_text(encoding="utf-8")
     builder_markers = [
-        'readonly PINNED_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"',
+        'readonly PINNED_REVISION="04d555a9d391f009d4f510f508fef58c39bdf810"',
         "iphoneos)",
         "iphonesimulator)",
         'git -C "$source_directory" apply --check "$source_patch"',
@@ -2643,7 +2655,8 @@ def verify_linux_runtime_contract(root: Path) -> None:
         or recipe.get("targets") != expected_targets
         or recipe.get("vlcRevision") != PINNED_REVISION
         or recipe.get("buildSystem") != "meson"
-        or recipe.get("mesonVersion") != "1.10.0"
+        or recipe.get("sourcePatches") != ["build-recipes/patches/vlc-meson-core-library.patch"]
+        or recipe.get("mesonVersion") != "1.12.0"
         or recipe.get("minimumGlibc") != "2.39"
         or recipe.get("buildMode") != "shared"
         or recipe.get("usesPrebuiltContribs") is not False
@@ -2666,8 +2679,11 @@ def verify_linux_runtime_contract(root: Path) -> None:
 
     builder = (root / "scripts/build_vlc_linux.sh").read_text(encoding="utf-8")
     builder_markers = [
-        'readonly PINNED_REVISION="e439692079a75cacb5f07310d1ec2dc20bfd1fe0"',
-        'readonly PINNED_MESON_VERSION="1.10.0"',
+        'readonly PINNED_REVISION="04d555a9d391f009d4f510f508fef58c39bdf810"',
+        'readonly PINNED_MESON_VERSION="1.12.0"',
+        "build-recipes/patches/vlc-meson-core-library.patch",
+        'git -C "$source_directory" apply --check "$recipe_patch"',
+        'git -C "$source_directory" apply --reverse "$recipe_patch"',
         "--disable-all",
         "--disable-gpl",
         "--enable-gnutls",
@@ -2745,11 +2761,11 @@ def verify_linux_runtime_contract(root: Path) -> None:
         '"--set-soname"',
         '"--set-rpath"',
         'return "$ORIGIN/../../../bin" if role == "PLUGIN" else "$ORIGIN"',
-        '(require_plain_file(install, "lib/libvlc.so"), "bin/libvlc.so.12", "LIBVLC")',
+        '(require_plain_file(install, "lib/libvlc.so.12.0.0"), "bin/libvlc.so.12", "LIBVLC")',
         'require_plain_file(install, "lib/libvlccore.so.9.0.0")',
         'require_plain_file(install, f"lib/{filename}")',
         'binary["runtimeSupportLibraries"]',
-        "source = require_plain_file(plugin_root, filename)",
+        "source = require_plugin(plugin_root, filename)",
         'dependency not in allowed_system_dependencies',
         'binary["allowedSystemDependenciesByTarget"][args.target]',
         '"GNU_STACK"',

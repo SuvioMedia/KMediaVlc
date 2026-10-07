@@ -41,7 +41,7 @@ jobs:
       TESTED_COMMIT: ${{ inputs.tested_commit }}
       CANDIDATE_VERSION: ${{ inputs.candidate_version }}
       AUDIT_CANDIDATE: ${{ inputs.audit_candidate }}
-      VLC_REVISION: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
+      VLC_REVISION: 04d555a9d391f009d4f510f508fef58c39bdf810
       TOOLCHAIN_IMAGE: registry.videolan.org/vlc-debian-llvm-ucrt:20260611225331
     steps:
       - name: Check out the exact KMediaVlc revision
@@ -55,7 +55,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           repository: videolan/vlc
-          ref: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
+          ref: 04d555a9d391f009d4f510f508fef58c39bdf810
           path: .vlc-source
           fetch-depth: 1
           persist-credentials: false
@@ -142,7 +142,7 @@ jobs:
             .vlc-source/contrib/python-venv
             .vlc-source/extras/tools/build
             .vlc-source/win64-ucrt-meson
-          key: vlc-e439692079a75cacb5f07310d1ec2dc20bfd1fe0-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1
+          key: vlc-04d555a9d391f009d4f510f508fef58c39bdf810-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1
 
       - name: Prepare the exact playback contrib state
         env:
@@ -187,7 +187,7 @@ jobs:
             .vlc-source/contrib/python-venv
             .vlc-source/extras/tools/build
             .vlc-source/win64-ucrt-meson
-          key: vlc-e439692079a75cacb5f07310d1ec2dc20bfd1fe0-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1
+          key: vlc-04d555a9d391f009d4f510f508fef58c39bdf810-windows-x86_64-llvm-ucrt-lgpl-playback-20260611225331-v1
 
       - name: Require a successful source build
         if: steps.source_build.outcome != 'success'
@@ -352,7 +352,7 @@ jobs:
       TESTED_COMMIT: ${{ inputs.tested_commit }}
       CANDIDATE_VERSION: ${{ inputs.candidate_version }}
       AUDIT_CANDIDATE: ${{ inputs.audit_candidate }}
-      VLC_REVISION: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
+      VLC_REVISION: 04d555a9d391f009d4f510f508fef58c39bdf810
       EXPECTED_RUNTIME_SHA256: ${{ needs.build-windows-x86-64.outputs.runtime_sha256 }}
       KMEDIAVLC_TEST_HTTPS_HDR_MEDIA: https://raw.githubusercontent.com/chromium/chromium/85af8764718f33f0d221e96f31f5d993f364b4a2/media/test/data/bear-1280x720-hevc-10bit-hdr10.mp4
     steps:
@@ -367,7 +367,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           repository: videolan/vlc
-          ref: e439692079a75cacb5f07310d1ec2dc20bfd1fe0
+          ref: 04d555a9d391f009d4f510f508fef58c39bdf810
           path: .vlc-source
           sparse-checkout: include
           fetch-depth: 1

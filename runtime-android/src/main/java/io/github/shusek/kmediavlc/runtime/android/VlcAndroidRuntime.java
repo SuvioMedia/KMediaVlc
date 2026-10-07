@@ -13,7 +13,7 @@ public final class VlcAndroidRuntime {
     public static final int MIN_SDK = 28;
     public static final int BRIDGE_ABI_VERSION = 1;
     public static final String VLC_VERSION = "4.0.0-dev";
-    public static final String VLC_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0";
+    public static final String VLC_REVISION = "04d555a9d391f009d4f510f508fef58c39bdf810";
     public static final String LIBVLCJNI_REVISION =
             "a8d53a9151d7e4a9a5dfd0a5eb1cd92669afdc21";
     public static final String LEGAL_ASSET_DIRECTORY = "kmediavlc/legal";

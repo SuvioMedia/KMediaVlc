@@ -1,4 +1,4 @@
-The glad 2.0.4 generator source is distributed under the MIT License:
+The glad 2.0.8 generator source is distributed under the MIT License:
 
 Copyright (c) 2013-2022 David Herberth
 

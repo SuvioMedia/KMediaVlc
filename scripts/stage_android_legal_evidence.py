@@ -11,7 +11,7 @@ import tarfile
 from pathlib import Path, PurePosixPath
 
 
-VLC_REVISION = "e439692079a75cacb5f07310d1ec2dc20bfd1fe0"
+VLC_REVISION = "04d555a9d391f009d4f510f508fef58c39bdf810"
 NDK_REVISION = "29.0.14206865"
 NDK_SOURCE_STATUS = "exact-source-revisions-recorded-source-package-pending"
 LLVM_PROJECT_REVISION = "386af4a5c64ab75eaee2448dc38f2e34a40bfed0"

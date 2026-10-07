@@ -11,23 +11,42 @@ contrib and VLC module instead of building the host-only BD-J Java payload.
 Use a portable in-place sed invocation so the same source recipe works on GNU
 and BSD hosts. Fix the literal archive-name lookup and allow pkg-config to
 return both upstream protobuf variants when generating the static link line.
+Exclude the newly automatic libnoidea/NDI graph from this closed Android recipe.
 
----
- buildsystem/build-libvlc.sh | 37 ++++++++++++++++++++++++++++++++-----
- 1 file changed, 32 insertions(+), 5 deletions(-)
-
-diff --git a/buildsystem/build-libvlc.sh b/buildsystem/build-libvlc.sh
 --- a/buildsystem/build-libvlc.sh
 +++ b/buildsystem/build-libvlc.sh
-@@ -230 +230 @@
+@@ -227,7 +227,7 @@
+ 
+ avlc_find_modules()
+ {
 -    echo "$(find $1 -name 'lib*plugin.a' | grep -vE "lib(${blacklist_regexp})_plugin.a" | tr '\n' ' ')"
 +    echo "$(find $1 -name 'lib*plugin.a' | grep -vE "lib(${blacklist_regexp})_plugin.a" | LC_ALL=C sort | tr '\n' ' ')"
-@@ -277,0 +278 @@
+ }
+ 
+ avlc_get_symbol()
+@@ -275,6 +275,8 @@
+ VLC_CONTRIB_ARGS="\
+     --disable-aribb24 \
+     --disable-aribb25 \
 +    --disable-bluray \
-@@ -355 +356 @@
++    --disable-libnoidea \
+     --disable-caca \
+     --disable-chromaprint \
+     --disable-faad2 \
+@@ -352,7 +354,8 @@
+     --disable-xcb \
+     --enable-avcodec \
+     --enable-avformat \
 -    --enable-bluray \
 +    --disable-bluray \
-@@ -387,0 +389,24 @@
++    --disable-ndi \
+     --enable-chromecast \
+     --enable-dvbpsi \
+     --enable-fluidlite \
+@@ -385,6 +388,30 @@
+     addons.*
+     alphamask
+     aout_file
 +    avahi
 +    dbus
 +    dummy
@@ -52,15 +71,42 @@ diff --git a/buildsystem/build-libvlc.sh b/buildsystem/build-libvlc.sh
 +    x26410b
 +    x265
 +    xcb_hotkeys
-@@ -558 +583,2 @@
+     audiobargraph_[av]
+     audioscrobbler
+     ball
+@@ -555,7 +582,8 @@
+ # disable forced -lc++ in contribs
+ PC_FILES=$(find ${VLC_CONTRIB_OUT_DIR}/lib/pkgconfig -type f -name '*.pc')
+ for pcfile in ${PC_FILES}; do
 -    sed -i 's/ -lc++//' $pcfile
 +    sed -i.bak 's/ -lc++//' "$pcfile"
 +    rm -f "$pcfile.bak"
-@@ -643 +669 @@
+ done
+ 
+ mkdir -p $VLC_BUILD_DIR
+@@ -640,7 +668,7 @@
+ 
+ # find and return the path of $2 inside $1
+ avlc_find_lib() {
 -    find $1 -name '$2'
 +    find "$1" -name "$2"
-@@ -714 +740 @@
+ }
+ 
+ # get all global symbols of a library and add them to SYMBOLS_TO_REDIFINE list
+@@ -711,7 +739,7 @@
+ ###########################
+ 
+ VLC_MODULES=$(avlc_find_modules ${REDEFINED_VLC_MODULES_DIR})
 -VLC_CONTRIB_LDFLAGS=$(cd $VLC_CONTRIB/lib/pkgconfig; avlc_pkgconfig --libs $(ls *.pc  | sed -e 's/\.pc$//' | xargs))
 +VLC_CONTRIB_LDFLAGS=$(cd $VLC_CONTRIB/lib/pkgconfig; PKG_CONFIG_IGNORE_CONFLICTS=1 avlc_pkgconfig --libs $(ls *.pc  | sed -e 's/\.pc$//' | xargs))
-@@ -726,0 +753 @@
+ 
+ if [ "$AVLC_STATIC_CXX" = 1 ]; then
+     VLC_APP_STL="c++_static"
+@@ -724,6 +752,7 @@
+ $NDK_BUILD -C $LIBVLCJNI_ROOT/libvlc \
+     APP_STL="$VLC_APP_STL" \
+     APP_CPPFLAGS="-frtti -fexceptions" \
 +    APP_LDFLAGS="${APP_LDFLAGS}" \
+     VLC_SRC_DIR="$VLC_SRC_DIR" \
+     VLC_BUILD_DIR="$VLC_BUILD_DIR" \
+     VLC_CONTRIB="$VLC_CONTRIB" \

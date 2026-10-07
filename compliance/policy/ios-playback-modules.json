@@ -4,7 +4,7 @@
     "ios-arm64",
     "ios-simulator-arm64"
   ],
-  "vlcRevision": "e439692079a75cacb5f07310d1ec2dc20bfd1fe0",
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
   "reviewStatus": "pending-framework-and-source-license-audit",
   "primaryLicenseSpdx": "LGPL-2.1-or-later",
   "additionalDirectSourceLicenses": {
