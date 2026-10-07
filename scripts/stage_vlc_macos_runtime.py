@@ -182,21 +182,24 @@ def parse_install_name(output: str) -> str:
     return values[0]
 
 
-def parse_build_versions(output: str) -> list[tuple[str, str]]:
-    versions: list[tuple[str, str]] = []
+def parse_build_versions(output: str) -> list[tuple[str, str, str]]:
+    versions: list[tuple[str, str, str]] = []
     lines = output.splitlines()
     for index, line in enumerate(lines):
         if line.strip() != "cmd LC_BUILD_VERSION":
             continue
         platform = ""
         minimum = ""
+        sdk = ""
         for detail in lines[index + 1 : index + 8]:
             tokens = detail.split()
             if len(tokens) == 2 and tokens[0] == "platform":
                 platform = tokens[1]
             if len(tokens) == 2 and tokens[0] == "minos":
                 minimum = tokens[1]
-        versions.append((platform, minimum))
+            if len(tokens) == 2 and tokens[0] == "sdk":
+                sdk = tokens[1]
+        versions.append((platform, minimum, sdk))
     return versions
 
 
@@ -264,13 +267,14 @@ def audit_macho(path: Path, role: str, otool: Path, lipo: Path) -> dict:
     if "cmd LC_RPATH" in layout:
         fail(f"macOS runtime contains an uncontrolled LC_RPATH: {path.name}")
     build_versions = parse_build_versions(layout)
-    if build_versions != [("1", EXPECTED_MINIMUM_MACOS)]:
-        fail(f"macOS runtime deployment target is not exactly 14.0: {path.name}: {build_versions}")
+    if build_versions != [("1", EXPECTED_MINIMUM_MACOS, "15.5")]:
+        fail(f"macOS runtime deployment target or SDK differs from its audited policy: {path.name}: {build_versions}")
     return {
         "architectures": architectures,
         "installName": install_name,
         "dependencies": dependencies,
         "minimumMacos": EXPECTED_MINIMUM_MACOS,
+        "sdkVersion": "15.5",
     }
 
 

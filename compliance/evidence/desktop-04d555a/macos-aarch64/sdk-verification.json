@@ -1,0 +1,1386 @@
+{
+  "schemaVersion": 1,
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
+  "sourceAuditRunId": 37607784620,
+  "result": "passed",
+  "machOCount": 93,
+  "sdkVersion": "15.5",
+  "minimumMacos": "14.0",
+  "auditImplementationSha256": "e41d9c07365da6e5d2e2962191eaf7d3b632671dae57ab15684a42d8fa10d315",
+  "files": {
+    "bin/libkmediavlc_bridge.dylib": {
+      "sha256": "9d47acd53fa7a4a0a73ee0b180f06eb8d0244990d095549861c4ae6044d4e20e",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libkmediavlc_bridge.dylib",
+      "dependencies": [
+        "@rpath/libkmediavlc_bridge.dylib",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo",
+        "/System/Library/Frameworks/IOSurface.framework/Versions/A/IOSurface",
+        "/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL",
+        "/usr/lib/libc++.1.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "bin/libvlc.12.dylib": {
+      "sha256": "1dc87094ff16a949202641f6749502f0d4d6980a77c3f3527e4d6115309be6ea",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libvlc.12.dylib",
+      "dependencies": [
+        "@rpath/libvlc.12.dylib",
+        "@loader_path/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "bin/libvlccore.9.dylib": {
+      "sha256": "ece87703823f9f8ba2bc92621fa1d532ef5960709ca1f578c64aa63e004769f5",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libvlccore.9.dylib",
+      "dependencies": [
+        "@rpath/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib",
+        "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/System/Library/Frameworks/CFNetwork.framework/Versions/A/CFNetwork",
+        "/usr/lib/libobjc.A.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libaccess_mms_plugin.dylib": {
+      "sha256": "f036b417375f984fee99c48c7ff167d5abe7448460256bc33cde924967d79de1",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libaccess_mms_plugin.dylib",
+      "dependencies": [
+        "@rpath/libaccess_mms_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libadaptive_plugin.dylib": {
+      "sha256": "61c8064e9398e5d1b0933aca10c13cffcd3b8847e4e7d8640a1d54c22cc23a0c",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libadaptive_plugin.dylib",
+      "dependencies": [
+        "@rpath/libadaptive_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib",
+        "/usr/lib/libc++.1.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libadummy_plugin.dylib": {
+      "sha256": "5866114f18c5a32cb7547263869365b0d64747b24a75926c9deb3a784f40c24f",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libadummy_plugin.dylib",
+      "dependencies": [
+        "@rpath/libadummy_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libasf_plugin.dylib": {
+      "sha256": "c1f232c39cb10fc05f8af17e7a4f648b75845bc4a81f070708ca03f29d0c0058",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libasf_plugin.dylib",
+      "dependencies": [
+        "@rpath/libasf_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libaudio_format_plugin.dylib": {
+      "sha256": "b9ac7803bbb64aace9a530b96f97184440f801cbbb846b27320ed4d3108c53da",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libaudio_format_plugin.dylib",
+      "dependencies": [
+        "@rpath/libaudio_format_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libauhal_plugin.dylib": {
+      "sha256": "99a2191977b3802ed01ebd3cb1f94ae199fd173eda9fa7ba3374275a2db0e48a",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libauhal_plugin.dylib",
+      "dependencies": [
+        "@rpath/libauhal_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio",
+        "/System/Library/Frameworks/AudioUnit.framework/Versions/A/AudioUnit",
+        "/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox",
+        "/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices",
+        "/usr/lib/libSystem.B.dylib",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libavcodec_plugin.dylib": {
+      "sha256": "9d8dae1afeeabbbc3ebd7d33c3c9edc88564f7a0376febd4451260c2d9551bc6",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libavcodec_plugin.dylib",
+      "dependencies": [
+        "@rpath/libavcodec_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox",
+        "/System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia",
+        "/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo",
+        "/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices",
+        "/usr/lib/libSystem.B.dylib",
+        "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "/System/Library/Frameworks/Security.framework/Versions/A/Security"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libavi_plugin.dylib": {
+      "sha256": "11622b9f04253d095ff8c6609ac37749d6040df9e6258e4b6b8c3f2c9a088adb",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libavi_plugin.dylib",
+      "dependencies": [
+        "@rpath/libavi_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libcache_read_plugin.dylib": {
+      "sha256": "c35d507b05bccc4c540b850f279902c43d5d1929177e6ca7d66dac2f580e4df4",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libcache_read_plugin.dylib",
+      "dependencies": [
+        "@rpath/libcache_read_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libcc_plugin.dylib": {
+      "sha256": "819f02e01dedf4d915691bec3407974fae0badec1621ed6e3fe4139dfac4b262",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libcc_plugin.dylib",
+      "dependencies": [
+        "@rpath/libcc_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libchain_plugin.dylib": {
+      "sha256": "6ebe4c7ba12dce287c2936a41665cae143321ec64d35f2a164e0fab7e447d41e",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libchain_plugin.dylib",
+      "dependencies": [
+        "@rpath/libchain_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libconsole_logger_plugin.dylib": {
+      "sha256": "65ede3e6c16d64dda1c32f69f3621c5aa4fdc0702bc3eb09f0983b57254921ec",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libconsole_logger_plugin.dylib",
+      "dependencies": [
+        "@rpath/libconsole_logger_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libcvpx_plugin.dylib": {
+      "sha256": "a93f88106e67f596de9f7c27f04ad4aeb12165d5941515a464c0001fd74f09b3",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libcvpx_plugin.dylib",
+      "dependencies": [
+        "@rpath/libcvpx_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "/System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox",
+        "/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia",
+        "/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo",
+        "/usr/lib/libSystem.B.dylib",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libdata_plugin.dylib": {
+      "sha256": "c4c88c3f6a67eeeaac749442b67f536f05846d696586e27e262b11d3470a2ffa",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libdata_plugin.dylib",
+      "dependencies": [
+        "@rpath/libdata_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libdav1d_plugin.dylib": {
+      "sha256": "cfbef8c6f4c9d4a16ffed01cf0dbeeb7e022316cc2f438b7d03ad40c37c4a6b5",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libdav1d_plugin.dylib",
+      "dependencies": [
+        "@rpath/libdav1d_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libes_plugin.dylib": {
+      "sha256": "5daf9c8278ea2ccd2c3101c4d20b28fd21e8312f25cb86fda5eeff28cb6f2639",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libes_plugin.dylib",
+      "dependencies": [
+        "@rpath/libes_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libfilesystem_plugin.dylib": {
+      "sha256": "2899ed898ae1a0c6868caff14abbe8de43734e4d96d93df24b5be2160f07131a",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libfilesystem_plugin.dylib",
+      "dependencies": [
+        "@rpath/libfilesystem_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libflac_plugin.dylib": {
+      "sha256": "ac24e8de91058d11dda61464006be3b9804c9377a24e651ee95d3cae7a0a2d55",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libflac_plugin.dylib",
+      "dependencies": [
+        "@rpath/libflac_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libfloat_mixer_plugin.dylib": {
+      "sha256": "deb046d799419dc1ec58c1f0d30c6302b93a8e79359968feaf962d0c92a25f80",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libfloat_mixer_plugin.dylib",
+      "dependencies": [
+        "@rpath/libfloat_mixer_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libfreetype_plugin.dylib": {
+      "sha256": "0e894981379839b69338a5dc503886dc9f8c019dfb5b8e67186a275f088e0695",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libfreetype_plugin.dylib",
+      "dependencies": [
+        "@rpath/libfreetype_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib",
+        "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/System/Library/Frameworks/CoreText.framework/Versions/A/CoreText",
+        "/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libftp_plugin.dylib": {
+      "sha256": "2fc0f0449bccfe3f5899bf1798bbf755404735a8013bdae23db46704aa1b9ab0",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libftp_plugin.dylib",
+      "dependencies": [
+        "@rpath/libftp_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libgl_plugin.dylib": {
+      "sha256": "f62a2cb36e43d000d0d65bcac7162608295f51595f56f48acba023b935bc3261",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libgl_plugin.dylib",
+      "dependencies": [
+        "@rpath/libgl_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libglinterop_cvpx_plugin.dylib": {
+      "sha256": "4fc6ff7ff4b63b474df90feeaa50ccf30c8c7bce87d62c9e81ec3777aae09776",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libglinterop_cvpx_plugin.dylib",
+      "dependencies": [
+        "@rpath/libglinterop_cvpx_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo",
+        "/System/Library/Frameworks/IOSurface.framework/Versions/A/IOSurface",
+        "/System/Library/Frameworks/Metal.framework/Versions/A/Metal",
+        "/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL",
+        "/usr/lib/libSystem.B.dylib",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/usr/lib/libobjc.A.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libglinterop_sw_plugin.dylib": {
+      "sha256": "9e1be53cb3d06c48d61cf8b3ca337d2894f22215bc1bde53ff31a608afe2dbe2",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libglinterop_sw_plugin.dylib",
+      "dependencies": [
+        "@rpath/libglinterop_sw_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libglsampler_builtin_plugin.dylib": {
+      "sha256": "8df8b1664c48fcafc65eba9f2196505ae49f951ffc9b317e75f3d3c7be282074",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libglsampler_builtin_plugin.dylib",
+      "dependencies": [
+        "@rpath/libglsampler_builtin_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libh26x_plugin.dylib": {
+      "sha256": "ac7070b812b08c8d5ae50be080a286a5565e6c11ca7da25b48f81874cb1d0c6f",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libh26x_plugin.dylib",
+      "dependencies": [
+        "@rpath/libh26x_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libhttp_plugin.dylib": {
+      "sha256": "4bb39edf1d9fcea012e1a5c98c91f5c456b7ec9fcbaf2827b25bc25c998389ab",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libhttp_plugin.dylib",
+      "dependencies": [
+        "@rpath/libhttp_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libhttps_plugin.dylib": {
+      "sha256": "32dd23be498d5fdb24b1a2312c49ace9f679febd0835d3007c272144eed258d7",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libhttps_plugin.dylib",
+      "dependencies": [
+        "@rpath/libhttps_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libi420_nv12_plugin.dylib": {
+      "sha256": "f6910f4734c70fc62c9aedb1838530dae1f15097a4fa50685ef089e594f8cfe4",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libi420_nv12_plugin.dylib",
+      "dependencies": [
+        "@rpath/libi420_nv12_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libi420_rgb_plugin.dylib": {
+      "sha256": "345840611754620d288c07d10af999a89a5a9c04f65febf3c71d6237a05c7a45",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libi420_rgb_plugin.dylib",
+      "dependencies": [
+        "@rpath/libi420_rgb_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libimage_plugin.dylib": {
+      "sha256": "e177cd6a75808bb6329aed26ffa335577c128526efc6555f6b93ecf47fb0dddb",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libimage_plugin.dylib",
+      "dependencies": [
+        "@rpath/libimage_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libinflate_plugin.dylib": {
+      "sha256": "cc6471bc65913b0f52c28d84b3c3481ba0ad6eb7aec0a7d3a11353140186542a",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libinflate_plugin.dylib",
+      "dependencies": [
+        "@rpath/libinflate_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libinteger_mixer_plugin.dylib": {
+      "sha256": "97fcb92cfd7e158c0f2d8bf47e4761201394b39e88f94e6cad09bdd3630a6117",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libinteger_mixer_plugin.dylib",
+      "dependencies": [
+        "@rpath/libinteger_mixer_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libjpeg_plugin.dylib": {
+      "sha256": "46e2912fdbf1f7c525b4d2bde1817b0b13df724e106938f05e9dc970f6b627f7",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libjpeg_plugin.dylib",
+      "dependencies": [
+        "@rpath/libjpeg_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libkeychain_plugin.dylib": {
+      "sha256": "59710c65e44bff3f10c8193e6ff1552296fc75a70dad7a1e771ac048eb358c48",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libkeychain_plugin.dylib",
+      "dependencies": [
+        "@rpath/libkeychain_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+        "/System/Library/Frameworks/Security.framework/Versions/A/Security",
+        "/usr/lib/libSystem.B.dylib",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/usr/lib/libobjc.A.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/liblibass_plugin.dylib": {
+      "sha256": "f11c886e36596b0531e02980fe018af5830eeecdcf1b2626eabd852c796a24a1",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/liblibass_plugin.dylib",
+      "dependencies": [
+        "@rpath/liblibass_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/usr/lib/libSystem.B.dylib",
+        "/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics",
+        "/System/Library/Frameworks/CoreText.framework/Versions/A/CoreText"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libmemory_keystore_plugin.dylib": {
+      "sha256": "5797cf0cfc74b3dc614066f9e7fa2bff114b2fcc1eac2ea0e03696a2fa12adf0",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libmemory_keystore_plugin.dylib",
+      "dependencies": [
+        "@rpath/libmemory_keystore_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libmkv_plugin.dylib": {
+      "sha256": "0c57fa2f9e621d44ac297767d30f91b6e752479df95f3ceacc87b99e8435e18e",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libmkv_plugin.dylib",
+      "dependencies": [
+        "@rpath/libmkv_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib",
+        "/usr/lib/libc++.1.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libmp4_plugin.dylib": {
+      "sha256": "2954565551305f37fbc4726b37af43011a542a3047e87f2ba25898ddb9bcac30",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libmp4_plugin.dylib",
+      "dependencies": [
+        "@rpath/libmp4_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libogg_plugin.dylib": {
+      "sha256": "9f2106f91312e47c002303e5d405efcb34891d66ab77748b05443453ca33bcae",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libogg_plugin.dylib",
+      "dependencies": [
+        "@rpath/libogg_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libopus_plugin.dylib": {
+      "sha256": "b559c3113ee76afc8878ba556730a114f3a67cb2cef52106f63cd8d2f05646b8",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libopus_plugin.dylib",
+      "dependencies": [
+        "@rpath/libopus_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/liborient_plugin.dylib": {
+      "sha256": "c69a7063f22d73870e2cf609382de4b9f709884d1c67d1ccef43157dd5c7c505",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/liborient_plugin.dylib",
+      "dependencies": [
+        "@rpath/liborient_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_a52_plugin.dylib": {
+      "sha256": "a0d73dc2b9e857069c6cb3e7c285425b9b01593399f319118b765b515c548a9a",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_a52_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_a52_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_av1_plugin.dylib": {
+      "sha256": "15a5d6fdcd20de116115fc380f521d4313bcc9d3a37f43bc74745e5b0a5d65e7",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_av1_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_av1_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_avparser_plugin.dylib": {
+      "sha256": "51d154a5bb4c6352e9bc5895db83a4f508e69383fa7c05441b8c411f9b9cbe44",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_avparser_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_avparser_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox",
+        "/System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia",
+        "/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo",
+        "/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_copy_plugin.dylib": {
+      "sha256": "d7ed209469fe240b434db27d135afbb6645560e778bc9efb1bb19e190b9b66f7",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_copy_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_copy_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_dts_plugin.dylib": {
+      "sha256": "b466a93ec13699c7d2c3b25f7b24fcc5d49e5c4e46877e08bc0dcb547a646aa1",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_dts_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_dts_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_flac_plugin.dylib": {
+      "sha256": "b3c1df9baba9b4bb5c1221e319e59768ad6d9e59d1200d0ab817df1359166a86",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_flac_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_flac_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_h264_plugin.dylib": {
+      "sha256": "96e83e258efdfab2669f2d559b63ec056fb06cb486233d5ea3763a76725b3fdb",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_h264_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_h264_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_hevc_plugin.dylib": {
+      "sha256": "186d4e8160555e6bf97cc2e505d77161b5cc43f208de880079f42603e750c28d",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_hevc_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_hevc_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_mjpeg_plugin.dylib": {
+      "sha256": "ab38646dc67d2d7ccdbe7be0631ee2a343a34e38a33f6bf94685f5d41fefdacc",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_mjpeg_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_mjpeg_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_mlp_plugin.dylib": {
+      "sha256": "8cbb8b4dbd9754d5d64f2bcec0a255e9bb0613d8c896b8cc4d484fe659a1138c",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_mlp_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_mlp_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_mpeg4audio_plugin.dylib": {
+      "sha256": "1539a369776dafd24076440ec8e5cb79e0f6645e146b52188ae537453b3f6b51",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_mpeg4audio_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_mpeg4audio_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_mpeg4video_plugin.dylib": {
+      "sha256": "5baa8c12122da169a596ea74bba7491bdb298298d71cca5348acbe60cb8e4a21",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_mpeg4video_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_mpeg4video_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_mpegaudio_plugin.dylib": {
+      "sha256": "3e1549d2010a66ea1f94e66a276ff548f1aeac215e617c5b88d809d8d9a6d49e",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_mpegaudio_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_mpegaudio_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_mpegvideo_plugin.dylib": {
+      "sha256": "9928d0384b6aa9b64ffb5deee0a7cbab3f091b7d05c1576a9d1c446e2ed0f588",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_mpegvideo_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_mpegvideo_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpacketizer_vc1_plugin.dylib": {
+      "sha256": "e57c5af12cfc44809f5a968e6b2c998f37a95a4031f0993bb73652b9c7e99bab",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpacketizer_vc1_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpacketizer_vc1_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libplaylist_plugin.dylib": {
+      "sha256": "0b1573ed942e1d6fe4fc8c533a4be95e9beb132237b8bc69b1827b3aa0db6490",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libplaylist_plugin.dylib",
+      "dependencies": [
+        "@rpath/libplaylist_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libpng_plugin.dylib": {
+      "sha256": "64f902e392faaf2dbc5feb083f16c3c451c04118944ef019aca85577f7d2ba3d",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libpng_plugin.dylib",
+      "dependencies": [
+        "@rpath/libpng_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libprefetch_plugin.dylib": {
+      "sha256": "e94d94c4f17d3133abfc8ce4e487b19be6003c64b3ceed962d6cca8dc64bddbe",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libprefetch_plugin.dylib",
+      "dependencies": [
+        "@rpath/libprefetch_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libps_plugin.dylib": {
+      "sha256": "aa3add0c635c6c676bf3926befdfbd9ec1c758192f09b468e1fd9458b712de4c",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libps_plugin.dylib",
+      "dependencies": [
+        "@rpath/libps_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/librawvideo_plugin.dylib": {
+      "sha256": "6d07fc7f7c296e7c4901ba34f41dc55b3a30b8733750f6e821db65780518a384",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/librawvideo_plugin.dylib",
+      "dependencies": [
+        "@rpath/librawvideo_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/librecord_plugin.dylib": {
+      "sha256": "40ec37f0cb44ea287f256b21af086159664a4a786e8b28bf6809bb1278416abf",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/librecord_plugin.dylib",
+      "dependencies": [
+        "@rpath/librecord_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/librv32_plugin.dylib": {
+      "sha256": "b92ebb499098f53e52b1cbdedae161969e6f8f7462e5dca83d409f92f5f40088",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/librv32_plugin.dylib",
+      "dependencies": [
+        "@rpath/librv32_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libsecuretransport_plugin.dylib": {
+      "sha256": "2cea7e9e6cebbeae1a1f2284aad08ffbb24674749e744195ef997ab64de32be5",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libsecuretransport_plugin.dylib",
+      "dependencies": [
+        "@rpath/libsecuretransport_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/System/Library/Frameworks/Security.framework/Versions/A/Security",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libsimple_channel_mixer_plugin.dylib": {
+      "sha256": "81dedb8df4d0dd77ef317005c0ccde334e931ddf24adb31567fdb7b704acbcc9",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libsimple_channel_mixer_plugin.dylib",
+      "dependencies": [
+        "@rpath/libsimple_channel_mixer_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libskiptags_plugin.dylib": {
+      "sha256": "98366258ec5e01a29147c7d98bc8691405c6439508c2e1b1ea4262d274de4aa5",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libskiptags_plugin.dylib",
+      "dependencies": [
+        "@rpath/libskiptags_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libsoxr_plugin.dylib": {
+      "sha256": "0d21198d77c78e2654459934d6cca302beababdf8956e40a233cb4a10203ad8a",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libsoxr_plugin.dylib",
+      "dependencies": [
+        "@rpath/libsoxr_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox",
+        "/System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia",
+        "/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo",
+        "/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libspdif_plugin.dylib": {
+      "sha256": "efc7e1ef8b3454cf5775deb3d5795db18e94e9e16cd7d29250ebf9140d8edb7e",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libspdif_plugin.dylib",
+      "dependencies": [
+        "@rpath/libspdif_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libsubsdec_plugin.dylib": {
+      "sha256": "d0d555f5453dc5df169602f77ed0625befab0a2b170e1e5e110bdb4cbd329c48",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libsubsdec_plugin.dylib",
+      "dependencies": [
+        "@rpath/libsubsdec_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libsubstx3g_plugin.dylib": {
+      "sha256": "e346df10ce67d521ee665c8617da69505fbbcb14e1abfd3c46ceb5be164da415",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libsubstx3g_plugin.dylib",
+      "dependencies": [
+        "@rpath/libsubstx3g_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libsubtitle_plugin.dylib": {
+      "sha256": "77009e149c2527a656a4490ba19d14659b90efbdc7b8ec69581bcbd3dc1f93fa",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libsubtitle_plugin.dylib",
+      "dependencies": [
+        "@rpath/libsubtitle_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libswscale_plugin.dylib": {
+      "sha256": "afc37a604b12b5df2df56b6dd7b8b0488b70e1ff133005de007509fe74c4ac96",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libswscale_plugin.dylib",
+      "dependencies": [
+        "@rpath/libswscale_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia",
+        "/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo",
+        "/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libtdummy_plugin.dylib": {
+      "sha256": "4bc24389eee602fc7c32a58af9c91a9c135cb5222d5976801ee76a64df425c70",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libtdummy_plugin.dylib",
+      "dependencies": [
+        "@rpath/libtdummy_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libtospdif_plugin.dylib": {
+      "sha256": "7313865d2341b272e3f1ebe3f6ed654fa33d5815f20e24941796aef568576be1",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libtospdif_plugin.dylib",
+      "dependencies": [
+        "@rpath/libtospdif_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libtrivial_channel_mixer_plugin.dylib": {
+      "sha256": "91f29eaeef61c97f848ade56e3f33b17228ab4bedfe452e881af92ebc67e515e",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libtrivial_channel_mixer_plugin.dylib",
+      "dependencies": [
+        "@rpath/libtrivial_channel_mixer_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libts_plugin.dylib": {
+      "sha256": "9206e7bfb500e271169e50f76c1d63da9903492840197a62729870a92f6c08a8",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libts_plugin.dylib",
+      "dependencies": [
+        "@rpath/libts_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libvgl_plugin.dylib": {
+      "sha256": "eca77724d9a69bb43ca0608ca72372fa9061028a08259a2b585b725ed74f4fd0",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libvgl_plugin.dylib",
+      "dependencies": [
+        "@rpath/libvgl_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libvideotoolbox_plugin.dylib": {
+      "sha256": "7b173971be4a5f6481b6bdec399f2729decb468662f898b514f3156a06fffbaf",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libvideotoolbox_plugin.dylib",
+      "dependencies": [
+        "@rpath/libvideotoolbox_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox",
+        "/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia",
+        "/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo",
+        "/System/Library/Frameworks/Metal.framework/Versions/A/Metal",
+        "/usr/lib/libSystem.B.dylib",
+        "/usr/lib/libobjc.A.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libvmem_plugin.dylib": {
+      "sha256": "34cde5bcc96d54ccf95a03f69132a6d91fe13943b7a2e3eb89db9c63f1cefd5c",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libvmem_plugin.dylib",
+      "dependencies": [
+        "@rpath/libvmem_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libvorbis_plugin.dylib": {
+      "sha256": "598d166c39abd5ff3bc5f14b0af2271bfeec6d659f650050027037a4d14eea86",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libvorbis_plugin.dylib",
+      "dependencies": [
+        "@rpath/libvorbis_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libvpx_plugin.dylib": {
+      "sha256": "d2d8172d2083ae0ab4d3ba2d767d22f77f94c61bb1185ca2a4569108ae2c6e1d",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libvpx_plugin.dylib",
+      "dependencies": [
+        "@rpath/libvpx_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libwav_plugin.dylib": {
+      "sha256": "71d6ed58a240e0a6e8a617cca5485df274df351d19965407a9ddc1847ce8e56b",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libwav_plugin.dylib",
+      "dependencies": [
+        "@rpath/libwav_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libwdummy_plugin.dylib": {
+      "sha256": "cfc5f1d5ef18344003c41a60ae1106a0984cec7dbe5b23d8e36eed0129dfe4b9",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libwdummy_plugin.dylib",
+      "dependencies": [
+        "@rpath/libwdummy_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libwebdav_plugin.dylib": {
+      "sha256": "3216d77e946bc9a4274fafe78a35dc5d83de0489b406f48c34c76e414043830c",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libwebdav_plugin.dylib",
+      "dependencies": [
+        "@rpath/libwebdav_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libwebvtt_plugin.dylib": {
+      "sha256": "9e7102f70a6fb8a68555da2b96dd8e4d6798ec8e117abefc68975058e64016c8",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libwebvtt_plugin.dylib",
+      "dependencies": [
+        "@rpath/libwebvtt_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libxml_plugin.dylib": {
+      "sha256": "0518c289d060e972072e2e39ff7bf5c520fe98de80e7d0ad93c622c1a8da1824",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libxml_plugin.dylib",
+      "dependencies": [
+        "@rpath/libxml_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libyuvp_plugin.dylib": {
+      "sha256": "932668a0a96114f7b538d8633bdd59f2465d1b7a50c563c564fcd518dca4be54",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libyuvp_plugin.dylib",
+      "dependencies": [
+        "@rpath/libyuvp_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libyuy2_i420_plugin.dylib": {
+      "sha256": "a9b68fb7889ac92e8016af3698b683e313f997e1ceff48ecd7d07fb81443d7c8",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libyuy2_i420_plugin.dylib",
+      "dependencies": [
+        "@rpath/libyuy2_i420_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    },
+    "lib/vlc/plugins/libyuy2_i422_plugin.dylib": {
+      "sha256": "a6b70bc2e42efc683c9b2bbc3ff8dd7b982747f8d8cbed971c7cf639f07ae990",
+      "architectures": [
+        "arm64"
+      ],
+      "installName": "@rpath/libyuy2_i422_plugin.dylib",
+      "dependencies": [
+        "@rpath/libyuy2_i422_plugin.dylib",
+        "@loader_path/../../../bin/libvlccore.9.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
+    }
+  }
+}

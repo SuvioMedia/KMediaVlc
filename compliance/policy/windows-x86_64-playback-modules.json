@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "target": "windows-x86_64",
   "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
-  "reviewStatus": "pending-meson-dependency-audit",
+  "reviewStatus": "approved",
   "primaryLicenseSpdx": "LGPL-2.1-or-later",
   "coreAdditionalDirectSourceLicenses": ["MIT"],
   "additionalDirectSourceLicenses": {
     "mkv": ["MIT"],
-    "opus": ["BSD-3-Clause"],
-    "ts": ["BSD-3-Clause"]
+    "opus": ["BSD-2-Clause"],
+    "ts": ["BSD-2-Clause"]
   },
   "modulesByFamily": {
     "access": [

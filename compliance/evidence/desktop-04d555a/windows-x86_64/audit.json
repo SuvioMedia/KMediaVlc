@@ -1,0 +1,751 @@
+{
+  "auditCandidate": true,
+  "binaryReviewStatus": "pending-link-command-audit",
+  "excludedPluginCount": 291,
+  "files": [
+    {
+      "path": "bin/libvlc.dll",
+      "role": "LIBVLC",
+      "sha256": "e1518870f228d98dadde8809f0e6bc35b71566accecede068b14268be5248c15",
+      "size": 118272
+    },
+    {
+      "path": "bin/libvlccore-9.dll",
+      "role": "CORE",
+      "sha256": "717b867fd85e4e13ebe6c0a388a8434d7ba3be349ed3002fd3daae02324125bd",
+      "size": 2059776
+    },
+    {
+      "path": "bin/kmediavlc_bridge.dll",
+      "role": "BRIDGE",
+      "sha256": "1637b4efc5066ceffd9f02225e02f54892acef1ba41b09f6250fc1498ab8dc15",
+      "size": 118784
+    },
+    {
+      "family": "access",
+      "module": "access_mms",
+      "path": "lib/vlc/plugins/libaccess_mms_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "aeda5be5c0c389f00a2245f384dde4cae843b3fe020a33206e710a8f7e035fe0",
+      "size": 50176
+    },
+    {
+      "family": "access",
+      "module": "data",
+      "path": "lib/vlc/plugins/libdata_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "09fa1c8df5c41195fcc27dc9f989546e22b3c86bfb6349f4b19a7c363f78c5b8",
+      "size": 15360
+    },
+    {
+      "family": "access",
+      "module": "filesystem",
+      "path": "lib/vlc/plugins/libfilesystem_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "39cbbe60b07759729501623bca386eeb6d0a7a9f6d0d9c58396202bcb241f081",
+      "size": 19456
+    },
+    {
+      "family": "access",
+      "module": "ftp",
+      "path": "lib/vlc/plugins/libftp_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "bfc90978102d8852cbc45a3d2ca0441f0cd842f297a3f876473c81ee56069311",
+      "size": 36352
+    },
+    {
+      "family": "access",
+      "module": "http",
+      "path": "lib/vlc/plugins/libhttp_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "8f2b64aa197e28b11c5122edcda2f956b8fdf5bb1bf9c4460a1dc1c0651e9da0",
+      "size": 27136
+    },
+    {
+      "family": "access",
+      "module": "sftp",
+      "path": "lib/vlc/plugins/libsftp_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "e342dc841684742140fdf5dfb41f2ccb7e860a079ffc51a85ad6ab2e00c9ed37",
+      "size": 151552
+    },
+    {
+      "family": "access",
+      "module": "tcp",
+      "path": "lib/vlc/plugins/libtcp_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "61e10b663caed92b2b5732a6b34ab6b0263db993ecafbfd1f210bcaa3ae1f4d4",
+      "size": 14336
+    },
+    {
+      "family": "access",
+      "module": "udp",
+      "path": "lib/vlc/plugins/libudp_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "65150f042761e95b6c51b3f7c6b57500c65f850b5d0e8621b8c76b6ace373b75",
+      "size": 17408
+    },
+    {
+      "family": "access/http",
+      "module": "https",
+      "path": "lib/vlc/plugins/libhttps_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "622a502e397b41fd07be52cf519de41b61b9eb5948e031d3a17e980a5dcb2028",
+      "size": 76288
+    },
+    {
+      "family": "access/http",
+      "module": "webdav",
+      "path": "lib/vlc/plugins/libwebdav_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "524846a5c46a4e27a2bbc8866bc72aeea43f45a74fd4ab64338e5befd22dd4b1",
+      "size": 74240
+    },
+    {
+      "family": "audio_filter",
+      "module": "audio_format",
+      "path": "lib/vlc/plugins/libaudio_format_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "291480b9ab29f6722c9f3b6b6bd65c3585a69a636ee2c6c845c84e3ea7af4d03",
+      "size": 23040
+    },
+    {
+      "family": "audio_filter",
+      "module": "simple_channel_mixer",
+      "path": "lib/vlc/plugins/libsimple_channel_mixer_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "89731b55b7423dfc623081b2cc77af899d589f4b7edda37941c4f05689ca3fca",
+      "size": 17920
+    },
+    {
+      "family": "audio_filter",
+      "module": "soxr",
+      "path": "lib/vlc/plugins/libsoxr_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "7701813f8ed8ca79284999105824cb0d6c73e89d71c1c153dcc19d5c15fe3a50",
+      "size": 676352
+    },
+    {
+      "family": "audio_filter",
+      "module": "speex_resampler",
+      "path": "lib/vlc/plugins/libspeex_resampler_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "b94b0e76ce8b2149ce518db69508de4e6241fbf217d8443ea5913c83932ac541",
+      "size": 28672
+    },
+    {
+      "family": "audio_filter",
+      "module": "tospdif",
+      "path": "lib/vlc/plugins/libtospdif_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "b8c5fddd67887d37f60fd07d0c87000570a9aabb6189a240d0e200fdd751273f",
+      "size": 30720
+    },
+    {
+      "family": "audio_filter",
+      "module": "trivial_channel_mixer",
+      "path": "lib/vlc/plugins/libtrivial_channel_mixer_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "3ec43b19230b572d71029957055e513c42a5e01099a2a870e27c0546bfa9d580",
+      "size": 18432
+    },
+    {
+      "family": "audio_mixer",
+      "module": "float_mixer",
+      "path": "lib/vlc/plugins/libfloat_mixer_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "e71436bf9168d289c28971b794445373cf1855f61cafb3c82c370d690e05c829",
+      "size": 14336
+    },
+    {
+      "family": "audio_mixer",
+      "module": "integer_mixer",
+      "path": "lib/vlc/plugins/libinteger_mixer_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "068cc8a9ec4e192d9367fa418524cead9f71ec597011fa91c5bb34cf7e27bdd0",
+      "size": 15360
+    },
+    {
+      "family": "audio_output",
+      "module": "adummy",
+      "path": "lib/vlc/plugins/libadummy_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "05271d9442c7c0acc5f990d0dbdafe47ff5658d4202b113417dc7cb4c4d6a7af",
+      "size": 14848
+    },
+    {
+      "family": "audio_output",
+      "module": "mmdevice",
+      "path": "lib/vlc/plugins/libmmdevice_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "87aaaa2f7e56accc90fba47b74fa5c9aedd65220551cc37ec17a22dc21ba75e1",
+      "size": 34816
+    },
+    {
+      "family": "audio_output",
+      "module": "wasapi",
+      "path": "lib/vlc/plugins/libwasapi_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "179669db56289fa2dd6f4fd2c824ddcf2634ff7f4579045ed2a3aeba83ccca2e",
+      "size": 25600
+    },
+    {
+      "family": "codec",
+      "module": "avcodec",
+      "path": "lib/vlc/plugins/libavcodec_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "8ed9633a5a69dabbe41b48501dcba0ca8888989079b8277e181934d5c0008c0a",
+      "size": 16689664
+    },
+    {
+      "family": "codec",
+      "module": "d3d11va",
+      "path": "lib/vlc/plugins/libd3d11va_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "989769d8f53940c34bd0e52bb7f363bef5b4fafd32bda3848a162aca8bbac807",
+      "size": 126976
+    },
+    {
+      "family": "codec",
+      "module": "flac",
+      "path": "lib/vlc/plugins/libflac_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "279c745ca9f0a47793c60a4fe0e8d1fdbd3512b0700013f284195605e2a7d6e8",
+      "size": 103424
+    },
+    {
+      "family": "codec",
+      "module": "jpeg",
+      "path": "lib/vlc/plugins/libjpeg_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "1fef514450e2849fc34818cc072a5868f36e83717f7cd760fee5cccd0ac617b3",
+      "size": 794624
+    },
+    {
+      "family": "codec",
+      "module": "libass",
+      "path": "lib/vlc/plugins/liblibass_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "cd2e7f718a0f2fe4da11b81fe28715bc8a7cba8baa70a7dcea7849c2df3d60c6",
+      "size": 1950720
+    },
+    {
+      "family": "codec",
+      "module": "mft",
+      "path": "lib/vlc/plugins/libmft_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "3f8ea616acec287ab5c4d80a8e8d049757ceb1b9cecb6374a51151825a7ee5db",
+      "size": 333312
+    },
+    {
+      "family": "codec",
+      "module": "opus",
+      "path": "lib/vlc/plugins/libopus_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "00ec60a0738f331c12de1f9237b3fe6f6a9f515be64bb19d06a520ec3c0e2600",
+      "size": 216064
+    },
+    {
+      "family": "codec",
+      "module": "png",
+      "path": "lib/vlc/plugins/libpng_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "8467da7a17f594b84197a160cb93e2298185eff635e0231d39622b5d2f43d770",
+      "size": 220672
+    },
+    {
+      "family": "codec",
+      "module": "rawvideo",
+      "path": "lib/vlc/plugins/librawvideo_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "b1ae961eea28ea08d5a03e44a21a30647163c66a84cb9e791a7d4391edfc712a",
+      "size": 16896
+    },
+    {
+      "family": "codec",
+      "module": "spdif",
+      "path": "lib/vlc/plugins/libspdif_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "1348f9184a40173f3a6253ce04369e29b6da1344d9c7566eab2bbeb6e6f1f5b5",
+      "size": 14336
+    },
+    {
+      "family": "codec",
+      "module": "subsdec",
+      "path": "lib/vlc/plugins/libsubsdec_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "b1a801ad608edf2be72e8229d6c8f472305c0ef4bd27e50dc8e91fcfb8726a46",
+      "size": 30720
+    },
+    {
+      "family": "codec",
+      "module": "substx3g",
+      "path": "lib/vlc/plugins/libsubstx3g_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "a857f2a39d0b46f44ba2de14650991d46b87251c29b01939b616ed6ceab305e5",
+      "size": 20992
+    },
+    {
+      "family": "codec",
+      "module": "vorbis",
+      "path": "lib/vlc/plugins/libvorbis_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "8a4db4ab3651002b672f93d6224b78d995e4833d2109859a62c044ac7f7b7cb8",
+      "size": 179200
+    },
+    {
+      "family": "codec",
+      "module": "webvtt",
+      "path": "lib/vlc/plugins/libwebvtt_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "a64df7ba023eac62281e3ced78f4a36d42656bc6612de87ebddfd04c27b235fb",
+      "size": 84992
+    },
+    {
+      "family": "demux",
+      "module": "adaptive",
+      "path": "lib/vlc/plugins/libadaptive_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "7d8936525b7554a3bb736f244b884ce43c5dac7a9fffd8479415ca4d5704aecb",
+      "size": 1996288
+    },
+    {
+      "family": "demux",
+      "module": "asf",
+      "path": "lib/vlc/plugins/libasf_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "f02baff9cb700a531d5ed69fd3b6527b77c7a824e4c95481d40a6bd7d7ab2214",
+      "size": 68608
+    },
+    {
+      "family": "demux",
+      "module": "avi",
+      "path": "lib/vlc/plugins/libavi_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "b997998c687f00bf4993f9e83b5621897de56e6569762ffa5836dcbb5ede36a1",
+      "size": 76288
+    },
+    {
+      "family": "demux",
+      "module": "es",
+      "path": "lib/vlc/plugins/libes_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "f6695ebf669ce38731f26f3938d1675d868c46bbb4894e55ac6e33c925ff0418",
+      "size": 50176
+    },
+    {
+      "family": "demux",
+      "module": "h26x",
+      "path": "lib/vlc/plugins/libh26x_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "68fa9a25998fbfbae63510acde747192a94f95b171c970e377663d4735398fb0",
+      "size": 43008
+    },
+    {
+      "family": "demux",
+      "module": "image",
+      "path": "lib/vlc/plugins/libimage_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "3d49fb8ba442726ba66d92a0ca303c54eade677280da370d24a588bf3cb58285",
+      "size": 25088
+    },
+    {
+      "family": "demux",
+      "module": "mkv",
+      "path": "lib/vlc/plugins/libmkv_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "ac39db53885f17124ae523789bc67b868e9989e17a7d8479c4e63bd1e5619bdf",
+      "size": 1145344
+    },
+    {
+      "family": "demux",
+      "module": "mp4",
+      "path": "lib/vlc/plugins/libmp4_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "c084525fb2adde196ebd7aa8e2ee17b7d3f08ebf189367d3f07fdb26bc4290a9",
+      "size": 266240
+    },
+    {
+      "family": "demux",
+      "module": "ogg",
+      "path": "lib/vlc/plugins/libogg_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "87c027e0a7ffa6ae3511613b151c3a8a0a38f35216a9427a9af9d6ea33245166",
+      "size": 204800
+    },
+    {
+      "family": "demux",
+      "module": "playlist",
+      "path": "lib/vlc/plugins/libplaylist_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "b1049911180d65321a3c3ffdf838745f0cc8daa0ce6febfbc96f5b42d3bcfa7f",
+      "size": 82944
+    },
+    {
+      "family": "demux",
+      "module": "ps",
+      "path": "lib/vlc/plugins/libps_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "efb970a8249e919d176d2daa99f1976686b3bef93abfc4dcb8553217b18e4899",
+      "size": 30720
+    },
+    {
+      "family": "demux",
+      "module": "subtitle",
+      "path": "lib/vlc/plugins/libsubtitle_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "afcdfebd778a60f887634650afa7355072cf5899074e10664cddec5edff6fc4d",
+      "size": 41984
+    },
+    {
+      "family": "demux",
+      "module": "ts",
+      "path": "lib/vlc/plugins/libts_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "da71f7b7415a7fe7d1fbd10d51bc87c6b0281ce7a6d52e915252e237cfe0f560",
+      "size": 233984
+    },
+    {
+      "family": "demux",
+      "module": "wav",
+      "path": "lib/vlc/plugins/libwav_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "1643c328ba6ad1551a5f4b60bc0861d8cf25929f0fd3dccf96f49e509f873e0c",
+      "size": 24576
+    },
+    {
+      "family": "hw/d3d11",
+      "module": "direct3d11_filters",
+      "path": "lib/vlc/plugins/libdirect3d11_filters_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "4a2803479e09f46b67770bc0da1a142db8d50c34cd5c0664c511eab315e93868",
+      "size": 286720
+    },
+    {
+      "family": "keystore",
+      "module": "memory_keystore",
+      "path": "lib/vlc/plugins/libmemory_keystore_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "eccb93fce4798a428d29d8200012bed4c213ae9bb4a6f59f207ef7b59f1d1dda",
+      "size": 16896
+    },
+    {
+      "family": "logger",
+      "module": "console_logger",
+      "path": "lib/vlc/plugins/libconsole_logger_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "ec2f05f6ce7e5fe748b0997911e0ee2745e70618cd98109067b906c19c2453aa",
+      "size": 15360
+    },
+    {
+      "family": "misc",
+      "module": "gnutls",
+      "path": "lib/vlc/plugins/libgnutls_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "4028646686e1105f7a6397f715ca1f312c8b5c636c55222f8d7aa2a06521be6c",
+      "size": 2092032
+    },
+    {
+      "family": "misc",
+      "module": "xml",
+      "path": "lib/vlc/plugins/libxml_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "8ee87676793339b6d2c649a813f7063abe5fcbbb0cde267a8dcbd45d24f39a79",
+      "size": 299520
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_a52",
+      "path": "lib/vlc/plugins/libpacketizer_a52_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "c2fbf0a6ed448e51efddaf59691292417d4aace86b7b5eeeca9b358ac5891a5b",
+      "size": 22528
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_av1",
+      "path": "lib/vlc/plugins/libpacketizer_av1_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "03918c1ede72b8d039d28f54d056f4691bbda5d0df8b010e06c40fed6ed34a1c",
+      "size": 40448
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_copy",
+      "path": "lib/vlc/plugins/libpacketizer_copy_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "103298500126dfe2e4f92948dc294c54ae87f9de9a4ef708afb9742f2c2b3265",
+      "size": 17408
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_dts",
+      "path": "lib/vlc/plugins/libpacketizer_dts_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "d986aa00400d7769b9cf4ea12d6c803f3e2df6f7d55db17dcb5cce3418ffae72",
+      "size": 26624
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_flac",
+      "path": "lib/vlc/plugins/libpacketizer_flac_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "3682f7121b3590e0e8e347c7461bcfa9280a85e7f1ebb9419cac84b312a92c76",
+      "size": 23040
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_h264",
+      "path": "lib/vlc/plugins/libpacketizer_h264_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "24ed6c1c796571b216bfba266e011d5c845f26eaba958fbfbc39f2df9ab9f29b",
+      "size": 69632
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_hevc",
+      "path": "lib/vlc/plugins/libpacketizer_hevc_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "f78f3c1c6bb71adfb8b97eaaa8e8b1793a86cf5d9cc494f5f5fc6b68b35c5870",
+      "size": 83456
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mjpeg",
+      "path": "lib/vlc/plugins/libpacketizer_mjpeg_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "f9aae6d7b17fb5b197847546f50935651a3a8f08425da485fcb55944e3b68d30",
+      "size": 18432
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mlp",
+      "path": "lib/vlc/plugins/libpacketizer_mlp_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "7c7e31ce33859ba826688835b830a8eb88bba3a2119fae978ea467db2f1bfa10",
+      "size": 25088
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mpeg4audio",
+      "path": "lib/vlc/plugins/libpacketizer_mpeg4audio_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "c57973403f33811175e88733350dce3c4e44f5e84f59e3f357f0716ad387b7a8",
+      "size": 46080
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mpeg4video",
+      "path": "lib/vlc/plugins/libpacketizer_mpeg4video_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "5389c5738720fed8e02e0791b2ab8f5afd1c679ebba644d4bc29d163eac201c7",
+      "size": 30208
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mpegaudio",
+      "path": "lib/vlc/plugins/libpacketizer_mpegaudio_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "5b163d09faa5f8cb40dc9fef3493c26a0433b66d9cf2c61804ef1e92e79717bb",
+      "size": 20480
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_mpegvideo",
+      "path": "lib/vlc/plugins/libpacketizer_mpegvideo_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "4984718dec1732ed19a859e5957b2da1a9f38f97a7f14fb73ce2cc660eff008e",
+      "size": 29184
+    },
+    {
+      "family": "packetizer",
+      "module": "packetizer_vc1",
+      "path": "lib/vlc/plugins/libpacketizer_vc1_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "ac40080cc4328830f97c183f75bd895efe04c69b9d8b15479bab5f1b8c3ed155",
+      "size": 35328
+    },
+    {
+      "family": "stream_filter",
+      "module": "cache_read",
+      "path": "lib/vlc/plugins/libcache_read_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "d40ad940758b8a428b6876588b49be718242a7dfa2521d00690954e14d301014",
+      "size": 18432
+    },
+    {
+      "family": "stream_filter",
+      "module": "inflate",
+      "path": "lib/vlc/plugins/libinflate_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "31de37ca8fc7f2039e6e70a10736b4e408a6c6a6acbfca7c07b3f7fd1545897f",
+      "size": 46592
+    },
+    {
+      "family": "stream_filter",
+      "module": "prefetch",
+      "path": "lib/vlc/plugins/libprefetch_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "0c7b4074f8f62b45bd0ea42355116f25acb1dbb9b824f26e40a137f159e2b637",
+      "size": 19456
+    },
+    {
+      "family": "stream_filter",
+      "module": "record",
+      "path": "lib/vlc/plugins/librecord_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "41f67290a013d1a20fa1d8d6e0de6fb37e2bba5be177195dd93e34e53a01ce10",
+      "size": 16384
+    },
+    {
+      "family": "stream_filter",
+      "module": "skiptags",
+      "path": "lib/vlc/plugins/libskiptags_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "4123e4fff68c471962c4df5e217cc4fc436790a8ea44cd8aa03b6bcae08910f6",
+      "size": 15872
+    },
+    {
+      "family": "text_renderer",
+      "module": "freetype",
+      "path": "lib/vlc/plugins/libfreetype_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "5a28a0b63ff8756049ab842822df873456165168245fa4f61a6b04e21e017678",
+      "size": 2250752
+    },
+    {
+      "family": "text_renderer",
+      "module": "tdummy",
+      "path": "lib/vlc/plugins/libtdummy_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "f87427d444973610397d571cbb0795610e3866841f95d750e3ce24f5d5f2c652",
+      "size": 13824
+    },
+    {
+      "family": "video_chroma",
+      "module": "chain",
+      "path": "lib/vlc/plugins/libchain_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "907ca6ab36e87647a219c229e42427909babf21828e3a25f4efb53b22aa8f265",
+      "size": 20480
+    },
+    {
+      "family": "video_chroma",
+      "module": "i420_nv12",
+      "path": "lib/vlc/plugins/libi420_nv12_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "6228bfcb1fc9a63e655689341a96b31c5c1baa942c89fc95e47c8648e845863b",
+      "size": 54784
+    },
+    {
+      "family": "video_chroma",
+      "module": "i420_rgb_sse2",
+      "path": "lib/vlc/plugins/libi420_rgb_sse2_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "a13119e74c16f84280953129efd57e3e5511d941488a6e6b923e64a063ad1ca2",
+      "size": 47616
+    },
+    {
+      "family": "video_chroma",
+      "module": "orient",
+      "path": "lib/vlc/plugins/liborient_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "8f7ef17b0183172d19436a0282e316a94a0576dc0652d422288cdb8e71ef25d9",
+      "size": 20480
+    },
+    {
+      "family": "video_chroma",
+      "module": "rv32",
+      "path": "lib/vlc/plugins/librv32_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "20db2c5cf1010e2334b6fa98c539fd8316e6dafb3b2f94ec21feadca08a07b4b",
+      "size": 15360
+    },
+    {
+      "family": "video_chroma",
+      "module": "swscale",
+      "path": "lib/vlc/plugins/libswscale_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "4ac51a580721b0db3ae13b24e828594cd93ccf5f19c8f3944dd3bcec1afd65e6",
+      "size": 1628160
+    },
+    {
+      "family": "video_chroma",
+      "module": "yuvp",
+      "path": "lib/vlc/plugins/libyuvp_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "f2eb7271854db8febaf7561d6de489d805420e6e8531bfc05da1ef96481fe6ae",
+      "size": 17920
+    },
+    {
+      "family": "video_chroma",
+      "module": "yuy2_i420",
+      "path": "lib/vlc/plugins/libyuy2_i420_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "4f6d2581ef312a3fa7eaabd50499c0da882facb21a6f9dd4bea2f8b9b7e9ab6b",
+      "size": 18944
+    },
+    {
+      "family": "video_chroma",
+      "module": "yuy2_i422",
+      "path": "lib/vlc/plugins/libyuy2_i422_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "e32fe7e00887eb7e9c53c79b95b35b18d77467853643db56723f0dc9bdf6bdd2",
+      "size": 17920
+    },
+    {
+      "family": "video_output",
+      "module": "vmem",
+      "path": "lib/vlc/plugins/libvmem_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "2f6e89b1d2d8e1e6df156d73317b8d7f4053518b3ad70640131272d512b9b5e3",
+      "size": 17408
+    },
+    {
+      "family": "video_output",
+      "module": "wdummy",
+      "path": "lib/vlc/plugins/libwdummy_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "cf4c22c35f56711f57800eaeee9717b0c56d86e3230b7c8d3527fcaf4cd783ac",
+      "size": 13824
+    },
+    {
+      "family": "video_output",
+      "module": "wextern",
+      "path": "lib/vlc/plugins/libwextern_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "046899ad78e208d14f96e3ee400d4e6a04c3ae0fe4ee005f34a0aa72e9075bb3",
+      "size": 14848
+    },
+    {
+      "family": "video_output/win32",
+      "module": "direct3d11",
+      "path": "lib/vlc/plugins/libdirect3d11_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "f8e27b3d099ce5e2f1253449c7d51ca1954061382d5e17eca49602284b3c3753",
+      "size": 349696
+    },
+    {
+      "family": "video_output/win32",
+      "module": "win32_window",
+      "path": "lib/vlc/plugins/libwin32_window_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "b3faf1f3c7013a182d42a2eb856643fade08f9f2589ebb08c16bc30b751fbcbe",
+      "size": 27136
+    },
+    {
+      "family": "video_output/win32",
+      "module": "winhibit",
+      "path": "lib/vlc/plugins/libwinhibit_plugin.dll",
+      "role": "PLUGIN",
+      "sha256": "a745dba2af30d083b29cd904183c9d429467daa42b138cdf7f7514ea95522d83",
+      "size": 14848
+    }
+  ],
+  "rawPluginCount": 381,
+  "reviewStatus": "pending-meson-dependency-audit",
+  "schemaVersion": 1,
+  "selectedPluginCount": 90,
+  "target": "windows-x86_64",
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810"
+}

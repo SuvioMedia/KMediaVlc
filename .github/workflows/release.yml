@@ -585,6 +585,8 @@ jobs:
             echo
             echo "- Audited KMediaVlc commit: \`$TESTED_COMMIT\`"
             echo "- Retained desktop runtime commit: \`$DESKTOP_RUNTIME_COMMIT\`"
+            echo "- VLC source commit: \`$VLC_REVISION\`"
+            echo "- Updated VLC includes transient HLS/DASH rebuffering and MKV/MP4 playback fixes."
             echo "- Desktop: Windows x64, Linux x64, Linux ARM64, macOS ARM64"
             echo "- Android: ARM64 and ARMv7 AAR with automatic GPL/AGPL/nonfree/unknown rejection"
             echo "- Maven: \`io.github.shusek:kmedia-vlc-runtime-desktop:$VERSION\`"

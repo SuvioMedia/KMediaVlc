@@ -54,30 +54,30 @@ cross-build; it is not the runtime test environment. The workflow retains
 separate seven-day artifacts for the reviewed corresponding source, native
 link metadata, exact tested runtime candidate, and native Windows test
 results. This workflow cannot create a tag, release, or Maven deployment.
-Standard hosted runners have no physical HDR display, so separate hardware
-HDR evidence remains mandatory.
+Hosted-runner approval records its executed CPU, HTTPS, and eligible GPU/HDR
+tests. Physical HDR display acceptance is separate and is not claimed by
+automatic source/runtime approval.
 Review its complete DLL/plugin inventory and upstream licenses before using
 any of those bytes as release inputs.
 
 Dispatch `Linux libVLC source validation` for the same exact commit. Both
 matrix jobs must complete on their native x64/ARM64 runners, retain the closed
 runtime inventory and contrib source inputs, and play a real CPU-pull frame.
-Policy approval additionally requires the separate physical render-node,
-DMA-BUF/fence, normal consumer, and VR-projection acceptance described in
-`docs/LINUX.md`.
+Physical render-node, DMA-BUF/fence, and VR-projection acceptance remain
+separate hardware/product checks described in `docs/LINUX.md`.
 
 Dispatch `macOS libVLC source audit` for that commit. It must retain the
 relocated ARM64 runtime, its Mach-O inventory, contrib source inputs, real
-CPU-pull playback, and real IOSurface-generation evidence. Policy approval also
-requires KMediaPlayer Metal consumption and representative physical-display
-acceptance described in `docs/MACOS.md`.
+CPU-pull playback, IOSurface-generation replacement, and FP16 HDR frame
+evidence. The source/runtime approval is retained separately from physical
+display and application-specific Metal acceptance described in `docs/MACOS.md`.
 
-Dispatch `Android libVLC source and HDR release audit` from `main` on a
-self-hosted Linux x64 runner labelled `kmediavlc-android-hdr` with exactly one
-authorized physical HDR Android device. That workflow builds both ABIs from
-the pinned sources, produces and independently reopens both source archives,
-builds the AAR, and requires all three physical MediaCodec/software/lifecycle/
-HDR tests. It cannot approve the SPDX review by itself.
+Dispatch `Fast Android libVLC release candidate` from `main` for the exact
+publication commit. It builds both ABIs from the pinned sources, checks static
+link maps and licenses, independently verifies both corresponding-source
+archives, promotes the legal evidence, and tests the resulting AAR. Real
+MediaCodec/software/lifecycle playback can additionally run on an isolated
+emulator; physical HDR acceptance remains a separate regression workflow.
 
 ## Android NDK source closure
 
@@ -99,7 +99,7 @@ Android publication requires all four properties together:
 Gradle repeats the independent Git-tree/blob verification before publication and attaches the
 archive with classifier `android-ndk-source`. This artifact supplements the complete Android
 `kmediaVlcAndroidCorrespondingSourceArchive`; it does not replace VLC, libvlcjni, contrib,
-KMediaVlc, and relinking sources. The legal manifest must still be explicitly approved and its NDK
+KMediaVlc, and relinking sources. The legal manifest must retain its accepted automatic scan state and its NDK
 component promoted to `corresponding-source-mapped` for the exact release inputs.
 
 ## Android complete corresponding source
@@ -192,13 +192,15 @@ tested KMediaVlc commit, and create a non-draft public GitHub release. RC
 versions are prereleases. Do not replace an asset after publishing the release;
 issue another version instead.
 
-After every source-built graph and physical gate has been reviewed, set the
-Windows, Linux, macOS, and Android policy review states to `approved`, commit
-the exact policies and notices, and rerun all four audits for that approved
-commit. Then dispatch **Create immutable multiplatform KMediaVlc release** with
+After every source-built desktop graph and hosted runtime test has passed,
+retain a new hash-bound source-license scan and platform evidence receipt.
+Set the six desktop policy review states to `approved` and retain Android's
+automatic license/source promotion evidence. Commit the exact policies,
+evidence, and notices, then rerun all four audits for that publication commit.
+Then dispatch **Create immutable multiplatform KMediaVlc release** with
 the version, exact commit, and the four successful audit run IDs. The workflow
 reopens every payload and source archive, assembles the complete desktop JAR,
-requires byte equality with the physically tested Android AAR, closes both
+requires byte equality with the tested Android AAR, closes both
 Maven coordinates, and creates the immutable tag and prerelease. It never
 guesses licenses or replaces an existing release.
 

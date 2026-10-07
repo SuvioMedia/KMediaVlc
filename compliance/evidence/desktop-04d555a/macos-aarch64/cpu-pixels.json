@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
+  "sourceAuditRunId": 37607784620,
+  "result": "passed",
+  "scope": "CPU-pull exact decoded pixels",
+  "syntheticImage": {
+    "width": 64,
+    "height": 36,
+    "rgb": "336699"
+  },
+  "decodedPixelFormat": "RGBA8_SRGB",
+  "expectedRgbMatches": true,
+  "testImplementationSha256": "0860741091cb863a7f02229e67bf9304fbc044b43fb3544b647e8b7f3613961c",
+  "playerResult": "AUDITED CANDIDATE PIXEL PASS: macos-aarch64, RGBA 64x36, decoded pixels verified"
+}

@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
+  "archiveCount": 25,
+  "archives": [
+    {
+      "archive": "dav1d-1.5.4.tar.xz",
+      "sha512": "75ab7c922bc9647d73534c9f6c95a514748557adbf7a4debf95eee52ef1db681012cbaad165a46141d904cdd01c1e6319cdea33d254afb5c6b3d968679e55b98",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "ffmpeg-9.0.tar.xz",
+      "sha512": "2e2fea606b290c306bdef13b4c8efb7a4b138ffa16f94f608f85877f5e7ca93980bda8219eeeed8343c463d302c7a2c46b14902ccbbe1e53483f9411b31b9c69",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "flac-1.5.0.tar.xz",
+      "sha512": "34c9193b804e990b0828a5759e4d7ef1d1859174262d3b305d03e65285edb35c7f429e8071d9dd2c6da0c16e842b40b439bf215704636ae15dd5886151f0d17a",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "freetype-2.14.3.tar.xz",
+      "sha512": "43de86ea70b4b47f6efaae67f3440f65a24ffac29dc6d11203a9764e4f1a749ce1ba7645acd23525220b3ba12ddad8687b962b9f1254e2c0a86070854e85d5a0",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "fribidi-1.0.16.tar.xz",
+      "sha512": "e3a56f36155f6813e3609473639fc533de742309f561c463012dc90b412a1ac7694b765d92669b2cbfaee973ca0e92fa5e926e68a1a078921f26ef17d82ab651",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "gmp-6.3.0.tar.xz",
+      "sha512": "e85a0dab5195889948a3462189f0e0598d331d3457612e2d3350799dba2e244316d256f8161df5219538eb003e4b5343f989aaa00f96321559063ed8c8f29fd2",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "gnutls-3.8.13.tar.xz",
+      "sha512": "71bf189a836fd18d58b9e995d4bfcecdb0aae6129dfd44247b98422b2f127dd868f9905d28fad2ca05afd919a0e6b3c8eebb6b95804067d3a8dab31ebdc72453",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "gsm-1.0-pl22.tar.gz",
+      "sha512": "f4284f096ed4d606ddece5c1b28edb63feacc26a0b664f1350c040dbf50113d27bedfd9896bf1620cb4fc3a6c8f6a5244955a6c625ded833dcee607c63c97dd2",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "harfbuzz-14.2.1.tar.xz",
+      "sha512": "481dca68900e57895d3671baf0595c2d3a26f4f08d0db5662e83089f0d0ff6dc0c28c64c2811eb0f812b0525ed428e90db44f091a88bef47ace2f97d8285b013",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "libass-0.17.5.tar.xz",
+      "sha512": "b9e06023e9f5760ba1946f8dbcd8c411908bc6c77030099098f8252edabd31c98a6523cffb7cccf7b62e12bb374d136600a98e29a7916ccc218100ff694bfb7c",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "libdvbpsi-1.3.3.tar.bz2",
+      "sha512": "70f9e783a947e026ea50afe98ad2b3bfce075bd8d76932f73a6253b077a3a180aa632e9a1fff20308e2f0f3f881d727b4e4aad9b8da2b384edf9a3a0f9eacc69",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "libebml-1.4.6.tar.xz",
+      "sha512": "86b469a1c1352e9ea6f581267ab8fc357575f2e410a3a732b12203575744667b152c135cf314978500d6a19fac4ef4015b89fdcfcca43f5bfc49f63e27ecbce2",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "libjpeg-turbo-3.1.4.1.tar.gz",
+      "sha512": "d82c2c2bd8abb1b88a245cece407a4cf65c378003e105a99a20ae4e7e3a7282b64874c3e7d8c003e83b43c990d43f860066e6ac57c143f8b3b9732d6bca7d94a",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "libmatroska-1.7.2.tar.xz",
+      "sha512": "86b21a0ff3e5149a2824a9f21f9460179d02aecf477f2b9f1f92ce2f991033bd0cb209d81a4aeee2c0c5ffc193dac57a84dd4f529939b12c900f2cfb881618fb",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "libogg-1.3.6.tar.xz",
+      "sha512": "2168548e57e23fadca4aa66351214b23d699bc3aa47f5d065f8b583a3fe85c99333014a6aa38e4021b0e3750115b88258a6c00cac1e1496cdee5f12cdc633814",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "libpng-1.6.58.tar.xz",
+      "sha512": "5937d6409d7ad564c9dba7969c5d39eea8bbc01936f433bf5936c872ec290dea353783f89bded91e124b3b3b15518320097de365acd3b0bcc922a0e90c94adc8",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "libvorbis-1.3.7.tar.xz",
+      "sha512": "bbf5f11f623d959b3ba98d6b52806521b0b918b59b867f0658c153ea1013293364eead4987e9e71f8798021379310860a2e548fcf89d10caf23d45e41aba45cd",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "libvpx-1.17.0.tar.gz",
+      "sha512": "be98d1b913575e538fefefe657c9944df85118fe2d0558361495a72c75ac6a2251048cb645fca49e60d6941c823a923f31d4ebc4de9b778008c267c42805b339",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "libxml2-2.15.3.tar.xz",
+      "sha512": "6f7f1aabd012454553e851bd1ee548fbd14d21c576f2b2ab9eeedab3dfba51392083f74b34f060e9b538baeea212cdb462b8669c214c711771fb9a897fdc1c60",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "nettle-3.10.2.tar.gz",
+      "sha512": "bf37ddd7dca8e78488da2a5286dcf16761d527d620572b42f2ad27bb8ee8c12999d92b0272e06f53766e7155a3f4a1ab7ad9c4b1c3caec47c031878b6b1772fb",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "openjpeg-2.5.4.tar.gz",
+      "sha512": "702a10e20caaf8209684ded7c9fcf32f5ba6a972cf2d9fcf2611cdc6a446d2c3bb60324205758e6b6f92278c8cf4ef0fbae511e6ffb45ed6e8df514db0c6ab25",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "opus-1.6.1.tar.gz",
+      "sha512": "93742e86b2eb222808a5055e62627d142e6e7347b3d5aebb4d39b45df78ed7d437746c51eb24d724a7c865d064e9d16f4541a4ce6a82fcf7dcc23427d2252e16",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "soxr-0.1.3-Source.tar.xz",
+      "sha512": "f4883ed298d5650399283238aac3dbe78d605b988246bea51fa343d4a8ce5ce97c6e143f6c3f50a3ff81795d9c19e7a07217c586d4020f6ced102aceac46aaa8",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "utfcpp-3.2.5.tar.gz",
+      "sha512": "1ce12c8158a2f3bcddec104ceacedaea4031b4c88fc0fa1f1fae8dfa8df81c846861df9d01e8f294d79b9e4ab8c51bd1289f404eed24d07abc760688fee13090",
+      "matchesPinnedUpstream": true
+    },
+    {
+      "archive": "zlib-1.3.2.tar.xz",
+      "sha512": "cf3d49fbabddc57cca99858feeca8f910e9de42a16014cddd406814d2d24ee33fee2af3805d7efbb1b04b05f55818092b000daf82502b675df65f2512c353f73",
+      "matchesPinnedUpstream": true
+    }
+  ]
+}

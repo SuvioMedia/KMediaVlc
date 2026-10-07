@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
+  "sourceAuditRunId": 37607784620,
+  "result": "passed",
+  "segmentCount": 12,
+  "segmentSeconds": 2,
+  "delayedSegment": 8,
+  "delaySeconds": 25,
+  "delayedSegmentRequested": true,
+  "segmentsRequested": 12,
+  "playerResult": "HLS PASS frames=622 ptsRangeMs=23150 ptsStallMs=11988 midstreamBuffering=1 states=[IDLE, OPENING, BUFFERING, PLAYING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, BUFFERING, PLAYING, BUFFERING, PLAYING, ENDED]",
+  "frames": 622,
+  "ptsRangeMs": 23150,
+  "ptsStallMs": 11988,
+  "midstreamBuffering": 1,
+  "testImplementationSha256": "999b14c3dc1bdf2a4e51407b260a8086d8e90e61193997994466029000410632",
+  "serverImplementationSha256": "771c956378e25a366a134cad44af3a94a73ee132359c8e1518a75418299727d8",
+  "fixture": {
+    "source": "synthetic testsrc pattern; no external media",
+    "generator": "FFmpeg 7.1; imageio-ffmpeg 0.6.0; temporary fixture tool only",
+    "encoding": "H.264/yuv420p, 160x90, 10 fps, two-second GOPs and HLS segments",
+    "durationSeconds": 24,
+    "segmentSha256": {
+      "segment-0.ts": "b66ead4d9250ab7f019124590c1587fe250c2be1929bc53194f8975ee6217812",
+      "segment-1.ts": "d0534432b8677e851bb1567844de9098da437589fc737a857f8ede4d45059d24",
+      "segment-10.ts": "a24045f4675239b5b660daee5115da9a9474b8af717f8a982fd89f2f1854f2bd",
+      "segment-11.ts": "53022183624f35af9c48e3723c56fd5dcba3561c2b14a7af82b05ee20990dc79",
+      "segment-2.ts": "f99d6c93442c45fcbbfabede6e6b037cf2535f2ae1ed5060174c337995dc8c30",
+      "segment-3.ts": "5365b0af81fefd389a57038bbc00d39028055a8c34b5f8c71df2a73a9028e74b",
+      "segment-4.ts": "40d2f8f77033f452c9a4540478f3881137f4f0dd49144c909933f906c707ea34",
+      "segment-5.ts": "2bb63bb759f9cad7d42cfc09291ff806217ef4879038582071abaf65e0ca86ae",
+      "segment-6.ts": "9f2612d7b3f9ae4a474eceef520691097e2f1426153296b55ce24b0af5caa622",
+      "segment-7.ts": "131c316b4a21c08433e417f3fc2b5871dda9f10ec0c91713177741247e756604",
+      "segment-8.ts": "c1f3756ccfcf02e91cccf4e78bf773f691ecf86ea59e138a4b4116f17773d816",
+      "segment-9.ts": "8f58fdfc5a1d489ae3d36e588074f619d07a04b53fa67ee95bf9fc629762ad2c"
+    }
+  }
+}

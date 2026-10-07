@@ -8,6 +8,7 @@ import binascii
 import hashlib
 import json
 import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
@@ -19,6 +20,25 @@ DESKTOP_AUDIT_EXECUTION_COMMIT = "afa5f0f794cb2916a8be946eb1a8baa3f7aa9198"
 DESKTOP_AUDIT_BASELINE_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
 DESKTOP_AUDIT_ACCEPTANCE_SHA256 = (
     "0a3d250ce98069be28375dd23da7f4150d2fb247d0a8c9ed379bb8d456fb5a4c"
+)
+CURRENT_DESKTOP_AUDIT_ACCEPTANCE_SHA256 = "3d0ce292001da3f1d505d6b7a5f9122beb1fd0d6113d61bc4a0649be5b20a1d4"
+CURRENT_DESKTOP_BUILD_INPUTS = (
+    ".github/workflows/native-audit.yml", ".github/workflows/linux-source-audit.yml",
+    ".github/workflows/macos-source-audit.yml",
+    "build-recipes/patches/vlc-meson-core-library.patch",
+    "scripts/build_vlc_windows.sh", "scripts/build_vlc_linux.sh", "scripts/build_vlc_macos.sh",
+    "scripts/select_apple_build_make.sh",
+    "scripts/stage_vlc_windows_runtime.py", "scripts/stage_vlc_linux_runtime.py",
+    "scripts/stage_vlc_macos_runtime.py",
+    "scripts/create_windows_native_inventory.py", "scripts/create_posix_native_inventory.py",
+    "scripts/audit_vlc_desktop_sources.py",
+    "native/CMakeLists.txt",
+    "native/include/kmediavlc_client.h",
+    "native/src/bridge_internal.hpp", "native/src/kmediavlc_bridge.cpp",
+    "native/src/kmediavlc_jni.cpp", "native/src/linux_dmabuf_inspector.cpp",
+    "native/src/linux_dmabuf_inspector.hpp", "native/src/linux_dmabuf_renderer.cpp",
+    "native/src/macos_iosurface_renderer.cpp", "native/src/platform_renderer_stub.cpp",
+    "native/src/windows_d3d11_renderer.cpp",
 )
 ALLOWED_LICENSES = {
     "0BSD",
@@ -229,8 +249,8 @@ def verify_policy(root: Path) -> None:
         fail("Windows playback allowlist contains a forbidden plugin family.")
     expected_additional = {
         "mkv": ["MIT"],
-        "opus": ["BSD-3-Clause"],
-        "ts": ["BSD-3-Clause"],
+        "opus": ["BSD-2-Clause"],
+        "ts": ["BSD-2-Clause"],
     }
     if playback.get("additionalDirectSourceLicenses") != expected_additional:
         fail("Windows playback direct-source license exceptions changed without review.")
@@ -492,13 +512,17 @@ def verify_desktop_retained_audit(root: Path) -> None:
     if policy != expected_policy:
         fail("The retained desktop audit policy is not closed.")
 
+    needs_current_evidence = False
     for relative in approved_policy_files:
         current_policy = load_json(root / relative)
         if current_policy.get("vlcRevision") == DESKTOP_AUDIT_REVISION:
             if current_policy.get("reviewStatus") != "approved":
                 fail(f"The retained desktop audit no longer approves its policy: {relative}")
         elif current_policy.get("reviewStatus") == "approved":
-            fail(f"A newer VLC revision cannot inherit the retained desktop approval: {relative}")
+            needs_current_evidence = True
+
+    if needs_current_evidence:
+        verify_current_desktop_audit(root, approved_policy_files)
 
     acceptance_path = root / policy["evidence"]["acceptancePath"]
     if (
@@ -543,6 +567,132 @@ def verify_desktop_retained_audit(root: Path) -> None:
         tests = evidence.get("tests", {}) if isinstance(evidence, dict) else {}
         if evidence.get("runId") != run_id or tests.get("failures") != 0:
             fail(f"The retained desktop platform evidence is invalid: {target}")
+
+
+def verify_current_desktop_audit(root: Path, approved_policy_files: list[str]) -> None:
+    prefix = "compliance/evidence/desktop-04d555a/"
+    acceptance_path = root / prefix / "acceptance.json"
+    if not acceptance_path.is_file() or acceptance_path.is_symlink():
+        fail("A newer VLC revision cannot inherit the retained desktop approval without new evidence.")
+    if hashlib.sha256(acceptance_path.read_bytes()).hexdigest() != CURRENT_DESKTOP_AUDIT_ACCEPTANCE_SHA256:
+        fail("The current desktop audit evidence bytes changed.")
+    acceptance = load_json(acceptance_path)
+    if (
+        acceptance.get("schemaVersion") != 1
+        or acceptance.get("decision") != "approved-automatic-source-license-and-hosted-runtime-audit"
+        or acceptance.get("vlcRevision") != PINNED_REVISION
+        or acceptance.get("vlcBaselineRevision") != DESKTOP_AUDIT_REVISION
+        or acceptance.get("approvedPolicyFiles") != approved_policy_files
+        or acceptance.get("physicalHdrDisplayOutput") != "not-claimed-by-this-approval"
+    ):
+        fail("The current desktop audit identity or scope is invalid.")
+    policy_hashes = acceptance.get("policySha256", {})
+    if set(policy_hashes) != set(approved_policy_files):
+        fail("The current desktop approval does not bind every policy.")
+    for relative in approved_policy_files:
+        policy = load_json(root / relative)
+        if policy.get("vlcRevision") != PINNED_REVISION or policy.get("reviewStatus") != "approved":
+            fail("The current desktop approval requires the entire approved policy matrix.")
+        encoded = json.dumps(
+            {key: value for key, value in policy.items() if key != "reviewStatus"},
+            sort_keys=True, separators=(",", ":"),
+        ).encode("utf-8")
+        if hashlib.sha256(encoded).hexdigest() != policy_hashes[relative]:
+            fail(f"The current desktop audit policy content changed: {relative}")
+    recipe_hashes = acceptance.get("recipeSha256", {})
+    if set(recipe_hashes) != {"build-recipes/windows.json", "build-recipes/linux.json", "build-recipes/macos.json"}:
+        fail("The current desktop approval does not bind every source recipe.")
+    for relative, expected in recipe_hashes.items():
+        if hashlib.sha256((root / relative).read_bytes()).hexdigest() != expected:
+            fail(f"The current desktop audit source recipe changed: {relative}")
+    build_hashes = acceptance.get("buildInputSha256", {})
+    if set(build_hashes) != set(CURRENT_DESKTOP_BUILD_INPUTS):
+        fail("The current desktop approval does not bind the native build inputs.")
+    for relative, expected in build_hashes.items():
+        if hashlib.sha256((root / relative).read_bytes()).hexdigest() != expected:
+            fail(f"The current desktop audit native build input changed: {relative}")
+
+    def evidence_file(entry: dict) -> Path:
+        relative = entry.get("path", "")
+        if not isinstance(relative, str) or not relative.startswith(prefix) or any(
+            part in {"", ".", ".."} for part in relative.split("/")
+        ):
+            fail("The current desktop audit evidence path is unsafe.")
+        path = root / relative
+        if path.is_symlink() or not path.is_file():
+            fail("The current desktop audit evidence file is missing or symbolic.")
+        try:
+            path.resolve(strict=True).relative_to((root / prefix).resolve(strict=True))
+        except (OSError, ValueError):
+            fail("The current desktop audit evidence file escapes its root.")
+        if hashlib.sha256(path.read_bytes()).hexdigest() != entry.get("sha256"):
+            fail(f"The current desktop audit evidence file changed: {relative}")
+        return path
+
+    source_scan = load_json(evidence_file(acceptance.get("sourceLicenseScan", {})))
+    for entry in acceptance.get("supplementalEvidence", {}).values():
+        evidence_file(entry)
+    source_files = source_scan.get("files", [])
+    if (
+        source_scan.get("vlcRevision") != PINNED_REVISION
+        or source_scan.get("baselineRevision") != DESKTOP_AUDIT_REVISION
+        or source_scan.get("scope") != "conservative-selected-modules-and-library-source-closure"
+        or source_scan.get("unresolvedModuleCount") != 0
+        or source_scan.get("forbiddenLicenseDetected") is not False
+        or source_scan.get("moduleCounts") != {"windows-x86_64": 90, "linux": 85, "macos-aarch64": 90}
+        or source_scan.get("sourceFileCount") != len(source_files)
+        or len(source_files) < 500
+        or len({entry.get("path") for entry in source_files}) != len(source_files)
+        or any(entry.get("licenseSpdx") not in ALLOWED_LICENSES | {"LicenseRef-Public-Domain"} for entry in source_files)
+    ):
+        fail("The current desktop source-license scan is incomplete or forbidden.")
+    expected_tests = {
+        "linux-aarch64": {"pinnedVideoLanFixturePublishesCpuPullFrame()"},
+        "linux-x86_64": {"pinnedVideoLanFixturePublishesCpuPullFrame()"},
+        "macos-aarch64": {
+            "pinnedVideoLanFixturePublishesCpuPullFrame()",
+            "pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames()",
+            "pinnedHdr10FixturePublishesFp16MacIosurfaceFrame()",
+        },
+        "windows-x86_64": {
+            "loadsBridgeBuiltAgainstPinnedLibVlcHeaders()",
+            "pinnedVideoLanFixturePublishesCpuPullFrame()",
+            "pinnedChromiumHttpsFixturePublishesCpuPullFrame()",
+        },
+    }
+    platforms = acceptance.get("platforms", {})
+    if set(platforms) != set(expected_tests):
+        fail("The current desktop platform evidence matrix is incomplete.")
+    for target, required in expected_tests.items():
+        platform = platforms[target]
+        if (
+            platform.get("conclusion") != "success"
+            or not isinstance(platform.get("runId"), int)
+            or platform["runId"] <= 0
+            or not re.fullmatch(r"[0-9a-f]{40}", platform.get("testedCommit", ""))
+        ):
+            fail(f"The current desktop source audit did not succeed: {target}")
+        entries = platform.get("evidence", {})
+        if not {"audit", "inventory", "tests", "sourceInputs", "sourceVerification"}.issubset(entries):
+            fail(f"The current desktop source audit lacks retained inputs: {target}")
+        paths = {key: evidence_file(entry) for key, entry in entries.items()}
+        audit = load_json(paths["audit"])
+        inventory = load_json(paths["inventory"])
+        if (
+            audit.get("target") != target
+            or audit.get("vlcRevision") != PINNED_REVISION
+            or audit.get("selectedPluginCount") != (85 if target.startswith("linux-") else 90)
+            or inventory.get("target") != target
+            or inventory.get("libvlcRevision") != PINNED_REVISION
+            or inventory.get("gplComponents") is not False
+            or inventory.get("nonfreeComponents") is not False
+        ):
+            fail(f"The current desktop runtime inventory is invalid: {target}")
+        suites = ET.parse(paths["tests"]).getroot()
+        cases = list(suites.iter("testcase"))
+        successful = {case.get("name") for case in cases if all(case.find(marker) is None for marker in ("skipped", "failure", "error"))}
+        if not required.issubset(successful) or any(case.find("failure") is not None or case.find("error") is not None for case in cases):
+            fail(f"The current desktop native playback tests did not execute successfully: {target}")
 
 
 def verify_pin_occurrences(root: Path) -> None:
@@ -1542,8 +1692,8 @@ def verify_macos_transport_contract(root: Path) -> None:
         fail("macOS playback allowlist must contain its 90 unique transport modules.")
     expected_additional = {
         "mkv": ["MIT"],
-        "opus": ["BSD-3-Clause"],
-        "ts": ["BSD-3-Clause"],
+        "opus": ["BSD-2-Clause"],
+        "ts": ["BSD-2-Clause"],
     }
     if playback.get("additionalDirectSourceLicenses") != expected_additional:
         fail("macOS playback direct-source license exceptions changed without review.")
@@ -1558,9 +1708,9 @@ def verify_macos_transport_contract(root: Path) -> None:
     ):
         fail("macOS binary component policy has an unsupported identity.")
     expected_toolchain = {
-        "xcodeVersion": "26.6",
-        "xcodeBuild": "17F113",
-        "sdkVersion": "26.5",
+        "xcodeVersion": "16.4",
+        "xcodeBuild": "16F6",
+        "sdkVersion": "15.5",
         "minimumMacos": "14.0",
         "architecture": "arm64",
     }
@@ -1950,8 +2100,8 @@ def verify_macos_transport_contract(root: Path) -> None:
         or "Set.of(VlcRenderEngine.OPENGL)" not in parser
         or 'return "macos-aarch64"' not in runtime
         or '"macos-aarch64": {"engine": "OPENGL", "hdr10": True}' not in inventory
-        or "not a published" not in documentation
-        or "Publication gates still open" not in documentation
+        or "compliance/evidence/desktop-04d555a/acceptance.json" not in documentation
+        or "Publication checks" not in documentation
     ):
         fail("The macOS target must remain exact-engine and publication-fail-closed.")
 
@@ -2018,8 +2168,8 @@ def verify_ios_runtime_contract(root: Path) -> None:
         fail("iOS playback allowlist must contain its 84 unique CPU-pull modules.")
     expected_additional = {
         "mkv": ["MIT"],
-        "opus": ["BSD-3-Clause"],
-        "ts": ["BSD-3-Clause"],
+        "opus": ["BSD-2-Clause"],
+        "ts": ["BSD-2-Clause"],
     }
     if playback.get("additionalDirectSourceLicenses") != expected_additional:
         fail("iOS playback direct-source license exceptions changed without review.")
@@ -2443,8 +2593,8 @@ def verify_linux_runtime_contract(root: Path) -> None:
         fail("Linux playback allowlist must contain its 85 unique platform modules.")
     expected_additional = {
         "mkv": ["MIT"],
-        "opus": ["BSD-3-Clause"],
-        "ts": ["BSD-3-Clause"],
+        "opus": ["BSD-2-Clause"],
+        "ts": ["BSD-2-Clause"],
     }
     if playback.get("additionalDirectSourceLicenses") != expected_additional:
         fail("Linux playback direct-source license exceptions changed without review.")
@@ -2963,6 +3113,15 @@ def verify_legal_files(root: Path) -> None:
         or "`LICENSES/VLC-Jaro-Winkler-MIT.txt`" not in notices
     ):
         fail("Third-party notices omit the MIT-licensed VLC core source.")
+    opus_header_notice = root / "LICENSES/VLC-Opus-Header-BSD-2-Clause.txt"
+    if (
+        not opus_header_notice.is_file()
+        or opus_header_notice.is_symlink()
+        or "LICENSES/VLC-Opus-Header-BSD-2-Clause.txt" not in notices
+        or "BSD-2-Clause" not in notices
+        or "Copyright (C)2012 Xiph.Org Foundation" not in opus_header_notice.read_text(encoding="utf-8")
+    ):
+        fail("Third-party notices omit VLC's BSD-2-Clause Opus header parser.")
     for component_id, component in components.items():
         licenses = " AND ".join(component["licenseSpdx"])
         row = f"| {component_id} | {component['version']} | {licenses} |"

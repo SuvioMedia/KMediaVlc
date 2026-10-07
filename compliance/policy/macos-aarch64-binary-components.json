@@ -3,13 +3,13 @@
   "target": "macos-aarch64",
   "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
   "toolchain": {
-    "xcodeVersion": "26.6",
-    "xcodeBuild": "17F113",
-    "sdkVersion": "26.5",
+    "xcodeVersion": "16.4",
+    "xcodeBuild": "16F6",
+    "sdkVersion": "15.5",
     "minimumMacos": "14.0",
     "architecture": "arm64"
   },
-  "reviewStatus": "pending-link-command-and-license-audit",
+  "reviewStatus": "approved",
   "buildOnlyContribPackages": ["jinja", "markupsafe"],
   "components": {
     "dav1d": {
@@ -181,7 +181,7 @@
   },
   "moduleAdditionalLicenses": {
     "mkv": ["MIT"],
-    "opus": ["BSD-3-Clause"],
-    "ts": ["BSD-3-Clause"]
+    "opus": ["BSD-2-Clause"],
+    "ts": ["BSD-2-Clause"]
   }
 }
