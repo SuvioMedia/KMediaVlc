@@ -48,6 +48,7 @@ actual_ndk_revision="$(sed -n 's/^Pkg.Revision = //p' "$ndk_directory/source.pro
     fail "Android NDK differs from $expected_ndk_revision"
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+source "$project_root/scripts/select_apple_build_make.sh"
 archive_prefetcher="$project_root/scripts/prefetch_vlc_archive.py"
 libvlcjni_patch_file="$project_root/patches/libvlcjni/0001-kmediavlc-android-static-module-policy.patch"
 vlc_patch_file="$project_root/patches/vlc/0001-android-external-anw-direct-mediacodec.patch"
