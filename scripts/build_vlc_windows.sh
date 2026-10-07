@@ -74,6 +74,7 @@ cd "$source_directory"
     -z \
     -g l \
     -m \
+    -o / \
     -a "$architecture"
 
 # A headless build intentionally leaves installation to this closed packaging
@@ -93,6 +94,10 @@ if [[ ! -x "$meson_executable" ]]; then
     echo "VLC bundled Meson is missing: $meson_executable" >&2
     exit 1
 fi
+# Upstream defaults to an absolute build-tree prefix, which --destdir would
+# preserve below the output directory. Reset cached configurations as well as
+# fresh builds so the runtime DLLs and plugins install directly at the root.
+"$meson_executable" configure "$meson_build_directory" -Dprefix=/
 "$meson_executable" install \
     -C "$meson_build_directory" \
     --destdir "$output_directory" \
