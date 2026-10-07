@@ -138,7 +138,10 @@ jobs:
         run: |
           set -euo pipefail
           install="$RUNNER_TEMP/vlc-linux-build/vlc-${{ matrix.target }}"
-          test -f "$install/lib/libvlc.so"
+          test -f "$install/lib/libvlc.so.12.0.0"
+          test ! -L "$install/lib/libvlc.so.12.0.0"
+          test -L "$install/lib/libvlc.so.12"
+          test "$(readlink "$install/lib/libvlc.so.12")" = libvlc.so.12.0.0
           test -f "$install/lib/libvlccore.so.9.0.0"
           test -L "$install/lib/libvlccore.so.9"
           test "$(readlink "$install/lib/libvlccore.so.9")" = libvlccore.so.9.0.0
