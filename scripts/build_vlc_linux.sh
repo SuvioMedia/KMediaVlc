@@ -120,9 +120,13 @@ mkdir "$tools_directory" "$contrib_build_directory"
 # Build the exact helper-tool graph recorded by the pinned VLC checkout. In
 # particular, this supplies Meson 1.12.0 even when the host distribution ships
 # another version. The source checkout remains the authority for tool hashes.
-make -C "$source_directory/extras/tools" \
-    -f "$source_directory/extras/tools/tools.mak" \
-    TOOLS="$source_directory/extras/tools" \
+# Bootstrap records both available host tools and transitive helper targets,
+# including Ninja's CMake prerequisite in this upstream revision.
+(
+    cd "$tools_directory"
+    "$source_directory/extras/tools/bootstrap"
+)
+make -C "$tools_directory" \
     PREFIX="$tools_directory" \
     -j"$jobs" \
     .buildmeson .buildninja

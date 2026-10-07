@@ -33,6 +33,10 @@ The current source-build candidate pins VideoLAN commit
 source/link approvals must be rebuilt for this revision. Retained runtime
 evidence applies only to the source revision recorded in each report.
 
+Apple-hosted VLC source recipes require Homebrew GNU Make 4.4 or newer
+(`brew install make`). They select its FIFO jobserver so parallel Make and
+Ninja builds share a compatible job pool.
+
 ## License and private-consumer boundary
 
 KMediaVlc's project-authored runtime clients, native bridges, build recipes,

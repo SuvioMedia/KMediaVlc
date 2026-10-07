@@ -104,6 +104,9 @@ jobs:
           sdkmanager "platforms;android-36" "build-tools;36.0.0" \
             "ndk;29.0.14206865" "cmake;4.1.2"
 
+      - name: Install GNU Make with a FIFO jobserver
+        run: brew install make
+
       - name: Build, scan, and promote both Android ABIs
         shell: bash
         run: |
