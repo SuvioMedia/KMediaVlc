@@ -21,7 +21,7 @@ DESKTOP_AUDIT_BASELINE_REVISION = "b5536cdea24b313ba9215eacfbd7fa3295d7f3ee"
 DESKTOP_AUDIT_ACCEPTANCE_SHA256 = (
     "0a3d250ce98069be28375dd23da7f4150d2fb247d0a8c9ed379bb8d456fb5a4c"
 )
-CURRENT_DESKTOP_AUDIT_ACCEPTANCE_SHA256 = "3d0ce292001da3f1d505d6b7a5f9122beb1fd0d6113d61bc4a0649be5b20a1d4"
+CURRENT_DESKTOP_AUDIT_ACCEPTANCE_SHA256 = "ae480f5a40b9f8b4a5e503d9872d25694ac59c9fcf5bf51e0793bea08f8c7c12"
 CURRENT_DESKTOP_BUILD_INPUTS = (
     ".github/workflows/native-audit.yml", ".github/workflows/linux-source-audit.yml",
     ".github/workflows/macos-source-audit.yml",

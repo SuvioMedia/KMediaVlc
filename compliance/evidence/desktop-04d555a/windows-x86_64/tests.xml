@@ -1,25 +1,29 @@
 <?xml version='1.0' encoding='utf-8'?>
-<testsuites><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.LatestFrameTransportTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:58:48.446Z" time="0.049">
+<testsuites><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.LatestFrameTransportTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-08T00:53:19.746Z" hostname="runnervmdlhio" time="0.244">
   <properties />
-  <testcase name="notificationDoesNotTransferOwnership()" classname="io.github.shusek.kmediavlc.runtime.desktop.LatestFrameTransportTest" time="0.022" />
-  <testcase name="skippedAndPendingFramesAreReleasedExactlyOnce()" classname="io.github.shusek.kmediavlc.runtime.desktop.LatestFrameTransportTest" time="0.001" />
-  <testcase name="transportHasOneConsumerAndContainsListenerFailures()" classname="io.github.shusek.kmediavlc.runtime.desktop.LatestFrameTransportTest" time="0.004" />
-  <testcase name="postClosePublicationIsRejectedAndReleased()" classname="io.github.shusek.kmediavlc.runtime.desktop.LatestFrameTransportTest" time="0.001" />
-  </testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.NativeBridgeSmokeTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:58:48.497Z" time="0.007">
+  <testcase name="notificationDoesNotTransferOwnership()" classname="io.github.shusek.kmediavlc.runtime.desktop.LatestFrameTransportTest" time="0.126" />
+  <testcase name="skippedAndPendingFramesAreReleasedExactlyOnce()" classname="io.github.shusek.kmediavlc.runtime.desktop.LatestFrameTransportTest" time="0.004" />
+  <testcase name="transportHasOneConsumerAndContainsListenerFailures()" classname="io.github.shusek.kmediavlc.runtime.desktop.LatestFrameTransportTest" time="0.026" />
+  <testcase name="postClosePublicationIsRejectedAndReleased()" classname="io.github.shusek.kmediavlc.runtime.desktop.LatestFrameTransportTest" time="0.036" />
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.NativeBridgeSmokeTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-08T00:53:20.035Z" hostname="runnervmdlhio" time="0.026">
   <properties />
-  <testcase name="loadsBridgeBuiltAgainstPinnedLibVlcHeaders()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativeBridgeSmokeTest" time="0.005" />
-  </testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" tests="10" skipped="1" failures="0" errors="0" timestamp="2026-10-07T12:58:48.505Z" time="0.052">
+  <testcase name="loadsBridgeBuiltAgainstPinnedLibVlcHeaders()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativeBridgeSmokeTest" time="0.024" />
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" tests="10" skipped="1" failures="0" errors="0" timestamp="2026-10-08T00:53:20.062Z" hostname="runnervmdlhio" time="0.091">
   <properties />
-  <testcase name="acceptsOnlyCanonicalAllowedLicenseConjunctions()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.017" />
-  <testcase name="acceptsOnlyTheClosedExtensionlessChecksumFile()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.004" />
-  <testcase name="rejectsRecipeRevisionThatIsNotAnExactLowercaseCommit()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.001" />
-  <testcase name="acceptsPinnedMacOsOpenGlIosurfacePayload()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.004" />
+  <testcase name="acceptsOnlyCanonicalAllowedLicenseConjunctions()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.041" />
+  <testcase name="acceptsOnlyTheClosedExtensionlessChecksumFile()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.006" />
+  <testcase name="rejectsRecipeRevisionThatIsNotAnExactLowercaseCommit()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.002" />
+  <testcase name="acceptsPinnedMacOsOpenGlIosurfacePayload()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.005" />
   <testcase name="acceptsCanonicalCc0LicenseUsedByMacOsGpuPayload()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.002" />
-  <testcase name="acceptsPinnedLinuxGles2DmaBufPayloads()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.003" />
-  <testcase name="acceptsPinnedGpuPushAndCpuPullPayload()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.001" />
-  <testcase name="rejectsGplPayloadAndPathTraversal()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.002" />
-  <testcase name="rejectsUnknownPreviewRevisionAndMissingPullMode()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.005" />
-  <testcase name="acceptsEveryBundledManifestInReleaseMatrix()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.008">
+  <testcase name="acceptsPinnedLinuxGles2DmaBufPayloads()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.005" />
+  <testcase name="acceptsPinnedGpuPushAndCpuPullPayload()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.002" />
+  <testcase name="rejectsGplPayloadAndPathTraversal()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.003" />
+  <testcase name="rejectsUnknownPreviewRevisionAndMissingPullMode()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.007" />
+  <testcase name="acceptsEveryBundledManifestInReleaseMatrix()" classname="io.github.shusek.kmediavlc.runtime.desktop.NativePayloadManifestTest" time="0.01">
     <skipped message="org.opentest4j.TestAbortedException: Assumption failed: assumption is not true" type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: assumption is not true
 	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)
 	at org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)
@@ -30,14 +34,18 @@
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 </skipped>
   </testcase>
-  </testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopFrameOwnershipTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:58:48.558Z" time="0.003">
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopFrameOwnershipTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-08T00:53:20.154Z" hostname="runnervmdlhio" time="0.004">
   <properties />
-  <testcase name="transfersAcquireFenceOwnershipExactlyOnce()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopFrameOwnershipTest" time="0.002" />
-  </testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" tests="16" skipped="12" failures="0" errors="0" timestamp="2026-10-07T12:58:48.566Z" time="1.515">
+  <testcase name="transfersAcquireFenceOwnershipExactlyOnce()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopFrameOwnershipTest" time="0.003" />
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" tests="16" skipped="12" failures="0" errors="0" timestamp="2026-10-08T00:53:20.162Z" hostname="runnervmdlhio" time="3.018">
   <properties />
-  <testcase name="pinnedVideoLanFixturePublishesCpuPullFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.824" />
-  <testcase name="pinnedChromiumHdr10FixturePublishesFp16D3D11Frame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.253" />
-  <testcase name="pinnedVideoLanFixtureKeepsSdrD3D11FrameSrgbOnHdrHost()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.069" />
+  <testcase name="pinnedVideoLanFixturePublishesCpuPullFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="2.026" />
+  <testcase name="pinnedChromiumHdr10FixturePublishesFp16D3D11Frame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.381" />
+  <testcase name="pinnedVideoLanFixtureKeepsSdrD3D11FrameSrgbOnHdrHost()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.076" />
   <testcase name="pinnedVideoLanFixturePublishesTargetFramesAfterTwoAndFiveMinuteGpuSeeks()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.004">
     <skipped message="org.opentest4j.TestAbortedException: Assumption failed: assumption is not true" type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: assumption is not true
 	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)
@@ -60,7 +68,7 @@
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 </skipped>
   </testcase>
-  <testcase name="fakeMacIosurfaceBackpressureDropsAFrameWithoutStoppingTheVout()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.008">
+  <testcase name="fakeMacIosurfaceBackpressureDropsAFrameWithoutStoppingTheVout()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.005">
     <skipped message="org.opentest4j.TestAbortedException: Assumption failed: assumption is not true" type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: assumption is not true
 	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)
 	at org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)
@@ -92,7 +100,7 @@
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 </skipped>
   </testcase>
-  <testcase name="fakeLibVlcSeparatesSourceDisplayGeometryFromOutputFrameAndPreservesEndedState()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.007">
+  <testcase name="fakeLibVlcSeparatesSourceDisplayGeometryFromOutputFrameAndPreservesEndedState()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.006">
     <skipped message="org.opentest4j.TestAbortedException: Assumption failed: The native CPU-pull fixture is opt-in." type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: The native CPU-pull fixture is opt-in.
 	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)
 	at org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)
@@ -102,7 +110,7 @@
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 </skipped>
   </testcase>
-  <testcase name="pinnedVideoLanFixtureStopsGpuFramesWhileRealMediaIsPaused()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.007">
+  <testcase name="pinnedVideoLanFixtureStopsGpuFramesWhileRealMediaIsPaused()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.005">
     <skipped message="org.opentest4j.TestAbortedException: Assumption failed: assumption is not true" type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: assumption is not true
 	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)
 	at org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)
@@ -113,7 +121,7 @@
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 </skipped>
   </testcase>
-  <testcase name="pinnedChromiumHttpsFixturePublishesCpuPullFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.293" />
+  <testcase name="pinnedChromiumHttpsFixturePublishesCpuPullFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.458" />
   <testcase name="pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.003">
     <skipped message="org.opentest4j.TestAbortedException: Assumption failed: assumption is not true" type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: assumption is not true
 	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)
@@ -136,7 +144,7 @@
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 </skipped>
   </testcase>
-  <testcase name="fakeLibVlcPublishesRealSdrAndHdrMacIosurfaceFrames()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.004">
+  <testcase name="fakeLibVlcPublishesRealSdrAndHdrMacIosurfaceFrames()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.007">
     <skipped message="org.opentest4j.TestAbortedException: Assumption failed: assumption is not true" type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: assumption is not true
 	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)
 	at org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)
@@ -147,7 +155,7 @@
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 </skipped>
   </testcase>
-  <testcase name="pausedGpuSeekRepausesEvenWhenNoReplacementSurfaceCanBePublished()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.004">
+  <testcase name="pausedGpuSeekRepausesEvenWhenNoReplacementSurfaceCanBePublished()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.006">
     <skipped message="org.opentest4j.TestAbortedException: Assumption failed: assumption is not true" type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: assumption is not true
 	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)
 	at org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)
@@ -158,7 +166,7 @@
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 </skipped>
   </testcase>
-  <testcase name="pinnedHdr10FixturePublishesFp16MacIosurfaceFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.004">
+  <testcase name="pinnedHdr10FixturePublishesFp16MacIosurfaceFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.005">
     <skipped message="org.opentest4j.TestAbortedException: Assumption failed: assumption is not true" type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: assumption is not true
 	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)
 	at org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)
@@ -169,12 +177,33 @@
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 </skipped>
   </testcase>
-  </testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopRuntimeTargetTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:58:50.083Z" time="0.005">
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopRuntimeTargetTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-08T00:53:23.181Z" hostname="runnervmdlhio" time="0.014">
   <properties />
-  <testcase name="rejectsTargetsWithoutAnAuditedGpuPayload()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopRuntimeTargetTest" time="0.003" />
-  <testcase name="resolvesDesktopRuntimeTargets()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopRuntimeTargetTest" time="0.001" />
-  </testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcLinuxOutputTargetTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:58:50.088Z" time="0.004">
+  <testcase name="rejectsTargetsWithoutAnAuditedGpuPayload()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopRuntimeTargetTest" time="0.005" />
+  <testcase name="resolvesDesktopRuntimeTargets()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopRuntimeTargetTest" time="0.004" />
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcLinuxOutputTargetTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-08T00:53:23.196Z" hostname="runnervmdlhio" time="0.014">
   <properties />
-  <testcase name="rejectsMissingRenderNodeAndUnpairedModifiers()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcLinuxOutputTargetTest" time="0.002" />
-  <testcase name="ownsDefensiveCopiesOfNegotiatedFormatModifierPairs()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcLinuxOutputTargetTest" time="0.001" />
-  </testsuite></testsuites>
+  <testcase name="rejectsMissingRenderNodeAndUnpairedModifiers()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcLinuxOutputTargetTest" time="0.008" />
+  <testcase name="ownsDefensiveCopiesOfNegotiatedFormatModifierPairs()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcLinuxOutputTargetTest" time="0.002" />
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="io.github.shusek.kmediavlc.runtime.desktop.WindowsVideoScalingIntegrationTest" tests="1" skipped="1" failures="0" errors="0" timestamp="2026-10-08T00:53:23.211Z" hostname="runnervmdlhio" time="0.002">
+  <properties />
+  <testcase name="everyScalingOptionProducesAnImportableD3d11Frame()" classname="io.github.shusek.kmediavlc.runtime.desktop.WindowsVideoScalingIntegrationTest" time="0.002">
+    <skipped message="org.opentest4j.TestAbortedException: Assumption failed: assumption is not true" type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: assumption is not true
+	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)
+	at org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)
+	at org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:71)
+	at io.github.shusek.kmediavlc.runtime.desktop.WindowsVideoScalingIntegrationTest.everyScalingOptionProducesAnImportableD3d11Frame(WindowsVideoScalingIntegrationTest.java:18)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+</skipped>
+  </testcase>
+  <system-out />
+  <system-err />
+</testsuite></testsuites>

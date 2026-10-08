@@ -1,4 +1,6 @@
 {
+  "schemaVersion": 1,
+  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
   "targets": [
     "libaccess_mms_plugin.dll",
     "libadaptive_plugin.dll",
@@ -640,12 +642,17 @@
     "src/win32/thread.c",
     "src/win32/timer.c"
   ],
-  "schemaVersion": 1,
-  "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
   "compiledSourceCount": 537,
   "targetCount": 100,
+  "generatedBuildSources": [
+    "modules/libwebvtt_plugin.dll.p/CSSGrammar.c",
+    "modules/libwebvtt_plugin.dll.p/CSSLexer.l.yy.c",
+    "src/build_config.c",
+    "src/revision.c"
+  ],
   "unscannedSourceCount": 0,
-  "targetMetadataSha256": "c21b811bfc68e53538ea563409a59dfbc8c57b0bf10ee44484306e617eb63081",
-  "ninjaGraphSha256": "9f1fb7302136dc2a8343e7dbd092b654392de2dd6e34edfd6a066977ae9befa9",
+  "compileCommandsSha256": "1b1d191b3fc52af67a43a65db02469a7b02bdaa14a66b21beb5ed1f2fea3f5a5",
+  "targetMetadataSha256": "49c81cab55aaa57cec14d1e3455b5176e7125603bfbe638e960a9f1113fdade2",
+  "ninjaGraphSha256": "1223040f53752766e01ee6bc18c56602b52189783965f22d1262dd0c23578f2b",
   "sourceLicenseScanSha256": "89025037caddb76fde176a870b317b9aeb06721950b8771230e37a00aa47ad3a"
 }

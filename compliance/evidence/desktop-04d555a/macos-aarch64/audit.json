@@ -209,14 +209,14 @@
     {
       "path": "bin/libvlc.12.dylib",
       "role": "LIBVLC",
-      "sha256": "1dc87094ff16a949202641f6749502f0d4d6980a77c3f3527e4d6115309be6ea",
+      "sha256": "61ad9b1f736b6d0bcbb1671a4fbd22cd2bc1e1c24679c8b34d004d5345d2561d",
       "size": 222400,
       "sourceComponents": []
     },
     {
       "path": "bin/libvlccore.9.dylib",
       "role": "CORE",
-      "sha256": "ece87703823f9f8ba2bc92621fa1d532ef5960709ca1f578c64aa63e004769f5",
+      "sha256": "b0f177fd5892ba074859134283b0c0a86391f057385833c69ffe4becb4027270",
       "size": 2264064,
       "sourceComponents": [
         "libiconv"
@@ -225,8 +225,8 @@
     {
       "path": "bin/libkmediavlc_bridge.dylib",
       "role": "BRIDGE",
-      "sha256": "9d47acd53fa7a4a0a73ee0b180f06eb8d0244990d095549861c4ae6044d4e20e",
-      "size": 179936,
+      "sha256": "ddfbc06ca549a33603f4ed32e00667e75db535a31e8691f2e0d5138ce6455c2b",
+      "size": 181136,
       "sourceComponents": []
     },
     {
@@ -234,7 +234,7 @@
       "module": "access_mms",
       "path": "lib/vlc/plugins/libaccess_mms_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "f036b417375f984fee99c48c7ff167d5abe7448460256bc33cde924967d79de1",
+      "sha256": "d79ef23e75444bdb5f24ca7bc1fc6cdee4a029cdb2b77be691f3f2982187f98f",
       "size": 94480,
       "sourceComponents": []
     },
@@ -243,7 +243,7 @@
       "module": "data",
       "path": "lib/vlc/plugins/libdata_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "c4c88c3f6a67eeeaac749442b67f536f05846d696586e27e262b11d3470a2ffa",
+      "sha256": "8cd7b374919714c3bc03baa458fdb594d2269f14147fcbefb44e047c4876e428",
       "size": 53408,
       "sourceComponents": []
     },
@@ -252,7 +252,7 @@
       "module": "filesystem",
       "path": "lib/vlc/plugins/libfilesystem_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "2899ed898ae1a0c6868caff14abbe8de43734e4d96d93df24b5be2160f07131a",
+      "sha256": "edb8fb6d8536bc06676a8ded42b0e64232661a57a338b4aa8b1ca3a7a016f19c",
       "size": 55600,
       "sourceComponents": []
     },
@@ -261,7 +261,7 @@
       "module": "ftp",
       "path": "lib/vlc/plugins/libftp_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "2fc0f0449bccfe3f5899bf1798bbf755404735a8013bdae23db46704aa1b9ab0",
+      "sha256": "6be7624ae8d93fbaf0eb6e53c1f37a468087a828de2d5988d0785d048a4e7b39",
       "size": 74608,
       "sourceComponents": []
     },
@@ -270,7 +270,7 @@
       "module": "http",
       "path": "lib/vlc/plugins/libhttp_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "4bb39edf1d9fcea012e1a5c98c91f5c456b7ec9fcbaf2827b25bc25c998389ab",
+      "sha256": "21cab7241070d73ad80330639c3325d3357fe50066a69ed84a7c22ffa180a174",
       "size": 55840,
       "sourceComponents": []
     },
@@ -279,7 +279,7 @@
       "module": "https",
       "path": "lib/vlc/plugins/libhttps_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "32dd23be498d5fdb24b1a2312c49ace9f679febd0835d3007c272144eed258d7",
+      "sha256": "4c6d7c7b87e0c270f6674b19a4d920033f710a27aa79406042d070be97e1ce68",
       "size": 145888,
       "sourceComponents": []
     },
@@ -288,7 +288,7 @@
       "module": "webdav",
       "path": "lib/vlc/plugins/libwebdav_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "3216d77e946bc9a4274fafe78a35dc5d83de0489b406f48c34c76e414043830c",
+      "sha256": "6ddfb87b90d6207a089db108328d6e977146229b322b9f25887767a5184e9218",
       "size": 142960,
       "sourceComponents": []
     },
@@ -297,7 +297,7 @@
       "module": "audio_format",
       "path": "lib/vlc/plugins/libaudio_format_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "b9ac7803bbb64aace9a530b96f97184440f801cbbb846b27320ed4d3108c53da",
+      "sha256": "defa63024ba71e90dbc2066bf0cc0da93f363477246210c8c9ff4a3c36fdc4d6",
       "size": 54928,
       "sourceComponents": []
     },
@@ -306,7 +306,7 @@
       "module": "simple_channel_mixer",
       "path": "lib/vlc/plugins/libsimple_channel_mixer_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "81dedb8df4d0dd77ef317005c0ccde334e931ddf24adb31567fdb7b704acbcc9",
+      "sha256": "361bdabcb257c898899a6fb5463ca0550645eccf21203c7d132cda8c396aa1e0",
       "size": 54240,
       "sourceComponents": []
     },
@@ -315,7 +315,7 @@
       "module": "soxr",
       "path": "lib/vlc/plugins/libsoxr_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "0d21198d77c78e2654459934d6cca302beababdf8956e40a233cb4a10203ad8a",
+      "sha256": "438fe65176b08e2c12de305120c852220bd94f1a6fa2421a9507ac196a6843bf",
       "size": 496768,
       "sourceComponents": [
         "ffmpeg",
@@ -330,7 +330,7 @@
       "module": "tospdif",
       "path": "lib/vlc/plugins/libtospdif_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "7313865d2341b272e3f1ebe3f6ed654fa33d5815f20e24941796aef568576be1",
+      "sha256": "13e0e966e75a25893a7d82a9e83fd028981b7387db906dd07d9ff11e4c0ddba5",
       "size": 71744,
       "sourceComponents": []
     },
@@ -339,7 +339,7 @@
       "module": "trivial_channel_mixer",
       "path": "lib/vlc/plugins/libtrivial_channel_mixer_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "91f29eaeef61c97f848ade56e3f33b17228ab4bedfe452e881af92ebc67e515e",
+      "sha256": "67a4c90b9ce071f43c33be9a2fe98b643beb6224edf6c732736958d23894fee9",
       "size": 53520,
       "sourceComponents": []
     },
@@ -348,7 +348,7 @@
       "module": "float_mixer",
       "path": "lib/vlc/plugins/libfloat_mixer_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "deb046d799419dc1ec58c1f0d30c6302b93a8e79359968feaf962d0c92a25f80",
+      "sha256": "71d5802222af674cf0fe41cc70b36d1b434207c0c77abb13a91f0156f7a10b21",
       "size": 52624,
       "sourceComponents": []
     },
@@ -357,7 +357,7 @@
       "module": "integer_mixer",
       "path": "lib/vlc/plugins/libinteger_mixer_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "97fcb92cfd7e158c0f2d8bf47e4761201394b39e88f94e6cad09bdd3630a6117",
+      "sha256": "0cf7f4c768edad72c2692e213cfeba2b47050b4db85bb1b55829c417895f507e",
       "size": 52736,
       "sourceComponents": []
     },
@@ -366,7 +366,7 @@
       "module": "adummy",
       "path": "lib/vlc/plugins/libadummy_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "5866114f18c5a32cb7547263869365b0d64747b24a75926c9deb3a784f40c24f",
+      "sha256": "a78890a5a520f6e266b30df1847b0bbee7e2263c6a0ce4159125ae65db24a0cb",
       "size": 53056,
       "sourceComponents": []
     },
@@ -375,7 +375,7 @@
       "module": "auhal",
       "path": "lib/vlc/plugins/libauhal_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "99a2191977b3802ed01ebd3cb1f94ae199fd173eda9fa7ba3374275a2db0e48a",
+      "sha256": "f4a8e4ccdf1fd65762ccbeffad9d2dd9edb9dd4e74c457e6a080764c5ed53ba7",
       "size": 94592,
       "sourceComponents": []
     },
@@ -384,7 +384,7 @@
       "module": "avcodec",
       "path": "lib/vlc/plugins/libavcodec_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "9d8dae1afeeabbbc3ebd7d33c3c9edc88564f7a0376febd4451260c2d9551bc6",
+      "sha256": "a09fa32751e5fd0b635158036e63d1204fc9e120c3b400409bddd189408537a4",
       "size": 12647088,
       "sourceComponents": [
         "ffmpeg",
@@ -398,7 +398,7 @@
       "module": "cc",
       "path": "lib/vlc/plugins/libcc_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "819f02e01dedf4d915691bec3407974fae0badec1621ed6e3fe4139dfac4b262",
+      "sha256": "cda62a5fbd7aa88a16394525b76e49a47576fcae951779a9c6d5ea5736ff0b2b",
       "size": 74176,
       "sourceComponents": []
     },
@@ -407,7 +407,7 @@
       "module": "dav1d",
       "path": "lib/vlc/plugins/libdav1d_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "cfbef8c6f4c9d4a16ffed01cf0dbeeb7e022316cc2f438b7d03ad40c37c4a6b5",
+      "sha256": "92853664aa386c41c23583c30cb8b68507f3d7f5298700dea304aa01c135f765",
       "size": 1257840,
       "sourceComponents": [
         "dav1d"
@@ -418,7 +418,7 @@
       "module": "flac",
       "path": "lib/vlc/plugins/libflac_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "ac24e8de91058d11dda61464006be3b9804c9377a24e651ee95d3cae7a0a2d55",
+      "sha256": "6ab4196773d38da0c28d13f11b6112f8e665e592e0a16b100166b5f3d52e2cc2",
       "size": 123104,
       "sourceComponents": [
         "flac",
@@ -430,7 +430,7 @@
       "module": "jpeg",
       "path": "lib/vlc/plugins/libjpeg_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "46e2912fdbf1f7c525b4d2bde1817b0b13df724e106938f05e9dc970f6b627f7",
+      "sha256": "6beee9ecfbaf381b61fc26ea6c424aefa26b0fdfdf1d8459c4dd7a26ed5766f3",
       "size": 706752,
       "sourceComponents": [
         "libjpeg-turbo"
@@ -441,7 +441,7 @@
       "module": "libass",
       "path": "lib/vlc/plugins/liblibass_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "f11c886e36596b0531e02980fe018af5830eeecdcf1b2626eabd852c796a24a1",
+      "sha256": "9b36b466c66c4c1a735a6d1c86ea43d32051de75e861dd6c0be693b73ead36ff",
       "size": 3213888,
       "sourceComponents": [
         "freetype",
@@ -457,7 +457,7 @@
       "module": "opus",
       "path": "lib/vlc/plugins/libopus_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "b559c3113ee76afc8878ba556730a114f3a67cb2cef52106f63cd8d2f05646b8",
+      "sha256": "36a3e8fc4582218298eaf57975b80c14587087003b81eb63929b81d86ef48eba",
       "size": 245744,
       "sourceComponents": [
         "libogg",
@@ -469,7 +469,7 @@
       "module": "png",
       "path": "lib/vlc/plugins/libpng_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "64f902e392faaf2dbc5feb083f16c3c451c04118944ef019aca85577f7d2ba3d",
+      "sha256": "0e2a7838507e8bbf392233229168dd4ba4d890eefd6d3cc510417031ca4481ff",
       "size": 238896,
       "sourceComponents": [
         "libpng",
@@ -481,7 +481,7 @@
       "module": "rawvideo",
       "path": "lib/vlc/plugins/librawvideo_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "6d07fc7f7c296e7c4901ba34f41dc55b3a30b8733750f6e821db65780518a384",
+      "sha256": "6f76eb8f58e10cd25a1411f184a6bae8514b2f39f16e3105decbc93de0bce0ca",
       "size": 53776,
       "sourceComponents": []
     },
@@ -490,7 +490,7 @@
       "module": "spdif",
       "path": "lib/vlc/plugins/libspdif_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "efc7e1ef8b3454cf5775deb3d5795db18e94e9e16cd7d29250ebf9140d8edb7e",
+      "sha256": "d32ead50600f571023dd488006be393c9e66e8b86695c0f6494d0e3e1602b790",
       "size": 52512,
       "sourceComponents": []
     },
@@ -499,7 +499,7 @@
       "module": "subsdec",
       "path": "lib/vlc/plugins/libsubsdec_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "d0d555f5453dc5df169602f77ed0625befab0a2b170e1e5e110bdb4cbd329c48",
+      "sha256": "8a2bacf59d1943119421a35ad60867c1333a87e1a91194e071ae747b991fcf39",
       "size": 72304,
       "sourceComponents": []
     },
@@ -508,7 +508,7 @@
       "module": "substx3g",
       "path": "lib/vlc/plugins/libsubstx3g_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "e346df10ce67d521ee665c8617da69505fbbcb14e1abfd3c46ceb5be164da415",
+      "sha256": "088b735dff46c1d6e852456085082ad6d6c8b07a572fddaadf1e0d59ecbcdc19",
       "size": 54512,
       "sourceComponents": []
     },
@@ -517,7 +517,7 @@
       "module": "videotoolbox",
       "path": "lib/vlc/plugins/libvideotoolbox_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "7b173971be4a5f6481b6bdec399f2729decb468662f898b514f3156a06fffbaf",
+      "sha256": "1f0f4c1a1b13278dfe73774f871d09e51ced543a5aca6de5dc60261b904307cb",
       "size": 203504,
       "sourceComponents": []
     },
@@ -526,7 +526,7 @@
       "module": "vorbis",
       "path": "lib/vlc/plugins/libvorbis_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "598d166c39abd5ff3bc5f14b0af2271bfeec6d659f650050027037a4d14eea86",
+      "sha256": "7490adc7af936d9f5f42cd7be284dc3ba9778dd65b7ca80061e00baac730ddbe",
       "size": 205184,
       "sourceComponents": [
         "libogg",
@@ -538,7 +538,7 @@
       "module": "vpx",
       "path": "lib/vlc/plugins/libvpx_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "d2d8172d2083ae0ab4d3ba2d767d22f77f94c61bb1185ca2a4569108ae2c6e1d",
+      "sha256": "598f31ebebf4483c4118e97cc7d0372b3367f67bc4e3f324058e4424fddf5107",
       "size": 720720,
       "sourceComponents": [
         "libvpx"
@@ -549,7 +549,7 @@
       "module": "webvtt",
       "path": "lib/vlc/plugins/libwebvtt_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "9e7102f70a6fb8a68555da2b96dd8e4d6798ec8e117abefc68975058e64016c8",
+      "sha256": "67ec3e10f45a27da265ea08179d998a240c02264b6ab2f7b2d8749a711106205",
       "size": 132400,
       "sourceComponents": []
     },
@@ -558,7 +558,7 @@
       "module": "adaptive",
       "path": "lib/vlc/plugins/libadaptive_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "61c8064e9398e5d1b0933aca10c13cffcd3b8847e4e7d8640a1d54c22cc23a0c",
+      "sha256": "618f716e59e170c41a260496964bb5e8ac919de30bf6a780d5873fbeb82c37ef",
       "size": 1066624,
       "sourceComponents": []
     },
@@ -567,7 +567,7 @@
       "module": "asf",
       "path": "lib/vlc/plugins/libasf_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "c1f232c39cb10fc05f8af17e7a4f648b75845bc4a81f070708ca03f29d0c0058",
+      "sha256": "8ac2d06f7ffce15376fed74340ea0fa0cc3c451493d2d276304147c395e1225c",
       "size": 98768,
       "sourceComponents": []
     },
@@ -576,7 +576,7 @@
       "module": "avi",
       "path": "lib/vlc/plugins/libavi_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "11622b9f04253d095ff8c6609ac37749d6040df9e6258e4b6b8c3f2c9a088adb",
+      "sha256": "3228275537fe2e5afb26d9429078ccd387077450a675693181bdfa2505c73960",
       "size": 112336,
       "sourceComponents": []
     },
@@ -585,7 +585,7 @@
       "module": "es",
       "path": "lib/vlc/plugins/libes_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "5daf9c8278ea2ccd2c3101c4d20b28fd21e8312f25cb86fda5eeff28cb6f2639",
+      "sha256": "73bcbc3d98a2c9e6165c85269a63b3723771e67b54bf22d44a58fc0577b86468",
       "size": 93184,
       "sourceComponents": []
     },
@@ -594,7 +594,7 @@
       "module": "h26x",
       "path": "lib/vlc/plugins/libh26x_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "ac7070b812b08c8d5ae50be080a286a5565e6c11ca7da25b48f81874cb1d0c6f",
+      "sha256": "462cdde23f530def62fcc1de71d07855cab3c31e91068db7603f2f88c1d8afcf",
       "size": 54416,
       "sourceComponents": []
     },
@@ -603,7 +603,7 @@
       "module": "image",
       "path": "lib/vlc/plugins/libimage_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "e177cd6a75808bb6329aed26ffa335577c128526efc6555f6b93ecf47fb0dddb",
+      "sha256": "88db56de28a239fa063fac4d90fe97e7e84108a77c2c7a6bc2f1a1eacc41b032",
       "size": 55984,
       "sourceComponents": []
     },
@@ -612,7 +612,7 @@
       "module": "mkv",
       "path": "lib/vlc/plugins/libmkv_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "0c57fa2f9e621d44ac297767d30f91b6e752479df95f3ceacc87b99e8435e18e",
+      "sha256": "e4b0dbcecdc62c8d7abeef779142d5e60f2e8f615709d98231eb94cbb721590c",
       "size": 1359104,
       "sourceComponents": [
         "libebml",
@@ -626,7 +626,7 @@
       "module": "mp4",
       "path": "lib/vlc/plugins/libmp4_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "2954565551305f37fbc4726b37af43011a542a3047e87f2ba25898ddb9bcac30",
+      "sha256": "b97809a45d0a2c70ce34b9dab8bd33d1bc8e15d5af867529b60f32da7da7202e",
       "size": 299280,
       "sourceComponents": [
         "zlib"
@@ -637,7 +637,7 @@
       "module": "ogg",
       "path": "lib/vlc/plugins/libogg_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "9f2106f91312e47c002303e5d405efcb34891d66ab77748b05443453ca33bcae",
+      "sha256": "8da59d6ee8b5a126c8839465457dc5ee136ff8f939dd7a1291802789806f2751",
       "size": 246192,
       "sourceComponents": [
         "libogg",
@@ -649,7 +649,7 @@
       "module": "playlist",
       "path": "lib/vlc/plugins/libplaylist_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "0b1573ed942e1d6fe4fc8c533a4be95e9beb132237b8bc69b1827b3aa0db6490",
+      "sha256": "0cab302568dc7454c995e70f269415cdee3f51ab63f4559534cc370702f39242",
       "size": 134624,
       "sourceComponents": []
     },
@@ -658,7 +658,7 @@
       "module": "ps",
       "path": "lib/vlc/plugins/libps_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "aa3add0c635c6c676bf3926befdfbd9ec1c758192f09b468e1fd9458b712de4c",
+      "sha256": "4ba6d9d69981b59091b4758ec79ab32ea94794818185cf80eac004804c773dfa",
       "size": 72272,
       "sourceComponents": []
     },
@@ -667,7 +667,7 @@
       "module": "subtitle",
       "path": "lib/vlc/plugins/libsubtitle_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "77009e149c2527a656a4490ba19d14659b90efbdc7b8ec69581bcbd3dc1f93fa",
+      "sha256": "0163caa4d9616f5b81486106da9d41b195141ce4a147776641fee08d849c4306",
       "size": 75120,
       "sourceComponents": []
     },
@@ -676,7 +676,7 @@
       "module": "ts",
       "path": "lib/vlc/plugins/libts_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "9206e7bfb500e271169e50f76c1d63da9903492840197a62729870a92f6c08a8",
+      "sha256": "a4a7386255a6181ab83bb92c8f290a39f9c0ce1e6afc70f24bd4cfe8f367c976",
       "size": 294512,
       "sourceComponents": [
         "libdvbpsi"
@@ -687,7 +687,7 @@
       "module": "wav",
       "path": "lib/vlc/plugins/libwav_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "71d6ed58a240e0a6e8a617cca5485df274df351d19965407a9ddc1847ce8e56b",
+      "sha256": "a36591d0e61ce04630cb5551211dd15c811e392324a2ba5366ec3d9147dc8008",
       "size": 54816,
       "sourceComponents": []
     },
@@ -696,7 +696,7 @@
       "module": "keychain",
       "path": "lib/vlc/plugins/libkeychain_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "59710c65e44bff3f10c8193e6ff1552296fc75a70dad7a1e771ac048eb358c48",
+      "sha256": "06bf0d4d1573b311a063ce49d1e7bd3e9e8cd818d2d4823f382a3249d48d7bc2",
       "size": 91824,
       "sourceComponents": []
     },
@@ -705,7 +705,7 @@
       "module": "memory_keystore",
       "path": "lib/vlc/plugins/libmemory_keystore_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "5797cf0cfc74b3dc614066f9e7fa2bff114b2fcc1eac2ea0e03696a2fa12adf0",
+      "sha256": "b550b94d50afaa45ab66a33a97be499a25c049f5e8a333b7b5eb1db82e5e6b97",
       "size": 53984,
       "sourceComponents": []
     },
@@ -714,7 +714,7 @@
       "module": "console_logger",
       "path": "lib/vlc/plugins/libconsole_logger_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "65ede3e6c16d64dda1c32f69f3621c5aa4fdc0702bc3eb09f0983b57254921ec",
+      "sha256": "e47813ae87ee2fecb87915bd19ee42c7ec8fa40f94ba69cc94dc1c1007dd17ce",
       "size": 53360,
       "sourceComponents": []
     },
@@ -723,7 +723,7 @@
       "module": "securetransport",
       "path": "lib/vlc/plugins/libsecuretransport_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "2cea7e9e6cebbeae1a1f2284aad08ffbb24674749e744195ef997ab64de32be5",
+      "sha256": "c82bd8763d1a852ab1e3f49a9fa3560c9faee5e5f68292de4ffab786d1dc5e6b",
       "size": 74464,
       "sourceComponents": []
     },
@@ -732,7 +732,7 @@
       "module": "xml",
       "path": "lib/vlc/plugins/libxml_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "0518c289d060e972072e2e39ff7bf5c520fe98de80e7d0ad93c622c1a8da1824",
+      "sha256": "c75083c5c1e1fa651c6bad3ed2ea57cc4f5e58995628469872355b6f84142380",
       "size": 373280,
       "sourceComponents": [
         "libxml2"
@@ -743,7 +743,7 @@
       "module": "packetizer_a52",
       "path": "lib/vlc/plugins/libpacketizer_a52_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "a0d73dc2b9e857069c6cb3e7c285425b9b01593399f319118b765b515c548a9a",
+      "sha256": "e33d9d07454a852dc56ae863815907c9ca0c81276bcffa342dc25653e6263f7d",
       "size": 53968,
       "sourceComponents": []
     },
@@ -752,7 +752,7 @@
       "module": "packetizer_av1",
       "path": "lib/vlc/plugins/libpacketizer_av1_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "15a5d6fdcd20de116115fc380f521d4313bcc9d3a37f43bc74745e5b0a5d65e7",
+      "sha256": "09e6edae17eea7a96dcd5e70ee69053721caab5d47a97cf8157aa1d39a9b41bc",
       "size": 71824,
       "sourceComponents": []
     },
@@ -761,7 +761,7 @@
       "module": "packetizer_avparser",
       "path": "lib/vlc/plugins/libpacketizer_avparser_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "51d154a5bb4c6352e9bc5895db83a4f508e69383fa7c05441b8c411f9b9cbe44",
+      "sha256": "83589a51079a6d8f132e8ebb6e8e419c4add646b84a2e3d27f46c5767ca6ebac",
       "size": 12747760,
       "sourceComponents": [
         "ffmpeg",
@@ -775,7 +775,7 @@
       "module": "packetizer_copy",
       "path": "lib/vlc/plugins/libpacketizer_copy_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "d7ed209469fe240b434db27d135afbb6645560e778bc9efb1bb19e190b9b66f7",
+      "sha256": "955f4ab6fe9fd61e5f56d4914f8b47ac3cd619e83b6d99ad71e9554efe98b013",
       "size": 53440,
       "sourceComponents": []
     },
@@ -784,7 +784,7 @@
       "module": "packetizer_dts",
       "path": "lib/vlc/plugins/libpacketizer_dts_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "b466a93ec13699c7d2c3b25f7b24fcc5d49e5c4e46877e08bc0dcb547a646aa1",
+      "sha256": "a2d36224a14697feb9df6c717e5a63745268189077c521c875aeb43d9e1f9b54",
       "size": 70608,
       "sourceComponents": []
     },
@@ -793,7 +793,7 @@
       "module": "packetizer_flac",
       "path": "lib/vlc/plugins/libpacketizer_flac_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "b3c1df9baba9b4bb5c1221e319e59768ad6d9e59d1200d0ab817df1359166a86",
+      "sha256": "64377d194f9814e44af4747703d7cdcfa028def6e7abed94df90776bd4fdd62c",
       "size": 54016,
       "sourceComponents": []
     },
@@ -802,7 +802,7 @@
       "module": "packetizer_h264",
       "path": "lib/vlc/plugins/libpacketizer_h264_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "96e83e258efdfab2669f2d559b63ec056fb06cb486233d5ea3763a76725b3fdb",
+      "sha256": "c1cd059e4c55136c06188e62d7593175e19fc49feaa745502cbb81ae8730e80a",
       "size": 97456,
       "sourceComponents": []
     },
@@ -811,7 +811,7 @@
       "module": "packetizer_hevc",
       "path": "lib/vlc/plugins/libpacketizer_hevc_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "186d4e8160555e6bf97cc2e505d77161b5cc43f208de880079f42603e750c28d",
+      "sha256": "3a66500849697c462f537591702a1986b8e6f941e74ccf249eb39ac5355dcd36",
       "size": 114832,
       "sourceComponents": []
     },
@@ -820,7 +820,7 @@
       "module": "packetizer_mjpeg",
       "path": "lib/vlc/plugins/libpacketizer_mjpeg_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "ab38646dc67d2d7ccdbe7be0631ee2a343a34e38a33f6bf94685f5d41fefdacc",
+      "sha256": "ed66fd6e0497c48669e5e3e0e9e09cfe7ee80ad7938a33b06e4c9c4a74ec2458",
       "size": 54064,
       "sourceComponents": []
     },
@@ -829,7 +829,7 @@
       "module": "packetizer_mlp",
       "path": "lib/vlc/plugins/libpacketizer_mlp_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "8cbb8b4dbd9754d5d64f2bcec0a255e9bb0613d8c896b8cc4d484fe659a1138c",
+      "sha256": "b944a64172ae8ec96fcf9ca919c0ff0dc609ef219bb2152142dd008b29d31f2e",
       "size": 70272,
       "sourceComponents": []
     },
@@ -838,7 +838,7 @@
       "module": "packetizer_mpeg4audio",
       "path": "lib/vlc/plugins/libpacketizer_mpeg4audio_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "1539a369776dafd24076440ec8e5cb79e0f6645e146b52188ae537453b3f6b51",
+      "sha256": "1f8689f8a8b1b1333dd5456e950da9008721f5246925ed04e95a078a488e1b0e",
       "size": 88464,
       "sourceComponents": []
     },
@@ -847,7 +847,7 @@
       "module": "packetizer_mpeg4video",
       "path": "lib/vlc/plugins/libpacketizer_mpeg4video_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "5baa8c12122da169a596ea74bba7491bdb298298d71cca5348acbe60cb8e4a21",
+      "sha256": "f2bae058146f10494a6af4f9a107ea283910bc29901b3d954b1ff7f95285fd33",
       "size": 71312,
       "sourceComponents": []
     },
@@ -856,7 +856,7 @@
       "module": "packetizer_mpegaudio",
       "path": "lib/vlc/plugins/libpacketizer_mpegaudio_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "3e1549d2010a66ea1f94e66a276ff548f1aeac215e617c5b88d809d8d9a6d49e",
+      "sha256": "649b32820e2e1c9159d0de4c8d8a8c4fe6f01bbae2720e9afb844fa61598468f",
       "size": 53488,
       "sourceComponents": []
     },
@@ -865,7 +865,7 @@
       "module": "packetizer_mpegvideo",
       "path": "lib/vlc/plugins/libpacketizer_mpegvideo_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "9928d0384b6aa9b64ffb5deee0a7cbab3f091b7d05c1576a9d1c446e2ed0f588",
+      "sha256": "ec6c5b1df4c47fb45e675078d34383dff70221bd601492606f2364854423ab08",
       "size": 72224,
       "sourceComponents": []
     },
@@ -874,7 +874,7 @@
       "module": "packetizer_vc1",
       "path": "lib/vlc/plugins/libpacketizer_vc1_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "e57c5af12cfc44809f5a968e6b2c998f37a95a4031f0993bb73652b9c7e99bab",
+      "sha256": "f0f95592b0e05642618e320ff2c0a0a0684855519413d1bc7f757bae95ca631b",
       "size": 72496,
       "sourceComponents": []
     },
@@ -883,7 +883,7 @@
       "module": "cache_read",
       "path": "lib/vlc/plugins/libcache_read_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "c35d507b05bccc4c540b850f279902c43d5d1929177e6ca7d66dac2f580e4df4",
+      "sha256": "cd89ac1595f989341aaa97422e4d06a5af60a6e14746e21bc7ba627d21eba1ec",
       "size": 53616,
       "sourceComponents": []
     },
@@ -892,7 +892,7 @@
       "module": "inflate",
       "path": "lib/vlc/plugins/libinflate_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "cc6471bc65913b0f52c28d84b3c3481ba0ad6eb7aec0a7d3a11353140186542a",
+      "sha256": "d133211d057a1441bd00c61575c194cceccf9c87152ea0b647c8e8ee988c9dd5",
       "size": 73056,
       "sourceComponents": [
         "zlib"
@@ -903,7 +903,7 @@
       "module": "prefetch",
       "path": "lib/vlc/plugins/libprefetch_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "e94d94c4f17d3133abfc8ce4e487b19be6003c64b3ceed962d6cca8dc64bddbe",
+      "sha256": "cbc80304c3c133916edc50444ebcab48e51aac4e46b27c99865d71046bf1188a",
       "size": 54688,
       "sourceComponents": []
     },
@@ -912,7 +912,7 @@
       "module": "record",
       "path": "lib/vlc/plugins/librecord_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "40ec37f0cb44ea287f256b21af086159664a4a786e8b28bf6809bb1278416abf",
+      "sha256": "8d784b537150a71252c80449c1bb273b4ca1c1c80cdf2758dd0b457930f42c47",
       "size": 53680,
       "sourceComponents": []
     },
@@ -921,7 +921,7 @@
       "module": "skiptags",
       "path": "lib/vlc/plugins/libskiptags_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "98366258ec5e01a29147c7d98bc8691405c6439508c2e1b1ea4262d274de4aa5",
+      "sha256": "911b13497e1b8474aa573b0829fd5f0213d3903aac81ee16608bac836653cffd",
       "size": 53728,
       "sourceComponents": []
     },
@@ -930,7 +930,7 @@
       "module": "freetype",
       "path": "lib/vlc/plugins/libfreetype_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "0e894981379839b69338a5dc503886dc9f8c019dfb5b8e67186a275f088e0695",
+      "sha256": "36d466fb51635912e883209ce369f321c4f6b0f03f498e54185c751dccc296c6",
       "size": 2072896,
       "sourceComponents": [
         "freetype",
@@ -944,7 +944,7 @@
       "module": "tdummy",
       "path": "lib/vlc/plugins/libtdummy_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "4bc24389eee602fc7c32a58af9c91a9c135cb5222d5976801ee76a64df425c70",
+      "sha256": "2fe6b293f51188537c3920ee20765e024e84a74ef0b268390816b0dfd4d42629",
       "size": 52576,
       "sourceComponents": []
     },
@@ -953,7 +953,7 @@
       "module": "chain",
       "path": "lib/vlc/plugins/libchain_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "6ebe4c7ba12dce287c2936a41665cae143321ec64d35f2a164e0fab7e447d41e",
+      "sha256": "25717b8b60fa83541ccd0315e2fc50dfa0331f64223ff06c514bb3f798c6df84",
       "size": 55984,
       "sourceComponents": []
     },
@@ -962,7 +962,7 @@
       "module": "cvpx",
       "path": "lib/vlc/plugins/libcvpx_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "a93f88106e67f596de9f7c27f04ad4aeb12165d5941515a464c0001fd74f09b3",
+      "sha256": "abf5e93df5f69039ce17acf38ad7946886a7b3329d41f763f4c8048127efb36e",
       "size": 96880,
       "sourceComponents": []
     },
@@ -971,7 +971,7 @@
       "module": "i420_nv12",
       "path": "lib/vlc/plugins/libi420_nv12_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "f6910f4734c70fc62c9aedb1838530dae1f15097a4fa50685ef089e594f8cfe4",
+      "sha256": "d02f79d1a6404f2fec8dd9c63b189164b32783cf4ffcabbb6a64abfda9c9aef4",
       "size": 54800,
       "sourceComponents": []
     },
@@ -980,7 +980,7 @@
       "module": "i420_rgb",
       "path": "lib/vlc/plugins/libi420_rgb_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "345840611754620d288c07d10af999a89a5a9c04f65febf3c71d6237a05c7a45",
+      "sha256": "eb6cb06718886729f107c851053e1ac69dd3e24454ebc41163309766dbdcd445",
       "size": 71376,
       "sourceComponents": []
     },
@@ -989,7 +989,7 @@
       "module": "orient",
       "path": "lib/vlc/plugins/liborient_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "c69a7063f22d73870e2cf609382de4b9f709884d1c67d1ccef43157dd5c7c505",
+      "sha256": "90ff1dae26ddebda1ebb3c8cba7569a1474cb786854500dbfab009eba719587d",
       "size": 71856,
       "sourceComponents": []
     },
@@ -998,7 +998,7 @@
       "module": "rv32",
       "path": "lib/vlc/plugins/librv32_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "b92ebb499098f53e52b1cbdedae161969e6f8f7462e5dca83d409f92f5f40088",
+      "sha256": "1f742979d7c32ff0b19c56893d4a25d018bc61e91268c461a3f1d4c2a2da5197",
       "size": 52976,
       "sourceComponents": []
     },
@@ -1007,7 +1007,7 @@
       "module": "swscale",
       "path": "lib/vlc/plugins/libswscale_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "afc37a604b12b5df2df56b6dd7b8b0488b70e1ff133005de007509fe74c4ac96",
+      "sha256": "c6306219400710eb4cc7b1222ba2d48fe14a7354fdcabcdf9da6cbca54014318",
       "size": 1249648,
       "sourceComponents": [
         "ffmpeg",
@@ -1019,7 +1019,7 @@
       "module": "yuvp",
       "path": "lib/vlc/plugins/libyuvp_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "932668a0a96114f7b538d8633bdd59f2465d1b7a50c563c564fcd518dca4be54",
+      "sha256": "fbbcadc14d5c75cf6ea7a01514fa12535970d4fb7b77a54b850ed6019a9dadd6",
       "size": 52976,
       "sourceComponents": []
     },
@@ -1028,7 +1028,7 @@
       "module": "yuy2_i420",
       "path": "lib/vlc/plugins/libyuy2_i420_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "a9b68fb7889ac92e8016af3698b683e313f997e1ceff48ecd7d07fb81443d7c8",
+      "sha256": "1c7d7cd71560a171d708ebe5a2d008c0fa4cf7858e116ab6f40a65aba2790aae",
       "size": 53280,
       "sourceComponents": []
     },
@@ -1037,7 +1037,7 @@
       "module": "yuy2_i422",
       "path": "lib/vlc/plugins/libyuy2_i422_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "a6b70bc2e42efc683c9b2bbc3ff8dd7b982747f8d8cbed971c7cf639f07ae990",
+      "sha256": "d55292b6be13daf5f85ea26c63703788f7a6eda00fef4bbf254a957852936b58",
       "size": 53280,
       "sourceComponents": []
     },
@@ -1046,7 +1046,7 @@
       "module": "gl",
       "path": "lib/vlc/plugins/libgl_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "f62a2cb36e43d000d0d65bcac7162608295f51595f56f48acba023b935bc3261",
+      "sha256": "347e0ea017ee0e10135687764efcc129b8fd89f75d951c5671a702bbeec94761",
       "size": 116128,
       "sourceComponents": []
     },
@@ -1055,7 +1055,7 @@
       "module": "glinterop_cvpx",
       "path": "lib/vlc/plugins/libglinterop_cvpx_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "4fc6ff7ff4b63b474df90feeaa50ccf30c8c7bce87d62c9e81ec3777aae09776",
+      "sha256": "d504f4c78bd521653586de5edbdf19297cf79a80ecfe2ff1042048834455e7cd",
       "size": 54224,
       "sourceComponents": []
     },
@@ -1064,7 +1064,7 @@
       "module": "glinterop_sw",
       "path": "lib/vlc/plugins/libglinterop_sw_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "9e1be53cb3d06c48d61cf8b3ca337d2894f22215bc1bde53ff31a608afe2dbe2",
+      "sha256": "d70360080b369fbb4c54596df95045158f0e54e6016c53098c14a453bc443759",
       "size": 55392,
       "sourceComponents": []
     },
@@ -1073,7 +1073,7 @@
       "module": "glsampler_builtin",
       "path": "lib/vlc/plugins/libglsampler_builtin_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "8df8b1664c48fcafc65eba9f2196505ae49f951ffc9b317e75f3d3c7be282074",
+      "sha256": "538452406edb63e1df1c59fd8601985319ee3f928c82acc663b9b86941540389",
       "size": 411024,
       "sourceComponents": [
         "glad",
@@ -1086,7 +1086,7 @@
       "module": "vgl",
       "path": "lib/vlc/plugins/libvgl_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "eca77724d9a69bb43ca0608ca72372fa9061028a08259a2b585b725ed74f4fd0",
+      "sha256": "7e1e0eae17cad87612d11cc464a4af8a6d7b896e187e830968a07c85bde64985",
       "size": 53792,
       "sourceComponents": []
     },
@@ -1095,7 +1095,7 @@
       "module": "vmem",
       "path": "lib/vlc/plugins/libvmem_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "34cde5bcc96d54ccf95a03f69132a6d91fe13943b7a2e3eb89db9c63f1cefd5c",
+      "sha256": "47b90f5ed7bec58c130a51d5fbd8ec9c6f99dbc60dec8e5e2de29172a0cdfb72",
       "size": 53440,
       "sourceComponents": []
     },
@@ -1104,14 +1104,14 @@
       "module": "wdummy",
       "path": "lib/vlc/plugins/libwdummy_plugin.dylib",
       "role": "PLUGIN",
-      "sha256": "cfc5f1d5ef18344003c41a60ae1106a0984cec7dbe5b23d8e36eed0129dfe4b9",
+      "sha256": "7d97a13ff3665661a0fa15e9f5c9b70d920ff4d59a8f57da5e55fc385a48074c",
       "size": 52640,
       "sourceComponents": []
     },
     {
       "path": "lib/vlc/plugins/plugins.dat",
       "role": "DATA",
-      "sha256": "e143c6bcdbb1f8aadfeb71400a43a3e3076b1e36e49581fd7d4abf54a70460cb",
+      "sha256": "89711e522da820f49ecff1360022109695603e7ffc8adf9b49b615785d84623d",
       "size": 46032,
       "sourceComponents": []
     }
@@ -1131,7 +1131,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libkmediavlc_bridge.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "bin/libvlc.12.dylib": {
       "architectures": [
@@ -1143,7 +1144,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libvlc.12.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "bin/libvlccore.9.dylib": {
       "architectures": [
@@ -1159,7 +1161,8 @@
         "/usr/lib/libobjc.A.dylib"
       ],
       "installName": "@rpath/libvlccore.9.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libaccess_mms_plugin.dylib": {
       "architectures": [
@@ -1171,7 +1174,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libaccess_mms_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libadaptive_plugin.dylib": {
       "architectures": [
@@ -1184,7 +1188,8 @@
         "/usr/lib/libc++.1.dylib"
       ],
       "installName": "@rpath/libadaptive_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libadummy_plugin.dylib": {
       "architectures": [
@@ -1196,7 +1201,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libadummy_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libasf_plugin.dylib": {
       "architectures": [
@@ -1208,7 +1214,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libasf_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libaudio_format_plugin.dylib": {
       "architectures": [
@@ -1220,7 +1227,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libaudio_format_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libauhal_plugin.dylib": {
       "architectures": [
@@ -1237,7 +1245,8 @@
         "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation"
       ],
       "installName": "@rpath/libauhal_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libavcodec_plugin.dylib": {
       "architectures": [
@@ -1257,7 +1266,8 @@
         "/System/Library/Frameworks/Security.framework/Versions/A/Security"
       ],
       "installName": "@rpath/libavcodec_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libavi_plugin.dylib": {
       "architectures": [
@@ -1269,7 +1279,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libavi_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libcache_read_plugin.dylib": {
       "architectures": [
@@ -1281,7 +1292,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libcache_read_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libcc_plugin.dylib": {
       "architectures": [
@@ -1293,7 +1305,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libcc_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libchain_plugin.dylib": {
       "architectures": [
@@ -1305,7 +1318,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libchain_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libconsole_logger_plugin.dylib": {
       "architectures": [
@@ -1317,7 +1331,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libconsole_logger_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libcvpx_plugin.dylib": {
       "architectures": [
@@ -1334,7 +1349,8 @@
         "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation"
       ],
       "installName": "@rpath/libcvpx_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libdata_plugin.dylib": {
       "architectures": [
@@ -1346,7 +1362,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libdata_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libdav1d_plugin.dylib": {
       "architectures": [
@@ -1358,7 +1375,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libdav1d_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libes_plugin.dylib": {
       "architectures": [
@@ -1370,7 +1388,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libes_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libfilesystem_plugin.dylib": {
       "architectures": [
@@ -1382,7 +1401,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libfilesystem_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libflac_plugin.dylib": {
       "architectures": [
@@ -1394,7 +1414,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libflac_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libfloat_mixer_plugin.dylib": {
       "architectures": [
@@ -1406,7 +1427,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libfloat_mixer_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libfreetype_plugin.dylib": {
       "architectures": [
@@ -1422,7 +1444,8 @@
         "/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics"
       ],
       "installName": "@rpath/libfreetype_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libftp_plugin.dylib": {
       "architectures": [
@@ -1434,7 +1457,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libftp_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libgl_plugin.dylib": {
       "architectures": [
@@ -1446,7 +1470,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libgl_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libglinterop_cvpx_plugin.dylib": {
       "architectures": [
@@ -1465,7 +1490,8 @@
         "/usr/lib/libobjc.A.dylib"
       ],
       "installName": "@rpath/libglinterop_cvpx_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libglinterop_sw_plugin.dylib": {
       "architectures": [
@@ -1477,7 +1503,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libglinterop_sw_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libglsampler_builtin_plugin.dylib": {
       "architectures": [
@@ -1489,7 +1516,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libglsampler_builtin_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libh26x_plugin.dylib": {
       "architectures": [
@@ -1501,7 +1529,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libh26x_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libhttp_plugin.dylib": {
       "architectures": [
@@ -1513,7 +1542,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libhttp_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libhttps_plugin.dylib": {
       "architectures": [
@@ -1525,7 +1555,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libhttps_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libi420_nv12_plugin.dylib": {
       "architectures": [
@@ -1537,7 +1568,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libi420_nv12_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libi420_rgb_plugin.dylib": {
       "architectures": [
@@ -1549,7 +1581,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libi420_rgb_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libimage_plugin.dylib": {
       "architectures": [
@@ -1561,7 +1594,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libimage_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libinflate_plugin.dylib": {
       "architectures": [
@@ -1573,7 +1607,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libinflate_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libinteger_mixer_plugin.dylib": {
       "architectures": [
@@ -1585,7 +1620,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libinteger_mixer_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libjpeg_plugin.dylib": {
       "architectures": [
@@ -1597,7 +1633,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libjpeg_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libkeychain_plugin.dylib": {
       "architectures": [
@@ -1613,7 +1650,8 @@
         "/usr/lib/libobjc.A.dylib"
       ],
       "installName": "@rpath/libkeychain_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/liblibass_plugin.dylib": {
       "architectures": [
@@ -1629,7 +1667,8 @@
         "/System/Library/Frameworks/CoreText.framework/Versions/A/CoreText"
       ],
       "installName": "@rpath/liblibass_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libmemory_keystore_plugin.dylib": {
       "architectures": [
@@ -1641,7 +1680,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libmemory_keystore_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libmkv_plugin.dylib": {
       "architectures": [
@@ -1654,7 +1694,8 @@
         "/usr/lib/libc++.1.dylib"
       ],
       "installName": "@rpath/libmkv_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libmp4_plugin.dylib": {
       "architectures": [
@@ -1666,7 +1707,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libmp4_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libogg_plugin.dylib": {
       "architectures": [
@@ -1678,7 +1720,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libogg_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libopus_plugin.dylib": {
       "architectures": [
@@ -1690,7 +1733,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libopus_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/liborient_plugin.dylib": {
       "architectures": [
@@ -1702,7 +1746,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/liborient_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_a52_plugin.dylib": {
       "architectures": [
@@ -1714,7 +1759,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_a52_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_av1_plugin.dylib": {
       "architectures": [
@@ -1726,7 +1772,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_av1_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_avparser_plugin.dylib": {
       "architectures": [
@@ -1744,7 +1791,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_avparser_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_copy_plugin.dylib": {
       "architectures": [
@@ -1756,7 +1804,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_copy_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_dts_plugin.dylib": {
       "architectures": [
@@ -1768,7 +1817,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_dts_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_flac_plugin.dylib": {
       "architectures": [
@@ -1780,7 +1830,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_flac_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_h264_plugin.dylib": {
       "architectures": [
@@ -1792,7 +1843,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_h264_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_hevc_plugin.dylib": {
       "architectures": [
@@ -1804,7 +1856,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_hevc_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_mjpeg_plugin.dylib": {
       "architectures": [
@@ -1816,7 +1869,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_mjpeg_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_mlp_plugin.dylib": {
       "architectures": [
@@ -1828,7 +1882,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_mlp_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_mpeg4audio_plugin.dylib": {
       "architectures": [
@@ -1840,7 +1895,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_mpeg4audio_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_mpeg4video_plugin.dylib": {
       "architectures": [
@@ -1852,7 +1908,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_mpeg4video_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_mpegaudio_plugin.dylib": {
       "architectures": [
@@ -1864,7 +1921,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_mpegaudio_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_mpegvideo_plugin.dylib": {
       "architectures": [
@@ -1876,7 +1934,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_mpegvideo_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpacketizer_vc1_plugin.dylib": {
       "architectures": [
@@ -1888,7 +1947,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpacketizer_vc1_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libplaylist_plugin.dylib": {
       "architectures": [
@@ -1900,7 +1960,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libplaylist_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libpng_plugin.dylib": {
       "architectures": [
@@ -1912,7 +1973,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libpng_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libprefetch_plugin.dylib": {
       "architectures": [
@@ -1924,7 +1986,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libprefetch_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libps_plugin.dylib": {
       "architectures": [
@@ -1936,7 +1999,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libps_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/librawvideo_plugin.dylib": {
       "architectures": [
@@ -1948,7 +2012,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/librawvideo_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/librecord_plugin.dylib": {
       "architectures": [
@@ -1960,7 +2025,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/librecord_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/librv32_plugin.dylib": {
       "architectures": [
@@ -1972,7 +2038,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/librv32_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libsecuretransport_plugin.dylib": {
       "architectures": [
@@ -1986,7 +2053,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libsecuretransport_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libsimple_channel_mixer_plugin.dylib": {
       "architectures": [
@@ -1998,7 +2066,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libsimple_channel_mixer_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libskiptags_plugin.dylib": {
       "architectures": [
@@ -2010,7 +2079,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libskiptags_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libsoxr_plugin.dylib": {
       "architectures": [
@@ -2028,7 +2098,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libsoxr_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libspdif_plugin.dylib": {
       "architectures": [
@@ -2040,7 +2111,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libspdif_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libsubsdec_plugin.dylib": {
       "architectures": [
@@ -2052,7 +2124,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libsubsdec_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libsubstx3g_plugin.dylib": {
       "architectures": [
@@ -2064,7 +2137,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libsubstx3g_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libsubtitle_plugin.dylib": {
       "architectures": [
@@ -2076,7 +2150,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libsubtitle_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libswscale_plugin.dylib": {
       "architectures": [
@@ -2093,7 +2168,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libswscale_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libtdummy_plugin.dylib": {
       "architectures": [
@@ -2105,7 +2181,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libtdummy_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libtospdif_plugin.dylib": {
       "architectures": [
@@ -2117,7 +2194,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libtospdif_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libtrivial_channel_mixer_plugin.dylib": {
       "architectures": [
@@ -2129,7 +2207,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libtrivial_channel_mixer_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libts_plugin.dylib": {
       "architectures": [
@@ -2141,7 +2220,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libts_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libvgl_plugin.dylib": {
       "architectures": [
@@ -2153,7 +2233,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libvgl_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libvideotoolbox_plugin.dylib": {
       "architectures": [
@@ -2171,7 +2252,8 @@
         "/usr/lib/libobjc.A.dylib"
       ],
       "installName": "@rpath/libvideotoolbox_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libvmem_plugin.dylib": {
       "architectures": [
@@ -2183,7 +2265,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libvmem_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libvorbis_plugin.dylib": {
       "architectures": [
@@ -2195,7 +2278,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libvorbis_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libvpx_plugin.dylib": {
       "architectures": [
@@ -2207,7 +2291,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libvpx_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libwav_plugin.dylib": {
       "architectures": [
@@ -2219,7 +2304,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libwav_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libwdummy_plugin.dylib": {
       "architectures": [
@@ -2231,7 +2317,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libwdummy_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libwebdav_plugin.dylib": {
       "architectures": [
@@ -2243,7 +2330,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libwebdav_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libwebvtt_plugin.dylib": {
       "architectures": [
@@ -2255,7 +2343,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libwebvtt_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libxml_plugin.dylib": {
       "architectures": [
@@ -2267,7 +2356,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libxml_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libyuvp_plugin.dylib": {
       "architectures": [
@@ -2279,7 +2369,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libyuvp_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libyuy2_i420_plugin.dylib": {
       "architectures": [
@@ -2291,7 +2382,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libyuy2_i420_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     },
     "lib/vlc/plugins/libyuy2_i422_plugin.dylib": {
       "architectures": [
@@ -2303,7 +2395,8 @@
         "/usr/lib/libSystem.B.dylib"
       ],
       "installName": "@rpath/libyuy2_i422_plugin.dylib",
-      "minimumMacos": "14.0"
+      "minimumMacos": "14.0",
+      "sdkVersion": "15.5"
     }
   },
   "rawPluginCount": 289,
