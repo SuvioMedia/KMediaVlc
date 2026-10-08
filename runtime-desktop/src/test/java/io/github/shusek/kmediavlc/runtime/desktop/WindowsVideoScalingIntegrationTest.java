@@ -26,8 +26,9 @@ final class WindowsVideoScalingIntegrationTest {
                     new VlcPlayerListener() {
                         @Override public void onFrameAvailable(long serial, long generation) { signal.countDown(); }
                     });
-            try (var player = VlcDesktopPlayer.create(runtime, config)) {
+            try (var player = VlcDesktopPlayer.create(runtime, config, mode)) {
                 assertTrue(player.setVideoScalingMode(mode));
+                assertFalse(player.setVideoScalingMode((mode + 1) % 5));
                 assertTrue(player.updateOutput(new VlcWindowsOutputTarget(1, 1280, 720, false, 203, 203, adapter)));
                 assertTrue(player.open(Path.of(media).toUri().toString(), Map.of(), true));
                 assertTrue(signal.await(15, TimeUnit.SECONDS), "No frame for scaling mode " + mode);
