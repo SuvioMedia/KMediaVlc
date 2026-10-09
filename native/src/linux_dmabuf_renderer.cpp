@@ -288,9 +288,13 @@ private:
             return false;
         }
 
+        // GBM displays (including Mesa) need not advertise any pbuffer configurations.
+        // Rendering uses our own framebuffer, so prefer a surfaceless GLES context.
+        const bool surfaceless = has_extension(
+            eglQueryString(display, EGL_EXTENSIONS), "EGL_KHR_surfaceless_context");
         const EGLint config_attributes[]{
             EGL_SURFACE_TYPE,
-            EGL_PBUFFER_BIT,
+            surfaceless ? 0 : EGL_PBUFFER_BIT,
             EGL_RENDERABLE_TYPE,
             EGL_OPENGL_ES2_BIT,
             EGL_RED_SIZE,
@@ -307,14 +311,14 @@ private:
         EGLint config_count = 0;
         if (eglChooseConfig(display, config_attributes, &config, 1, &config_count) != EGL_TRUE ||
             config_count != 1 || config == nullptr) {
-            error = "The Linux EGL driver has no GLES2 pbuffer configuration.";
+            error = "The Linux EGL driver has no compatible GLES2 configuration.";
             return false;
         }
         const EGLint context_attributes[]{EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
         context = eglCreateContext(display, config, EGL_NO_CONTEXT, context_attributes);
         const EGLint pbuffer_attributes[]{EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
-        pbuffer = eglCreatePbufferSurface(display, config, pbuffer_attributes);
-        if (context == EGL_NO_CONTEXT || pbuffer == EGL_NO_SURFACE ||
+        if (!surfaceless) pbuffer = eglCreatePbufferSurface(display, config, pbuffer_attributes);
+        if (context == EGL_NO_CONTEXT || (!surfaceless && pbuffer == EGL_NO_SURFACE) ||
             eglMakeCurrent(display, pbuffer, pbuffer, context) != EGL_TRUE) {
             error = "The Linux GLES2 producer context could not be created.";
             return false;
