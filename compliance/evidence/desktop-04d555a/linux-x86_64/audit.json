@@ -195,7 +195,7 @@
   },
   "elf": {
     "bin/libkmediavlc_bridge.so": {
-      "buildId": "c1448d59b205c0844ab0fe0b2772ed9441ee1890",
+      "buildId": "388c99063979e2d626b19dfd12d287dea72bdd97",
       "dependencies": [
         "libEGL.so.1",
         "libGLESv2.so.2",
@@ -587,7 +587,7 @@
       "soname": "libfloat_mixer_plugin.so"
     },
     "lib/vlc/plugins/libfreetype_plugin.so": {
-      "buildId": "91b63a3a0021d1482916f84b136ce6c7405965f9",
+      "buildId": "2df85b5ece657d9699f7ce63917b6be8c734d227",
       "dependencies": [
         "libvlccore.so.9",
         "libm.so.6",
@@ -878,7 +878,7 @@
       "soname": "libjpeg_plugin.so"
     },
     "lib/vlc/plugins/liblibass_plugin.so": {
-      "buildId": "8f91c12ecfb727de931f9236cc8a31a5b54d87ab",
+      "buildId": "8a408e997df7304b8673da283162223991d5fff2",
       "dependencies": [
         "libvlccore.so.9",
         "libm.so.6",
@@ -1943,7 +1943,7 @@
     {
       "path": "bin/libkmediavlc_bridge.so",
       "role": "BRIDGE",
-      "sha256": "75e62756f6abf8ec4c15ee819ba1d1953f8fac9734ffe6e0523c223e877f5a29",
+      "sha256": "28559d96559314d8474968250c238e273d105669391e3dfe8dda25a82181f03a",
       "size": 158425,
       "sourceComponents": []
     },
@@ -2175,7 +2175,7 @@
       "module": "libass",
       "path": "lib/vlc/plugins/liblibass_plugin.so",
       "role": "PLUGIN",
-      "sha256": "eacb07ed2cca60405756f8414e80535eedcf0dfad35cd45c02e557f6d41431bd",
+      "sha256": "b760787807aea68a85f5c9ca41de03074d6f88735444a897283e7a159354f412",
       "size": 2453897,
       "sourceComponents": [
         "freetype",
@@ -2643,7 +2643,7 @@
       "module": "freetype",
       "path": "lib/vlc/plugins/libfreetype_plugin.so",
       "role": "PLUGIN",
-      "sha256": "04d7a336598bfcc8cc3b65f60e5067aa3754d3bb66d45e5dbeb546d5988eb52e",
+      "sha256": "1dfce60a1583dfdffdae195e49c93fd699abc44b6732eda51d313eeb2e766749",
       "size": 2296953,
       "sourceComponents": [
         "freetype",
@@ -2802,7 +2802,7 @@
     {
       "path": "lib/vlc/plugins/plugins.dat",
       "role": "DATA",
-      "sha256": "3eb43caec37a501513dfefbd75e1652f29d02f6734e8b1cbcd373a2372de0d1a",
+      "sha256": "15924ea5c7678b0f9e8407b7a540f1152f17d2b66d0ed000eacec70436486176",
       "size": 39390,
       "sourceComponents": []
     }

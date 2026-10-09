@@ -195,7 +195,7 @@
   },
   "elf": {
     "bin/libkmediavlc_bridge.so": {
-      "buildId": "e8a3a4be15d9b18b62cb1a2c325a9f6d47dd8d0c",
+      "buildId": "b28524cc0c9ab5c6daa5db6d83e5111041bbfc4c",
       "dependencies": [
         "libEGL.so.1",
         "libGLESv2.so.2",
@@ -2026,7 +2026,7 @@
     {
       "path": "bin/libkmediavlc_bridge.so",
       "role": "BRIDGE",
-      "sha256": "a867d61038a9f8d9041dda1cb96b4652490b0ce90bba332a42deb219efd15f08",
+      "sha256": "4e7fc2451f8e25f59bebad3302410459849bc623377a2734821b79d4b6300a19",
       "size": 207577,
       "sourceComponents": []
     },
@@ -2885,7 +2885,7 @@
     {
       "path": "lib/vlc/plugins/plugins.dat",
       "role": "DATA",
-      "sha256": "d0e3e5aab8d8e89eaa8106df5d0f1a2656ef33ebf7fbeccd3bf3667c41958bc3",
+      "sha256": "cf558251e347c9ca1b2814ffc369b151bae47881cae754acdc59d662e25be2a0",
       "size": 39389,
       "sourceComponents": []
     }

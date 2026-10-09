@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-08T00:12:21.025Z" hostname="iad20-eo1213-36ceef23-514b-4b30-ad28-26614c57ff5c-5E223643E4C2.local" time="3.462">
+<testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-09T11:54:21.838Z" hostname="sat12-dp155-b9197fe7-f476-45b7-afe5-f429d48cdbe1-A6CF3D26BD49.local" time="2.9">
   <properties/>
-  <testcase name="pinnedVideoLanFixturePublishesCpuPullFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="2.313"/>
-  <testcase name="pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.401"/>
-  <testcase name="pinnedHdr10FixturePublishesFp16MacIosurfaceFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.733"/>
+  <testcase name="pinnedVideoLanFixturePublishesCpuPullFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="1.727"/>
+  <testcase name="pinnedVideoLanFixturePublishesAndReplacesRealMacIosurfaceFrames()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.348"/>
+  <testcase name="pinnedHdr10FixturePublishesFp16MacIosurfaceFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.805"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

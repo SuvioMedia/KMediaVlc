@@ -43,14 +43,14 @@
     "scripts/create_windows_native_inventory.py": "ba431d1d6b2343954b359918a5484b8d015b22aa4704d48624a2b3299de9aa2a",
     "scripts/create_posix_native_inventory.py": "1e4190774666de632c5521191bc46942e18d802c9291207735ed1fb05e34d130",
     "scripts/audit_vlc_desktop_sources.py": "69040b923b7a04b09d4bf7b53b54988cba6c7e3b64cf7ace3e4ccf4d850fd7c5",
-    "native/CMakeLists.txt": "0a71ec59a0ac65ef0c7a8b2d68ea2152e2c0a0fa513068a173cfd4d09d0e019d",
+    "native/CMakeLists.txt": "bef3b1aaf14572cd7297f90c4c0c41cb8b2ee2886001098313818d2a98b8d982",
     "native/include/kmediavlc_client.h": "6e66f0c85fc9187788df76f1dd81e5d955e4475d9372471cdc6a996bb0099e4e",
     "native/src/bridge_internal.hpp": "48889feb5cf2738e38f47565674f810e9b49e7e7d88e89b8c5d49ed4eb163d04",
     "native/src/kmediavlc_bridge.cpp": "4476364f22da74e7709056c358d2473da17bd5f90e31d3301ea0b42dcbf4e2ba",
     "native/src/kmediavlc_jni.cpp": "b6cc724483fe2025f08148d7e6231406587564aeb03ddca83451b63578103b23",
-    "native/src/linux_dmabuf_inspector.cpp": "f7eea232c2bcb9ae95edc6f9115d707af12a888a9913d19df33f249019ca87b8",
+    "native/src/linux_dmabuf_inspector.cpp": "388d9167c830bd6da79d347c3b6ba5e260935429d7659e2ab8f3df7e5fb50e18",
     "native/src/linux_dmabuf_inspector.hpp": "b5d6ef36abf557e549db667b6e5dd2435416e88957491495b498d0c17f49b940",
-    "native/src/linux_dmabuf_renderer.cpp": "b5bd45ddc11e1455cb687e548b26e5621d043905484d73d1c4ec2c8c45613dac",
+    "native/src/linux_dmabuf_renderer.cpp": "6b3ed09c8dc16c257327e3a98582c7fd64db8c1d21b12aaa8cff43453d860c9f",
     "native/src/macos_iosurface_renderer.cpp": "cb04276abcdbe91fbb48320988e6dabc19d11dfb34ae9db0bba41a93d125f2b4",
     "native/src/platform_renderer_stub.cpp": "c5e5256586f5af9ebd996251f500a69bf51559f4e1b617415aa01564e21b3e3b",
     "native/src/windows_d3d11_renderer.cpp": "630b2899bbe4f16f2ca33402510af8562fe6f932bd94755b4f3a82e013db858e",
@@ -62,23 +62,23 @@
   },
   "platforms": {
     "linux-aarch64": {
-      "runId": 37705332097,
-      "runUrl": "https://github.com/SuvioMedia/KMediaVlc/actions/runs/37705332097",
-      "testedCommit": "ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
+      "runId": 37925201161,
+      "runUrl": "https://github.com/SuvioMedia/KMediaVlc/actions/runs/37925201161",
+      "testedCommit": "1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
       "workflow": ".github/workflows/linux-source-audit.yml",
       "conclusion": "success",
       "evidence": {
         "audit": {
           "path": "compliance/evidence/desktop-04d555a/linux-aarch64/audit.json",
-          "sha256": "528ea13c485501a8aa7e4690804076c048c3bdc603a16f8077b5c8f7acb18393"
+          "sha256": "3b859ec506a0d4ed4aa2b6c6fc280ac54c5e6b427d228211d129e309a6ea0e57"
         },
         "inventory": {
           "path": "compliance/evidence/desktop-04d555a/linux-aarch64/inventory.json",
-          "sha256": "718f6524cdf952715543790e110d58821ec42c7075edbfa18d396749e49bb92e"
+          "sha256": "c111a089a660115bb6113778e102f389b046d9fe6a016d5be26771d3324c3e31"
         },
         "tests": {
           "path": "compliance/evidence/desktop-04d555a/linux-aarch64/tests.xml",
-          "sha256": "00b068d3db17dd34c8e38ae88d5d3ea15bf0c3d907cae84fb7a3a5b77c4c5308"
+          "sha256": "639f64e6114fa7f7eedf7ddcd11f8bda2499e109f08e3c284155c5da1ea9e6ce"
         },
         "sourceInputs": {
           "path": "compliance/evidence/desktop-04d555a/linux-aarch64/source-SHA256SUMS",
@@ -92,42 +92,42 @@
       "tests": {
         "total": 1,
         "executed": 1,
-        "failures": 0,
-        "skipped": 0
+        "skipped": 0,
+        "failures": 0
       },
       "artifacts": [
         {
-          "name": "vlc-linux-aarch64-source-inputs-ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-          "id": 11520210968,
-          "digest": "sha256:478762c7f44d9e39f67386a558fbbe522706d88bc2066e4a834b0075777bee84",
+          "id": 11614332426,
+          "name": "vlc-linux-aarch64-source-inputs-1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+          "digest": "sha256:096a8f2087e16dfc1e74d14be368dff1dc50e41b7534f287a80b549923f4c79e",
           "size_in_bytes": 78766820
         },
         {
-          "name": "kmediavlc-linux-aarch64-tested-candidate-ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-          "id": 11519293765,
-          "digest": "sha256:0eb23d6911394cd8fbb85111f4c5fe5473cac2517d97ef1f6154ee851b767c34",
+          "id": 11614246494,
+          "name": "kmediavlc-linux-aarch64-tested-candidate-1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+          "digest": "sha256:75f9e949e1167eeddb1d9549ffe624aa08fbb889a681d4e51829d39c37864547",
           "size_in_bytes": 56297864
         }
       ]
     },
     "linux-x86_64": {
-      "runId": 37705332097,
-      "runUrl": "https://github.com/SuvioMedia/KMediaVlc/actions/runs/37705332097",
-      "testedCommit": "ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
+      "runId": 37925201161,
+      "runUrl": "https://github.com/SuvioMedia/KMediaVlc/actions/runs/37925201161",
+      "testedCommit": "1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
       "workflow": ".github/workflows/linux-source-audit.yml",
       "conclusion": "success",
       "evidence": {
         "audit": {
           "path": "compliance/evidence/desktop-04d555a/linux-x86_64/audit.json",
-          "sha256": "3c30375ab553375c9d86539f35878a9291d0d3fdc9cd6c28d22525f351cafd90"
+          "sha256": "0734ded95dec9c4dc3730d54eae9b002ad16a0b46e9e5c3dc13798cafea237af"
         },
         "inventory": {
           "path": "compliance/evidence/desktop-04d555a/linux-x86_64/inventory.json",
-          "sha256": "c50a1cd5d3a3cd117e92bf796508bb2050719018c7a84c25c3726786106425b9"
+          "sha256": "fa68f8908e50cb3b2361aa41ce598168945f74ac4e548545f34cac65ab71e99f"
         },
         "tests": {
           "path": "compliance/evidence/desktop-04d555a/linux-x86_64/tests.xml",
-          "sha256": "1f56babc7821c09eecd39210f03cd0fa214812f8513b4aa1549b0f74db0a32c9"
+          "sha256": "d81c5d68603c343f7d2941a1aa577ce907924169b87b2592517bcd2c10377893"
         },
         "sourceInputs": {
           "path": "compliance/evidence/desktop-04d555a/linux-x86_64/source-SHA256SUMS",
@@ -141,42 +141,42 @@
       "tests": {
         "total": 1,
         "executed": 1,
-        "failures": 0,
-        "skipped": 0
+        "skipped": 0,
+        "failures": 0
       },
       "artifacts": [
         {
-          "name": "vlc-linux-x86_64-source-inputs-ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-          "id": 11520086353,
-          "digest": "sha256:f2d1baa39c6cabc39a1085c47fe481ff21a76fc297c7a03d739644bba896c6a9",
+          "id": 11613873306,
+          "name": "vlc-linux-x86_64-source-inputs-1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+          "digest": "sha256:0d1e378a8cbacd23e928f2ac3201b9a03f0c8b1a4ede2b2decfb23001e5049fb",
           "size_in_bytes": 78766820
         },
         {
-          "name": "kmediavlc-linux-x86_64-tested-candidate-ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-          "id": 11519209415,
-          "digest": "sha256:e175a5ed53e755e72b6df164af5a6a3f13929cdc95e479108239da37b72d7da0",
-          "size_in_bytes": 56199383
+          "id": 11613453678,
+          "name": "kmediavlc-linux-x86_64-tested-candidate-1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+          "digest": "sha256:1a0c4d12ad87cd57c4c04eda917bf9b40e5560c906f032725eb081d4277d2ec0",
+          "size_in_bytes": 56199384
         }
       ]
     },
     "macos-aarch64": {
-      "runId": 37705334509,
-      "runUrl": "https://github.com/SuvioMedia/KMediaVlc/actions/runs/37705334509",
-      "testedCommit": "ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
+      "runId": 37925204417,
+      "runUrl": "https://github.com/SuvioMedia/KMediaVlc/actions/runs/37925204417",
+      "testedCommit": "1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
       "workflow": ".github/workflows/macos-source-audit.yml",
       "conclusion": "success",
       "evidence": {
         "audit": {
           "path": "compliance/evidence/desktop-04d555a/macos-aarch64/audit.json",
-          "sha256": "b5895c1b54a9390d539a3dacd746c3f2393cbdeb73bc07be393b5a3e4697ac72"
+          "sha256": "10d0ad336d2a02da6a89b46a756826c59b97a36b6d9bf7cbde799945c1e925e2"
         },
         "inventory": {
           "path": "compliance/evidence/desktop-04d555a/macos-aarch64/inventory.json",
-          "sha256": "ca7fa326d29f94ee22abed24ff895a423611df62877180ac69345a2c874dab31"
+          "sha256": "7b411f2c90ad5ef37e001b5f1c86dd9e44cb93faba99c98978370b56434bead9"
         },
         "tests": {
           "path": "compliance/evidence/desktop-04d555a/macos-aarch64/tests.xml",
-          "sha256": "28443e591ed7983de67b9e1d65fe3f7af37fcb96b7dae04fe1a3f0df70459549"
+          "sha256": "bdc959083418cd568fe693fb4f13ff018dac1542e3d2ce8fd18173c9463844a0"
         },
         "sourceInputs": {
           "path": "compliance/evidence/desktop-04d555a/macos-aarch64/source-SHA256SUMS",
@@ -190,42 +190,48 @@
       "tests": {
         "total": 3,
         "executed": 3,
-        "failures": 0,
-        "skipped": 0
+        "skipped": 0,
+        "failures": 0
       },
       "artifacts": [
         {
-          "name": "vlc-macos-aarch64-source-inputs-ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-          "id": 11520365104,
-          "digest": "sha256:84c49dce60cfe90b96d05abf0aa0779c6f101f93062fbf05e434876252b4e61c",
+          "id": 11614242359,
+          "name": "kmediavlc-macos-aarch64-source-audit-1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+          "digest": "sha256:ee71dfd702b75ff6c3d401b2af107c1680cb9e5601c7cfe68e743f6b82d0c5a4",
+          "size_in_bytes": 11342
+        },
+        {
+          "id": 11614192628,
+          "name": "vlc-macos-aarch64-source-inputs-1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+          "digest": "sha256:a3c2830245af8934e0ebccd4f74a844f36786b8264e56fb0ad8b283ee6ecc7c6",
           "size_in_bytes": 77618548
         },
         {
-          "name": "kmediavlc-macos-aarch64-tested-candidate-ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-          "id": 11519468731,
-          "digest": "sha256:00866cf386f8f739050d45dfda4ca98b81102d3152f37d82591de6593623d355",
-          "size_in_bytes": 47969884
+          "id": 11614132556,
+          "name": "kmediavlc-macos-aarch64-tested-candidate-1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+          "digest": "sha256:6929737c46b93922b69254b28e9074a9289708070802337e9128767aad77f303",
+          "size_in_bytes": 47969881
         }
       ]
     },
     "windows-x86_64": {
-      "runId": 37705329581,
-      "runUrl": "https://github.com/SuvioMedia/KMediaVlc/actions/runs/37705329581",
-      "testedCommit": "ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
+      "runId": 37925196210,
+      "runUrl": "https://github.com/SuvioMedia/KMediaVlc/actions/runs/37925196210",
+      "testedCommit": "1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
       "workflow": ".github/workflows/native-audit.yml",
       "conclusion": "success",
       "evidence": {
         "audit": {
           "path": "compliance/evidence/desktop-04d555a/windows-x86_64/audit.json",
-          "sha256": "5cc6c3949494573d061ff334f7a781ffe53a542881f8827cd0660ea50a073df9"
+          "sha256": "a7f0ac63ca044c35ab1164c1f40d29e9ecf5e7e8a083c5a38e85514c447ff932"
         },
         "inventory": {
           "path": "compliance/evidence/desktop-04d555a/windows-x86_64/inventory.json",
-          "sha256": "e18cf1d29c5cb8f362eaa8353f6d2dc20480109dbc51e1b2110dc180373902c2"
+          "sha256": "8040db5361e5b66e3a71e3ba4b8eeb253bac126f82c57bc4545d624c45706e18"
         },
         "tests": {
           "path": "compliance/evidence/desktop-04d555a/windows-x86_64/tests.xml",
-          "sha256": "a97ce632e3e2a6f405b40bb56880e02e111eee54e41031b02cde6f26ab38e656"
+          "sha256": "33bb5bf92fc6eb82b588ac6e27fc22cc3f8af3356819f883522eab889f091c29"
         },
         "sourceInputs": {
           "path": "compliance/evidence/desktop-04d555a/windows-x86_64/source-SHA256SUMS",
@@ -237,7 +243,7 @@
         },
         "compile-closure": {
           "path": "compliance/evidence/desktop-04d555a/windows-x86_64/compile-closure.json",
-          "sha256": "d3f54901f4e9319145af58b52876bc4994d46a0eb315ea48b251f1fd722e87ca"
+          "sha256": "e618e5c43c5eb0ab598865927414f323fdad3780fbae1210e5fde59b8897300a"
         },
         "raw-contrib-SHA256SUMS": {
           "path": "compliance/evidence/desktop-04d555a/windows-x86_64/raw-contrib-SHA256SUMS",
@@ -247,39 +253,33 @@
       "tests": {
         "total": 37,
         "executed": 23,
-        "failures": 0,
-        "skipped": 14
+        "skipped": 14,
+        "failures": 0
       },
       "artifacts": [
         {
-          "name": "vlc-windows-x86_64-runtime-input-ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-          "id": 11521885071,
-          "digest": "sha256:9821f94f2076221aa59c012bdc5c08aebd3f620c283d9e499922f57354ff6ff5",
-          "size_in_bytes": 39709424
+          "id": 11616225255,
+          "name": "kmediavlc-windows-x86_64-native-validation-1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+          "digest": "sha256:b71d4712424fb195a15acfba841bf4ab600befde5e2c3f18bca2c7bcab3e698b",
+          "size_in_bytes": 29173
         },
         {
-          "name": "kmediavlc-windows-x86_64-tested-candidate-ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-          "id": 11521661396,
-          "digest": "sha256:4d912a373e4567b4ae45d0efa7a07b32200a9b33906404a80384ddf91e19b604",
-          "size_in_bytes": 16945815
+          "id": 11615903144,
+          "name": "vlc-windows-x86_64-link-audit-1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+          "digest": "sha256:15c534fdf126e6c5f4e2e825b831b5b36d719736ceee512471c45e1f020b557b",
+          "size_in_bytes": 510215
         },
         {
-          "name": "vlc-windows-x86_64-source-audit-ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-          "id": 11521616048,
-          "digest": "sha256:181d416a0e2fdac45f4904a88e1044e43d2e70f27691b69633df903c646c39be",
-          "size_in_bytes": 123115032
+          "id": 11615598470,
+          "name": "vlc-windows-x86_64-source-audit-1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+          "digest": "sha256:9748df75aac0f558a92d8b742ad3e393b0b6a1fa1cb61e73a69c54960102d8cc",
+          "size_in_bytes": 123116216
         },
         {
-          "name": "vlc-windows-x86_64-link-audit-ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-          "id": 11521371652,
-          "digest": "sha256:594bdd305f981146bac30d7936cad800651586805b5263a524e143d637e6c075",
-          "size_in_bytes": 510611
-        },
-        {
-          "name": "kmediavlc-windows-x86_64-native-validation-ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-          "id": 11520829848,
-          "digest": "sha256:27c44a76230fb73f9085741cc31e3a4d8f474cdefabb648c407086ffcd25080e",
-          "size_in_bytes": 29196
+          "id": 11614979977,
+          "name": "kmediavlc-windows-x86_64-tested-candidate-1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+          "digest": "sha256:88786eb92db13591637c8e5de8bce35c2b270e423b26eab5ba9f0dd8434a83c8",
+          "size_in_bytes": 16945844
         }
       ]
     }
@@ -306,12 +306,12 @@
     }
   },
   "nativeBridgeAudit": {
-    "testedCommit": "ebf73ec4e849bc0c416e2017a583cbfc26b21fc2",
-    "change": "Windows libVLC instance scaling options, D3D11 scaling capability query, and JNI contract",
+    "testedCommit": "1f4a9ff369f48bfd136d2ed690c4e6ff58998630",
+    "change": "Linux GBM/EGL context creation without pbuffer configurations and the current Windows instance-level scaling acceptance test",
     "sourceRevisionChanged": false,
-    "upstreamSourceArchives": "All fresh desktop contrib archives match the previously reviewed pinned upstream SHA-512 values.",
-    "windowsCompiledSources": "The same 537 non-generated VLC source files are compiled; the four generated build sources are listed in compile-closure.json.",
-    "hardwareScaling": "Hosted Windows scaling integration is skipped without an eligible DXGI adapter; this approval does not claim RTX VSR or physical HDR hardware acceptance."
+    "upstreamSourceArchives": "All fresh desktop contrib archives match the SHA-512 values from the pinned VLC source tree.",
+    "windowsCompiledSources": "The same 537 non-generated VLC source files and four generated build sources are covered by the fresh compile closure.",
+    "hardwareScaling": "This source/runtime audit does not claim physical Linux DMA-BUF, Windows vendor scaling, or physical HDR display acceptance."
   },
   "supplementalEvidenceScope": "Historical Android emulator evidence for the unchanged VLC revision; not rerun as part of this desktop bridge audit."
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-08T00:09:24.778Z" hostname="runnervmy3dvn" time="0.124">
+<testsuite name="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-09T11:50:17.051Z" hostname="runnervmy3dvn" time="0.139">
   <properties/>
-  <testcase name="pinnedVideoLanFixturePublishesCpuPullFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.111"/>
+  <testcase name="pinnedVideoLanFixturePublishesCpuPullFrame()" classname="io.github.shusek.kmediavlc.runtime.desktop.VlcDesktopPlayerIntegrationTest" time="0.124"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -22,9 +22,11 @@ continues to reject it. Run the desktop source audit workflows with
 `audit_candidate=true` to collect new evidence before promoting the policies
 and rerunning the publication audits described below.
 
-The Linux surfaceless EGL change currently requires this new desktop audit.
-The retained `desktop-04d555a` evidence describes the earlier bridge and does
-not approve the changed native inputs for the next release.
+The retained `desktop-04d555a` evidence now covers the Linux surfaceless EGL
+change and the current Windows instance-level scaling test. It binds the fresh
+source-build inventories, corresponding-source checksums, and hosted runtime
+test results for all four desktop targets. Physical display and GPU acceptance
+remain separate from this source/runtime approval.
 
 Every release is atomic across the supported runtime matrix:
 

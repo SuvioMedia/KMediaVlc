@@ -6,19 +6,19 @@
     {
       "path": "bin/libvlc.dll",
       "role": "LIBVLC",
-      "sha256": "667da1d2b76330e548dc78374703faef216ae1ea948796f16e79a4948a206503",
+      "sha256": "90183547b3aa2c829fcae9c7f8eef21931833a2900593fc3b845dfba9307d469",
       "size": 118272
     },
     {
       "path": "bin/libvlccore-9.dll",
       "role": "CORE",
-      "sha256": "4162bf46e467305dc09f8e690eaa1c603b363b0ab735f2e0e8ffbd43174d6313",
+      "sha256": "c31bea0c3e744e1e90cff3865f659d263acb7fa2e46b916993adba1712cba571",
       "size": 2059776
     },
     {
       "path": "bin/kmediavlc_bridge.dll",
       "role": "BRIDGE",
-      "sha256": "28952a0366141b71a4ec040e7484e565048f8ed0a735708ab6a93fda2e37167e",
+      "sha256": "538c52f56f7c47e14ed8b146f02949b2e04a3abc3081a5e3c669f07965bde71b",
       "size": 122368
     },
     {
@@ -26,7 +26,7 @@
       "module": "access_mms",
       "path": "lib/vlc/plugins/libaccess_mms_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "d8f71a95e885f914c546999be8da93ca25ca58eb40b9edecdb7d71b526689657",
+      "sha256": "1ff22a2267d28b9e36b3342cde96bff0f474b55e0dbe7e46d57160ada6039c8e",
       "size": 50176
     },
     {
@@ -34,7 +34,7 @@
       "module": "data",
       "path": "lib/vlc/plugins/libdata_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "e0a72e93ba355e7a54ecabef6bc8642c25790d4139ca3554bb19e2da9db35be9",
+      "sha256": "0656cb1f5ffa70b082b0cb8c986edd6f31729d11abf9fa4d560b56ef459a2c95",
       "size": 15360
     },
     {
@@ -42,7 +42,7 @@
       "module": "filesystem",
       "path": "lib/vlc/plugins/libfilesystem_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "31f064fdbd2b1a4ea98e8f4e26dfa78d5298587fd115dd24b2c37a75e044fbd6",
+      "sha256": "d179280ea17755094bc8528ab0604b30e2a4a0960222508a66cd5667770ec431",
       "size": 19456
     },
     {
@@ -50,7 +50,7 @@
       "module": "ftp",
       "path": "lib/vlc/plugins/libftp_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "8695bb58887eac3a4c7edd895ddbaccac13e6381aef49344a0b87663540dfb29",
+      "sha256": "0ee6714fa8b8763d0ef215201e9b7307f3bcc9e6ad82ce0bf6bef58569f4d1c2",
       "size": 36352
     },
     {
@@ -58,7 +58,7 @@
       "module": "http",
       "path": "lib/vlc/plugins/libhttp_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "a75e5f6d653b1672342d500114cd45f4b0e4a1bb2e632f2867d7864051b38a7b",
+      "sha256": "fae98dc04943744dfaad691e0e307c6485612440336544ada7ba75dd8824a095",
       "size": 27136
     },
     {
@@ -66,7 +66,7 @@
       "module": "sftp",
       "path": "lib/vlc/plugins/libsftp_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "26cf82592c2652f5d78426ee0ff19092406e86b00d1d523b80473b9758457ff2",
+      "sha256": "4cca2a1bc37268a19c73df192a523fe0aebfeff638cccca77378f53b2bdee65e",
       "size": 151552
     },
     {
@@ -74,7 +74,7 @@
       "module": "tcp",
       "path": "lib/vlc/plugins/libtcp_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "58ae7e7986af39f5e29bddfb08b307db36dc8d3bccb1387cbb5f1c5a76a26440",
+      "sha256": "6dd4d605492c0a66755f1b0465331952d5bfd2b16410453fe4ab68901e329e56",
       "size": 14336
     },
     {
@@ -82,7 +82,7 @@
       "module": "udp",
       "path": "lib/vlc/plugins/libudp_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "4b708f6d81d523d810f4baa001664c6c977b5a4d7394c223401f633ef0bf0e8b",
+      "sha256": "ed494101f58bef124cd87dbf54612e01e4c3cffdffc23f877f503f12765317ed",
       "size": 17408
     },
     {
@@ -90,7 +90,7 @@
       "module": "https",
       "path": "lib/vlc/plugins/libhttps_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "ef47251b75a80716aaadb222d504a4fc794e98e157db84f62658cc427c6fe9a6",
+      "sha256": "21c3539b82b0fe67acf9b6552501340df95d053c6ae7c55c63e235891a5c0f0b",
       "size": 76288
     },
     {
@@ -98,7 +98,7 @@
       "module": "webdav",
       "path": "lib/vlc/plugins/libwebdav_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "2db749c70286599eb1275e27652cc9846225b875065e22f3505de4d2828e67f2",
+      "sha256": "083bd1f56e633ff4b6d4e2a820790964fe0b2d9e4a7cb50b301b8c11a0f043fc",
       "size": 74240
     },
     {
@@ -106,7 +106,7 @@
       "module": "audio_format",
       "path": "lib/vlc/plugins/libaudio_format_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "dd8ad94c7493dec6379e364ccb4d68a2ed5d501cb415d080a06c53782077e962",
+      "sha256": "b30d16170e7894ce387033336af94881563c8f130f8121433bb8ffb195933144",
       "size": 23040
     },
     {
@@ -114,7 +114,7 @@
       "module": "simple_channel_mixer",
       "path": "lib/vlc/plugins/libsimple_channel_mixer_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "1c49771e4f5399f521e52badd952cf11e249b845121c183fbed5fc946b19c277",
+      "sha256": "dd651aae9228aee07e7663f188c6600ac1df520c984bb9c75a6232abb86ca37d",
       "size": 17920
     },
     {
@@ -122,7 +122,7 @@
       "module": "soxr",
       "path": "lib/vlc/plugins/libsoxr_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "3b106278ec28cfa837c22b33993344c2a8c50767d5d8a69891559ae62b61efca",
+      "sha256": "05445c2354c31bb81b0a695288ce46c3f5d1357253f7441dae2c9c27798ccd6a",
       "size": 676352
     },
     {
@@ -130,7 +130,7 @@
       "module": "speex_resampler",
       "path": "lib/vlc/plugins/libspeex_resampler_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "1389693fbbeb154f24e94f4bb1318f36ff71e95c7baf138b42646020158d170d",
+      "sha256": "28e6637cf691fb6ef6dbdfc1951c858cea2f8ce2cccad997def2a1b0f72e3430",
       "size": 28672
     },
     {
@@ -138,7 +138,7 @@
       "module": "tospdif",
       "path": "lib/vlc/plugins/libtospdif_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "bb76e958717a0f0846df3c1496584bbece633e13fae8c0261cbff2a71abbab59",
+      "sha256": "5058962016cbf57d98954e398884062b3d00fd5614b54f8041d781919071ff89",
       "size": 30720
     },
     {
@@ -146,7 +146,7 @@
       "module": "trivial_channel_mixer",
       "path": "lib/vlc/plugins/libtrivial_channel_mixer_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "52dab265fd208438f6b35be4e7379069e51e72419ecd654f183e1665ba57f599",
+      "sha256": "759a743b464d483b3397e718588626b552ea8ddb6dc3e637dde8f9e02912ca90",
       "size": 18432
     },
     {
@@ -154,7 +154,7 @@
       "module": "float_mixer",
       "path": "lib/vlc/plugins/libfloat_mixer_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "f31ab73c556f96bf07180ab15050f3b62ecd305c5cb173180e082bdca7037cd5",
+      "sha256": "9cc2836a5604a70695f12a2d2b0bc7d49d7929fe99128e9c73535d51ecb9e547",
       "size": 14336
     },
     {
@@ -162,7 +162,7 @@
       "module": "integer_mixer",
       "path": "lib/vlc/plugins/libinteger_mixer_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "d5f251599f38d083908ba3c3d0f484072c0625c64ae33316b2906cf925755dcc",
+      "sha256": "214183ad327424538187227fbd1c5f4c56818ff1035a7a221f7058d3223f60ee",
       "size": 15360
     },
     {
@@ -170,7 +170,7 @@
       "module": "adummy",
       "path": "lib/vlc/plugins/libadummy_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "20deaa5721bc902bc72d2906371bd821f223c9e40b0199fe76f98d310c8348aa",
+      "sha256": "d49584d906197b4ae59f0a979c247fbb6e73d8bd422b226d09cb10119ba1ac45",
       "size": 14848
     },
     {
@@ -178,7 +178,7 @@
       "module": "mmdevice",
       "path": "lib/vlc/plugins/libmmdevice_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "97a42849b2f93fe774bad2d9da97879c25664241599572a56c165ff92d78b397",
+      "sha256": "d597952daf870aa88d757513f879e4fde433ec22f8ec61fe76271de7f35c0047",
       "size": 34816
     },
     {
@@ -186,7 +186,7 @@
       "module": "wasapi",
       "path": "lib/vlc/plugins/libwasapi_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "aefa99bd3b2c7dc47b024fb3d92518b6c908301de82648b3086505bf5ff421ba",
+      "sha256": "a87eea523dbcf138de8b7ba899a0d69c9b9bac76cb749b4621707337498f35f3",
       "size": 25600
     },
     {
@@ -194,7 +194,7 @@
       "module": "avcodec",
       "path": "lib/vlc/plugins/libavcodec_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "ed7b22651c2667d48ea015fd1faec1315cb6995bd20fb08cabb25e06bd96bc0d",
+      "sha256": "a9a81da0864cf25a4736a84026346d02603b72419bf090030e54ee1828413ecb",
       "size": 16689664
     },
     {
@@ -202,7 +202,7 @@
       "module": "d3d11va",
       "path": "lib/vlc/plugins/libd3d11va_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "1070e1ef6ee3f9a88c67338bd387f6d04c5b242a4faaee1546000becaa7ac64e",
+      "sha256": "03852f148711463006158146358408598180bf7eb14b7a2f2d6b51066c96969a",
       "size": 126976
     },
     {
@@ -210,7 +210,7 @@
       "module": "flac",
       "path": "lib/vlc/plugins/libflac_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "fbcba899f8f9b58ebce5eba378e9191777f772d95f09dce780b6220d07d32cff",
+      "sha256": "116705f7990b296832f57230d3058daa77033caf3cc9a4e212f383a5661e1738",
       "size": 103424
     },
     {
@@ -218,7 +218,7 @@
       "module": "jpeg",
       "path": "lib/vlc/plugins/libjpeg_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "ca1956b5a96b0335ea452d6d27b27a443d91a958d108ccfbc44cbecb060efa8f",
+      "sha256": "811cced354af68f094d1972bb7d6779266296e84901c4ba94f9a1436a13b5032",
       "size": 794624
     },
     {
@@ -226,7 +226,7 @@
       "module": "libass",
       "path": "lib/vlc/plugins/liblibass_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "e515720b7a3f4af99fdfe1e9ff9b31907d63fceaff62f341efc65e1e076d1687",
+      "sha256": "e9c61fdc3e3bb13f7441ff763c101ba2240af782b420e8aeb10002ae19c8ea86",
       "size": 1950720
     },
     {
@@ -234,7 +234,7 @@
       "module": "mft",
       "path": "lib/vlc/plugins/libmft_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "c5127249aea9267e813a013072576631a73271998b735de4a2596cd6885f4469",
+      "sha256": "f257ff5afaf89d3080464cad81ae7588a5934ba75b2166e9a6b8732208057ec5",
       "size": 333312
     },
     {
@@ -242,7 +242,7 @@
       "module": "opus",
       "path": "lib/vlc/plugins/libopus_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "b37fc3b6b424f089590687a5a48ee63c9f99659dda9f82459484ae400334e5de",
+      "sha256": "3bc2dbb9cd0ac2e5fe0d6a268431a1e1e37f160c97168c52c5bbcfbcc8793176",
       "size": 216064
     },
     {
@@ -250,7 +250,7 @@
       "module": "png",
       "path": "lib/vlc/plugins/libpng_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "e79b4e4de3b1d5e3f5863bbf52018cf18537912ab4b820a85c22046fe88d06e3",
+      "sha256": "e3ea1911097f914661a96f72548200aa37a4e143d90af8e9f4c1f15337433247",
       "size": 220672
     },
     {
@@ -258,7 +258,7 @@
       "module": "rawvideo",
       "path": "lib/vlc/plugins/librawvideo_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "3191b3ce0d720db616a356ca06e2101a84453d412e936ae6536a9c0cf29e4715",
+      "sha256": "dd3536fd9887ff6c6846e5f88561133743faafacdf7865012690c3b65f2ff583",
       "size": 16896
     },
     {
@@ -266,7 +266,7 @@
       "module": "spdif",
       "path": "lib/vlc/plugins/libspdif_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "7ec0fb1cb37d3c670f7c06f3df22e673e102383626cd0856ad38e05000b230f6",
+      "sha256": "02911abeae2d74e97d50d7f48bb292f02c17c8e223c06f4078ae885061c7898c",
       "size": 14336
     },
     {
@@ -274,7 +274,7 @@
       "module": "subsdec",
       "path": "lib/vlc/plugins/libsubsdec_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "832e5d0b5e94ad7763026630460c3a3b65a03e282924bf228e8daeaff92fea74",
+      "sha256": "843c0a12fa9ed5298d3dd4ab46e9da354d65a65eff95efa29402afc1e25dbc78",
       "size": 30720
     },
     {
@@ -282,7 +282,7 @@
       "module": "substx3g",
       "path": "lib/vlc/plugins/libsubstx3g_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "7a73d6b16dc7a5380fb518a3a3be5e3b4956496cfbc3dff499aad6f78d016aab",
+      "sha256": "50f96077a7ebb18937694b3839bc274bf6754fbcbc8b4ff7ad4176eb34bc4c72",
       "size": 20992
     },
     {
@@ -290,7 +290,7 @@
       "module": "vorbis",
       "path": "lib/vlc/plugins/libvorbis_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "3e511c66b4ce683100a8f97e79c028d9717335ec29eeea4dd68ca55a4d68a7a2",
+      "sha256": "b650e9fc5b9b3ef1237bc8cbb730de48264c2e636b81258de46225c776af9ed2",
       "size": 179200
     },
     {
@@ -298,7 +298,7 @@
       "module": "webvtt",
       "path": "lib/vlc/plugins/libwebvtt_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "b7db58f0ae1c4db533fec6beeb2d92d70722571fca45d4b043002cc34065e73f",
+      "sha256": "ab115d6b9448d2cdc0737e24218634fd1ef087923b91bfb196535514a770677e",
       "size": 84992
     },
     {
@@ -306,7 +306,7 @@
       "module": "adaptive",
       "path": "lib/vlc/plugins/libadaptive_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "4f90b3aa278aad427fd03d0fd2438441e5d8cfc460067d5dd2858e988f662d1c",
+      "sha256": "ec145a88209293f549a60d86450e2d13ca952793bdbade0780a3cd42e1f88509",
       "size": 1996288
     },
     {
@@ -314,7 +314,7 @@
       "module": "asf",
       "path": "lib/vlc/plugins/libasf_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "75b540997d4d0bbd1a03bf68b5d7c32e36e8dc2cf6c5e16a7e6c3cf33a607360",
+      "sha256": "dfe59650e69fa219da3fb559bdf8d6cb0979f3dc3fea834019a401001af23c69",
       "size": 68608
     },
     {
@@ -322,7 +322,7 @@
       "module": "avi",
       "path": "lib/vlc/plugins/libavi_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "2b6cc76a78628adcfe32289ed553283b58daaf03d2d8b2a4116ace970c94e6b0",
+      "sha256": "a48fdcf68008ada68d03ad3ecb1822cb0e2a5510f8f9f0b4cefe3abae2788e33",
       "size": 76288
     },
     {
@@ -330,7 +330,7 @@
       "module": "es",
       "path": "lib/vlc/plugins/libes_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "f8779de2d421fa3415f0d9a7c5a4ade042a417ee81be975e524f1218078c8317",
+      "sha256": "06b82bea2ebb3cd04ef7dd41bd49e6dbbbd6ee70be44419a4df2dd59bbf337b3",
       "size": 50176
     },
     {
@@ -338,7 +338,7 @@
       "module": "h26x",
       "path": "lib/vlc/plugins/libh26x_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "58b902ce6e75e3c367030f863e11fa8451f2e267e37dc397041905cd4981a31f",
+      "sha256": "d1f1af5c27b803a0ca52c80c5bcd3cb1a53b60a1a81fe6955575959f260ca008",
       "size": 43008
     },
     {
@@ -346,7 +346,7 @@
       "module": "image",
       "path": "lib/vlc/plugins/libimage_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "5fbb887ea5bab3fefafcec136bbec24102a4b8c7e3556e958ee80ddf3cd31db0",
+      "sha256": "8a32189d310fc6c4136bd8a9a1d76be7c33dd36bc5a5430f33b51aa50fc172b0",
       "size": 25088
     },
     {
@@ -354,7 +354,7 @@
       "module": "mkv",
       "path": "lib/vlc/plugins/libmkv_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "11c1c69292298634db8aaf701d7f44395985bac05cdd2757f3911745e6d88df1",
+      "sha256": "5c0610bba3d60afde7643aefe17802e0c3489e8b0741b40d75061ce70a53c737",
       "size": 1145344
     },
     {
@@ -362,7 +362,7 @@
       "module": "mp4",
       "path": "lib/vlc/plugins/libmp4_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "1c0fddf47eda8440f067febb3e5fcad3a2599e0ba5b2d99854dbcdbbf47fa2c5",
+      "sha256": "510b915f9d54f8e2d136c31a7bf93c2aa962816137bf352df02af79a1764a927",
       "size": 266240
     },
     {
@@ -370,7 +370,7 @@
       "module": "ogg",
       "path": "lib/vlc/plugins/libogg_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "12cdf89da58962a136e345be16da4802d0b04d399f59d3cc711d6644f5c0d0b7",
+      "sha256": "a73bbf545817102a9704c161662a3ff0f9c083822c0524ae33b71e55435f2c9c",
       "size": 204800
     },
     {
@@ -378,7 +378,7 @@
       "module": "playlist",
       "path": "lib/vlc/plugins/libplaylist_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "0bac755601bbc3c80cef1294b946fb60c6626cf678c811827b8bd6a1c33bd4a3",
+      "sha256": "57dffa6f7d403059e1b5b745bea498bbbe1e425fe5186d671dd1285d96f8936e",
       "size": 82944
     },
     {
@@ -386,7 +386,7 @@
       "module": "ps",
       "path": "lib/vlc/plugins/libps_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "3b5cd985605ff3700750e76d4e33622e6001a98efd60e58110385515cc7c5100",
+      "sha256": "a85622a6bd9faccab9c88695fa27481defd0a718bd8f02d25ed43303850526a2",
       "size": 30720
     },
     {
@@ -394,7 +394,7 @@
       "module": "subtitle",
       "path": "lib/vlc/plugins/libsubtitle_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "eda17c5f6083d420c33e25bd05d6ba8114c3698e7c55a77e494f0cb69abf32a5",
+      "sha256": "41a2b53421d508ab975b29bf0d4697834f2711332c0107aec42b2e5707ccf63c",
       "size": 41984
     },
     {
@@ -402,7 +402,7 @@
       "module": "ts",
       "path": "lib/vlc/plugins/libts_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "c34c8cffbdf5d3d0037d3a7a193c3b200d2e6750681c18979a4dbcc9790b36f4",
+      "sha256": "7d0ae8c83644dfd161aa739fcfdf25ccb8fe3862d1fbf0015796779423fca567",
       "size": 233984
     },
     {
@@ -410,7 +410,7 @@
       "module": "wav",
       "path": "lib/vlc/plugins/libwav_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "4e4995b5e26fb0863af59d040cfdac9052c78cce597fe0b75607cd800216938f",
+      "sha256": "518d4d5f7d2ffdec5c3b73a3118bede1cf75763fa7bc298ac30979c9cfbf671e",
       "size": 24576
     },
     {
@@ -418,7 +418,7 @@
       "module": "direct3d11_filters",
       "path": "lib/vlc/plugins/libdirect3d11_filters_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "33a843bc1d42c9e2afc2b78c5034b768ee2775c93a194a5c79ef88e9d88b0df7",
+      "sha256": "1325790b8186ae15b22d5dea8bc4e78783e04ae548b00ba2257992ca4fd27371",
       "size": 286720
     },
     {
@@ -426,7 +426,7 @@
       "module": "memory_keystore",
       "path": "lib/vlc/plugins/libmemory_keystore_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "33688f3dc39b64404b17da8ffda4ee342a87e99cade0a201da68cc021bcebe23",
+      "sha256": "653efcfad498b65664149e204c3bc0673f255674a755662b25806597c29ae7b9",
       "size": 16896
     },
     {
@@ -434,7 +434,7 @@
       "module": "console_logger",
       "path": "lib/vlc/plugins/libconsole_logger_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "9bd416468347e7904c341c32ddba5ffdd954f22784464d5fcb04e715af7a9e0a",
+      "sha256": "893edca435a0935b7102fbd94ffda2d72d6337ddd424f08a93b930869f96db2f",
       "size": 15360
     },
     {
@@ -442,7 +442,7 @@
       "module": "gnutls",
       "path": "lib/vlc/plugins/libgnutls_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "3926cfeadcfe66c300b6dccdef0a682a8d0de1d14d9171c5ae3af9ec8fd00315",
+      "sha256": "1e8aa95dbe697f37f627ff3c656f6373be036dcd4e91b5ebcb8984ec026c1b90",
       "size": 2092032
     },
     {
@@ -450,7 +450,7 @@
       "module": "xml",
       "path": "lib/vlc/plugins/libxml_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "94ee67a4f26668a5f4ebf776a5fa0805ade8616926b07856ee0f5089b940f183",
+      "sha256": "7c512962c2462d3b91b530d5e4a924a8591258fd98a961898fb32ff155f5e26a",
       "size": 299520
     },
     {
@@ -458,7 +458,7 @@
       "module": "packetizer_a52",
       "path": "lib/vlc/plugins/libpacketizer_a52_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "2cad4a49a282ba8389665766670209dcd918f64da9540a5e320f04b6446940d7",
+      "sha256": "d7e770311926e3575852bd988ee3e8a52e0df5fab9d228d9ea2d234585f487de",
       "size": 22528
     },
     {
@@ -466,7 +466,7 @@
       "module": "packetizer_av1",
       "path": "lib/vlc/plugins/libpacketizer_av1_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "ed80c879e6ee135b2f82f637bdce86538a9576457f8383e0123eb8799cbee224",
+      "sha256": "e4334dd6682b10fce9dee426fa3a734a62a4876d30877688dd7252495447d0a1",
       "size": 40448
     },
     {
@@ -474,7 +474,7 @@
       "module": "packetizer_copy",
       "path": "lib/vlc/plugins/libpacketizer_copy_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "da84dc11fbccd7665ad809b1f78f79d532194a646151386543a831257827e4d2",
+      "sha256": "cea42b7813d034293f6aa483c3c0ff0b16993329dfcb7ab5ecbf9610882a30f4",
       "size": 17408
     },
     {
@@ -482,7 +482,7 @@
       "module": "packetizer_dts",
       "path": "lib/vlc/plugins/libpacketizer_dts_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "ab2a36f85aee0059514bbfb3bfe0fa6e0f6fdec9ceb4dc389caf473a33b1ef36",
+      "sha256": "6623e34f2fb67651dd6a59c888fbc3ceb461a234da9e3a059cdf994bd06d5072",
       "size": 26624
     },
     {
@@ -490,7 +490,7 @@
       "module": "packetizer_flac",
       "path": "lib/vlc/plugins/libpacketizer_flac_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "b6a3ef4b0a68c9434793f1b9d57ea3ebb9d6411ad59d1d28cd1d45e9953cbe4b",
+      "sha256": "31506211ada909c26c27836e0fa060897f91a0a1ac98c4ed1fae76adeb4ae72d",
       "size": 23040
     },
     {
@@ -498,7 +498,7 @@
       "module": "packetizer_h264",
       "path": "lib/vlc/plugins/libpacketizer_h264_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "d63a866686d7cfd3ce303f9363d550d516f7e7ef65d06bc54b857a71f6cc1aeb",
+      "sha256": "8fa3fe222c13ed3cde2990de10a47a698b95586303165d26c205e12ecebfd829",
       "size": 69632
     },
     {
@@ -506,7 +506,7 @@
       "module": "packetizer_hevc",
       "path": "lib/vlc/plugins/libpacketizer_hevc_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "0c2c9f399c2175a964cf9cef2d72d79b3ccb5b640f5507dc0d50547e9e6d48bc",
+      "sha256": "12b065193f0923b43ec0f664478e22b3731bb9f80e3784228fa02f18cc1e6a91",
       "size": 83456
     },
     {
@@ -514,7 +514,7 @@
       "module": "packetizer_mjpeg",
       "path": "lib/vlc/plugins/libpacketizer_mjpeg_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "b9b780f895547323d63948e084127e6b4b11dcb331cf85dba447481defd4e8df",
+      "sha256": "c1542b4f927c8b6248c6a9d9b5cfd345800ae610ab59919011680ac186309ebd",
       "size": 18432
     },
     {
@@ -522,7 +522,7 @@
       "module": "packetizer_mlp",
       "path": "lib/vlc/plugins/libpacketizer_mlp_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "b514f08a4fcd203968dceb5fc27d03c18b4d138324a5b6065014561b57894395",
+      "sha256": "1936ce616532d6d0002e3b37764f7f8fde857dc319920891636ec216be23a528",
       "size": 25088
     },
     {
@@ -530,7 +530,7 @@
       "module": "packetizer_mpeg4audio",
       "path": "lib/vlc/plugins/libpacketizer_mpeg4audio_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "a4e48ed07e8f6fc3abc8ae2fd53f537f7e19635d52166b96121687c70a481e65",
+      "sha256": "0c1b53d8bcf5b0e47fa4d3d347d882682fb474fdc3b2f760def15cd2d5e7945b",
       "size": 46080
     },
     {
@@ -538,7 +538,7 @@
       "module": "packetizer_mpeg4video",
       "path": "lib/vlc/plugins/libpacketizer_mpeg4video_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "b85b3587ccf8ccbdfabf1c41d1ac963a026602ee28a278527bc1b2968fb0a570",
+      "sha256": "dde6edec764f04e303c9ea65b5b14c9148de525b86b26bb59063ccc1da5316d5",
       "size": 30208
     },
     {
@@ -546,7 +546,7 @@
       "module": "packetizer_mpegaudio",
       "path": "lib/vlc/plugins/libpacketizer_mpegaudio_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "b398f62cd5a922a1d62af861631d68dd01c9bab71f7efae1dc0bcc496a67cb49",
+      "sha256": "6b762af23aec33a39e9c5965fcbe5dfb67ce636964dcba8571f6aa461a53bc44",
       "size": 20480
     },
     {
@@ -554,7 +554,7 @@
       "module": "packetizer_mpegvideo",
       "path": "lib/vlc/plugins/libpacketizer_mpegvideo_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "f2e9239035d6c3c49ee5d408ee28970e0d20aa1e630a7d8f86caa77563f04ab1",
+      "sha256": "a8e61c9d382c7672af42fc1e1d76ba29e00fc449fda01f9b92fc0051ec167f52",
       "size": 29184
     },
     {
@@ -562,7 +562,7 @@
       "module": "packetizer_vc1",
       "path": "lib/vlc/plugins/libpacketizer_vc1_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "7bfddb9e8d79bb003edc961755e3bf6c094a29a5c5f407636c2c9a6cd4769cd3",
+      "sha256": "0dfb33ac5b6ca9c69704ef6cc6ba02bff3f6b45ccfba3fb70dece7b9db578e14",
       "size": 35328
     },
     {
@@ -570,7 +570,7 @@
       "module": "cache_read",
       "path": "lib/vlc/plugins/libcache_read_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "e247fd6a6032383e9b542416c872275248198432bd395b13d237a9e3b494bfe6",
+      "sha256": "dea162751bfb0194a4fecc335abb9cd899692e6fd25db58baec2ac182d35168d",
       "size": 18432
     },
     {
@@ -578,7 +578,7 @@
       "module": "inflate",
       "path": "lib/vlc/plugins/libinflate_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "ecae89d61f0565d4bda304e9f1ce9f9d4c3b238d78292d085c865949e42b141d",
+      "sha256": "d98bb7b837d358809e3bcc02be6a0c83ed0b94126ba2cc62d302db456b450df5",
       "size": 46592
     },
     {
@@ -586,7 +586,7 @@
       "module": "prefetch",
       "path": "lib/vlc/plugins/libprefetch_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "100e3c78f6b3bb04bb84ae3106b262f4ffe5308119947129d1bb4a428916310c",
+      "sha256": "415739b770d4346ae36ed00f04d90a37b0df1c743e20144bfa888be8e92b9706",
       "size": 19456
     },
     {
@@ -594,7 +594,7 @@
       "module": "record",
       "path": "lib/vlc/plugins/librecord_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "a89ec3e8fa3667ab739b568ab7c4c2edc3454d2b2548ffc51ea41e57022df098",
+      "sha256": "9d2657930aa28ae291d2647b88b300bb19d5b005bb9499939b3f89bb8e04404d",
       "size": 16384
     },
     {
@@ -602,7 +602,7 @@
       "module": "skiptags",
       "path": "lib/vlc/plugins/libskiptags_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "4f30894561876b50ba9e6cdd4270a5649a8fa29aff868f43171e94603ad4bf09",
+      "sha256": "539ba8117667228e9c0c01b63016dfa1dc8e8353aa6a4a5478aac1e5368e7677",
       "size": 15872
     },
     {
@@ -610,7 +610,7 @@
       "module": "freetype",
       "path": "lib/vlc/plugins/libfreetype_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "a73fe7881dcb17915f9aa1c22cac0554843bfe403f5ae61d3063267fa98d7385",
+      "sha256": "6fe449aa759eda168b6332e4d667ce1573109209a448f62f9eb6eb7872d3acdb",
       "size": 2250752
     },
     {
@@ -618,7 +618,7 @@
       "module": "tdummy",
       "path": "lib/vlc/plugins/libtdummy_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "df1659ba765bba803568997c0572375d4b1b931f10249c9372351853771fb413",
+      "sha256": "b4eed76c30612f569e162e2ab36c7ad9c016d96401c0889dc7dd5e32a9d93b46",
       "size": 13824
     },
     {
@@ -626,7 +626,7 @@
       "module": "chain",
       "path": "lib/vlc/plugins/libchain_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "c8a6637e257e90add6556b065e40be37fad1af0f9688d2b17e999b08318c0c15",
+      "sha256": "70b71f25064cdc121b7c4951ae626b8ab6d51ef66212a97ac20fd8504369e301",
       "size": 20480
     },
     {
@@ -634,7 +634,7 @@
       "module": "i420_nv12",
       "path": "lib/vlc/plugins/libi420_nv12_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "de51ee16d249b82f7bd586db09f331af4602da367d6fb6bd69efef6b1a1f4aa8",
+      "sha256": "d33f928710f1b393583b41bc54122e5def2cf45d95b62b82217f15c77df0eb05",
       "size": 54784
     },
     {
@@ -642,7 +642,7 @@
       "module": "i420_rgb_sse2",
       "path": "lib/vlc/plugins/libi420_rgb_sse2_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "474770cb922dc0938dc26e7384be8c320048a5f9f1b8f3db0f57de27b5fcb8a6",
+      "sha256": "d2dcc71e649820c47116480eedfe09d294c6a598ab3560b464c6a6a44416c474",
       "size": 47616
     },
     {
@@ -650,7 +650,7 @@
       "module": "orient",
       "path": "lib/vlc/plugins/liborient_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "b246f8585f7fdd3383a74518a202f93d5fa074a5972d75dab954af59b8e56b85",
+      "sha256": "c8cf3ef96f886629a8744fc497c42823ba30acb854f564fb90b17aab16b13bb9",
       "size": 20480
     },
     {
@@ -658,7 +658,7 @@
       "module": "rv32",
       "path": "lib/vlc/plugins/librv32_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "f918e9ff8cae667f4455ddc80043aa2f36fa1f31870de8c748eaf7c8bd429a12",
+      "sha256": "c9caea5ae59b9713b339cfca310deeea5f37aa9eab2292373a37e95ac1b92297",
       "size": 15360
     },
     {
@@ -666,7 +666,7 @@
       "module": "swscale",
       "path": "lib/vlc/plugins/libswscale_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "1a49ccf0256b1ee0e232a65ab91868552ea343ad553e1f6ca10cce5fe3edf252",
+      "sha256": "fadb825ee52d0bb1d92aa6ace55e67f3ce3eaf1eb9364ffdca13151e04499be3",
       "size": 1628160
     },
     {
@@ -674,7 +674,7 @@
       "module": "yuvp",
       "path": "lib/vlc/plugins/libyuvp_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "c9c95edecabc7b717f3c15faa2a08e498f058954b75074fcffdb16e1f1f8c84c",
+      "sha256": "5843650b8e0379af62790980f923bf46abbab43ea653b629c954aea49e3d1e73",
       "size": 17920
     },
     {
@@ -682,7 +682,7 @@
       "module": "yuy2_i420",
       "path": "lib/vlc/plugins/libyuy2_i420_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "bd770223ad4748699daeb02fb2fb8c8b867e39c16cd234a0bb3609459a94377a",
+      "sha256": "2f9a7efdfeba1b49c98f85890f605f71f407ec541a5ae7557731650a9081c841",
       "size": 18944
     },
     {
@@ -690,7 +690,7 @@
       "module": "yuy2_i422",
       "path": "lib/vlc/plugins/libyuy2_i422_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "4ddd19b3a12622d71a1b84f8d9dd7c4161107e88677a67837f21149887a2f013",
+      "sha256": "bf0ed492d05812884a4b00effdf548caa0abc2d5673986ad6f6fbe476f712d81",
       "size": 17920
     },
     {
@@ -698,7 +698,7 @@
       "module": "vmem",
       "path": "lib/vlc/plugins/libvmem_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "e865a9ab9ee74bf85736f66e569067101b47581c33164e9c2a78d1384f44eec4",
+      "sha256": "8ab806ad257ab05a94c63068b9bc2d1729a7fc602d92ac64f23e26be6e5a716d",
       "size": 17408
     },
     {
@@ -706,7 +706,7 @@
       "module": "wdummy",
       "path": "lib/vlc/plugins/libwdummy_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "4c09ffd7d62633321e68ec75002d00e57ff52590e61151818b54974c6f3f7621",
+      "sha256": "23a851cecf43e7aa98794d6d1aeb694469c67d44d05bb8d68f567aa4ea749e1b",
       "size": 13824
     },
     {
@@ -714,7 +714,7 @@
       "module": "wextern",
       "path": "lib/vlc/plugins/libwextern_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "3697376de8dd5dbdd6429ea379ef3645569dcea8daa7b94ebfe5a507c10c8418",
+      "sha256": "91512f59cf2b7271da9850037a633aa059ec37c447fe6c2094102ea43098cf88",
       "size": 14848
     },
     {
@@ -722,7 +722,7 @@
       "module": "direct3d11",
       "path": "lib/vlc/plugins/libdirect3d11_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "972c6c4b62ad7fecad1fb22348839a96c6a2ddedb9cc52d2b5ded55558b53b33",
+      "sha256": "2021d31f42de55c010b35728511e4f6bbae773c5764658d53d62e5e1b05403c2",
       "size": 349696
     },
     {
@@ -730,7 +730,7 @@
       "module": "win32_window",
       "path": "lib/vlc/plugins/libwin32_window_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "f375481efc465a2d763a574d65e978aec979f91ba1ce365fda74953fb167f8b7",
+      "sha256": "55783684c852c132dee96844d84998c72814c862d8fdbf3cc65599e687ee5271",
       "size": 27136
     },
     {
@@ -738,7 +738,7 @@
       "module": "winhibit",
       "path": "lib/vlc/plugins/libwinhibit_plugin.dll",
       "role": "PLUGIN",
-      "sha256": "2d803432e1c9db8f1aea67b93ce86bf842bfbb9ef92bef9aef102840bf8a9e3b",
+      "sha256": "406f09379a29778d627006becb9cbbd08a07a5aaa08b7f02668091aacd864381",
       "size": 14848
     }
   ],
