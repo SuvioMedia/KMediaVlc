@@ -80,6 +80,11 @@ class CurrentDesktopAuditTest(unittest.TestCase):
         self.root = Path(self.temporary.name)
         historical = json.loads((ROOT / "compliance/policy/desktop-retained-audit-e439692.json").read_text())
         self.policies = historical["approvedPolicyFiles"]
+        for relative in ("compliance/policy/desktop-retained-audit-e439692.json",
+                         historical["evidence"]["acceptancePath"]):
+            path = self.root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / relative, path)
         for relative in self.policies:
             path = self.root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -115,6 +120,43 @@ class CurrentDesktopAuditTest(unittest.TestCase):
 
     def test_valid_fixture_has_complete_approval(self) -> None:
         COMPLIANCE.verify_current_desktop_audit(self.root, self.policies)
+
+    def test_changed_bridge_requires_pending_matrix_until_new_audit(self) -> None:
+        path = self.root / "native/CMakeLists.txt"
+        path.write_bytes(path.read_bytes() + b"\n# Changed bridge build input\n")
+        with self.assertRaisesRegex(SystemExit, "native build input changed"):
+            COMPLIANCE.verify_desktop_retained_audit(self.root)
+
+        pending_states = (
+            "pending-link-command-and-license-audit",
+            "pending-elf-source-license-and-dmabuf-audit",
+            "pending-link-command-and-license-audit",
+            "pending-mach-o-and-source-license-audit",
+            "pending-link-command-audit",
+            "pending-meson-dependency-audit",
+        )
+        for relative, pending in zip(self.policies, pending_states):
+            path = self.root / relative
+            policy = json.loads(path.read_text())
+            policy["reviewStatus"] = pending
+            path.write_text(json.dumps(policy))
+        COMPLIANCE.verify_desktop_retained_audit(self.root)
+
+        # A partial promotion still cannot claim approval for the changed bridge.
+        path = self.root / self.policies[0]
+        policy = json.loads(path.read_text())
+        policy["reviewStatus"] = "approved"
+        path.write_text(json.dumps(policy))
+        with self.assertRaisesRegex(SystemExit, "entire approved policy matrix"):
+            COMPLIANCE.verify_desktop_retained_audit(self.root)
+
+        for relative in self.policies:
+            path = self.root / relative
+            policy = json.loads(path.read_text())
+            policy["reviewStatus"] = "approved"
+            path.write_text(json.dumps(policy))
+        with self.assertRaisesRegex(SystemExit, "native build input changed"):
+            COMPLIANCE.verify_desktop_retained_audit(self.root)
 
     def test_changed_policy_cannot_reuse_the_current_approval(self) -> None:
         path = self.root / self.policies[0]

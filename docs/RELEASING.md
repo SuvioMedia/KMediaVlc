@@ -12,6 +12,20 @@ requires reviewed native evidence; tokens cannot replace that review.
 
 ## Native release inputs
 
+When a hash-bound desktop build input changes, return all six desktop
+policy `reviewStatus` fields to their supported pending states in the same
+change. The approval covers the complete desktop matrix, including shared
+CMake inputs; leaving any policy approved still requires the old evidence
+to match the current sources. Keep the retained evidence unchanged.
+Ordinary CI validates the pending source tree, while release-mode staging
+continues to reject it. Run the desktop source audit workflows with
+`audit_candidate=true` to collect new evidence before promoting the policies
+and rerunning the publication audits described below.
+
+The Linux surfaceless EGL change currently requires this new desktop audit.
+The retained `desktop-04d555a` evidence describes the earlier bridge and does
+not approve the changed native inputs for the next release.
+
 Every release is atomic across the supported runtime matrix:
 
 - Windows x64;

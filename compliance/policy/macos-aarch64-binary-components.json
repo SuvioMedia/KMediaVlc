@@ -9,7 +9,7 @@
     "minimumMacos": "14.0",
     "architecture": "arm64"
   },
-  "reviewStatus": "approved",
+  "reviewStatus": "pending-link-command-and-license-audit",
   "buildOnlyContribPackages": ["jinja", "markupsafe"],
   "components": {
     "dav1d": {
