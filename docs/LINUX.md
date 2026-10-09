@@ -62,7 +62,14 @@ the packaged graph remains the closed playback library and plugin set.
 ## GPU frame transport
 
 `GPU_PUSH` uses libVLC 4's GLES2 output callbacks and a private EGL context on
-the consumer-supplied DRM render node. The consumer must advertise concrete
+the consumer-supplied DRM render node. On displays exposing `EGL_KHR_surfaceless_context`,
+both the producer and inspection consumer use a context without a default
+surface: GBM drivers need not offer pbuffer configurations. Drivers without
+that extension retain the pbuffer path. The physical context regression can
+be run with `KMEDIA_TEST_RENDER_NODE=/dev/dri/renderD128 ctest --test-dir <native-build>`
+after configuring with `KMEDIAVLC_BUILD_TEST_FIXTURES=ON`.
+
+The consumer must advertise concrete
 DRM format/modifier pairs. The first bounded transport deliberately supports
 only single-plane `DRM_FORMAT_ABGR8888` that is both importable by EGL and
 renderable as a GLES2 framebuffer; implicit `DRM_FORMAT_MOD_INVALID` layouts

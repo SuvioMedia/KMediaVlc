@@ -293,9 +293,13 @@ private:
             return false;
         }
 
+        // GBM displays (including Mesa) need not advertise any pbuffer configurations.
+        // Rendering uses our own framebuffer, so prefer a surfaceless GLES context.
+        const bool surfaceless = has_extension(
+            eglQueryString(display_, EGL_EXTENSIONS), "EGL_KHR_surfaceless_context");
         const EGLint config_attributes[]{
             EGL_SURFACE_TYPE,
-            EGL_PBUFFER_BIT,
+            surfaceless ? 0 : EGL_PBUFFER_BIT,
             EGL_RENDERABLE_TYPE,
             EGL_OPENGL_ES2_BIT,
             EGL_RED_SIZE,
@@ -318,8 +322,8 @@ private:
         const EGLint context_attributes[]{EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
         const EGLint pbuffer_attributes[]{EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
         context_ = eglCreateContext(display_, config, EGL_NO_CONTEXT, context_attributes);
-        pbuffer_ = eglCreatePbufferSurface(display_, config, pbuffer_attributes);
-        if (context_ == EGL_NO_CONTEXT || pbuffer_ == EGL_NO_SURFACE ||
+        if (!surfaceless) pbuffer_ = eglCreatePbufferSurface(display_, config, pbuffer_attributes);
+        if (context_ == EGL_NO_CONTEXT || (!surfaceless && pbuffer_ == EGL_NO_SURFACE) ||
             eglMakeCurrent(display_, pbuffer_, pbuffer_, context_) != EGL_TRUE) {
             return false;
         }
