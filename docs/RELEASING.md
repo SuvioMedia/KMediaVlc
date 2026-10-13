@@ -10,6 +10,28 @@ KMediaVlc releases are deliberately two-stage:
 The Central credentials are the only secret part of stage two. Stage one also
 requires reviewed native evidence; tokens cannot replace that review.
 
+### Java loader and license-only desktop hotfix
+
+A desktop hotfix can retain the entire audited native matrix when its native
+source, recipes, patches, policies and packagers are unchanged. The Gradle
+publication gate runs `scripts/verify_desktop_runtime_reuse.py` against the
+exact ancestor runtime commit and the new release commit. It allows the
+reviewed manifest/loader implementations, their tests and JNI metadata.
+For other desktop Java files it permits only the exact additional MIT SPDX
+header; changed JNI bindings, added/deleted classes or altered code fail.
+The Java tests must pass for the release commit.
+
+Retain the original successful audit runs and hash-verified candidate files
+for Windows x64, both Linux architectures and macOS ARM64. Pass those files
+through the normal native matrix packager and license/inventory checks.
+Build and independently verify a new corresponding-source archive containing
+the new Java code and the exact original VLC/contrib sources. Publish a new
+immutable desktop version with the normal Gradle publication gates enabled;
+do not replace an old Maven artifact or publish an API-only fixture. Android
+continues using its existing coordinate unless it is separately released.
+The standalone additional MIT grant also covers the project-authored Java
+code already conveyed in rc.15; it does not alter native library terms.
+
 ## Native release inputs
 
 When a hash-bound desktop build input changes, return all six desktop

@@ -399,55 +399,19 @@ val requireNativePayloadForPublication =
                 require(ancestor == 0) {
                     "The desktop runtime commit must be an ancestor of the release commit."
                 }
-                val behaviorPaths =
-                    listOf(
-                        "native",
-                        "runtime-desktop/src",
-                        "build-recipes/linux.json",
-                        "build-recipes/macos.json",
-                        "build-recipes/windows.json",
-                        "patches/vlc",
-                        "gradle/libs.versions.toml",
-                        "compliance/policy/release-policy.json",
-                        "compliance/policy/linux-playback-modules.json",
-                        "compliance/policy/linux-binary-components.json",
-                        "compliance/policy/macos-aarch64-playback-modules.json",
-                        "compliance/policy/macos-aarch64-binary-components.json",
-                        "compliance/policy/windows-x86_64-playback-modules.json",
-                        "compliance/policy/windows-x86_64-binary-components.json",
-                        "scripts/package_native_runtime.py",
-                        "scripts/package_native_runtime_matrix.py",
+                providers.exec {
+                    workingDir(rootProject.layout.projectDirectory)
+                    commandLine(
+                        rootProject.providers.gradleProperty("kmediaVlcPythonExecutable")
+                            .orElse(rootProject.providers.environmentVariable("KMEDIAVLC_PYTHON"))
+                            .orElse(if (System.getProperty("os.name").startsWith("Windows")) "python" else "python3")
+                            .get(),
+                        "scripts/verify_desktop_runtime_reuse.py",
+                        "--root", rootProject.layout.projectDirectory.asFile.absolutePath,
+                        "--runtime-commit", recipeRevision.get(),
+                        "--release-commit", checkoutRevision.get(),
                     )
-                val changedBehaviorPaths =
-                    providers
-                        .exec {
-                            workingDir(rootProject.layout.projectDirectory)
-                            commandLine(
-                                listOf(
-                                    "git",
-                                    "diff",
-                                    "--name-only",
-                                    "${recipeRevision.get()}..${checkoutRevision.get()}",
-                                    "--",
-                                ) + behaviorPaths,
-                            )
-                        }.standardOutput.asText
-                        .get()
-                        .lineSequence()
-                        .filter(String::isNotBlank)
-                        .toSet()
-                val allowedJavaOnlyChanges =
-                    setOf(
-                        "runtime-desktop/src/main/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifest.java",
-                        "runtime-desktop/src/main/resources/META-INF/native-image/io.github.shusek/" +
-                            "kmedia-vlc-runtime-desktop/reachability-metadata.json",
-                        "runtime-desktop/src/test/java/io/github/shusek/kmediavlc/runtime/desktop/NativePayloadManifestTest.java",
-                    )
-                val unexpectedBehaviorPaths = changedBehaviorPaths - allowedJavaOnlyChanges
-                require(unexpectedBehaviorPaths.isEmpty()) {
-                    "Desktop runtime behavior or packaging policy changed after its source build: " +
-                        unexpectedBehaviorPaths.sorted().joinToString()
-                }
+                }.result.get().assertNormalExitValue()
             }
             require(!publicationVersionValue.contains("SNAPSHOT", ignoreCase = true)) {
                 "Publishing requires an immutable non-SNAPSHOT version."
