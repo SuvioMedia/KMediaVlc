@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-2.1-or-later
+// SPDX-License-Identifier: MIT OR LGPL-2.1-or-later
 
 package io.github.shusek.kmediavlc.runtime.desktop;
 
@@ -63,6 +63,15 @@ record NativePayloadManifest(
                     "Zlib");
 
     static NativePayloadManifest parse(byte[] bytes, String expectedTarget) {
+        return parse(bytes, expectedTarget, false);
+    }
+
+    /** Local replacements retain ABI/inventory checks, but need not be an upstream release. */
+    static NativePayloadManifest parseReplacement(byte[] bytes, String expectedTarget) {
+        return parse(bytes, expectedTarget, true);
+    }
+
+    private static NativePayloadManifest parse(byte[] bytes, String expectedTarget, boolean replacement) {
         if (bytes.length == 0 || bytes.length > MAX_MANIFEST_BYTES) {
             return reject("Native manifest size is invalid.");
         }
@@ -76,13 +85,26 @@ record NativePayloadManifest(
 
         requireEqual("1", required(properties, "schemaVersion"), "manifest schema");
         requireEqual(expectedTarget, required(properties, "target"), "runtime target");
-        requireTrue(properties, "releaseEligible");
-        requireFalse(properties, "stockNightly");
-        requireFalse(properties, "gplComponents");
-        requireFalse(properties, "nonfreeComponents");
+        if (!replacement) {
+            requireTrue(properties, "releaseEligible");
+            requireFalse(properties, "stockNightly");
+            requireFalse(properties, "gplComponents");
+            requireFalse(properties, "nonfreeComponents");
+        } else {
+            for (String key : List.of("releaseEligible", "stockNightly", "gplComponents", "nonfreeComponents")) {
+                parseBoolean(properties, key);
+            }
+        }
         requireEqual("4", required(properties, "libvlc.abiMajor"), "libVLC ABI major");
-        requireEqual(VLC_VERSION, required(properties, "libvlc.version"), "libVLC version");
-        requireEqual(VLC_REVISION, required(properties, "libvlc.revision"), "libVLC revision");
+        String vlcVersion = required(properties, "libvlc.version");
+        String vlcRevision = required(properties, "libvlc.revision");
+        if (!replacement) {
+            requireEqual(VLC_VERSION, vlcVersion, "libVLC version");
+            requireEqual(VLC_REVISION, vlcRevision, "libVLC revision");
+        } else if (!vlcVersion.startsWith("4.") || vlcVersion.length() > 128
+                || !COMMIT_REVISION.matcher(vlcRevision).matches()) {
+            return reject("Replacement libVLC version or revision is invalid.");
+        }
         requireEqual(
                 Integer.toString(BRIDGE_ABI_VERSION),
                 required(properties, "bridge.abiVersion"),
@@ -138,7 +160,7 @@ record NativePayloadManifest(
                 return reject("Native manifest contains an invalid component identifier.");
             }
             String licenseSpdx = required(properties, prefix + "licenseSpdx");
-            if (!isAllowedLicenseExpression(licenseSpdx)) {
+            if ((!replacement && !isAllowedLicenseExpression(licenseSpdx)) || licenseSpdx.length() > 512) {
                 return reject("Native manifest contains a forbidden or unknown license.");
             }
             FileRole role = parseEnum(required(properties, prefix + "role"), FileRole.class, "file role");
@@ -178,7 +200,7 @@ record NativePayloadManifest(
                 bridgePath,
                 libVlcPath,
                 pluginDirectory,
-                new VlcRuntimeCapabilities(4, 2, VLC_VERSION, VLC_REVISION, modes, engines, hdr10Metadata),
+                new VlcRuntimeCapabilities(4, BRIDGE_ABI_VERSION, vlcVersion, vlcRevision, modes, engines, hdr10Metadata),
                 List.copyOf(files));
     }
 

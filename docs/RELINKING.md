@@ -67,3 +67,32 @@ generated and independently reopened for the final tested commit.
 An application can replace the pair by substituting a rebuilt AAR (or its
 matching `jni/<abi>` entries) while retaining bridge ABI 1 and the exact VLC
 4 callback ABI. The public release includes these relinking inputs alongside the AAR.
+
+## Desktop recipient-built replacements
+
+The project-authored desktop and Android Java layer may be compiled under its additional
+MIT license, including into a proprietary Native Image. The JNI bridge, VLC,
+plugins and native dependencies retain their own licenses and remain separate
+replaceable libraries. See the root license map for the exact grant scope.
+
+Use `VlcDesktopRuntime.resolveExternalDirectory(absoluteDirectory)` and pass its
+result to `VlcDesktopPlayer.create` (or KMediaPlayer's `LibVlcRuntimeSource.Resolved`).
+The directory must contain `manifest.properties` and all files inventoried by
+it, using the same layout as `META-INF/kmediavlc/native/<target>/` in the runtime
+JAR. Extract that whole target directory as the starting point. Rebuild with
+the corresponding-source archive and its REBUILD instructions; replace the
+bridge, libVLC, core and affected plugins coherently, then update each changed
+file's size and SHA-256 in your local manifest. Set your actual libVLC version,
+source revision, recipe revision and source references. A private modified
+build can set `releaseEligible=false`; this API is not a publication approval.
+
+The replacement checks platform, libVLC ABI 4, bridge ABI 2, output capabilities,
+paths and the local file inventory. Its bytes and source revision do not have
+to match the bundled release. The bundled resolver continues to require the
+exact original manifest and hashes. No runtime is downloaded. Do not alter
+files while the app is running; restart after choosing a different runtime.
+Keep all files inside the chosen real directory without symbolic links.
+The macOS application must permit recipient-signed libraries (for example
+`com.apple.security.cs.disable-library-validation`); sign rebuilt libraries
+locally where required by macOS. Use a complete ABI-compatible VLC 4 build,
+not a VLC 3 system installation.

@@ -41,8 +41,10 @@ Ninja builds share a compatible job pool.
 
 ## License and private-consumer boundary
 
-KMediaVlc's project-authored runtime clients, native bridges, build recipes,
-and packaging tools are licensed under LGPL-2.1-or-later. The stable
+KMediaVlc's project-authored desktop and Android Java API and loader are available under
+MIT or LGPL-2.1-or-later, at the recipient's choice; the exact paths and
+version scope are recorded in `LICENSE`. Other runtime clients, native
+bridges, build recipes, and packaging tools remain LGPL-2.1-or-later. The stable
 `native/include/kmediavlc_client.h` ABI is ISC so an independent application or
 adapter can use the runtime without copying its implementation. VideoLAN and
 all bundled dependencies retain their upstream licenses.

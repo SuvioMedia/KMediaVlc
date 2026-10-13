@@ -4,8 +4,9 @@ KMediaVlc
 Copyright (C) 2026 Shusek
 
 KMediaVlc is an optional client and distribution boundary for libVLC 4.
-Project-authored loaders, APIs, adapters, build recipes, and packaging tools
-are licensed under LGPL-2.1-or-later. The stable client header remains ISC so
+Project-authored desktop and Android Java APIs and loaders are dual-licensed under MIT or
+LGPL-2.1-or-later; see LICENSE. Other project-authored adapters, native bridges,
+build recipes, and packaging tools remain LGPL-2.1-or-later. The stable client header remains ISC so
 independent proprietary or open-source applications can implement an adapter.
 VideoLAN VLC, its plugins, and every transitive native dependency retain
 their upstream terms. A release is eligible only when its exact binary graph,

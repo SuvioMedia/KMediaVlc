@@ -969,6 +969,11 @@ afterEvaluate {
                     url.set("https://github.com/SuvioMedia/KMediaVlc")
                     licenses {
                         license {
+                            name.set("MIT alternative for project-authored Java only; native libraries retain their licenses")
+                            url.set("https://github.com/SuvioMedia/KMediaVlc/blob/main/LICENSE")
+                            distribution.set("repo")
+                        }
+                        license {
                             name.set("GNU Lesser General Public License, version 2.1 or later")
                             url.set("https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html")
                             distribution.set("repo")

@@ -2,8 +2,10 @@
 
 # Third-party notices
 
-KMediaVlc is an optional LGPL-2.1-or-later client and distribution boundary for
-libVLC 4. The stable `native/include/kmediavlc_client.h` client API is ISC.
+KMediaVlc is an optional client and distribution boundary for libVLC 4.
+The project-authored desktop and Android Java API and loader have the additional MIT
+grant described in `LICENSE`; the native bridge remains LGPL-2.1-or-later.
+The stable `native/include/kmediavlc_client.h` client API is ISC.
 VideoLAN VLC, its plugins, native dependencies, and compiler runtime code keep
 their upstream terms.
 

@@ -222,6 +222,7 @@ tasks.named<ProcessResources>("processResources") {
     duplicatesStrategy = DuplicatesStrategy.FAIL
     from(rootProject.layout.projectDirectory.file("LICENSE")) { into("META-INF") }
     from(rootProject.layout.projectDirectory.file("NOTICE")) { into("META-INF") }
+    from(rootProject.layout.projectDirectory.file("docs/RELINKING.md")) { into("META-INF") }
     from(rootProject.layout.projectDirectory.file("THIRD_PARTY_NOTICES.md")) { into("META-INF") }
     from(rootProject.layout.projectDirectory.dir("LICENSES")) {
         include("*.txt")
@@ -308,6 +309,8 @@ val verifyRuntimeJar =
                         "META-INF/LICENSE",
                         "META-INF/NOTICE",
                         "META-INF/THIRD_PARTY_NOTICES.md",
+                        "META-INF/RELINKING.md",
+                        "META-INF/LICENSES/MIT-KMediaVlc-Java.txt",
                     )
                 require(names.containsAll(required)) { "Runtime JAR is missing mandatory legal files." }
                 val graalMetadataPath =
@@ -498,6 +501,11 @@ publishing {
                 inceptionYear.set("2026")
                 url.set("https://github.com/SuvioMedia/KMediaVlc")
                 licenses {
+                    license {
+                        name.set("MIT License (project-authored desktop Java layer; alternative license)")
+                        url.set("https://github.com/SuvioMedia/KMediaVlc/blob/main/LICENSES/MIT-KMediaVlc-Java.txt")
+                        distribution.set("repo")
+                    }
                     license {
                         name.set("GNU Lesser General Public License, version 2.1 or later")
                         url.set("https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html")

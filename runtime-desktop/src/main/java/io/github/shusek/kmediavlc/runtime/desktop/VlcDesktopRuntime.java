@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-2.1-or-later
+// SPDX-License-Identifier: MIT OR LGPL-2.1-or-later
 
 package io.github.shusek.kmediavlc.runtime.desktop;
 
@@ -7,7 +7,6 @@ import static io.github.shusek.kmediavlc.runtime.desktop.VlcRuntimeException.Rea
 import static io.github.shusek.kmediavlc.runtime.desktop.VlcRuntimeException.Reason.PAYLOAD_MISSING;
 import static io.github.shusek.kmediavlc.runtime.desktop.VlcRuntimeException.Reason.UNSUPPORTED_PLATFORM;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -17,7 +16,9 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
@@ -108,6 +109,46 @@ public final class VlcDesktopRuntime {
         }
     }
 
+    /**
+     * Verifies an explicitly selected recipient-built runtime without extracting or loading it.
+     * The directory contains manifest.properties and the files it inventories. Hashes come from
+     * that local manifest, not the bundled release. Keep the directory unchanged while in use.
+     */
+    public static VlcDesktopRuntimeResolution resolveExternalDirectory(Path directory) {
+        if (directory == null || !directory.isAbsolute()) {
+            throw new IllegalArgumentException("Replacement directory must be an absolute path.");
+        }
+        Path root = directory.normalize();
+        Path manifestPath = root.resolve("manifest.properties");
+        try {
+            rejectSymbolicLink(root);
+            rejectSymbolicLink(manifestPath);
+            if (!Files.isDirectory(root) || !Files.isRegularFile(manifestPath)) {
+                throw new VlcRuntimeException(INTEGRITY_FAILURE, "Replacement VLC manifest is missing.");
+            }
+            byte[] bytes = readManifestBytes(Files.newInputStream(manifestPath));
+            NativePayloadManifest manifest = NativePayloadManifest.parseReplacement(bytes, currentTarget());
+            verifyExtracted(root, manifest);
+            var expected = new HashSet<Path>();
+            expected.add(manifestPath);
+            manifest.files().forEach(entry -> expected.add(root.resolve(entry.path()).normalize()));
+            try (var paths = Files.walk(root)) {
+                paths.forEach(path -> {
+                    if (Files.isSymbolicLink(path)
+                            || (!Files.isDirectory(path) && !expected.contains(path))) {
+                        throw new VlcRuntimeException(INTEGRITY_FAILURE, "Replacement VLC contains an uninventoried file or link.");
+                    }
+                });
+            }
+            if (!Arrays.equals(bytes, readManifestBytes(Files.newInputStream(manifestPath)))) {
+                throw new VlcRuntimeException(INTEGRITY_FAILURE, "Replacement VLC manifest changed during verification.");
+            }
+            return resolution(root, manifest);
+        } catch (IOException failure) {
+            throw new VlcRuntimeException(INTEGRITY_FAILURE, "Replacement VLC runtime cannot be verified.", failure);
+        }
+    }
+
     static String currentTarget() {
         return targetFor(
                 System.getProperty("os.name", ""),
@@ -135,15 +176,19 @@ public final class VlcDesktopRuntime {
         String name = RESOURCE_ROOT + target + "/manifest.properties";
         try (InputStream input = VlcDesktopRuntime.class.getClassLoader().getResourceAsStream(name)) {
             if (input == null) throw new VlcRuntimeException(PAYLOAD_MISSING, "Bundled VLC runtime is unavailable.");
-            var output = new ByteArrayOutputStream();
-            input.transferTo(output);
-            byte[] bytes = output.toByteArray();
-            if (bytes.length > NativePayloadManifest.MAX_MANIFEST_BYTES) {
-                throw new VlcRuntimeException(INTEGRITY_FAILURE, "Bundled VLC manifest is oversized.");
-            }
-            return NativePayloadManifest.parse(bytes, target);
+            return NativePayloadManifest.parse(readManifestBytes(input), target);
         } catch (IOException failure) {
             throw new VlcRuntimeException(INTEGRITY_FAILURE, "Bundled VLC manifest cannot be read.", failure);
+        }
+    }
+
+    private static byte[] readManifestBytes(InputStream input) throws IOException {
+        try (input) {
+            byte[] bytes = input.readNBytes(NativePayloadManifest.MAX_MANIFEST_BYTES + 1);
+            if (bytes.length > NativePayloadManifest.MAX_MANIFEST_BYTES) {
+                throw new VlcRuntimeException(INTEGRITY_FAILURE, "VLC manifest is oversized.");
+            }
+            return bytes;
         }
     }
 
@@ -162,6 +207,9 @@ public final class VlcDesktopRuntime {
             for (NativePayloadManifest.FileEntry entry : manifest.files()) {
                 Path file = directory.resolve(entry.path()).normalize();
                 requireDescendant(directory, file);
+                for (Path parent = file.getParent(); !parent.equals(directory); parent = parent.getParent()) {
+                    rejectSymbolicLink(parent);
+                }
                 verifyFile(file, entry);
             }
         } catch (IOException failure) {

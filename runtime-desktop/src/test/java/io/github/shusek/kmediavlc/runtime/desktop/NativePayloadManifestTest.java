@@ -162,7 +162,7 @@ class NativePayloadManifestTest {
                 unknownExtensionless.getBytes(StandardCharsets.ISO_8859_1), "windows-x86_64"));
     }
 
-    private static String validManifest() {
+    static String validManifest() {
         String hash = "a".repeat(64);
         return """
                 schemaVersion=1
