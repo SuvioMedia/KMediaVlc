@@ -3089,8 +3089,18 @@ def verify_legal_files(root: Path) -> None:
     if missing:
         fail("Missing or truncated legal files: " + ", ".join(missing))
 
-    if (root / "LICENSE").read_bytes() != (root / "LICENSES/LGPL-2.1.txt").read_bytes():
-        fail("The repository LICENSE must be the canonical bundled LGPL-2.1 text.")
+    license_map = (root / "LICENSE").read_text(encoding="utf-8")
+    if "MIT OR LGPL-2.1-or-later" not in license_map or "0.1.0-rc.15" not in license_map:
+        fail("The Java license map must preserve both grants and its version scope.")
+    mit_license = root / "LICENSES/MIT-KMediaVlc-Java.txt"
+    if not mit_license.is_file() or "Permission is hereby granted" not in mit_license.read_text():
+        fail("The Java MIT grant must carry the complete license text.")
+    for module in ("runtime-desktop", "runtime-android"):
+        if f"{module}/src/main/java/**" not in license_map:
+            fail("The Java license map must identify its exact source scope.")
+        for source in (root / module / "src/main/java").rglob("*.java"):
+            if not source.read_text().startswith("// SPDX-License-Identifier: MIT OR LGPL-2.1-or-later"):
+                fail("Java sources must identify the two alternative licenses.")
 
     notices = (root / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
     if windows_binary.get("toolchainImage") not in notices:
