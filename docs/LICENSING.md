@@ -2,8 +2,13 @@
 
 # Licensing boundary
 
-Project-authored KMediaVlc runtime clients, native bridges, build recipes, and
-packaging tools are licensed under LGPL-2.1-or-later. The stable public
+Project-authored Java clients and loaders in `runtime-desktop/src/main/java/**`
+and `runtime-android/src/main/java/**` have the additional MIT option specified
+in the root `LICENSE`, including its release-version scope. This option applies
+only to those Java sources and their compiled forms. Native bridges, VLC,
+plugins, contribs, build recipes, packaging tools, and other third-party code
+do not acquire that MIT option. Other project-authored implementation files
+remain LGPL-2.1-or-later. The stable public
 `kmediavlc_client.h` ABI is separately licensed under ISC so KMediaPlayer and
 other independent consumers do not inherit KMediaVlc implementation code.
 KMediaPlayer is a separate work and retains its own license.
