@@ -13,13 +13,9 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +24,8 @@ import java.util.UUID;
 public final class VlcDesktopRuntime {
     private static final String RESOURCE_ROOT = "META-INF/kmediavlc/native/";
     private static final Object EXTRACTION_LOCK = new Object();
+    /** Headroom for a re-signed macOS library whose new code signature is larger. */
+    private static final long MAX_SIGNATURE_GROWTH_BYTES = 1024L * 1024L;
 
     private VlcDesktopRuntime() {}
 
@@ -221,30 +219,23 @@ public final class VlcDesktopRuntime {
         if (!Files.isRegularFile(file) || Files.isSymbolicLink(file)) {
             throw new VlcRuntimeException(INTEGRITY_FAILURE, "Extracted VLC runtime contains an invalid file.");
         }
-        if (Files.size(file) != entry.size()) {
-            throw new VlcRuntimeException(INTEGRITY_FAILURE, "Extracted VLC runtime file size is invalid.");
+        // macOS application packaging re-signs bundled libraries, which changes their size and
+        // exact hash but not their signature-independent digest.
+        if (Files.size(file) == entry.size() && NativeLibraryDigest.sha256(file).equals(entry.sha256())) {
+            return;
         }
-        String hash = sha256(file);
-        if (!hash.equals(entry.sha256())) {
+        if (entry.signatureIndependentSha256() == null) {
+            if (Files.size(file) != entry.size()) {
+                throw new VlcRuntimeException(INTEGRITY_FAILURE, "Extracted VLC runtime file size is invalid.");
+            }
             throw new VlcRuntimeException(INTEGRITY_FAILURE, "Extracted VLC runtime file hash is invalid.");
         }
-    }
-
-    private static String sha256(Path file) throws IOException {
-        MessageDigest digest;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException impossible) {
-            throw new AssertionError(impossible);
+        if (Files.size(file) > entry.size() + MAX_SIGNATURE_GROWTH_BYTES
+                || !NativeLibraryDigest.signatureIndependentSha256(file)
+                        .map(entry.signatureIndependentSha256()::equals)
+                        .orElse(false)) {
+            throw new VlcRuntimeException(INTEGRITY_FAILURE, "Extracted VLC runtime file hash is invalid.");
         }
-        try (InputStream input = Files.newInputStream(file, StandardOpenOption.READ)) {
-            byte[] buffer = new byte[64 * 1024];
-            int count;
-            while ((count = input.read(buffer)) >= 0) {
-                if (count > 0) digest.update(buffer, 0, count);
-            }
-        }
-        return HexFormat.of().formatHex(digest.digest());
     }
 
     private static VlcDesktopRuntimeResolution resolution(

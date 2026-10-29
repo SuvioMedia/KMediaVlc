@@ -57,6 +57,32 @@ class VlcExternalRuntimeTest {
                 Files.readAllBytes(directory.resolve("manifest.properties")), VlcDesktopRuntime.currentTarget()));
     }
 
+    @Test void acceptsALibraryReSignedAfterItsManifestWasWritten() throws Exception {
+        var properties = fixture();
+        Path library = publishMachO(properties, NativeLibraryDigestTest.MachO.library().build());
+        Files.write(library, NativeLibraryDigestTest.MachO.library().reSigned().build());
+        assertEquals(directory.resolve("libvlc.dll"), VlcDesktopRuntime.resolveExternalDirectory(directory).libVlcPath());
+    }
+
+    @Test void rejectsAReSignedLibraryWithChangedCode() throws Exception {
+        var properties = fixture();
+        Path library = publishMachO(properties, NativeLibraryDigestTest.MachO.library().build());
+        Files.write(library, NativeLibraryDigestTest.MachO.library().reSigned().code((byte) 0x7f).build());
+        assertThrows(VlcRuntimeException.class, () -> VlcDesktopRuntime.resolveExternalDirectory(directory));
+    }
+
+    /** Replaces file 0 with a signed Mach-O library and records both of its digests. */
+    private Path publishMachO(Properties properties, byte[] library) throws Exception {
+        Path file = directory.resolve(properties.getProperty("file.0.path"));
+        Files.write(file, library);
+        properties.setProperty("file.0.size", Integer.toString(library.length));
+        properties.setProperty("file.0.sha256",
+                HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(library)));
+        properties.setProperty("file.0.signatureIndependentSha256", NativeLibraryDigestTest.EXPECTED_DIGEST);
+        save(properties);
+        return file;
+    }
+
     @Test void rejectsChangedFileUnlessItsLocalManifestIsUpdated() throws Exception {
         fixture();
         Files.writeString(directory.resolve("libvlc.dll"), "changed again");

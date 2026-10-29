@@ -8,6 +8,7 @@ import json
 import os
 import re
 import shutil
+import struct
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
@@ -53,6 +54,74 @@ def sha256(path: Path) -> str:
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
+    return digest.hexdigest()
+
+
+MACHO_MAGIC_64 = 0xFEEDFACF
+LC_SEGMENT_64 = 0x19
+LC_CODE_SIGNATURE = 0x1D
+CSMAGIC_EMBEDDED_SIGNATURE = 0xFADE0CC0
+
+
+def signature_independent_sha256(path: Path) -> str | None:
+    """Digest a signed thin 64-bit Mach-O file without its replaceable code signature.
+
+    Re-signing rewrites the signature blob, its LC_CODE_SIGNATURE size, the __LINKEDIT sizes and
+    may move LC_CODE_SIGNATURE to the end of the load commands. Every other byte before the
+    signature is hashed. Returns None for files that are not 64-bit Mach-O files. Keep this in
+    sync with NativeLibraryDigest.java.
+    """
+    data = bytearray(path.read_bytes())
+    if len(data) < 32 or struct.unpack_from("<I", data, 0)[0] != MACHO_MAGIC_64:
+        return None
+    command_count, command_bytes = struct.unpack_from("<II", data, 16)
+    end = 32 + command_bytes
+    if command_count == 0 or command_bytes == 0 or end > len(data):
+        fail(f"{path.name} has malformed Mach-O load commands")
+    signature = linkedit = None
+    offset = 32
+    for _ in range(command_count):
+        if offset + 8 > end:
+            fail(f"{path.name} has malformed Mach-O load commands")
+        command, size = struct.unpack_from("<II", data, offset)
+        if size < 8 or size % 8 or offset + size > end:
+            fail(f"{path.name} has malformed Mach-O load commands")
+        if command == LC_CODE_SIGNATURE:
+            if signature is not None or size != 16:
+                fail(f"{path.name} has more than one code signature")
+            signature = offset
+        elif command == LC_SEGMENT_64 and size >= 56 and bytes(data[offset + 8:offset + 24]) == b"__LINKEDIT".ljust(16, b"\0"):
+            if linkedit is not None:
+                fail(f"{path.name} has more than one __LINKEDIT segment")
+            linkedit = offset
+        offset += size
+    if offset != end or signature is None or linkedit is None:
+        fail(f"{path.name} has no embedded code signature")
+    signature_offset, signature_size = struct.unpack_from("<II", data, signature + 8)
+    vm_size, file_offset, file_size = struct.unpack_from("<QQQ", data, linkedit + 32)
+    if (
+        signature_offset < end
+        or vm_size < file_size
+        or file_offset > signature_offset
+        or signature_offset + signature_size != len(data)
+        or file_offset + file_size != len(data)
+        or signature_size < 12
+    ):
+        fail(f"{path.name} code signature is not at the end of __LINKEDIT")
+    magic, blob_size = struct.unpack_from(">II", data, signature_offset)
+    if magic != CSMAGIC_EMBEDDED_SIGNATURE or not 12 <= blob_size <= signature_size:
+        fail(f"{path.name} has a malformed embedded code signature")
+    struct.pack_into("<Q", data, linkedit + 32, 0)
+    struct.pack_into("<Q", data, linkedit + 48, 0)
+    digest = hashlib.sha256(data[:32])
+    offset = 32
+    for _ in range(command_count):
+        size = struct.unpack_from("<I", data, offset + 4)[0]
+        if offset != signature:
+            digest.update(data[offset:offset + size])
+        offset += size
+    digest.update(struct.pack("<III", LC_CODE_SIGNATURE, 16, signature_offset))
+    digest.update(data[end:signature_offset])
     return digest.hexdigest()
 
 
@@ -240,6 +309,7 @@ def manifest_text(
     runtime_id: str,
     source_offer: str,
     recipe_revision: str,
+    signature_independent: dict[str, str] | None = None,
 ) -> str:
     bridge = next(entry["path"] for entry in files if entry["role"] == "BRIDGE")
     libvlc = next(entry["path"] for entry in files if entry["role"] == "LIBVLC")
@@ -279,6 +349,8 @@ def manifest_text(
                 f"{prefix}linkage={entry['linkage']}",
             ]
         )
+        if signature_independent and entry["path"] in signature_independent:
+            lines.append(f"{prefix}signatureIndependentSha256={signature_independent[entry['path']]}")
     return "\n".join(lines) + "\n"
 
 
@@ -315,9 +387,22 @@ def package(
         packaged_file = destination.joinpath(*relative.parts)
         packaged_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, packaged_file)
+    # macOS applications re-sign bundled Mach-O files; the loader accepts that through this
+    # digest. It stays out of the runtime ID, which identifies the exact published files.
+    signature_independent: dict[str, str] = {}
+    if target.startswith("macos-"):
+        for entry in files:
+            relative = PurePosixPath(entry["path"])
+            digest = signature_independent_sha256(staging.joinpath(*relative.parts))
+            if digest is not None:
+                signature_independent[entry["path"]] = digest
     manifest_path = destination / "manifest.properties"
     with manifest_path.open("w", encoding="iso-8859-1", newline="\n") as handle:
-        handle.write(manifest_text(inventory, files, runtime_id, source_offer, recipe_revision))
+        handle.write(
+            manifest_text(
+                inventory, files, runtime_id, source_offer, recipe_revision, signature_independent
+            )
+        )
     print(f"Packaged verified KMediaVlc runtime {runtime_id} for {target}")
     return runtime_id
 

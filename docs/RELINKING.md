@@ -89,7 +89,11 @@ build can set `releaseEligible=false`; this API is not a publication approval.
 The replacement checks platform, libVLC ABI 4, bridge ABI 2, output capabilities,
 paths and the local file inventory. Its bytes and source revision do not have
 to match the bundled release. The bundled resolver continues to require the
-exact original manifest and hashes. No runtime is downloaded. Do not alter
+exact original manifest and hashes. On macOS a file may instead match its
+optional `file.N.signatureIndependentSha256`, which leaves out the embedded code
+signature, so libraries re-signed by application packaging (with any identity,
+including ad-hoc) still verify; remove that key for a file you rebuilt, or
+recompute it with `scripts/package_native_runtime.py`. No runtime is downloaded. Do not alter
 files while the app is running; restart after choosing a different runtime.
 Keep all files inside the chosen real directory without symbolic links.
 The macOS application must permit recipient-signed libraries (for example

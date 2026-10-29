@@ -155,6 +155,10 @@ record NativePayloadManifest(
             if (!SHA_256.matcher(sha256).matches()) {
                 return reject("Native manifest contains an invalid SHA-256 value.");
             }
+            String signatureIndependentSha256 = properties.getProperty(prefix + "signatureIndependentSha256");
+            if (signatureIndependentSha256 != null && !SHA_256.matcher(signatureIndependentSha256).matches()) {
+                return reject("Native manifest contains an invalid SHA-256 value.");
+            }
             String component = required(properties, prefix + "component");
             if (!COMPONENT.matcher(component).matches()) {
                 return reject("Native manifest contains an invalid component identifier.");
@@ -173,7 +177,9 @@ record NativePayloadManifest(
                 return reject("Native manifest contains unsafe or incomplete relinking metadata.");
             }
             roles.add(role);
-            files.add(new FileEntry(path, size, sha256, component, licenseSpdx, role, source, linkage));
+            files.add(
+                    new FileEntry(
+                            path, size, sha256, signatureIndependentSha256, component, licenseSpdx, role, source, linkage));
         }
 
         if (!paths.contains(bridgePath) || !paths.contains(libVlcPath)) {
@@ -369,6 +375,7 @@ record NativePayloadManifest(
             allowed.add(prefix + "path");
             allowed.add(prefix + "size");
             allowed.add(prefix + "sha256");
+            allowed.add(prefix + "signatureIndependentSha256");
             allowed.add(prefix + "component");
             allowed.add(prefix + "licenseSpdx");
             allowed.add(prefix + "role");
@@ -401,10 +408,16 @@ record NativePayloadManifest(
         NONE
     }
 
+    /**
+     * One inventoried file. {@code size} and {@code sha256} describe the exact published file;
+     * {@code signatureIndependentSha256}, when present, also accepts that macOS library after it was
+     * re-signed.
+     */
     record FileEntry(
             String path,
             long size,
             String sha256,
+            String signatureIndependentSha256,
             String component,
             String licenseSpdx,
             FileRole role,
