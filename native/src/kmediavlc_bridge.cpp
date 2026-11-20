@@ -1040,7 +1040,7 @@ bool kmediavlc_player_seek(kmediavlc_player* player, int64_t time_microseconds, 
 
 bool kmediavlc_player_set_volume(kmediavlc_player* player, float volume) {
     if (!valid_player(player) || !std::isfinite(volume)) return false;
-    const int percent = static_cast<int>(std::lround(std::clamp(volume, 0.0F, 1.0F) * 100.0F));
+    const int percent = static_cast<int>(std::lround(std::clamp(volume, 0.0F, 2.0F) * 100.0F));
     return player->api->audio_set_volume(player->media_player, percent) == 0;
 }
 

@@ -146,10 +146,15 @@ public final class VlcAndroidPlayer implements AutoCloseable {
         return NativeBridge.seek(nativeHandle, Math.max(0L, timeMicroseconds), fast);
     }
 
+    /**
+     * Sets the software volume as a linear gain: 0.0 is mute, 1.0 is nominal, and values up to 2.0
+     * boost by up to 200%. Out-of-range values are clamped to 0.0..2.0; non-finite values throw.
+     * Above 1.0 the output may clip, and passthrough/bitstream output ignores the value.
+     */
     public synchronized boolean setVolume(float volume) {
         requireOpen();
         if (!Float.isFinite(volume)) throw new IllegalArgumentException("volume must be finite.");
-        return NativeBridge.setVolume(nativeHandle, Math.max(0.0f, Math.min(1.0f, volume)));
+        return NativeBridge.setVolume(nativeHandle, Math.max(0.0f, Math.min(2.0f, volume)));
     }
 
     public synchronized boolean setRate(float rate) {

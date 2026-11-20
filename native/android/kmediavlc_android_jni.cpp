@@ -845,7 +845,7 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_setVolume(
     JNIEnv*, jclass, jlong handle, jfloat volume) {
     auto* player = player_from(handle);
     if (!valid_player(player) || !std::isfinite(volume)) return JNI_FALSE;
-    const int percent = static_cast<int>(std::lround(std::clamp(volume, 0.0F, 1.0F) * 100.0F));
+    const int percent = static_cast<int>(std::lround(std::clamp(volume, 0.0F, 2.0F) * 100.0F));
     if (libvlc_audio_set_volume(player->media_player, percent) == 0) {
         player->volume_percent = percent;
         player->volume_pending = false;

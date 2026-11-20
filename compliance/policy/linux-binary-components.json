@@ -5,7 +5,7 @@
     "linux-aarch64"
   ],
   "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
-  "reviewStatus": "approved",
+  "reviewStatus": "pending-link-command-and-license-audit",
   "buildOnlyContribPackages": [],
   "runtimeSupportLibraries": {
     "libvlc_pulse.so": {

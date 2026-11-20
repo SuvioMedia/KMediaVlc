@@ -179,6 +179,10 @@ KMEDIAVLC_API bool kmediavlc_player_play(kmediavlc_player *player);
 KMEDIAVLC_API bool kmediavlc_player_pause(kmediavlc_player *player);
 KMEDIAVLC_API bool kmediavlc_player_stop(kmediavlc_player *player);
 KMEDIAVLC_API bool kmediavlc_player_seek(kmediavlc_player *player, int64_t time_microseconds, bool fast);
+/* Software volume as a linear gain: 0.0 = mute, 1.0 = nominal (100%), up to 2.0
+ * (200%, boost). Values outside 0.0..2.0 are clamped; NaN/infinity returns false.
+ * Values above 1.0 amplify the signal and the output may clip. Ignored by
+ * passthrough/bitstream output, where the stream is not decoded to PCM. */
 KMEDIAVLC_API bool kmediavlc_player_set_volume(kmediavlc_player *player, float volume);
 KMEDIAVLC_API bool kmediavlc_player_set_rate(kmediavlc_player *player, float rate);
 KMEDIAVLC_API bool kmediavlc_player_set_loop(kmediavlc_player *player, bool loop);
