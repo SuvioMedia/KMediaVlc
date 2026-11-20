@@ -77,6 +77,39 @@ final class VlcAndroidPlayerTest {
                 VlcAndroidPlayer.class.getMethod("setRate", float.class).getReturnType());
         assertEquals(
                 boolean.class,
+                VlcAndroidPlayer.class.getMethod("setAudioDelay", long.class).getReturnType());
+        assertEquals(60_000_000L, VlcAndroidPlayer.MAX_AUDIO_DELAY_MICROSECONDS);
+        assertEquals(
+                boolean.class,
+                NativeBridge.class
+                        .getDeclaredMethod("setAudioDelay", long.class, long.class)
+                        .getReturnType());
+        assertEquals(
+                boolean.class,
+                VlcAndroidPlayer.class.getMethod("setSubtitleDelay", long.class).getReturnType());
+        assertEquals(600_000_000L, VlcAndroidPlayer.MAX_SUBTITLE_DELAY_MICROSECONDS);
+        assertEquals(long.class, VlcAndroidPlayer.class.getMethod("tracksGeneration").getReturnType());
+        assertEquals(
+                java.util.List.class,
+                VlcAndroidPlayer.class.getMethod("tracks", VlcAndroidTrackType.class).getReturnType());
+        assertEquals(
+                boolean.class,
+                VlcAndroidPlayer.class
+                        .getMethod("selectTrack", VlcAndroidTrackType.class, String.class)
+                        .getReturnType());
+        assertEquals(
+                boolean.class,
+                VlcAndroidPlayer.class.getMethod("disableTracks", VlcAndroidTrackType.class).getReturnType());
+        assertEquals(
+                boolean.class,
+                NativeBridge.class
+                        .getDeclaredMethod("selectTrack", long.class, int.class, byte[].class)
+                        .getReturnType());
+        assertEquals(
+                byte[].class,
+                NativeBridge.class.getDeclaredMethod("tracks", long.class, int.class).getReturnType());
+        assertEquals(
+                boolean.class,
                 VlcAndroidPlayer.class.getMethod("setLoop", boolean.class).getReturnType());
         assertEquals(
                 VlcAndroidPlayerSnapshot.class,

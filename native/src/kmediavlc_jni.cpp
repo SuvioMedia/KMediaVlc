@@ -35,6 +35,9 @@
 namespace {
 
 JavaVM* g_java_vm = nullptr;
+// Bounds what one track list may ask the JVM to allocate.
+constexpr std::size_t kMaximumTrackCount = 256;
+constexpr std::size_t kMaximumTrackTextBytes = 4096;
 
 std::string utf8_from_java(JNIEnv* env, jstring value) {
     if (value == nullptr) return {};
@@ -841,6 +844,98 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_setRate(
     auto* player = player_from(player_handle);
     return player != nullptr && player->native != nullptr &&
         kmediavlc_player_set_rate(player->native, rate) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_setAudioDelay(
+    JNIEnv*, jclass, jlong player_handle, jlong delay_microseconds) {
+    auto* player = player_from(player_handle);
+    return player != nullptr && player->native != nullptr &&
+        kmediavlc_player_set_audio_delay(player->native, delay_microseconds) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_setSubtitleDelay(
+    JNIEnv*, jclass, jlong player_handle, jlong delay_microseconds) {
+    auto* player = player_from(player_handle);
+    return player != nullptr && player->native != nullptr &&
+        kmediavlc_player_set_subtitle_delay(player->native, delay_microseconds) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jlong JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_tracksGeneration(
+    JNIEnv*, jclass, jlong player_handle) {
+    auto* player = player_from(player_handle);
+    if (player == nullptr || player->native == nullptr) return 0;
+    return static_cast<jlong>(kmediavlc_player_tracks_generation(player->native));
+}
+
+// Returns the tracks as one big-endian byte array: an int32 count, then per
+// track int32 codec fourcc, channels, sample rate and bitrate, one byte each
+// for selected and stable id, and four texts (id, name, language,
+// description) as an int32 length (-1 when absent) followed by raw UTF-8.
+// Raw UTF-8 avoids JNI's modified UTF-8, and one primitive array needs no
+// class lookup.
+JNIEXPORT jbyteArray JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_tracks(
+    JNIEnv* env, jclass, jlong player_handle, jint type) {
+    auto* player = player_from(player_handle);
+    if (player == nullptr || player->native == nullptr) return nullptr;
+    if (type != KMEDIAVLC_TRACK_AUDIO && type != KMEDIAVLC_TRACK_SUBTITLE) return nullptr;
+    const auto track_type = static_cast<kmediavlc_track_type>(type);
+    const std::size_t count = std::min<std::size_t>(
+        kmediavlc_player_track_count(player->native, track_type), kMaximumTrackCount);
+    std::vector<std::uint8_t> encoded;
+    const auto put_int = [&encoded](std::int64_t value) {
+        const auto bits = static_cast<std::uint32_t>(value);
+        for (int shift = 24; shift >= 0; shift -= 8) {
+            encoded.push_back(static_cast<std::uint8_t>((bits >> shift) & 0xFFU));
+        }
+    };
+    const auto put_text = [&encoded, &put_int](const char* text) {
+        if (text == nullptr || *text == '\0') {
+            put_int(-1);
+            return;
+        }
+        const std::size_t length = std::min<std::size_t>(std::strlen(text), kMaximumTrackTextBytes);
+        put_int(static_cast<std::int64_t>(length));
+        encoded.insert(encoded.end(), text, text + length);
+    };
+    put_int(static_cast<std::int64_t>(count));
+    for (std::size_t index = 0; index < count; ++index) {
+        kmediavlc_track_info info{};
+        info.struct_size = sizeof(info);
+        info.bridge_abi_version = KMEDIAVLC_BRIDGE_ABI_VERSION;
+        if (!kmediavlc_player_get_track(player->native, track_type, index, &info)) return nullptr;
+        put_int(static_cast<std::int64_t>(info.codec_fourcc));
+        put_int(static_cast<std::int64_t>(info.audio_channels));
+        put_int(static_cast<std::int64_t>(info.audio_sample_rate));
+        put_int(static_cast<std::int64_t>(info.bitrate));
+        encoded.push_back(info.selected ? 1U : 0U);
+        encoded.push_back(info.id_stable ? 1U : 0U);
+        put_text(info.id_utf8);
+        put_text(info.name_utf8);
+        put_text(info.language_utf8);
+        put_text(info.description_utf8);
+    }
+    jbyteArray result = env->NewByteArray(static_cast<jsize>(encoded.size()));
+    if (result == nullptr) return nullptr;
+    env->SetByteArrayRegion(
+        result, 0, static_cast<jsize>(encoded.size()), reinterpret_cast<const jbyte*>(encoded.data()));
+    return env->ExceptionCheck() ? nullptr : result;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_selectTrack(
+    JNIEnv* env, jclass, jlong player_handle, jint type, jstring id) {
+    auto* player = player_from(player_handle);
+    if (player == nullptr || player->native == nullptr) return JNI_FALSE;
+    if (type != KMEDIAVLC_TRACK_AUDIO && type != KMEDIAVLC_TRACK_SUBTITLE) return JNI_FALSE;
+    const std::string value = utf8_from_java(env, id);
+    return kmediavlc_player_select_track(
+        player->native,
+        static_cast<kmediavlc_track_type>(type),
+        value.c_str()) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL

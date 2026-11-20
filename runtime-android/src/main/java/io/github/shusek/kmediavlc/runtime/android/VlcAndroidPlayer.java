@@ -6,12 +6,18 @@ import android.content.Context;
 import android.view.Surface;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 /** A serialized libVLC 4 lifecycle that renders directly into Android surfaces. */
 public final class VlcAndroidPlayer implements AutoCloseable {
+    /** Largest {@link #setAudioDelay(long)} value in either direction. */
+    public static final long MAX_AUDIO_DELAY_MICROSECONDS = 60_000_000L;
+    /** Largest {@link #setSubtitleDelay(long)} value in either direction. */
+    public static final long MAX_SUBTITLE_DELAY_MICROSECONDS = 600_000_000L;
+
     private static final int MAX_LOCATION_CHARACTERS = 16_384;
     private static final int MAX_UTF8_BYTES = 65_536;
     private static final int MAX_HEADERS = 32;
@@ -163,6 +169,69 @@ public final class VlcAndroidPlayer implements AutoCloseable {
             throw new IllegalArgumentException("rate must be finite and positive.");
         }
         return NativeBridge.setRate(nativeHandle, rate);
+    }
+
+    /**
+     * Moves the sound against the picture: positive plays the sound later, negative earlier.
+     * The player keeps the value for every media it opens and across Surface replacement.
+     */
+    public synchronized boolean setAudioDelay(long delayMicroseconds) {
+        requireOpen();
+        if (delayMicroseconds < -MAX_AUDIO_DELAY_MICROSECONDS
+                || delayMicroseconds > MAX_AUDIO_DELAY_MICROSECONDS) {
+            throw new IllegalArgumentException("delayMicroseconds exceeds the supported audio delay.");
+        }
+        return NativeBridge.setAudioDelay(nativeHandle, delayMicroseconds);
+    }
+
+    /**
+     * Moves the subtitles against the picture: positive shows them later, negative earlier
+     * (libVLC's sign). The player keeps the value for every media it opens and across Surface
+     * replacement.
+     */
+    public synchronized boolean setSubtitleDelay(long delayMicroseconds) {
+        requireOpen();
+        if (delayMicroseconds < -MAX_SUBTITLE_DELAY_MICROSECONDS
+                || delayMicroseconds > MAX_SUBTITLE_DELAY_MICROSECONDS) {
+            throw new IllegalArgumentException("delayMicroseconds exceeds the supported subtitle delay.");
+        }
+        return NativeBridge.setSubtitleDelay(nativeHandle, delayMicroseconds);
+    }
+
+    /**
+     * Changes whenever a track is added, removed, updated, selected or unselected, on open and on
+     * Surface replacement. Read {@link #tracks} again only after it changed.
+     */
+    public synchronized long tracksGeneration() {
+        requireOpen();
+        return NativeBridge.tracksGeneration(nativeHandle);
+    }
+
+    /** The tracks of one type of the current input; empty while no input exists. */
+    public synchronized List<VlcAndroidTrack> tracks(VlcAndroidTrackType type) {
+        requireOpen();
+        Objects.requireNonNull(type, "type");
+        return VlcAndroidTrack.decode(type, NativeBridge.tracks(nativeHandle, type.nativeValue()));
+    }
+
+    /**
+     * Selects the track with this id from {@link #tracks}; libVLC keeps the choice for the current
+     * media. Returns false when the current input has no such track.
+     */
+    public synchronized boolean selectTrack(VlcAndroidTrackType type, String id) {
+        requireOpen();
+        Objects.requireNonNull(type, "type");
+        if (id == null || id.isEmpty() || id.indexOf('\0') >= 0 || id.indexOf(',') >= 0) {
+            throw new IllegalArgumentException("id must be a single non-empty track id.");
+        }
+        return NativeBridge.selectTrack(nativeHandle, type.nativeValue(), id.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Turns every track of the type off for the current media, for example subtitles off. */
+    public synchronized boolean disableTracks(VlcAndroidTrackType type) {
+        requireOpen();
+        Objects.requireNonNull(type, "type");
+        return NativeBridge.selectTrack(nativeHandle, type.nativeValue(), null);
     }
 
     /** Applies to media opened after this call. */

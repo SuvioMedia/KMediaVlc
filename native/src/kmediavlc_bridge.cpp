@@ -263,6 +263,14 @@ kmediavlc_playback_state map_state(libvlc_state_t state) {
 void on_state_changed(void* opaque, libvlc_state_t state) {
     auto* player = static_cast<kmediavlc_player*>(opaque);
     if (player == nullptr) return;
+    // A started input is the first point at which libVLC accepts the audio and
+    // subtitle delays for a media that replaced a running one, and for a replay
+    // after stop or the end. libVLC's player lock is re-entrant, so the call is
+    // safe from its own callback.
+    if ((state == libvlc_Opening || state == libvlc_Playing) &&
+        player->callbacks_enabled.load(std::memory_order_acquire)) {
+        kmediavlc::apply_delays(player);
+    }
     const auto mapped = map_state(state);
     if ((mapped == KMEDIAVLC_STATE_PLAYING || mapped == KMEDIAVLC_STATE_BUFFERING) &&
         kmediavlc::paused_seek_decode_in_progress(player)) {
@@ -276,6 +284,36 @@ void on_state_changed(void* opaque, libvlc_state_t state) {
     }
     player->state_before_buffering.store(mapped, std::memory_order_release);
     notify_state(player, mapped);
+}
+
+void advance_tracks_generation(void* opaque) {
+    auto* player = static_cast<kmediavlc_player*>(opaque);
+    if (player != nullptr) player->tracks_generation.fetch_add(1, std::memory_order_acq_rel);
+}
+
+void on_track_list_changed(void* opaque, libvlc_list_action_t action, libvlc_track_type_t, const char*) {
+    advance_tracks_generation(opaque);
+    auto* player = static_cast<kmediavlc_player*>(opaque);
+    // destroy() turns callbacks off before libVLC tears the player down.
+    if (action != libvlc_list_action_added || player == nullptr ||
+        !player->callbacks_enabled.load(std::memory_order_acquire)) {
+        return;
+    }
+    // A track was added to an input that exists now. When a running media is
+    // replaced, or replayed after the end, libVLC keeps its global state at
+    // Playing and sends no state callback, so this is the first point at which
+    // the new input can take the retained delays and track choices.
+    kmediavlc::apply_delays(player);
+    kmediavlc::apply_track_choices(player, true);
+}
+
+void on_track_selection_changed(void* opaque, libvlc_track_type_t, const char*, const char*) {
+    advance_tracks_generation(opaque);
+    // libVLC picks its default tracks only after it announced them, so a
+    // retained choice, "none" in particular, is checked again here.
+    auto* player = static_cast<kmediavlc_player*>(opaque);
+    if (player == nullptr || !player->callbacks_enabled.load(std::memory_order_acquire)) return;
+    kmediavlc::apply_track_choices(player, true);
 }
 
 void on_buffering_changed(void* opaque, float buffering) {
@@ -498,6 +536,50 @@ bool valid_player(const kmediavlc_player* player) {
     return player != nullptr && player->media_player != nullptr && player->api != nullptr;
 }
 
+std::optional<libvlc_track_type_t> vlc_track_type(kmediavlc_track_type type) {
+    switch (type) {
+        case KMEDIAVLC_TRACK_AUDIO: return libvlc_track_audio;
+        case KMEDIAVLC_TRACK_SUBTITLE: return libvlc_track_text;
+    }
+    return std::nullopt;
+}
+
+std::optional<std::string> optional_string(const char* value) {
+    if (value == nullptr || *value == '\0') return std::nullopt;
+    return std::string(value);
+}
+
+std::vector<kmediavlc::CapturedTrack> capture_tracks(kmediavlc_player* player, libvlc_track_type_t type) {
+    std::vector<kmediavlc::CapturedTrack> captured;
+    libvlc_media_tracklist_t* list =
+        player->api->media_player_get_tracklist(player->media_player, type, false);
+    if (list == nullptr) return captured;
+    const std::size_t count = player->api->media_tracklist_count(list);
+    captured.reserve(count);
+    for (std::size_t index = 0; index < count; ++index) {
+        const libvlc_media_track_t* track = player->api->media_tracklist_at(list, index);
+        if (track == nullptr || track->i_type != type || track->psz_id == nullptr || *track->psz_id == '\0') {
+            continue;
+        }
+        kmediavlc::CapturedTrack copy;
+        copy.id = track->psz_id;
+        copy.name = optional_string(track->psz_name);
+        copy.language = optional_string(track->psz_language);
+        copy.description = optional_string(track->psz_description);
+        copy.codec_fourcc = track->i_codec;
+        if (type == libvlc_track_audio && track->u.audio != nullptr) {
+            copy.audio_channels = track->u.audio->i_channels;
+            copy.audio_sample_rate = track->u.audio->i_rate;
+        }
+        copy.bitrate = track->i_bitrate;
+        copy.selected = track->selected;
+        copy.id_stable = track->id_stable;
+        captured.push_back(std::move(copy));
+    }
+    player->api->media_tracklist_delete(list);
+    return captured;
+}
+
 void capture_vlc_error(kmediavlc_player* player, std::string fallback) {
     if (player != nullptr && player->api && player->api->error_message) {
         const char* detail = player->api->error_message();
@@ -558,6 +640,15 @@ std::shared_ptr<LibVlcApi> LibVlcApi::load(const char* path_value, std::string& 
     KMEDIAVLC_BIND(media_track_release, "libvlc_media_track_release");
     KMEDIAVLC_BIND(media_player_set_rate, "libvlc_media_player_set_rate");
     KMEDIAVLC_BIND(audio_set_volume, "libvlc_audio_set_volume");
+    KMEDIAVLC_BIND(audio_get_delay, "libvlc_audio_get_delay");
+    KMEDIAVLC_BIND(audio_set_delay, "libvlc_audio_set_delay");
+    KMEDIAVLC_BIND(video_get_spu_delay, "libvlc_video_get_spu_delay");
+    KMEDIAVLC_BIND(video_set_spu_delay, "libvlc_video_set_spu_delay");
+    KMEDIAVLC_BIND(media_player_get_tracklist, "libvlc_media_player_get_tracklist");
+    KMEDIAVLC_BIND(media_tracklist_count, "libvlc_media_tracklist_count");
+    KMEDIAVLC_BIND(media_tracklist_at, "libvlc_media_tracklist_at");
+    KMEDIAVLC_BIND(media_tracklist_delete, "libvlc_media_tracklist_delete");
+    KMEDIAVLC_BIND(media_player_select_tracks_by_ids, "libvlc_media_player_select_tracks_by_ids");
     KMEDIAVLC_BIND(media_new_location, "libvlc_media_new_location");
     KMEDIAVLC_BIND(media_new_path, "libvlc_media_new_path");
     KMEDIAVLC_BIND(media_add_option, "libvlc_media_add_option");
@@ -729,6 +820,59 @@ bool paused_seek_decode_in_progress(kmediavlc_player* player) {
         player->paused_seek_transport_generation == transport_generation;
 }
 
+void apply_delays(kmediavlc_player* player) {
+    if (player == nullptr || player->media_player == nullptr || !player->api) return;
+    // libVLC reports zero while it has no input and ignores a delay set then.
+    // Comparing first keeps state callbacks from resending an applied value.
+    const auto audio = player->audio_delay_microseconds.load(std::memory_order_acquire);
+    if (player->api->audio_get_delay(player->media_player) != audio) {
+        (void)player->api->audio_set_delay(player->media_player, audio);
+    }
+    const auto subtitles = player->subtitle_delay_microseconds.load(std::memory_order_acquire);
+    if (player->api->video_get_spu_delay(player->media_player) != subtitles) {
+        (void)player->api->video_set_spu_delay(player->media_player, subtitles);
+    }
+}
+
+void apply_track_choices(kmediavlc_player* player, bool from_callback) {
+    if (player == nullptr || player->media_player == nullptr || !player->api) return;
+    std::unique_lock choice_lock(player->track_choice_mutex, std::defer_lock);
+    if (from_callback) {
+        if (!choice_lock.try_lock()) return;
+    } else {
+        choice_lock.lock();
+    }
+    const auto generation = player->tracks_generation.load(std::memory_order_acquire);
+    bool matched = true;
+    const std::pair<libvlc_track_type_t, const std::optional<std::string>*> choices[] = {
+        {libvlc_track_audio, &player->audio_track_choice},
+        {libvlc_track_text, &player->subtitle_track_choice},
+    };
+    for (const auto& [type, choice] : choices) {
+        if (!*choice) continue;
+        bool present = (*choice)->empty();
+        bool exact = true;
+        std::size_t selected = 0;
+        for (const auto& track : capture_tracks(player, type)) {
+            if (track.id == **choice) present = true;
+            if (track.selected) {
+                ++selected;
+                if (track.id != **choice) exact = false;
+            }
+        }
+        // An input that has not announced the chosen track yet is checked
+        // again on its next track change or snapshot.
+        if (!present) {
+            matched = false;
+            continue;
+        }
+        if (exact && selected == ((*choice)->empty() ? 0U : 1U)) continue;
+        matched = false;
+        player->api->media_player_select_tracks_by_ids(player->media_player, type, (*choice)->c_str());
+    }
+    if (matched) player->track_choice_checked_generation.store(generation, std::memory_order_release);
+}
+
 } // namespace kmediavlc
 
 kmediavlc_frame::~kmediavlc_frame() {
@@ -829,6 +973,8 @@ kmediavlc_player* kmediavlc_player_create_with_video_scaling(
     player->media_player_callbacks.on_buffering_changed = on_buffering_changed;
     player->media_player_callbacks.on_position_changed = on_position_changed;
     player->media_player_callbacks.on_length_changed = on_length_changed;
+    player->media_player_callbacks.on_track_list_changed = on_track_list_changed;
+    player->media_player_callbacks.on_track_selection_changed = on_track_selection_changed;
     player->media_player = player->api->media_player_new(
         player->instance,
         &player->media_player_callbacks,
@@ -903,8 +1049,23 @@ bool kmediavlc_player_open(
         player->transport_generation.fetch_add(1, std::memory_order_acq_rel);
         return false;
     }
+    {
+        // Track choices belong to one media; clear them before its successor
+        // can announce tracks.
+        std::lock_guard choice_lock(player->track_choice_mutex);
+        player->audio_track_choice.reset();
+        player->subtitle_track_choice.reset();
+    }
     player->api->media_player_set_media(player->media_player, media);
     player->api->media_release(media);
+    {
+        // An idle player gets its input here, before any sample is decoded. A
+        // running one gets it once the old input has stopped; on_state_changed
+        // covers that case.
+        std::lock_guard delay_lock(player->delay_mutex);
+        kmediavlc::apply_delays(player);
+    }
+    player->tracks_generation.fetch_add(1, std::memory_order_acq_rel);
     const auto generation = player->media_generation.fetch_add(1, std::memory_order_acq_rel) + 1U;
     (void)generation;
     player->position_microseconds.store(0, std::memory_order_release);
@@ -1049,6 +1210,109 @@ bool kmediavlc_player_set_rate(kmediavlc_player* player, float rate) {
     return player->api->media_player_set_rate(player->media_player, rate) == 0;
 }
 
+bool kmediavlc_player_set_audio_delay(kmediavlc_player* player, int64_t delay_microseconds) {
+    if (!valid_player(player) ||
+        delay_microseconds < -KMEDIAVLC_MAX_AUDIO_DELAY_MICROSECONDS ||
+        delay_microseconds > KMEDIAVLC_MAX_AUDIO_DELAY_MICROSECONDS) {
+        return false;
+    }
+    std::lock_guard delay_lock(player->delay_mutex);
+    // Publish the request before entering libVLC: a state callback that runs
+    // first then already carries this value, and one that runs later repeats it.
+    player->audio_delay_microseconds.store(delay_microseconds, std::memory_order_release);
+    kmediavlc::apply_delays(player);
+    return true;
+}
+
+bool kmediavlc_player_set_subtitle_delay(kmediavlc_player* player, int64_t delay_microseconds) {
+    if (!valid_player(player) ||
+        delay_microseconds < -KMEDIAVLC_MAX_SUBTITLE_DELAY_MICROSECONDS ||
+        delay_microseconds > KMEDIAVLC_MAX_SUBTITLE_DELAY_MICROSECONDS) {
+        return false;
+    }
+    std::lock_guard delay_lock(player->delay_mutex);
+    player->subtitle_delay_microseconds.store(delay_microseconds, std::memory_order_release);
+    kmediavlc::apply_delays(player);
+    return true;
+}
+
+uint64_t kmediavlc_player_tracks_generation(kmediavlc_player* player) {
+    return valid_player(player) ? player->tracks_generation.load(std::memory_order_acquire) : 0;
+}
+
+size_t kmediavlc_player_track_count(kmediavlc_player* player, kmediavlc_track_type type) {
+    const auto vlc_type = vlc_track_type(type);
+    if (!valid_player(player) || !vlc_type) return 0;
+    auto tracks = capture_tracks(player, *vlc_type);
+    std::lock_guard tracks_lock(player->tracks_mutex);
+    auto& destination = type == KMEDIAVLC_TRACK_AUDIO
+        ? player->captured_audio_tracks
+        : player->captured_subtitle_tracks;
+    destination = std::move(tracks);
+    return destination.size();
+}
+
+bool kmediavlc_player_get_track(
+    kmediavlc_player* player,
+    kmediavlc_track_type type,
+    size_t index,
+    kmediavlc_track_info* output) {
+    if (!valid_player(player) || !vlc_track_type(type) || output == nullptr ||
+        output->struct_size != sizeof(kmediavlc_track_info) ||
+        output->bridge_abi_version != kBridgeAbi) {
+        return false;
+    }
+    std::lock_guard tracks_lock(player->tracks_mutex);
+    const auto& tracks = type == KMEDIAVLC_TRACK_AUDIO
+        ? player->captured_audio_tracks
+        : player->captured_subtitle_tracks;
+    if (index >= tracks.size()) return false;
+    const auto& track = tracks[index];
+    const auto optional_text = [](const std::optional<std::string>& value) {
+        return value ? value->c_str() : nullptr;
+    };
+    output->type = type;
+    output->id_utf8 = track.id.c_str();
+    output->name_utf8 = optional_text(track.name);
+    output->language_utf8 = optional_text(track.language);
+    output->description_utf8 = optional_text(track.description);
+    output->codec_fourcc = track.codec_fourcc;
+    output->audio_channels = track.audio_channels;
+    output->audio_sample_rate = track.audio_sample_rate;
+    output->bitrate = track.bitrate;
+    output->selected = track.selected;
+    output->id_stable = track.id_stable;
+    return true;
+}
+
+bool kmediavlc_player_select_track(
+    kmediavlc_player* player,
+    kmediavlc_track_type type,
+    const char* id_utf8) {
+    const auto vlc_type = vlc_track_type(type);
+    if (!valid_player(player) || !vlc_type) return false;
+    const std::string_view id = id_utf8 == nullptr ? std::string_view() : std::string_view(id_utf8);
+    // libVLC reads a comma as a list separator and unselects every track for an
+    // unknown id, so only an id of the current input may reach it.
+    if (!id.empty()) {
+        if (id.find(',') != std::string_view::npos) return false;
+        const auto tracks = capture_tracks(player, *vlc_type);
+        const bool known = std::any_of(tracks.begin(), tracks.end(), [&](const auto& track) {
+            return track.id == id;
+        });
+        if (!known) return false;
+    }
+    // An empty list is libVLC's "none of this type"; it also keeps tracks that
+    // appear later switched off for this input. The retained choice carries it
+    // to the next input of this media.
+    std::lock_guard choice_lock(player->track_choice_mutex);
+    auto& choice = type == KMEDIAVLC_TRACK_AUDIO ? player->audio_track_choice : player->subtitle_track_choice;
+    choice = std::string(id);
+    player->track_choice_checked_generation.store(UINT64_MAX, std::memory_order_release);
+    player->api->media_player_select_tracks_by_ids(player->media_player, *vlc_type, choice->c_str());
+    return true;
+}
+
 bool kmediavlc_player_set_loop(kmediavlc_player* player, bool loop) {
     if (!valid_player(player)) return false;
     player->loop.store(loop, std::memory_order_release);
@@ -1142,6 +1406,18 @@ bool kmediavlc_player_update_output(kmediavlc_player* player, const kmediavlc_ou
 bool kmediavlc_player_get_snapshot(kmediavlc_player* player, kmediavlc_player_snapshot* output) {
     if (!valid_player(player) || output == nullptr || output->struct_size != sizeof(kmediavlc_player_snapshot) ||
         output->bridge_abi_version != kBridgeAbi) return false;
+    {
+        // libVLC can move to its next input without a state callback. Polling
+        // clients then still give that input the requested audio delay.
+        std::lock_guard delay_lock(player->delay_mutex);
+        kmediavlc::apply_delays(player);
+    }
+    // Covers a new input whose track callbacks ran while a client command held
+    // the choice lock. Compares only after a track change.
+    if (player->tracks_generation.load(std::memory_order_acquire) !=
+        player->track_choice_checked_generation.load(std::memory_order_acquire)) {
+        kmediavlc::apply_track_choices(player, false);
+    }
     const bool track_position =
         player->play_when_ready.load(std::memory_order_acquire) ||
         kmediavlc::paused_seek_decode_in_progress(player);

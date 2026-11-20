@@ -62,5 +62,25 @@ VLC vout setup an independent binding. Android publication remains fail-closed
 until the source-built static module graph and real device lifecycle evidence
 are approved.
 
+## Tracks and delays
+
+Desktop, Android and the iOS C ABI share one contract for audio and subtitle
+tracks. `kmediavlc_player_track_count` / `kmediavlc_player_get_track` (Java:
+`tracks(type)`) list the tracks of the current input with libVLC's string ids;
+`kmediavlc_player_select_track` (Java: `selectTrack`, `disableTracks`) chooses
+one id or none. `kmediavlc_player_tracks_generation` changes on every track
+list or selection change and on open, so clients re-read only after it moved.
+
+libVLC keeps the audio delay, the subtitle delay and the track choice on one
+input and forgets them when that input stops: on stop and replay, at the end,
+and when a running media is replaced. A replaced media also gets no state
+callback, because libVLC's global state stays Playing. The bridges therefore
+keep the client's values and give them to every new input: the delays for
+every media, the track choice for the current media until the next open. The
+desktop and iOS bridge applies them from libVLC's track callbacks and from
+snapshot polling; the Android bridge from its serialized commands and snapshot
+polling. Signs follow libVLC: a positive delay plays the sound or shows the
+subtitles later.
+
 Supporting libVLC 3 remains an adapter concern. A process selects exactly one
 major runtime and never loads libVLC 3 and 4 plugin graphs together.

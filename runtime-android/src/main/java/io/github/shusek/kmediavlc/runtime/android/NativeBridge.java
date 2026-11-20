@@ -28,6 +28,16 @@ final class NativeBridge {
 
     static native boolean setRate(long handle, float rate);
 
+    static native boolean setAudioDelay(long handle, long delayMicroseconds);
+
+    static native boolean setSubtitleDelay(long handle, long delayMicroseconds);
+
+    static native long tracksGeneration(long handle);
+
+    static native byte[] tracks(long handle, int type);
+
+    static native boolean selectTrack(long handle, int type, byte[] idUtf8);
+
     static native boolean setLoop(long handle, boolean loop);
 
     static native long[] snapshot(long handle);
