@@ -12,6 +12,9 @@ import java.util.Optional;
 
 /** A serialized libVLC 4 lifecycle that renders directly into Android surfaces. */
 public final class VlcAndroidPlayer implements AutoCloseable {
+    /** Largest {@link #setAudioDelay(long)} value in either direction. */
+    public static final long MAX_AUDIO_DELAY_MICROSECONDS = 60_000_000L;
+
     private static final int MAX_LOCATION_CHARACTERS = 16_384;
     private static final int MAX_UTF8_BYTES = 65_536;
     private static final int MAX_HEADERS = 32;
@@ -163,6 +166,19 @@ public final class VlcAndroidPlayer implements AutoCloseable {
             throw new IllegalArgumentException("rate must be finite and positive.");
         }
         return NativeBridge.setRate(nativeHandle, rate);
+    }
+
+    /**
+     * Moves the sound against the picture: positive plays the sound later, negative earlier.
+     * The player keeps the value for every media it opens and across Surface replacement.
+     */
+    public synchronized boolean setAudioDelay(long delayMicroseconds) {
+        requireOpen();
+        if (delayMicroseconds < -MAX_AUDIO_DELAY_MICROSECONDS
+                || delayMicroseconds > MAX_AUDIO_DELAY_MICROSECONDS) {
+            throw new IllegalArgumentException("delayMicroseconds exceeds the supported audio delay.");
+        }
+        return NativeBridge.setAudioDelay(nativeHandle, delayMicroseconds);
     }
 
     /** Applies to media opened after this call. */

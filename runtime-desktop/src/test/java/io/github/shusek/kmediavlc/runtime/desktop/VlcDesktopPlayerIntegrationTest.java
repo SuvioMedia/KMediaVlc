@@ -5,6 +5,7 @@ package io.github.shusek.kmediavlc.runtime.desktop;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.Color;
@@ -99,6 +100,44 @@ final class VlcDesktopPlayerIntegrationTest {
                 assertEquals(36, frame.height());
                 assertTrue(frame.cpuPixels().orElseThrow().remaining() >= 64 * 36 * 4);
             }
+        }
+    }
+
+    @Test
+    void pinnedVideoLanFixtureKeepsPlayingWhileAudioDelayChanges() throws Exception {
+        var fixture = fixture();
+        var frames = new Semaphore(0);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.CPU_PULL,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        frames.release();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
+            // Requested before libVLC has an input: the bridge applies it from libVLC's own
+            // state callback once the input starts, which must not block that callback.
+            assertTrue(player.setAudioDelay(250_000));
+            assertTrue(player.open(fixture.image().toUri().toString(), Map.of(), true));
+            assertTrue(
+                    frames.tryAcquire(15, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "No CPU frame arrived with an audio delay."));
+            assertTrue(player.setAudioDelay(-100_000));
+            assertNotNull(player.snapshot());
+
+            // Replacing a started media makes libVLC drop its delay; the second input must start too.
+            frames.drainPermits();
+            assertTrue(player.open(fixture.image().toUri().toString(), Map.of(), true));
+            assertTrue(
+                    frames.tryAcquire(15, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "No CPU frame arrived after replacing the media."));
+            assertTrue(player.setAudioDelay(0));
+            assertNotNull(player.snapshot());
         }
     }
 
@@ -488,6 +527,51 @@ final class VlcDesktopPlayerIntegrationTest {
             assertTrue(player.stop());
             assertEquals(VlcPlaybackState.STOPPED, player.snapshot().state());
         }
+    }
+
+    @Test
+    void fakeLibVlcAcceptsAudioDelayThroughTheJavaBoundary() {
+        String bridge = System.getProperty("kmediavlc.test.nativeBridge");
+        String fakeLibVlc = System.getProperty("kmediavlc.test.fakeLibVlc");
+        Assumptions.assumeTrue(
+                bridge != null && fakeLibVlc != null, "The native CPU-pull fixture is opt-in.");
+        Path fakeLibVlcPath = Path.of(fakeLibVlc).toAbsolutePath();
+        Path plugins = fakeLibVlcPath.getParent();
+        assertNotNull(plugins);
+        var runtime = new VlcDesktopRuntimeResolution(
+                Path.of(bridge).toAbsolutePath(),
+                fakeLibVlcPath,
+                plugins,
+                "fake-libvlc-audio-delay",
+                new VlcRuntimeCapabilities(
+                        4,
+                        2,
+                        "4.0.0-dev",
+                        "04d555a9d391f009d4f510f508fef58c39bdf810",
+                        Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
+                        Set.of(VlcRenderEngine.OPENGL),
+                        false));
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.CPU_PULL, false, 203f, 203f, new VlcPlayerListener() {});
+
+        var player = VlcDesktopPlayer.create(runtime, config);
+        try (player) {
+            // Accepted without media: the bridge retains it for the first input.
+            assertTrue(player.setAudioDelay(250_000));
+            assertTrue(player.open("test://audio-delay", Map.of(), true));
+            assertTrue(player.setAudioDelay(-100_000));
+            assertTrue(player.setAudioDelay(VlcDesktopPlayer.MAX_AUDIO_DELAY_MICROSECONDS));
+            assertTrue(player.setAudioDelay(-VlcDesktopPlayer.MAX_AUDIO_DELAY_MICROSECONDS));
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> player.setAudioDelay(VlcDesktopPlayer.MAX_AUDIO_DELAY_MICROSECONDS + 1));
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> player.setAudioDelay(-VlcDesktopPlayer.MAX_AUDIO_DELAY_MICROSECONDS - 1));
+            assertThrows(IllegalArgumentException.class, () -> player.setAudioDelay(Long.MIN_VALUE));
+            assertTrue(player.setAudioDelay(0));
+        }
+        assertThrows(IllegalStateException.class, () -> player.setAudioDelay(0));
     }
 
     @Test

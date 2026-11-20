@@ -15,6 +15,9 @@ import java.util.function.Supplier;
 
 /** One optional libVLC 4 player using the KMediaVlc push-notify/pull-acquire bridge. */
 public final class VlcDesktopPlayer implements AutoCloseable {
+    /** Largest {@link #setAudioDelay(long)} value in either direction. */
+    public static final long MAX_AUDIO_DELAY_MICROSECONDS = 60_000_000L;
+
     private final long nativePlayer;
     private final VlcDesktopPlayerConfig config;
     private final NativeEventSink eventSink;
@@ -115,6 +118,14 @@ public final class VlcDesktopPlayer implements AutoCloseable {
     public boolean setRate(float rate) {
         if (!Float.isFinite(rate) || rate <= 0f) throw new IllegalArgumentException("rate must be positive.");
         return callNative(() -> NativeBridge.setRate(nativePlayer, rate));
+    }
+    /** Moves the sound against the picture: positive plays the sound later, negative earlier.
+     * The player keeps the value for every media it opens; a new player starts at zero. */
+    public boolean setAudioDelay(long delayMicroseconds) {
+        if (delayMicroseconds < -MAX_AUDIO_DELAY_MICROSECONDS || delayMicroseconds > MAX_AUDIO_DELAY_MICROSECONDS) {
+            throw new IllegalArgumentException("delayMicroseconds exceeds the supported audio delay.");
+        }
+        return callNative(() -> NativeBridge.setAudioDelay(nativePlayer, delayMicroseconds));
     }
     public boolean setLoop(boolean loop) { return callNative(() -> NativeBridge.setLoop(nativePlayer, loop)); }
     /** Returns true only when this instance was created with the requested mode.

@@ -39,6 +39,7 @@ constexpr jint kBridgeAbiVersion = 1;
 constexpr std::size_t kMaximumUtf8Bytes = 65'536;
 constexpr std::size_t kMaximumHeaderPairs = 64;
 constexpr unsigned kMaximumDimension = 16'384;
+constexpr std::int64_t kMaximumAudioDelayMicroseconds = 60'000'000;
 constexpr const char* kBuildMarker = "kmediavlc-android-anw-abi1";
 
 enum PlaybackState : std::int64_t {
@@ -76,6 +77,9 @@ struct AndroidPlayer final {
     bool output_callbacks_installed = false;
     int volume_percent = 100;
     float playback_rate = 1.0F;
+    // libVLC keeps the audio delay on the input of one media and ignores it while no input
+    // exists. Serialized Java commands and snapshot polling give it to each new input.
+    libvlc_time_t audio_delay_microseconds = 0;
     bool volume_pending = false;
     bool pause_pending = false; // Serialized Java commands/snapshot polling only, never callbacks.
     kmediavlc::FrameTiming frame_timing;
@@ -466,6 +470,13 @@ void refresh_video_dimensions(AndroidPlayer* player) {
     libvlc_media_tracklist_delete(tracks);
 }
 
+void apply_audio_delay(AndroidPlayer* player) {
+    // libVLC reports zero while it has no input and for every new one, so the comparison finds
+    // an input that still lacks the requested delay without resending an applied value.
+    if (libvlc_audio_get_delay(player->media_player) == player->audio_delay_microseconds) return;
+    (void)libvlc_audio_set_delay(player->media_player, player->audio_delay_microseconds);
+}
+
 void apply_pending_pause(AndroidPlayer* player) {
     // libVLC set_pause stops an input whose pause capability is not known yet.
     // Surface recreation starts a fresh asynchronous input; preserve Pause intent
@@ -515,6 +526,7 @@ bool recreate_media_player(AndroidPlayer* player) {
     restore_selected_tracks(player->media_player, libvlc_track_video, selected_video);
     restore_selected_tracks(player->media_player, libvlc_track_text, selected_text);
     (void)libvlc_media_player_set_rate(player->media_player, player->playback_rate);
+    apply_audio_delay(player);
     player->volume_pending = true;
     if (!resume_playback) {
         player->state.store(kStateIdle, std::memory_order_release);
@@ -529,6 +541,7 @@ bool recreate_media_player(AndroidPlayer* player) {
         (void)libvlc_media_player_set_time(player->media_player, resume_time, false);
     }
     apply_pending_pause(player);
+    apply_audio_delay(player);
     if (libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {
         player->volume_pending = false;
     }
@@ -769,7 +782,14 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_open(
     player->buffered_permille.store(0, std::memory_order_release);
     player->seekable.store(false, std::memory_order_release);
     player->state.store(kStateIdle, std::memory_order_release);
-    if (autoplay == JNI_FALSE || libvlc_media_player_play(player->media_player) == 0) return JNI_TRUE;
+    // An idle player has its new input now; one that was playing gets it after the old input
+    // stops, where play and snapshot polling repeat this step.
+    apply_audio_delay(player);
+    if (autoplay == JNI_FALSE) return JNI_TRUE;
+    if (libvlc_media_player_play(player->media_player) == 0) {
+        apply_audio_delay(player);
+        return JNI_TRUE;
+    }
     set_error(player, "libVLC rejected autoplay.");
     return JNI_FALSE;
 }
@@ -782,6 +802,7 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_play(
     if (libvlc_media_player_play(player->media_player) == 0) {
         player->pause_pending = false;
         player->transport_intent.store(TransportIntent::playing, std::memory_order_release);
+        apply_audio_delay(player);
         if (player->volume_pending &&
             libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {
             player->volume_pending = false;
@@ -869,6 +890,19 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_setRate(
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_setAudioDelay(
+    JNIEnv*, jclass, jlong handle, jlong delay_microseconds) {
+    auto* player = player_from(handle);
+    if (!valid_player(player) || delay_microseconds < -kMaximumAudioDelayMicroseconds ||
+        delay_microseconds > kMaximumAudioDelayMicroseconds) {
+        return JNI_FALSE;
+    }
+    player->audio_delay_microseconds = static_cast<libvlc_time_t>(delay_microseconds);
+    apply_audio_delay(player);
+    return JNI_TRUE;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_setLoop(
     JNIEnv*, jclass, jlong handle, jboolean loop) {
     auto* player = player_from(handle);
@@ -883,6 +917,7 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_snapshot(
     auto* player = player_from(handle);
     if (!valid_player(player)) return nullptr;
     apply_pending_pause(player);
+    apply_audio_delay(player);
     refresh_video_dimensions(player);
     if (player->volume_pending &&
         libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {

@@ -45,11 +45,25 @@ struct libvlc_media_player_t final {
     bool hdr = false;
     bool eos_sequence = false;
     bool resize_between_render_and_swap = false;
+    // Pinned libVLC keeps the audio delay on the input of one media.
+    bool has_input = false;
+    bool input_started = false;
+    libvlc_time_t audio_delay = 0;
 };
 
 namespace {
 
 int last_scaling_mode = 0;
+libvlc_time_t last_audio_delay = 0;
+unsigned audio_delay_set_calls = 0;
+
+// Every new input starts without a delay, and a player without an input has none.
+void replace_input(libvlc_media_player_t* player, bool has_input) {
+    player->has_input = has_input;
+    player->input_started = false;
+    player->audio_delay = 0;
+    last_audio_delay = 0;
+}
 
 void cleanup_output(libvlc_media_player_t* player) {
     if (player == nullptr || !player->output.setup_active) return;
@@ -211,6 +225,17 @@ __declspec(dllexport)
 #endif
 int kmediavlc_fake_last_scaling_mode() { return last_scaling_mode; }
 
+// Delay of the input that most recently changed, and the number of accepted or ignored requests.
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+libvlc_time_t kmediavlc_fake_audio_delay() { return last_audio_delay; }
+
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+unsigned kmediavlc_fake_audio_delay_set_calls() { return audio_delay_set_calls; }
+
 void libvlc_release(libvlc_instance_t* instance) { delete instance; }
 
 const char* libvlc_errmsg() { return "KMediaVlc fake libVLC test fixture"; }
@@ -240,6 +265,10 @@ void libvlc_media_player_set_media(libvlc_media_player_t* player, libvlc_media_t
     player->hdr = media != nullptr && media->hdr;
     player->eos_sequence = media != nullptr && media->eos_sequence;
     player->resize_between_render_and_swap = media != nullptr && media->resize_between_render_and_swap;
+    // vlc_player_SetCurrentMedia opens the media at once only while no input is
+    // running. Otherwise the new input appears after the old one has stopped,
+    // which this fixture reaches on the next play.
+    replace_input(player, media != nullptr && !player->input_started);
 }
 
 int libvlc_media_player_play(libvlc_media_player_t* player) {
@@ -248,9 +277,12 @@ int libvlc_media_player_play(libvlc_media_player_t* player) {
              ? publish_cpu_test_frame(player)
              : publish_test_frame(player));
     if (!published) return -1;
+    if (!player->has_input) replace_input(player, true);
+    player->input_started = true;
     if (player->callbacks != nullptr && player->callbacks->on_state_changed != nullptr) {
         player->callbacks->on_state_changed(player->callbacks_opaque, libvlc_Playing);
     }
+    if (player->eos_sequence) replace_input(player, false);
     if (player->eos_sequence && player->callbacks != nullptr) {
         if (player->callbacks->on_media_stopping != nullptr) {
             player->callbacks->on_media_stopping(
@@ -272,7 +304,10 @@ int libvlc_media_player_play(libvlc_media_player_t* player) {
 
 void libvlc_media_player_set_pause(libvlc_media_player_t*, int) {}
 
-int libvlc_media_player_stop_async(libvlc_media_player_t*) { return 0; }
+int libvlc_media_player_stop_async(libvlc_media_player_t* player) {
+    if (player != nullptr) replace_input(player, false);
+    return 0;
+}
 
 int libvlc_media_player_set_time(libvlc_media_player_t*, libvlc_time_t, bool) { return 0; }
 
@@ -315,6 +350,20 @@ void libvlc_media_track_release(libvlc_media_track_t* track) {
 int libvlc_media_player_set_rate(libvlc_media_player_t*, float) { return 0; }
 
 int libvlc_audio_set_volume(libvlc_media_player_t*, int) { return 0; }
+
+libvlc_time_t libvlc_audio_get_delay(libvlc_media_player_t* player) {
+    return player != nullptr && player->has_input ? player->audio_delay : 0;
+}
+
+// Pinned libVLC always reports success and drops the request while it has no input.
+int libvlc_audio_set_delay(libvlc_media_player_t* player, libvlc_time_t delay) {
+    ++audio_delay_set_calls;
+    if (player != nullptr && player->has_input) {
+        player->audio_delay = delay;
+        last_audio_delay = delay;
+    }
+    return 0;
+}
 
 libvlc_media_t* libvlc_media_new_location(const char* location) {
     auto* media = new (std::nothrow) libvlc_media_t();

@@ -77,6 +77,15 @@ final class VlcAndroidPlayerTest {
                 VlcAndroidPlayer.class.getMethod("setRate", float.class).getReturnType());
         assertEquals(
                 boolean.class,
+                VlcAndroidPlayer.class.getMethod("setAudioDelay", long.class).getReturnType());
+        assertEquals(60_000_000L, VlcAndroidPlayer.MAX_AUDIO_DELAY_MICROSECONDS);
+        assertEquals(
+                boolean.class,
+                NativeBridge.class
+                        .getDeclaredMethod("setAudioDelay", long.class, long.class)
+                        .getReturnType());
+        assertEquals(
+                boolean.class,
                 VlcAndroidPlayer.class.getMethod("setLoop", boolean.class).getReturnType());
         assertEquals(
                 VlcAndroidPlayerSnapshot.class,

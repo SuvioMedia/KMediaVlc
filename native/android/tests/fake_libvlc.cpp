@@ -20,6 +20,9 @@ struct libvlc_media_player_t final {
     libvlc_time_t time = 0;
     libvlc_time_t length = 60'000'000;
     bool playing = false;
+    // Pinned libVLC keeps the audio delay on the input of one media.
+    bool has_input = false;
+    libvlc_time_t audio_delay = 0;
 
     libvlc_video_engine_t engine = libvlc_video_engine_disable;
     libvlc_video_output_setup_cb setup = nullptr;
@@ -33,6 +36,12 @@ namespace {
 
 bool pause_ready = true;
 bool deferred_stop = false;
+
+// Every new input starts without a delay, and a player without an input has none.
+void replace_input(libvlc_media_player_t* player, bool has_input) {
+    player->has_input = has_input;
+    player->audio_delay = 0;
+}
 
 void cleanup_output(libvlc_media_player_t* player) {
     if (player->active_opaque != nullptr && player->cleanup != nullptr) {
@@ -163,7 +172,11 @@ extern "C" void libvlc_media_release(libvlc_media_t* media) {
     delete media;
 }
 
-extern "C" void libvlc_media_player_set_media(libvlc_media_player_t*, libvlc_media_t*) {}
+extern "C" void libvlc_media_player_set_media(libvlc_media_player_t* player, libvlc_media_t* media) {
+    // vlc_player_SetCurrentMedia opens the media at once only while no input is running.
+    // Otherwise the new input appears after the old one has stopped: on the next play here.
+    if (player != nullptr) replace_input(player, media != nullptr && !player->playing);
+}
 
 extern "C" libvlc_media_tracklist_t* libvlc_media_player_get_tracklist(
     libvlc_media_player_t* player,
@@ -193,6 +206,7 @@ extern "C" void libvlc_media_player_select_tracks_by_ids(
 
 extern "C" int libvlc_media_player_play(libvlc_media_player_t* player) {
     if (player == nullptr) return -1;
+    if (!player->has_input) replace_input(player, true);
     state_changed(player, libvlc_Opening);
     if (player->callbacks.on_buffering_changed != nullptr) {
         player->callbacks.on_buffering_changed(player->callback_opaque, 0.0F);
@@ -227,6 +241,7 @@ extern "C" int libvlc_media_player_stop_async(libvlc_media_player_t* player) {
     if (player == nullptr) return -1;
     if (deferred_stop) return 0;
     player->playing = false;
+    replace_input(player, false);
     cleanup_output(player);
     if (player->callbacks.on_media_stopping != nullptr) {
         player->callbacks.on_media_stopping(
@@ -265,4 +280,14 @@ extern "C" int libvlc_media_player_set_rate(libvlc_media_player_t* player, float
 
 extern "C" int libvlc_audio_set_volume(libvlc_media_player_t* player, int volume) {
     return player != nullptr && volume >= 0 && volume <= 200 ? 0 : -1;
+}
+
+extern "C" libvlc_time_t libvlc_audio_get_delay(libvlc_media_player_t* player) {
+    return player != nullptr && player->has_input ? player->audio_delay : 0;
+}
+
+// Pinned libVLC always reports success and drops the request while it has no input.
+extern "C" int libvlc_audio_set_delay(libvlc_media_player_t* player, libvlc_time_t delay) {
+    if (player != nullptr && player->has_input) player->audio_delay = delay;
+    return 0;
 }

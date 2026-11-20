@@ -43,6 +43,8 @@ public:
     decltype(&libvlc_media_track_release) media_track_release = nullptr;
     decltype(&libvlc_media_player_set_rate) media_player_set_rate = nullptr;
     decltype(&libvlc_audio_set_volume) audio_set_volume = nullptr;
+    decltype(&libvlc_audio_get_delay) audio_get_delay = nullptr;
+    decltype(&libvlc_audio_set_delay) audio_set_delay = nullptr;
     decltype(&libvlc_media_new_location) media_new_location = nullptr;
     decltype(&libvlc_media_new_path) media_new_path = nullptr;
     decltype(&libvlc_media_add_option) media_add_option = nullptr;
@@ -92,6 +94,7 @@ void publish_paused_seek_candidate_if_ready(
     ::kmediavlc_player* player,
     std::int64_t position_microseconds);
 bool paused_seek_decode_in_progress(::kmediavlc_player* player);
+void apply_audio_delay(::kmediavlc_player* player);
 
 } // namespace kmediavlc
 
@@ -124,6 +127,12 @@ struct kmediavlc_player final {
 
     std::atomic<bool> callbacks_enabled{true};
     std::atomic<bool> loop{false};
+    // libVLC keeps the audio delay on the input of one media and ignores it
+    // while no input exists. Retain the request here; apply_audio_delay gives
+    // it to every input the player creates.
+    std::atomic<std::int64_t> audio_delay_microseconds{0};
+    // Orders the client's set and open commands. libVLC callbacks never take it.
+    std::mutex audio_delay_mutex;
     std::atomic<int> video_scaling_mode{0};
     std::atomic<int> video_scaling_vendor{0};
     std::atomic<int> video_scaling_options{7};

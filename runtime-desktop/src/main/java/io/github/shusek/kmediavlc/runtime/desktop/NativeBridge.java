@@ -93,6 +93,7 @@ final class NativeBridge {
     static native boolean seek(long player, long timeMicroseconds, boolean fast);
     static native boolean setVolume(long player, float volume);
     static native boolean setRate(long player, float rate);
+    static native boolean setAudioDelay(long player, long delayMicroseconds);
     static native boolean setLoop(long player, boolean loop);
     static native boolean setVideoScalingMode(long player, int mode);
     static native int videoScalingCapabilities(long player);

@@ -263,6 +263,11 @@ kmediavlc_playback_state map_state(libvlc_state_t state) {
 void on_state_changed(void* opaque, libvlc_state_t state) {
     auto* player = static_cast<kmediavlc_player*>(opaque);
     if (player == nullptr) return;
+    // A started input is the first point at which libVLC accepts the audio
+    // delay for a media that replaced a running one, and for a replay after
+    // stop or the end. libVLC's player lock is re-entrant, so the call is safe
+    // from its own callback.
+    if (state == libvlc_Opening || state == libvlc_Playing) kmediavlc::apply_audio_delay(player);
     const auto mapped = map_state(state);
     if ((mapped == KMEDIAVLC_STATE_PLAYING || mapped == KMEDIAVLC_STATE_BUFFERING) &&
         kmediavlc::paused_seek_decode_in_progress(player)) {
@@ -558,6 +563,8 @@ std::shared_ptr<LibVlcApi> LibVlcApi::load(const char* path_value, std::string& 
     KMEDIAVLC_BIND(media_track_release, "libvlc_media_track_release");
     KMEDIAVLC_BIND(media_player_set_rate, "libvlc_media_player_set_rate");
     KMEDIAVLC_BIND(audio_set_volume, "libvlc_audio_set_volume");
+    KMEDIAVLC_BIND(audio_get_delay, "libvlc_audio_get_delay");
+    KMEDIAVLC_BIND(audio_set_delay, "libvlc_audio_set_delay");
     KMEDIAVLC_BIND(media_new_location, "libvlc_media_new_location");
     KMEDIAVLC_BIND(media_new_path, "libvlc_media_new_path");
     KMEDIAVLC_BIND(media_add_option, "libvlc_media_add_option");
@@ -727,6 +734,15 @@ bool paused_seek_decode_in_progress(kmediavlc_player* player) {
     std::lock_guard lock(player->frame_mutex);
     return player->paused_seek_repause_pending && player->paused_seek_target_microseconds >= 0 &&
         player->paused_seek_transport_generation == transport_generation;
+}
+
+void apply_audio_delay(kmediavlc_player* player) {
+    if (player == nullptr || player->media_player == nullptr || !player->api) return;
+    const auto requested = player->audio_delay_microseconds.load(std::memory_order_acquire);
+    // libVLC reports zero while it has no input and ignores a delay set then.
+    // Comparing first keeps state callbacks from resending an applied value.
+    if (player->api->audio_get_delay(player->media_player) == requested) return;
+    (void)player->api->audio_set_delay(player->media_player, requested);
 }
 
 } // namespace kmediavlc
@@ -905,6 +921,13 @@ bool kmediavlc_player_open(
     }
     player->api->media_player_set_media(player->media_player, media);
     player->api->media_release(media);
+    {
+        // An idle player gets its input here, before any sample is decoded. A
+        // running one gets it once the old input has stopped; on_state_changed
+        // covers that case.
+        std::lock_guard audio_delay_lock(player->audio_delay_mutex);
+        kmediavlc::apply_audio_delay(player);
+    }
     const auto generation = player->media_generation.fetch_add(1, std::memory_order_acq_rel) + 1U;
     (void)generation;
     player->position_microseconds.store(0, std::memory_order_release);
@@ -1049,6 +1072,20 @@ bool kmediavlc_player_set_rate(kmediavlc_player* player, float rate) {
     return player->api->media_player_set_rate(player->media_player, rate) == 0;
 }
 
+bool kmediavlc_player_set_audio_delay(kmediavlc_player* player, int64_t delay_microseconds) {
+    if (!valid_player(player) ||
+        delay_microseconds < -KMEDIAVLC_MAX_AUDIO_DELAY_MICROSECONDS ||
+        delay_microseconds > KMEDIAVLC_MAX_AUDIO_DELAY_MICROSECONDS) {
+        return false;
+    }
+    std::lock_guard audio_delay_lock(player->audio_delay_mutex);
+    // Publish the request before entering libVLC: a state callback that runs
+    // first then already carries this value, and one that runs later repeats it.
+    player->audio_delay_microseconds.store(delay_microseconds, std::memory_order_release);
+    kmediavlc::apply_audio_delay(player);
+    return true;
+}
+
 bool kmediavlc_player_set_loop(kmediavlc_player* player, bool loop) {
     if (!valid_player(player)) return false;
     player->loop.store(loop, std::memory_order_release);
@@ -1142,6 +1179,12 @@ bool kmediavlc_player_update_output(kmediavlc_player* player, const kmediavlc_ou
 bool kmediavlc_player_get_snapshot(kmediavlc_player* player, kmediavlc_player_snapshot* output) {
     if (!valid_player(player) || output == nullptr || output->struct_size != sizeof(kmediavlc_player_snapshot) ||
         output->bridge_abi_version != kBridgeAbi) return false;
+    {
+        // libVLC can move to its next input without a state callback. Polling
+        // clients then still give that input the requested audio delay.
+        std::lock_guard audio_delay_lock(player->audio_delay_mutex);
+        kmediavlc::apply_audio_delay(player);
+    }
     const bool track_position =
         player->play_when_ready.load(std::memory_order_acquire) ||
         kmediavlc::paused_seek_decode_in_progress(player);

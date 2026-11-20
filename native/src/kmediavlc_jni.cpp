@@ -844,6 +844,14 @@ Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_setRate(
 }
 
 JNIEXPORT jboolean JNICALL
+Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_setAudioDelay(
+    JNIEnv*, jclass, jlong player_handle, jlong delay_microseconds) {
+    auto* player = player_from(player_handle);
+    return player != nullptr && player->native != nullptr &&
+        kmediavlc_player_set_audio_delay(player->native, delay_microseconds) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
 Java_io_github_shusek_kmediavlc_runtime_desktop_NativeBridge_setLoop(
     JNIEnv*, jclass, jlong player_handle, jboolean loop) {
     auto* player = player_from(player_handle);

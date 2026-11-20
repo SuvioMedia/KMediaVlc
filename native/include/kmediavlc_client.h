@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 #define KMEDIAVLC_BRIDGE_ABI_VERSION 2u
+#define KMEDIAVLC_MAX_AUDIO_DELAY_MICROSECONDS INT64_C(60000000)
 
 typedef struct kmediavlc_player kmediavlc_player;
 typedef struct kmediavlc_frame kmediavlc_frame;
@@ -185,6 +186,16 @@ KMEDIAVLC_API bool kmediavlc_player_seek(kmediavlc_player *player, int64_t time_
  * passthrough/bitstream output, where the stream is not decoded to PCM. */
 KMEDIAVLC_API bool kmediavlc_player_set_volume(kmediavlc_player *player, float volume);
 KMEDIAVLC_API bool kmediavlc_player_set_rate(kmediavlc_player *player, float rate);
+/*
+ * Moves the sound against the picture: a positive delay plays the sound later, a negative one
+ * earlier. The bridge keeps the value for this player and gives it to every media it opens,
+ * because libVLC itself returns to zero whenever the media changes. Returns false outside
+ * -KMEDIAVLC_MAX_AUDIO_DELAY_MICROSECONDS..KMEDIAVLC_MAX_AUDIO_DELAY_MICROSECONDS.
+ * Additive entry point: it keeps the bridge ABI version.
+ */
+KMEDIAVLC_API bool kmediavlc_player_set_audio_delay(
+    kmediavlc_player *player,
+    int64_t delay_microseconds);
 KMEDIAVLC_API bool kmediavlc_player_set_loop(kmediavlc_player *player, bool loop);
 /* Windows D3D11 only. Confirms the mode chosen at creation; returns false for
  * a changed mode, which requires create_with_video_scaling(). */

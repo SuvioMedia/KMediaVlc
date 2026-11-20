@@ -174,5 +174,11 @@ if(KMEDIAVLC_BUILD_TEST_FIXTURES)
         target_link_libraries(kmediavlc_paused_seek_test PRIVATE kmediavlc_bridge)
         add_test(NAME paused_seek_frame_delivery COMMAND kmediavlc_paused_seek_test
             $<TARGET_FILE:kmediavlc_fake_libvlc>)
+        add_executable(kmediavlc_audio_delay_test tests/audio_delay_test.cpp)
+        target_compile_features(kmediavlc_audio_delay_test PRIVATE cxx_std_20)
+        target_include_directories(kmediavlc_audio_delay_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+        target_link_libraries(kmediavlc_audio_delay_test PRIVATE kmediavlc_bridge ${CMAKE_DL_LIBS})
+        add_test(NAME audio_delay_across_media COMMAND kmediavlc_audio_delay_test
+            $<TARGET_FILE:kmediavlc_fake_libvlc>)
     endif()
 endif()
