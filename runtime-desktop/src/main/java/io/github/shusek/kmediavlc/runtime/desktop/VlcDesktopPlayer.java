@@ -104,8 +104,13 @@ public final class VlcDesktopPlayer implements AutoCloseable {
     public boolean seek(long timeMicroseconds, boolean fast) {
         return callNative(() -> NativeBridge.seek(nativePlayer, Math.max(0, timeMicroseconds), fast));
     }
+    /**
+     * Sets the software volume as a linear gain: 0.0 is mute, 1.0 is nominal, and values up to 2.0
+     * boost by up to 200%. Out-of-range values are clamped to 0.0..2.0. Above 1.0 the output may
+     * clip, and passthrough/bitstream output ignores the value.
+     */
     public boolean setVolume(float volume) {
-        return callNative(() -> NativeBridge.setVolume(nativePlayer, Math.clamp(volume, 0f, 1f)));
+        return callNative(() -> NativeBridge.setVolume(nativePlayer, Math.clamp(volume, 0f, 2f)));
     }
     public boolean setRate(float rate) {
         if (!Float.isFinite(rate) || rate <= 0f) throw new IllegalArgumentException("rate must be positive.");

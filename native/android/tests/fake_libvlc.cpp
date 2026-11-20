@@ -264,5 +264,5 @@ extern "C" int libvlc_media_player_set_rate(libvlc_media_player_t* player, float
 }
 
 extern "C" int libvlc_audio_set_volume(libvlc_media_player_t* player, int volume) {
-    return player != nullptr && volume >= 0 && volume <= 100 ? 0 : -1;
+    return player != nullptr && volume >= 0 && volume <= 200 ? 0 : -1;
 }
