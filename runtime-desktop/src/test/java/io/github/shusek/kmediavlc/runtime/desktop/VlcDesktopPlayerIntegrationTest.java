@@ -142,6 +142,100 @@ final class VlcDesktopPlayerIntegrationTest {
     }
 
     @Test
+    void pinnedVideoLanFixtureListsSwitchesAndDelaysEmbeddedTracks() throws Exception {
+        String mediaPath = System.getProperty("kmediavlc.test.tracksMedia");
+        Assumptions.assumeTrue(mediaPath != null, "Real track media is opt-in.");
+        var fixture = fixture();
+        var frames = new Semaphore(0);
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.CPU_PULL,
+                false,
+                203f,
+                203f,
+                new VlcPlayerListener() {
+                    @Override
+                    public void onFrameAvailable(long serial, long outputGeneration) {
+                        frames.release();
+                    }
+                });
+
+        try (var player = VlcDesktopPlayer.create(fixture.runtime(), config)) {
+            assertTrue(player.setSubtitleDelay(-1_500_000));
+            assertTrue(player.setAudioDelay(200_000));
+            assertTrue(player.open(Path.of(mediaPath).toUri().toString(), Map.of(), true));
+            assertTrue(
+                    frames.tryAcquire(15, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "No CPU frame arrived from the track media."));
+            var audio = awaitTracks(player, VlcTrackType.AUDIO, 2);
+            var subtitles = awaitTracks(player, VlcTrackType.SUBTITLE, 2);
+            assertEquals(Set.of("eng", "pol"), languages(audio), audio::toString);
+            assertEquals(Set.of("eng", "pol"), languages(subtitles), subtitles::toString);
+            assertTrue(audio.stream().allMatch(track -> !track.id().isEmpty() && track.audioChannels() > 0));
+
+            var polish = subtitles.stream().filter(track -> track.language().equals("pol")).findFirst().orElseThrow();
+            long generation = player.tracksGeneration();
+            assertTrue(player.selectTrack(VlcTrackType.SUBTITLE, polish.id()));
+            awaitSelection(player, VlcTrackType.SUBTITLE, polish.id());
+            assertTrue(player.tracksGeneration() != generation);
+            assertFalse(player.selectTrack(VlcTrackType.SUBTITLE, "spu/999"));
+
+            var secondAudio = audio.stream().filter(track -> !track.selected()).findFirst().orElseThrow();
+            assertTrue(player.selectTrack(VlcTrackType.AUDIO, secondAudio.id()));
+            awaitSelection(player, VlcTrackType.AUDIO, secondAudio.id());
+
+            assertTrue(player.disableTracks(VlcTrackType.SUBTITLE));
+            awaitSelection(player, VlcTrackType.SUBTITLE, null);
+            // libVLC itself forgets both choices when its input stops; the bridge keeps them.
+            assertTrue(player.stop());
+            assertTrue(player.play());
+            awaitTracks(player, VlcTrackType.SUBTITLE, 2);
+            awaitSelection(player, VlcTrackType.SUBTITLE, null);
+            awaitSelection(player, VlcTrackType.AUDIO, secondAudio.id());
+            assertTrue(player.setSubtitleDelay(2_000_000));
+            assertTrue(player.setAudioDelay(-100_000));
+
+            // Playback keeps running through every change.
+            long position = player.snapshot().positionMicroseconds();
+            frames.drainPermits();
+            assertTrue(
+                    frames.tryAcquire(10, 15, TimeUnit.SECONDS),
+                    () -> timeoutDiagnostics(player, "Playback stopped after track changes."));
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (player.snapshot().positionMicroseconds() <= position && System.nanoTime() < deadline) {
+                Thread.sleep(50);
+            }
+            assertTrue(player.snapshot().positionMicroseconds() > position, () -> timeoutDiagnostics(player, "The clock stood still."));
+        }
+    }
+
+    private static java.util.List<VlcTrack> awaitTracks(VlcDesktopPlayer player, VlcTrackType type, int count)
+            throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        var tracks = player.tracks(type);
+        while (tracks.size() < count && System.nanoTime() < deadline) {
+            Thread.sleep(50);
+            tracks = player.tracks(type);
+        }
+        assertEquals(count, tracks.size(), tracks::toString);
+        return tracks;
+    }
+
+    private static void awaitSelection(VlcDesktopPlayer player, VlcTrackType type, String id)
+            throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (System.nanoTime() < deadline) {
+            var selected = player.tracks(type).stream().filter(VlcTrack::selected).map(VlcTrack::id).toList();
+            if (id == null ? selected.isEmpty() : selected.equals(java.util.List.of(id))) return;
+            Thread.sleep(50);
+        }
+        throw new AssertionError("Selection of " + type + " did not become " + id + ": " + player.tracks(type));
+    }
+
+    private static Set<String> languages(java.util.List<VlcTrack> tracks) {
+        return tracks.stream().map(VlcTrack::language).collect(java.util.stream.Collectors.toSet());
+    }
+
+    @Test
     void pinnedVideoLanFixturePausesAndResumesRealMedia() throws Exception {
         String mediaPath = System.getProperty("kmediavlc.test.pauseMedia");
         Assumptions.assumeTrue(mediaPath != null, "The real pause fixture is opt-in.");
@@ -572,6 +666,69 @@ final class VlcDesktopPlayerIntegrationTest {
             assertTrue(player.setAudioDelay(0));
         }
         assertThrows(IllegalStateException.class, () -> player.setAudioDelay(0));
+    }
+
+    @Test
+    void fakeLibVlcListsSwitchesAndDelaysTracksThroughTheJavaBoundary() {
+        String bridge = System.getProperty("kmediavlc.test.nativeBridge");
+        String fakeLibVlc = System.getProperty("kmediavlc.test.fakeLibVlc");
+        Assumptions.assumeTrue(
+                bridge != null && fakeLibVlc != null, "The native CPU-pull fixture is opt-in.");
+        Path fakeLibVlcPath = Path.of(fakeLibVlc).toAbsolutePath();
+        Path plugins = fakeLibVlcPath.getParent();
+        assertNotNull(plugins);
+        var runtime = new VlcDesktopRuntimeResolution(
+                Path.of(bridge).toAbsolutePath(),
+                fakeLibVlcPath,
+                plugins,
+                "fake-libvlc-tracks",
+                new VlcRuntimeCapabilities(
+                        4,
+                        2,
+                        "4.0.0-dev",
+                        "04d555a9d391f009d4f510f508fef58c39bdf810",
+                        Set.of(VlcFrameDeliveryMode.GPU_PUSH, VlcFrameDeliveryMode.CPU_PULL),
+                        Set.of(VlcRenderEngine.OPENGL),
+                        false));
+        var config = new VlcDesktopPlayerConfig(
+                VlcFrameDeliveryMode.CPU_PULL, false, 203f, 203f, new VlcPlayerListener() {});
+
+        var player = VlcDesktopPlayer.create(runtime, config);
+        try (player) {
+            assertEquals(java.util.List.of(), player.tracks(VlcTrackType.SUBTITLE));
+            assertTrue(player.setSubtitleDelay(-2_000_000));
+            long generation = player.tracksGeneration();
+            assertTrue(player.open("test://tracks", Map.of(), true));
+            assertTrue(player.tracksGeneration() != generation);
+
+            var audio = player.tracks(VlcTrackType.AUDIO);
+            assertEquals(2, audio.size());
+            assertEquals(
+                    new VlcTrack(VlcTrackType.AUDIO, "audio/0", "English 5.1", "en", "", 0x6134706D,
+                            6, 48_000, 384_000, true, true),
+                    audio.get(0));
+            assertEquals("mp4a", audio.get(0).codecName());
+            var subtitles = player.tracks(VlcTrackType.SUBTITLE);
+            assertEquals(java.util.List.of("spu/0", "spu/1", "spu/2"),
+                    subtitles.stream().map(VlcTrack::id).toList());
+            assertEquals("Polski \uD83C\uDFAC", subtitles.get(1).name());
+            assertEquals("", subtitles.get(2).name());
+
+            assertTrue(player.selectTrack(VlcTrackType.SUBTITLE, "spu/1"));
+            assertTrue(player.tracks(VlcTrackType.SUBTITLE).get(1).selected());
+            assertFalse(player.selectTrack(VlcTrackType.SUBTITLE, "spu/7"));
+            assertThrows(IllegalArgumentException.class, () -> player.selectTrack(VlcTrackType.SUBTITLE, "spu/0,spu/1"));
+            assertThrows(IllegalArgumentException.class, () -> player.selectTrack(VlcTrackType.SUBTITLE, ""));
+            assertTrue(player.disableTracks(VlcTrackType.SUBTITLE));
+            assertTrue(player.tracks(VlcTrackType.SUBTITLE).stream().noneMatch(VlcTrack::selected));
+
+            assertTrue(player.setSubtitleDelay(VlcDesktopPlayer.MAX_SUBTITLE_DELAY_MICROSECONDS));
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> player.setSubtitleDelay(VlcDesktopPlayer.MAX_SUBTITLE_DELAY_MICROSECONDS + 1));
+            assertTrue(player.setSubtitleDelay(0));
+        }
+        assertThrows(IllegalStateException.class, () -> player.tracks(VlcTrackType.AUDIO));
     }
 
     @Test

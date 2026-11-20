@@ -5,7 +5,11 @@ package io.github.shusek.kmediavlc.runtime.desktop;
 import static io.github.shusek.kmediavlc.runtime.desktop.VlcRuntimeException.Reason.NATIVE_CALL_FAILED;
 import static io.github.shusek.kmediavlc.runtime.desktop.VlcRuntimeException.Reason.PLAYER_INITIALIZATION_FAILED;
 
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -17,6 +21,8 @@ import java.util.function.Supplier;
 public final class VlcDesktopPlayer implements AutoCloseable {
     /** Largest {@link #setAudioDelay(long)} value in either direction. */
     public static final long MAX_AUDIO_DELAY_MICROSECONDS = 60_000_000L;
+    /** Largest {@link #setSubtitleDelay(long)} value in either direction. */
+    public static final long MAX_SUBTITLE_DELAY_MICROSECONDS = 600_000_000L;
 
     private final long nativePlayer;
     private final VlcDesktopPlayerConfig config;
@@ -127,6 +133,77 @@ public final class VlcDesktopPlayer implements AutoCloseable {
         }
         return callNative(() -> NativeBridge.setAudioDelay(nativePlayer, delayMicroseconds));
     }
+    /** Moves the subtitles against the picture: positive shows them later, negative earlier
+     * (libVLC's sign). The player keeps the value for every media it opens. */
+    public boolean setSubtitleDelay(long delayMicroseconds) {
+        if (delayMicroseconds < -MAX_SUBTITLE_DELAY_MICROSECONDS || delayMicroseconds > MAX_SUBTITLE_DELAY_MICROSECONDS) {
+            throw new IllegalArgumentException("delayMicroseconds exceeds the supported subtitle delay.");
+        }
+        return callNative(() -> NativeBridge.setSubtitleDelay(nativePlayer, delayMicroseconds));
+    }
+
+    /** Changes whenever a track is added, removed, updated, selected or unselected, and on open.
+     * Read {@link #tracks} again only after it changed. */
+    public long tracksGeneration() { return callNative(() -> NativeBridge.tracksGeneration(nativePlayer)); }
+
+    /** The tracks of one type of the current input; empty while no input exists. */
+    public List<VlcTrack> tracks(VlcTrackType type) {
+        Objects.requireNonNull(type, "type");
+        byte[] encoded = callNative(() -> NativeBridge.tracks(nativePlayer, type.nativeValue()));
+        if (encoded == null) throw nativeFailure("The VLC bridge returned no track list.");
+        try {
+            return decodeTracks(type, encoded);
+        } catch (BufferUnderflowException | IllegalArgumentException failure) {
+            throw nativeFailure("The VLC bridge returned a malformed track list.");
+        }
+    }
+
+    static List<VlcTrack> decodeTracks(VlcTrackType type, byte[] encoded) {
+        ByteBuffer buffer = ByteBuffer.wrap(encoded);
+        int count = buffer.getInt();
+        if (count < 0 || count > 256) throw new IllegalArgumentException("track count");
+        List<VlcTrack> tracks = new ArrayList<>(count);
+        for (int index = 0; index < count; index++) {
+            int codec = buffer.getInt();
+            int channels = buffer.getInt();
+            int sampleRate = buffer.getInt();
+            int bitrate = buffer.getInt();
+            boolean selected = buffer.get() != 0;
+            boolean stableId = buffer.get() != 0;
+            String id = decodeText(buffer);
+            tracks.add(new VlcTrack(
+                    type, id, decodeText(buffer), decodeText(buffer), decodeText(buffer),
+                    codec, channels, sampleRate, bitrate, selected, stableId));
+        }
+        if (buffer.hasRemaining()) throw new IllegalArgumentException("trailing bytes");
+        return List.copyOf(tracks);
+    }
+
+    private static String decodeText(ByteBuffer buffer) {
+        int length = buffer.getInt();
+        if (length == -1) return "";
+        if (length < 0 || length > buffer.remaining()) throw new IllegalArgumentException("text length");
+        byte[] bytes = new byte[length];
+        buffer.get(bytes);
+        return new String(bytes, StandardCharsets.UTF_8).replace("\0", "");
+    }
+
+    /** Selects the track with this id from {@link #tracks}; libVLC keeps the choice for the current
+     * media. Returns false when the current input has no such track. */
+    public boolean selectTrack(VlcTrackType type, String id) {
+        Objects.requireNonNull(type, "type");
+        if (id == null || id.isEmpty() || id.indexOf('\0') >= 0 || id.indexOf(',') >= 0) {
+            throw new IllegalArgumentException("id must be a single non-empty track id.");
+        }
+        return callNative(() -> NativeBridge.selectTrack(nativePlayer, type.nativeValue(), id));
+    }
+
+    /** Turns every track of the type off for the current media, for example subtitles off. */
+    public boolean disableTracks(VlcTrackType type) {
+        Objects.requireNonNull(type, "type");
+        return callNative(() -> NativeBridge.selectTrack(nativePlayer, type.nativeValue(), ""));
+    }
+
     public boolean setLoop(boolean loop) { return callNative(() -> NativeBridge.setLoop(nativePlayer, loop)); }
     /** Returns true only when this instance was created with the requested mode.
      * Use create(runtime, config, mode) to select another resampler. */

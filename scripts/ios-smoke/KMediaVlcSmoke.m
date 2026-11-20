@@ -31,6 +31,8 @@ static int64_t g_last_video_position = 0;
 static int64_t g_video_duration = 0;
 static int64_t g_audio_progress = 0;
 static int64_t g_audio_duration = 0;
+static uint64_t g_tracks_generation = UINT64_MAX;
+static size_t g_subtitle_tracks = 0;
 
 static NSURL *result_url(void) {
     NSURL *documents = [[[NSFileManager defaultManager]
@@ -293,6 +295,12 @@ static void poll_video(kmediavlc_player_snapshot snapshot) {
     if (snapshot.state != KMEDIAVLC_STATE_ENDED) {
         g_last_video_position = snapshot.position_microseconds;
     }
+    const uint64_t tracks_generation = kmediavlc_player_tracks_generation(g_player);
+    if (tracks_generation != g_tracks_generation) {
+        g_tracks_generation = tracks_generation;
+        const size_t subtitles = kmediavlc_player_track_count(g_player, KMEDIAVLC_TRACK_SUBTITLE);
+        if (subtitles > g_subtitle_tracks) g_subtitle_tracks = subtitles;
+    }
     if (!g_seek_requested && g_video_frame_count >= 3 && g_distinct_video_frame &&
         snapshot.position_microseconds >= 250000) {
         if (!kmediavlc_player_seek(g_player, 7000000, false)) {
@@ -310,6 +318,10 @@ static void poll_video(kmediavlc_player_snapshot snapshot) {
         if (g_video_duration == 0 || g_video_frame_count < 6 || !g_distinct_video_frame ||
             !g_seek_observed) {
             finish_smoke(@"FAIL incomplete timed video evidence", 18);
+            return;
+        }
+        if (g_subtitle_tracks == 0) {
+            finish_smoke(@"FAIL the embedded subtitle track was not listed", 25);
             return;
         }
         begin_audio_playback();
@@ -347,12 +359,13 @@ static void poll_audio(kmediavlc_player_snapshot snapshot) {
         finish_smoke(
             [NSString stringWithFormat:
                 @"PASS videoFrames=%lu videoDurationUs=%lld seekUs=%lld "
-                 "audioDurationUs=%lld audioProgressUs=%lld",
+                 "audioDurationUs=%lld audioProgressUs=%lld subtitleTracks=%lu",
                 (unsigned long)g_video_frame_count,
                 (long long)g_video_duration,
                 (long long)g_last_video_position,
                 (long long)g_audio_duration,
-                (long long)g_audio_progress],
+                (long long)g_audio_progress,
+                (unsigned long)g_subtitle_tracks],
             0);
         return;
     }
@@ -408,6 +421,13 @@ static void poll_playback(void) {
     g_player = kmediavlc_player_create(&config);
     if (g_player == NULL) {
         finish_smoke(@"FAIL player creation", 5);
+        return YES;
+    }
+    // Retained before the first media and given to every input; playback must
+    // stay intact with both delays in place.
+    if (!kmediavlc_player_set_audio_delay(g_player, 100000) ||
+        !kmediavlc_player_set_subtitle_delay(g_player, -500000)) {
+        finish_smoke(@"FAIL audio or subtitle delay rejected", 24);
         return YES;
     }
     if (!kmediavlc_player_open(g_player, fixture.UTF8String, NULL, 0, true)) {

@@ -36,6 +36,7 @@ val fakeLibVlcTestPath = providers.gradleProperty("kmediaVlcTestFakeLibVlcPath")
 val pluginTestDirectory = providers.gradleProperty("kmediaVlcTestPluginDirectory")
 val hdrTestMedia = providers.gradleProperty("kmediaVlcTestHdrMedia")
 val pauseTestMedia = providers.gradleProperty("kmediaVlcTestPauseMedia")
+val tracksTestMedia = providers.gradleProperty("kmediaVlcTestTracksMedia")
 val linuxRenderNode = providers.gradleProperty("kmediaVlcTestLinuxRenderNode")
 
 tasks.test {
@@ -63,6 +64,10 @@ tasks.test {
     pauseTestMedia.orNull?.let { pauseMedia ->
         inputs.file(pauseMedia).withPropertyName("pauseTestMedia")
         systemProperty("kmediavlc.test.pauseMedia", pauseMedia)
+    }
+    tracksTestMedia.orNull?.let { tracksMedia ->
+        inputs.file(tracksMedia).withPropertyName("tracksTestMedia")
+        systemProperty("kmediavlc.test.tracksMedia", tracksMedia)
     }
     linuxRenderNode.orNull?.let { renderNode ->
         inputs.property("linuxRenderNode", renderNode)

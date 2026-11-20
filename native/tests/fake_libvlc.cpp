@@ -4,8 +4,12 @@
 
 #include <cstdint>
 #include <cstring>
+#include <iterator>
 #include <new>
+#include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 
 struct libvlc_instance_t final {};
 struct libvlc_media_t final {
@@ -37,6 +41,12 @@ struct FakeVmemCallbacks final {
     bool setup_active = false;
 };
 
+// Owns copies of the fixture tracks, as libVLC's list owns its tracks.
+struct libvlc_media_tracklist_t final {
+    std::vector<libvlc_media_track_t> tracks;
+    std::vector<libvlc_audio_track_t> audio;
+};
+
 struct libvlc_media_player_t final {
     const libvlc_media_player_cbs* callbacks = nullptr;
     void* callbacks_opaque = nullptr;
@@ -49,6 +59,17 @@ struct libvlc_media_player_t final {
     bool has_input = false;
     bool input_started = false;
     libvlc_time_t audio_delay = 0;
+    libvlc_time_t subtitle_delay = 0;
+    // Selected ids per type of the current input; "" selects none.
+    std::string audio_selection;
+    std::string text_selection;
+    // The input's string-id preference, which keeps libVLC from choosing its
+    // default track. Every new input starts without one.
+    bool audio_preference = false;
+    bool text_preference = false;
+    // libVLC keeps its global state at Playing while it moves from a running
+    // input to the next one, and sends no state callback for that input.
+    bool replaced_while_running = false;
 };
 
 namespace {
@@ -56,13 +77,38 @@ namespace {
 int last_scaling_mode = 0;
 libvlc_time_t last_audio_delay = 0;
 unsigned audio_delay_set_calls = 0;
+libvlc_time_t last_subtitle_delay = 0;
 
-// Every new input starts without a delay, and a player without an input has none.
+// Two audio and three subtitle tracks while an input exists. The second
+// subtitle name has a character outside the Basic Multilingual Plane.
+struct FixtureTrack final {
+    libvlc_track_type_t type;
+    const char* id;
+    const char* name;
+    const char* language;
+    std::uint32_t codec;
+};
+constexpr FixtureTrack kFixtureTracks[] = {
+    {libvlc_track_audio, "audio/0", "English 5.1", "en", 0x6134706DU},
+    {libvlc_track_audio, "audio/1", "Polski", "pl", 0x33636165U},
+    {libvlc_track_text, "spu/0", "English", "en", 0x74627573U},
+    {libvlc_track_text, "spu/1", "Polski \xF0\x9F\x8E\xAC", "pl", 0x20617373U},
+    {libvlc_track_text, "spu/2", nullptr, nullptr, 0x74627573U},
+};
+
+// Every new input starts without a delay and with libVLC's default tracks, and
+// a player without an input has none.
 void replace_input(libvlc_media_player_t* player, bool has_input) {
     player->has_input = has_input;
     player->input_started = false;
+    player->audio_selection.clear();
+    player->text_selection.clear();
+    player->audio_preference = false;
+    player->text_preference = false;
     player->audio_delay = 0;
     last_audio_delay = 0;
+    player->subtitle_delay = 0;
+    last_subtitle_delay = 0;
 }
 
 void cleanup_output(libvlc_media_player_t* player) {
@@ -236,6 +282,11 @@ __declspec(dllexport)
 #endif
 unsigned kmediavlc_fake_audio_delay_set_calls() { return audio_delay_set_calls; }
 
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+libvlc_time_t kmediavlc_fake_subtitle_delay() { return last_subtitle_delay; }
+
 void libvlc_release(libvlc_instance_t* instance) { delete instance; }
 
 const char* libvlc_errmsg() { return "KMediaVlc fake libVLC test fixture"; }
@@ -268,7 +319,33 @@ void libvlc_media_player_set_media(libvlc_media_player_t* player, libvlc_media_t
     // vlc_player_SetCurrentMedia opens the media at once only while no input is
     // running. Otherwise the new input appears after the old one has stopped,
     // which this fixture reaches on the next play.
+    player->replaced_while_running = player->input_started;
     replace_input(player, media != nullptr && !player->input_started);
+}
+
+// A started input announces its tracks once its demuxer runs.
+// A started input announces its tracks once its demuxer runs, then selects
+// the first track of each type unless a preference already chose.
+static void announce_tracks(libvlc_media_player_t* player) {
+    if (player->callbacks == nullptr) return;
+    if (player->callbacks->on_track_list_changed != nullptr) {
+        for (const auto& fixture : kFixtureTracks) {
+            player->callbacks->on_track_list_changed(
+                player->callbacks_opaque, libvlc_list_action_added, fixture.type, fixture.id);
+        }
+    }
+    const std::pair<libvlc_track_type_t, const char*> defaults[] = {
+        {libvlc_track_audio, "audio/0"},
+        {libvlc_track_text, "spu/0"},
+    };
+    for (const auto& [type, id] : defaults) {
+        const bool preference = type == libvlc_track_audio ? player->audio_preference : player->text_preference;
+        if (preference) continue;
+        (type == libvlc_track_audio ? player->audio_selection : player->text_selection) = id;
+        if (player->callbacks->on_track_selection_changed != nullptr) {
+            player->callbacks->on_track_selection_changed(player->callbacks_opaque, type, nullptr, id);
+        }
+    }
 }
 
 int libvlc_media_player_play(libvlc_media_player_t* player) {
@@ -278,10 +355,13 @@ int libvlc_media_player_play(libvlc_media_player_t* player) {
              : publish_test_frame(player));
     if (!published) return -1;
     if (!player->has_input) replace_input(player, true);
+    const bool new_input = !player->input_started;
     player->input_started = true;
-    if (player->callbacks != nullptr && player->callbacks->on_state_changed != nullptr) {
+    const bool silent = std::exchange(player->replaced_while_running, false);
+    if (!silent && player->callbacks != nullptr && player->callbacks->on_state_changed != nullptr) {
         player->callbacks->on_state_changed(player->callbacks_opaque, libvlc_Playing);
     }
+    if (new_input) announce_tracks(player);
     if (player->eos_sequence) replace_input(player, false);
     if (player->eos_sequence && player->callbacks != nullptr) {
         if (player->callbacks->on_media_stopping != nullptr) {
@@ -305,7 +385,10 @@ int libvlc_media_player_play(libvlc_media_player_t* player) {
 void libvlc_media_player_set_pause(libvlc_media_player_t*, int) {}
 
 int libvlc_media_player_stop_async(libvlc_media_player_t* player) {
-    if (player != nullptr) replace_input(player, false);
+    if (player != nullptr) {
+        replace_input(player, false);
+        player->replaced_while_running = false;
+    }
     return 0;
 }
 
@@ -363,6 +446,76 @@ int libvlc_audio_set_delay(libvlc_media_player_t* player, libvlc_time_t delay) {
         last_audio_delay = delay;
     }
     return 0;
+}
+
+libvlc_time_t libvlc_video_get_spu_delay(libvlc_media_player_t* player) {
+    return player != nullptr && player->has_input ? player->subtitle_delay : 0;
+}
+
+// Pinned libVLC always reports success and drops the request while it has no input.
+int libvlc_video_set_spu_delay(libvlc_media_player_t* player, libvlc_time_t delay) {
+    if (player != nullptr && player->has_input) {
+        player->subtitle_delay = delay;
+        last_subtitle_delay = delay;
+    }
+    return 0;
+}
+
+libvlc_media_tracklist_t* libvlc_media_player_get_tracklist(
+    libvlc_media_player_t* player,
+    libvlc_track_type_t type,
+    bool selected_only) {
+    if (player == nullptr) return nullptr;
+    auto* list = new (std::nothrow) libvlc_media_tracklist_t();
+    if (list == nullptr || !player->input_started) return list;
+    list->audio.reserve(std::size(kFixtureTracks));
+    for (const auto& fixture : kFixtureTracks) {
+        if (fixture.type != type) continue;
+        const std::string& selection =
+            type == libvlc_track_audio ? player->audio_selection : player->text_selection;
+        const bool selected = selection == fixture.id;
+        if (selected_only && !selected) continue;
+        libvlc_media_track_t track{};
+        track.i_type = fixture.type;
+        track.i_codec = fixture.codec;
+        track.i_bitrate = type == libvlc_track_audio ? 384'000U : 0U;
+        track.psz_id = fixture.id;
+        track.psz_name = const_cast<char*>(fixture.name);
+        track.psz_language = const_cast<char*>(fixture.language);
+        track.id_stable = true;
+        track.selected = selected;
+        if (type == libvlc_track_audio) {
+            list->audio.push_back({6U, 48'000U});
+            track.u.audio = &list->audio.back();
+        }
+        list->tracks.push_back(track);
+    }
+    return list;
+}
+
+size_t libvlc_media_tracklist_count(const libvlc_media_tracklist_t* list) {
+    return list == nullptr ? 0 : list->tracks.size();
+}
+
+libvlc_media_track_t* libvlc_media_tracklist_at(libvlc_media_tracklist_t* list, size_t index) {
+    return list == nullptr || index >= list->tracks.size() ? nullptr : &list->tracks[index];
+}
+
+void libvlc_media_tracklist_delete(libvlc_media_tracklist_t* list) { delete list; }
+
+void libvlc_media_player_select_tracks_by_ids(
+    libvlc_media_player_t* player,
+    libvlc_track_type_t type,
+    const char* ids) {
+    if (player == nullptr || ids == nullptr) return;
+    std::string& selection =
+        type == libvlc_track_audio ? player->audio_selection : player->text_selection;
+    (type == libvlc_track_audio ? player->audio_preference : player->text_preference) = true;
+    if (selection == ids) return;
+    selection = ids;
+    if (player->callbacks != nullptr && player->callbacks->on_track_selection_changed != nullptr) {
+        player->callbacks->on_track_selection_changed(player->callbacks_opaque, type, nullptr, ids);
+    }
 }
 
 libvlc_media_t* libvlc_media_new_location(const char* location) {

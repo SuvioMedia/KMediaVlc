@@ -23,6 +23,7 @@ extern "C" {
 
 #define KMEDIAVLC_BRIDGE_ABI_VERSION 2u
 #define KMEDIAVLC_MAX_AUDIO_DELAY_MICROSECONDS INT64_C(60000000)
+#define KMEDIAVLC_MAX_SUBTITLE_DELAY_MICROSECONDS INT64_C(600000000)
 
 typedef struct kmediavlc_player kmediavlc_player;
 typedef struct kmediavlc_frame kmediavlc_frame;
@@ -145,6 +146,33 @@ typedef struct kmediavlc_player_snapshot {
     bool seekable;
 } kmediavlc_player_snapshot;
 
+typedef enum kmediavlc_track_type {
+    KMEDIAVLC_TRACK_AUDIO = 1,
+    KMEDIAVLC_TRACK_SUBTITLE = 2,
+} kmediavlc_track_type;
+
+/* One audio or subtitle track of the current input. Strings are UTF-8 and owned by the bridge. */
+typedef struct kmediavlc_track_info {
+    uint32_t struct_size;
+    uint32_t bridge_abi_version;
+    kmediavlc_track_type type;
+    /* libVLC's string id, for example "audio/1" or "spu/3". Never NULL. */
+    const char *id_utf8;
+    /* Display name chosen by libVLC, language code and description; NULL when absent. */
+    const char *name_utf8;
+    const char *language_utf8;
+    const char *description_utf8;
+    /* VLC fourcc of the codec (vlc_fourcc_t byte order), 0 when unknown. */
+    uint32_t codec_fourcc;
+    /* Audio only; 0 for subtitles or when unknown. */
+    uint32_t audio_channels;
+    uint32_t audio_sample_rate;
+    uint32_t bitrate;
+    bool selected;
+    /* True when the id names the same track in another playback of the same media. */
+    bool id_stable;
+} kmediavlc_track_info;
+
 typedef struct kmediavlc_player_config {
     uint32_t struct_size;
     uint32_t bridge_abi_version;
@@ -196,6 +224,43 @@ KMEDIAVLC_API bool kmediavlc_player_set_rate(kmediavlc_player *player, float rat
 KMEDIAVLC_API bool kmediavlc_player_set_audio_delay(
     kmediavlc_player *player,
     int64_t delay_microseconds);
+/*
+ * Moves the subtitles against the picture: a positive delay shows them later, a negative one
+ * earlier (libVLC's sign). Kept and re-applied for every media like the audio delay. Returns false
+ * outside -KMEDIAVLC_MAX_SUBTITLE_DELAY_MICROSECONDS..KMEDIAVLC_MAX_SUBTITLE_DELAY_MICROSECONDS.
+ * Additive entry point: it keeps the bridge ABI version.
+ */
+KMEDIAVLC_API bool kmediavlc_player_set_subtitle_delay(
+    kmediavlc_player *player,
+    int64_t delay_microseconds);
+/*
+ * Changes whenever libVLC adds, removes, updates, selects or unselects a track, and when a media
+ * is opened. Clients poll it and read the tracks again only after it changed.
+ */
+KMEDIAVLC_API uint64_t kmediavlc_player_tracks_generation(kmediavlc_player *player);
+/*
+ * Captures the tracks of one type of the current input and returns how many there are; 0 without
+ * an input. The capture replaces the previous one of the same type, so strings returned by
+ * kmediavlc_player_get_track for that type stay valid only until the next count call for the
+ * type, or until the player is destroyed.
+ */
+KMEDIAVLC_API size_t kmediavlc_player_track_count(kmediavlc_player *player, kmediavlc_track_type type);
+/* Reads one track of the last capture. The caller sets struct_size and bridge_abi_version. */
+KMEDIAVLC_API bool kmediavlc_player_get_track(
+    kmediavlc_player *player,
+    kmediavlc_track_type type,
+    size_t index,
+    kmediavlc_track_info *out_track);
+/*
+ * Selects one track of the current input by its id; NULL or "" turns every track of the type off
+ * (subtitles off). libVLC keeps the choice for this media, also across stop and replay; opening
+ * another media starts with libVLC's own choice. Returns false for an id the current input does
+ * not have, leaving the selection unchanged.
+ */
+KMEDIAVLC_API bool kmediavlc_player_select_track(
+    kmediavlc_player *player,
+    kmediavlc_track_type type,
+    const char *id_utf8);
 KMEDIAVLC_API bool kmediavlc_player_set_loop(kmediavlc_player *player, bool loop);
 /* Windows D3D11 only. Confirms the mode chosen at creation; returns false for
  * a changed mode, which requires create_with_video_scaling(). */

@@ -20,6 +20,7 @@
 #include <memory>
 #include <mutex>
 #include <new>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -40,6 +41,11 @@ constexpr std::size_t kMaximumUtf8Bytes = 65'536;
 constexpr std::size_t kMaximumHeaderPairs = 64;
 constexpr unsigned kMaximumDimension = 16'384;
 constexpr std::int64_t kMaximumAudioDelayMicroseconds = 60'000'000;
+constexpr std::int64_t kMaximumSubtitleDelayMicroseconds = 600'000'000;
+constexpr int kTrackAudio = 1;
+constexpr int kTrackSubtitle = 2;
+constexpr std::size_t kMaximumTrackCount = 256;
+constexpr std::size_t kMaximumTrackTextBytes = 4096;
 constexpr const char* kBuildMarker = "kmediavlc-android-anw-abi1";
 
 enum PlaybackState : std::int64_t {
@@ -80,6 +86,16 @@ struct AndroidPlayer final {
     // libVLC keeps the audio delay on the input of one media and ignores it while no input
     // exists. Serialized Java commands and snapshot polling give it to each new input.
     libvlc_time_t audio_delay_microseconds = 0;
+    libvlc_time_t subtitle_delay_microseconds = 0;
+    // Advanced by libVLC's track callbacks, by open and by Surface replacement.
+    std::atomic<std::uint64_t> tracks_generation{0};
+    // libVLC forgets a track choice when its input stops, so the bridge keeps
+    // the client's choice for the current media: no value is libVLC's own
+    // choice, an empty id is "none". Open clears both. Serialized Java
+    // commands and snapshot polling only, never callbacks.
+    std::optional<std::string> audio_track_choice;
+    std::optional<std::string> subtitle_track_choice;
+    std::uint64_t track_choice_checked_generation = UINT64_MAX;
     bool volume_pending = false;
     bool pause_pending = false; // Serialized Java commands/snapshot polling only, never callbacks.
     kmediavlc::FrameTiming frame_timing;
@@ -233,6 +249,19 @@ void on_state_changed(void* opaque, libvlc_state_t state) {
     }
     player->state_before_buffering.store(mapped, std::memory_order_release);
     player->state.store(mapped, std::memory_order_release);
+}
+
+void advance_tracks_generation(void* opaque) {
+    auto* player = static_cast<AndroidPlayer*>(opaque);
+    if (player != nullptr) player->tracks_generation.fetch_add(1, std::memory_order_acq_rel);
+}
+
+void on_track_list_changed(void* opaque, libvlc_list_action_t, libvlc_track_type_t, const char*) {
+    advance_tracks_generation(opaque);
+}
+
+void on_track_selection_changed(void* opaque, libvlc_track_type_t, const char*, const char*) {
+    advance_tracks_generation(opaque);
 }
 
 void on_buffering_changed(void* opaque, float buffering) {
@@ -470,11 +499,75 @@ void refresh_video_dimensions(AndroidPlayer* player) {
     libvlc_media_tracklist_delete(tracks);
 }
 
-void apply_audio_delay(AndroidPlayer* player) {
+void apply_delays(AndroidPlayer* player) {
     // libVLC reports zero while it has no input and for every new one, so the comparison finds
     // an input that still lacks the requested delay without resending an applied value.
-    if (libvlc_audio_get_delay(player->media_player) == player->audio_delay_microseconds) return;
-    (void)libvlc_audio_set_delay(player->media_player, player->audio_delay_microseconds);
+    if (libvlc_audio_get_delay(player->media_player) != player->audio_delay_microseconds) {
+        (void)libvlc_audio_set_delay(player->media_player, player->audio_delay_microseconds);
+    }
+    if (libvlc_video_get_spu_delay(player->media_player) != player->subtitle_delay_microseconds) {
+        (void)libvlc_video_set_spu_delay(player->media_player, player->subtitle_delay_microseconds);
+    }
+}
+
+std::optional<libvlc_track_type_t> vlc_track_type(jint type) {
+    if (type == kTrackAudio) return libvlc_track_audio;
+    if (type == kTrackSubtitle) return libvlc_track_text;
+    return std::nullopt;
+}
+
+// Gives the retained track choices to the current input when it differs, for
+// example after stop and replay or when libVLC picked its default track.
+void apply_track_choices(AndroidPlayer* player) {
+    const auto generation = player->tracks_generation.load(std::memory_order_acquire);
+    if (generation == player->track_choice_checked_generation) return;
+    bool matched = true;
+    const std::pair<libvlc_track_type_t, const std::optional<std::string>*> choices[] = {
+        {libvlc_track_audio, &player->audio_track_choice},
+        {libvlc_track_text, &player->subtitle_track_choice},
+    };
+    for (const auto& [type, choice] : choices) {
+        if (!*choice) continue;
+        libvlc_media_tracklist_t* tracks = libvlc_media_player_get_tracklist(player->media_player, type, false);
+        if (tracks == nullptr) {
+            matched = false;
+            continue;
+        }
+        bool present = (*choice)->empty();
+        bool exact = true;
+        std::size_t selected = 0;
+        for (std::size_t index = 0; index < libvlc_media_tracklist_count(tracks); ++index) {
+            const libvlc_media_track_t* track = libvlc_media_tracklist_at(tracks, index);
+            if (track == nullptr || track->psz_id == nullptr) continue;
+            if (**choice == track->psz_id) present = true;
+            if (track->selected) {
+                ++selected;
+                if (**choice != track->psz_id) exact = false;
+            }
+        }
+        libvlc_media_tracklist_delete(tracks);
+        // An input that has not announced the chosen track yet is checked again later.
+        if (!present) {
+            matched = false;
+            continue;
+        }
+        if (exact && selected == ((*choice)->empty() ? 0U : 1U)) continue;
+        matched = false;
+        libvlc_media_player_select_tracks_by_ids(player->media_player, type, (*choice)->c_str());
+    }
+    if (matched) player->track_choice_checked_generation = generation;
+}
+
+bool has_track(libvlc_media_player_t* media_player, libvlc_track_type_t type, std::string_view id) {
+    libvlc_media_tracklist_t* tracks = libvlc_media_player_get_tracklist(media_player, type, false);
+    if (tracks == nullptr) return false;
+    bool found = false;
+    for (std::size_t index = 0; index < libvlc_media_tracklist_count(tracks) && !found; ++index) {
+        const libvlc_media_track_t* track = libvlc_media_tracklist_at(tracks, index);
+        found = track != nullptr && track->psz_id != nullptr && id == track->psz_id;
+    }
+    libvlc_media_tracklist_delete(tracks);
+    return found;
 }
 
 void apply_pending_pause(AndroidPlayer* player) {
@@ -522,11 +615,12 @@ bool recreate_media_player(AndroidPlayer* player) {
     }
 
     libvlc_media_player_set_media(player->media_player, player->current_media);
+    player->tracks_generation.fetch_add(1, std::memory_order_acq_rel);
     restore_selected_tracks(player->media_player, libvlc_track_audio, selected_audio);
     restore_selected_tracks(player->media_player, libvlc_track_video, selected_video);
     restore_selected_tracks(player->media_player, libvlc_track_text, selected_text);
     (void)libvlc_media_player_set_rate(player->media_player, player->playback_rate);
-    apply_audio_delay(player);
+    apply_delays(player);
     player->volume_pending = true;
     if (!resume_playback) {
         player->state.store(kStateIdle, std::memory_order_release);
@@ -541,7 +635,7 @@ bool recreate_media_player(AndroidPlayer* player) {
         (void)libvlc_media_player_set_time(player->media_player, resume_time, false);
     }
     apply_pending_pause(player);
-    apply_audio_delay(player);
+    apply_delays(player);
     if (libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {
         player->volume_pending = false;
     }
@@ -662,6 +756,8 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_create(
     player->callbacks.on_buffering_changed = on_buffering_changed;
     player->callbacks.on_position_changed = on_position_changed;
     player->callbacks.on_length_changed = on_length_changed;
+    player->callbacks.on_track_list_changed = on_track_list_changed;
+    player->callbacks.on_track_selection_changed = on_track_selection_changed;
     if (!create_media_player(player.get())) {
         libvlc_release(player->instance);
         player->instance = nullptr;
@@ -769,10 +865,14 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_open(
     }
 
     player->media_generation.fetch_add(1, std::memory_order_acq_rel);
+    player->tracks_generation.fetch_add(1, std::memory_order_acq_rel);
     player->pause_pending = false;
     player->transport_intent.store(autoplay == JNI_TRUE ? TransportIntent::playing : TransportIntent::stopped,
         std::memory_order_release);
     install_frame_timing(player);
+    player->audio_track_choice.reset();
+    player->subtitle_track_choice.reset();
+    player->track_choice_checked_generation = UINT64_MAX;
     libvlc_media_player_set_media(player->media_player, media);
     libvlc_media_t* previous_media = std::exchange(player->current_media, media);
     if (previous_media != nullptr) libvlc_media_release(previous_media);
@@ -784,10 +884,10 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_open(
     player->state.store(kStateIdle, std::memory_order_release);
     // An idle player has its new input now; one that was playing gets it after the old input
     // stops, where play and snapshot polling repeat this step.
-    apply_audio_delay(player);
+    apply_delays(player);
     if (autoplay == JNI_FALSE) return JNI_TRUE;
     if (libvlc_media_player_play(player->media_player) == 0) {
-        apply_audio_delay(player);
+        apply_delays(player);
         return JNI_TRUE;
     }
     set_error(player, "libVLC rejected autoplay.");
@@ -802,7 +902,7 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_play(
     if (libvlc_media_player_play(player->media_player) == 0) {
         player->pause_pending = false;
         player->transport_intent.store(TransportIntent::playing, std::memory_order_release);
-        apply_audio_delay(player);
+        apply_delays(player);
         if (player->volume_pending &&
             libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {
             player->volume_pending = false;
@@ -898,7 +998,116 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_setAudioDelay(
         return JNI_FALSE;
     }
     player->audio_delay_microseconds = static_cast<libvlc_time_t>(delay_microseconds);
-    apply_audio_delay(player);
+    apply_delays(player);
+    return JNI_TRUE;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_setSubtitleDelay(
+    JNIEnv*, jclass, jlong handle, jlong delay_microseconds) {
+    auto* player = player_from(handle);
+    if (!valid_player(player) || delay_microseconds < -kMaximumSubtitleDelayMicroseconds ||
+        delay_microseconds > kMaximumSubtitleDelayMicroseconds) {
+        return JNI_FALSE;
+    }
+    player->subtitle_delay_microseconds = static_cast<libvlc_time_t>(delay_microseconds);
+    apply_delays(player);
+    return JNI_TRUE;
+}
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_tracksGeneration(
+    JNIEnv*, jclass, jlong handle) {
+    auto* player = player_from(handle);
+    if (!valid_player(player)) return 0;
+    return static_cast<jlong>(player->tracks_generation.load(std::memory_order_acquire));
+}
+
+// The same big-endian encoding as the desktop bridge: an int32 count, then per
+// track int32 codec fourcc, channels, sample rate and bitrate, one byte each
+// for selected and stable id, and four texts (id, name, language,
+// description) as an int32 length (-1 when absent) followed by raw UTF-8.
+extern "C" JNIEXPORT jbyteArray JNICALL
+Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_tracks(
+    JNIEnv* environment, jclass, jlong handle, jint type) {
+    auto* player = player_from(handle);
+    const auto vlc_type = vlc_track_type(type);
+    if (!valid_player(player) || !vlc_type) return nullptr;
+    std::vector<std::uint8_t> encoded;
+    const auto put_int = [&encoded](std::int64_t value) {
+        const auto bits = static_cast<std::uint32_t>(value);
+        for (int shift = 24; shift >= 0; shift -= 8) {
+            encoded.push_back(static_cast<std::uint8_t>((bits >> shift) & 0xFFU));
+        }
+    };
+    const auto put_text = [&encoded, &put_int](const char* text) {
+        if (text == nullptr || *text == '\0') {
+            put_int(-1);
+            return;
+        }
+        const std::size_t length = std::min<std::size_t>(std::strlen(text), kMaximumTrackTextBytes);
+        put_int(static_cast<std::int64_t>(length));
+        encoded.insert(encoded.end(), text, text + length);
+    };
+    put_int(0);
+    libvlc_media_tracklist_t* tracks =
+        libvlc_media_player_get_tracklist(player->media_player, *vlc_type, false);
+    std::size_t written = 0;
+    if (tracks != nullptr) {
+        const std::size_t count = libvlc_media_tracklist_count(tracks);
+        for (std::size_t index = 0; index < count && written < kMaximumTrackCount; ++index) {
+            const libvlc_media_track_t* track = libvlc_media_tracklist_at(tracks, index);
+            if (track == nullptr || track->i_type != *vlc_type || track->psz_id == nullptr ||
+                *track->psz_id == '\0') {
+                continue;
+            }
+            const bool audio = *vlc_type == libvlc_track_audio && track->u.audio != nullptr;
+            put_int(static_cast<std::int64_t>(track->i_codec));
+            put_int(audio ? static_cast<std::int64_t>(track->u.audio->i_channels) : 0);
+            put_int(audio ? static_cast<std::int64_t>(track->u.audio->i_rate) : 0);
+            put_int(static_cast<std::int64_t>(track->i_bitrate));
+            encoded.push_back(track->selected ? 1U : 0U);
+            encoded.push_back(track->id_stable ? 1U : 0U);
+            put_text(track->psz_id);
+            put_text(track->psz_name);
+            put_text(track->psz_language);
+            put_text(track->psz_description);
+            ++written;
+        }
+        libvlc_media_tracklist_delete(tracks);
+    }
+    for (int byte = 0; byte < 4; ++byte) {
+        encoded[static_cast<std::size_t>(byte)] =
+            static_cast<std::uint8_t>((written >> (8 * (3 - byte))) & 0xFFU);
+    }
+    auto* result = environment->NewByteArray(static_cast<jsize>(encoded.size()));
+    if (result == nullptr) return nullptr;
+    environment->SetByteArrayRegion(
+        result, 0, static_cast<jsize>(encoded.size()), reinterpret_cast<const jbyte*>(encoded.data()));
+    return environment->ExceptionCheck() ? nullptr : result;
+}
+
+// An empty id turns every track of the type off for the current media. libVLC
+// reads a comma as a list separator and unselects everything for an unknown
+// id, so only an id of the current input may reach it.
+extern "C" JNIEXPORT jboolean JNICALL
+Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_selectTrack(
+    JNIEnv* environment, jclass, jlong handle, jint type, jbyteArray id_bytes) {
+    auto* player = player_from(handle);
+    const auto vlc_type = vlc_track_type(type);
+    if (!valid_player(player) || !vlc_type) return JNI_FALSE;
+    std::string id;
+    if (id_bytes != nullptr && environment->GetArrayLength(id_bytes) > 0) {
+        if (!read_bytes(environment, id_bytes, id, kMaximumTrackTextBytes) ||
+            id.find(',') != std::string::npos ||
+            !has_track(player->media_player, *vlc_type, id)) {
+            return JNI_FALSE;
+        }
+    }
+    auto& choice = *vlc_type == libvlc_track_audio ? player->audio_track_choice : player->subtitle_track_choice;
+    choice = id;
+    player->track_choice_checked_generation = UINT64_MAX;
+    libvlc_media_player_select_tracks_by_ids(player->media_player, *vlc_type, choice->c_str());
     return JNI_TRUE;
 }
 
@@ -917,7 +1126,8 @@ Java_io_github_shusek_kmediavlc_runtime_android_NativeBridge_snapshot(
     auto* player = player_from(handle);
     if (!valid_player(player)) return nullptr;
     apply_pending_pause(player);
-    apply_audio_delay(player);
+    apply_delays(player);
+    apply_track_choices(player);
     refresh_video_dimensions(player);
     if (player->volume_pending &&
         libvlc_audio_set_volume(player->media_player, player->volume_percent) == 0) {
