@@ -125,15 +125,15 @@ python3 -B scripts/assemble_ios_xcframeworks.py \
   --simulator-frameworks /absolute/ios-simulator-frameworks \
   --simulator-report /absolute/ios-simulator-frameworks.json \
   --output /absolute/kmedia-vlc-ios-aggregate \
-  --archive /absolute/kmedia-vlc-0.1.0-rc.7-ios-xcframeworks.zip \
+  --archive /absolute/kmedia-vlc-0.1.0-rc.19-ios-xcframeworks.zip \
   --podspec /absolute/KMediaVlc.podspec \
-  --version 0.1.0-rc.7 \
+  --version 0.1.0-rc.19 \
   --revision 0123456789abcdef0123456789abcdef01234567 \
   --allow-audit-candidate
 python3 -B scripts/verify_ios_xcframework_archive.py \
-  --archive /absolute/kmedia-vlc-0.1.0-rc.7-ios-xcframeworks.zip \
+  --archive /absolute/kmedia-vlc-0.1.0-rc.19-ios-xcframeworks.zip \
   --podspec /absolute/KMediaVlc.podspec \
-  --expected-version 0.1.0-rc.7 \
+  --expected-version 0.1.0-rc.19 \
   --expected-revision 0123456789abcdef0123456789abcdef01234567 \
   --allow-audit-candidate
 ```
