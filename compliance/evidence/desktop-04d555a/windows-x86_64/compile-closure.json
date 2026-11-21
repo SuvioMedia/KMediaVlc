@@ -652,7 +652,7 @@
   ],
   "unscannedSourceCount": 0,
   "compileCommandsSha256": "1b1d191b3fc52af67a43a65db02469a7b02bdaa14a66b21beb5ed1f2fea3f5a5",
-  "targetMetadataSha256": "f7fc85cab5bb7e6df7c89df7dfa14e37d74fc742027e6917dc312e3c3825580b",
-  "ninjaGraphSha256": "8fc350251484a56518ce17d53e108b01876a4baa918864aa9b7dc85ed6925022",
+  "targetMetadataSha256": "00d726d2a931961d4accc75624ec4d4fb34a113c935c7157ba7edbdccf3230b0",
+  "ninjaGraphSha256": "dfb1b8a78f31c9f2334834637b43f9fe71362c170c58700aba1895b4f5359d3c",
   "sourceLicenseScanSha256": "89025037caddb76fde176a870b317b9aeb06721950b8771230e37a00aa47ad3a"
 }
