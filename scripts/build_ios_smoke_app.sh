@@ -83,9 +83,9 @@ if [[ "$playback_fixture_sha256" != "$PLAYBACK_FIXTURE_SHA256" ]]; then
     echo "the shared playback fixture differs from its pinned hash" >&2
     exit 1
 fi
-if [[ "$(/usr/bin/find "$frameworks" -mindepth 1 -maxdepth 1 -print | /usr/bin/wc -l | /usr/bin/tr -d ' ')" != "87" ]] ||
-   [[ "$(/usr/bin/find "$frameworks" -mindepth 1 -maxdepth 1 -type d -name '*.framework' -print | /usr/bin/wc -l | /usr/bin/tr -d ' ')" != "87" ]]; then
-    echo "the iOS framework graph must contain exactly 87 framework directories" >&2
+if [[ "$(/usr/bin/find "$frameworks" -mindepth 1 -maxdepth 1 -print | /usr/bin/wc -l | /usr/bin/tr -d ' ')" != "88" ]] ||
+   [[ "$(/usr/bin/find "$frameworks" -mindepth 1 -maxdepth 1 -type d -name '*.framework' -print | /usr/bin/wc -l | /usr/bin/tr -d ' ')" != "88" ]]; then
+    echo "the iOS framework graph must contain exactly 88 framework directories" >&2
     exit 1
 fi
 for required_framework in KMediaVlc KMediaVlcLibVlc KMediaVlcCore \

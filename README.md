@@ -19,7 +19,7 @@ one closed matrix: the desktop JAR must contain Windows x64, Linux x64, Linux
 ARM64, and macOS ARM64, while the Android AAR must contain ARM64 and ARMv7.
 Neither coordinate is published alone when another required target is missing.
 The iOS build-time coordinate is
-`io.github.shusek:kmedia-vlc-runtime-ios:0.1.0-rc.7`. It is a ZIP containing
+`io.github.shusek:kmedia-vlc-runtime-ios:0.1.0-rc.19`. It is a ZIP containing
 device and Apple Silicon simulator XCFramework slices; Gradle resolves it from
 Maven and Xcode embeds and signs the selected frameworks in the application.
 
@@ -95,7 +95,7 @@ calls Compose and never waits for a UI render.
   are included in the multiplatform release.
 - iOS 16.2 arm64 device and Apple-silicon simulator source-build recipes now
   produce shared libVLC 4 candidates. The stable C bridge excludes JNI, starts
-  with fail-closed CPU pull, and packages an 84-plugin allowlist as 87 dynamic
+  with fail-closed CPU pull, and packages an 85-plugin allowlist as 88 dynamic
   frameworks per slice. Both source-built slices pass relocation audit, and the
   repository now contains deterministic XCFramework/Maven assembly plus an
   independent archive verifier. Real simulator playback through the packaged

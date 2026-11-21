@@ -82,7 +82,7 @@ def macho_bytes(
 
 
 class IosXcframeworkTest(unittest.TestCase):
-    def test_policy_closes_all_87_logical_frameworks(self) -> None:
+    def test_policy_closes_all_88_logical_frameworks(self) -> None:
         frameworks = expected_frameworks()
         self.assertEqual(EXPECTED_FRAMEWORK_COUNT, len(frameworks))
         self.assertEqual(
@@ -93,7 +93,7 @@ class IosXcframeworkTest(unittest.TestCase):
                 if record["role"] != "PLUGIN"
             },
         )
-        self.assertEqual(84, sum(record["role"] == "PLUGIN" for record in frameworks))
+        self.assertEqual(85, sum(record["role"] == "PLUGIN" for record in frameworks))
         self.assertIn(
             "libaudiounit_ios_plugin",
             {record["frameworkName"] for record in frameworks},

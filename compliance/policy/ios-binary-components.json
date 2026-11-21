@@ -6,9 +6,9 @@
   ],
   "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
   "toolchain": {
-    "xcodeVersion": "26.6",
-    "xcodeBuild": "17F113",
-    "sdkVersion": "26.5",
+    "xcodeVersion": "27.0",
+    "xcodeBuild": "27A266a",
+    "sdkVersion": "27.0",
     "minimumIos": "16.2",
     "architecture": "arm64"
   },
