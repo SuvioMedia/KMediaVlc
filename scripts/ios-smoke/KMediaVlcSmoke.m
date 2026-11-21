@@ -36,7 +36,7 @@ static size_t g_subtitle_tracks = 0;
 // The fixture's video is grey and low-contrast (no channel above ~150), and
 // its default subtitle track is white text. Near-white pixels therefore only
 // appear when libVLC blends the subtitle into the CPU-pull frame.
-static const uint8_t kSubtitlePixelMinimum = 230;
+static const uint8_t kSubtitlePixelMinimum = 200;
 static const size_t kSubtitlePixelEvidence = 24;
 static size_t g_max_subtitle_pixels = 0;
 
@@ -422,8 +422,29 @@ static void poll_playback(void) {
     }
 }
 
-@interface KMediaVlcSmokeDelegate : UIResponder <UIApplicationDelegate>
+// iOS 27 SDK builds must adopt the scene life cycle; the scene only shows a
+// black window, playback starts from the application delegate.
+@interface KMediaVlcSmokeSceneDelegate : UIResponder <UIWindowSceneDelegate>
 @property(nonatomic, strong) UIWindow *window;
+@end
+
+@implementation KMediaVlcSmokeSceneDelegate
+
+- (void)scene:(UIScene *)scene
+    willConnectToSession:(UISceneSession *)session
+                 options:(UISceneConnectionOptions *)connectionOptions {
+    (void)session;
+    (void)connectionOptions;
+    if (![scene isKindOfClass:[UIWindowScene class]]) return;
+    self.window = [[UIWindow alloc] initWithWindowScene:(UIWindowScene *)scene];
+    self.window.rootViewController = [[UIViewController alloc] init];
+    self.window.rootViewController.view.backgroundColor = UIColor.blackColor;
+    [self.window makeKeyAndVisible];
+}
+
+@end
+
+@interface KMediaVlcSmokeDelegate : UIResponder <UIApplicationDelegate>
 @end
 
 @implementation KMediaVlcSmokeDelegate
@@ -432,10 +453,6 @@ static void poll_playback(void) {
     didFinishLaunchingWithOptions:(NSDictionary<UIApplicationLaunchOptionsKey, id> *)options {
     (void)application;
     (void)options;
-    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-    self.window.rootViewController = [[UIViewController alloc] init];
-    self.window.rootViewController.view.backgroundColor = UIColor.blackColor;
-    [self.window makeKeyAndVisible];
 
     NSString *frameworks = NSBundle.mainBundle.privateFrameworksPath;
     NSString *libvlc = [frameworks

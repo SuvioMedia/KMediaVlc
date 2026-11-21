@@ -25,6 +25,23 @@
   <string>16.2</string>
   <key>UILaunchScreen</key>
   <dict/>
+  <key>UIApplicationSceneManifest</key>
+  <dict>
+    <key>UIApplicationSupportsMultipleScenes</key>
+    <false/>
+    <key>UISceneConfigurations</key>
+    <dict>
+      <key>UIWindowSceneSessionRoleApplication</key>
+      <array>
+        <dict>
+          <key>UISceneConfigurationName</key>
+          <string>Default</string>
+          <key>UISceneDelegateClassName</key>
+          <string>KMediaVlcSmokeSceneDelegate</string>
+        </dict>
+      </array>
+    </dict>
+  </dict>
   <key>UIDeviceFamily</key>
   <array>
     <integer>1</integer>
