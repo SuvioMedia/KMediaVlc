@@ -44,11 +44,13 @@ continues to reject it. Run the desktop source audit workflows with
 `audit_candidate=true` to collect new evidence before promoting the policies
 and rerunning the publication audits described below.
 
-The retained `desktop-04d555a` evidence now covers the Linux surfaceless EGL
-change and the current Windows instance-level scaling test. It binds the fresh
-source-build inventories, corresponding-source checksums, and hosted runtime
-test results for all four desktop targets. Physical display and GPU acceptance
-remain separate from this source/runtime approval.
+The retained `desktop-04d555a` evidence now covers the bridge entry points for
+audio delay, subtitle delay and track selection, and the 0.0-2.0 volume range
+(audit commit `b87e77a`). It binds the fresh source-build inventories,
+corresponding-source checksums, and hosted runtime test results for all four
+desktop targets; the file sets, components and licenses are unchanged from
+rc.15. Physical display and GPU acceptance remain separate from this
+source/runtime approval.
 
 Every release is atomic across the supported runtime matrix:
 

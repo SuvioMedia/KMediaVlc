@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "target": "macos-aarch64",
   "vlcRevision": "04d555a9d391f009d4f510f508fef58c39bdf810",
-  "reviewStatus": "pending-mach-o-and-source-license-audit",
+  "reviewStatus": "approved",
   "primaryLicenseSpdx": "LGPL-2.1-or-later",
   "coreAdditionalDirectSourceLicenses": ["MIT"],
   "additionalDirectSourceLicenses": {
