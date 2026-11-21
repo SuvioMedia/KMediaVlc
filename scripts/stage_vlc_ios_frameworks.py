@@ -35,6 +35,7 @@ ALLOWED_FAMILIES = {
     "stream_filter",
     "text_renderer",
     "video_chroma",
+    "video_filter",
     "video_output",
 }
 TARGETS = {

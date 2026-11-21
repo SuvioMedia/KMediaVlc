@@ -62,9 +62,9 @@ if [[ "$fixture_sha256" != "$PLAYBACK_FIXTURE_SHA256" ]]; then
     echo "the signed iOS application contains an unexpected playback fixture" >&2
     exit 1
 fi
-if [[ "$(/usr/bin/find "$app/Frameworks" -mindepth 1 -maxdepth 1 -print | /usr/bin/wc -l | /usr/bin/tr -d ' ')" != "87" ]] ||
-   [[ "$(/usr/bin/find "$app/Frameworks" -mindepth 1 -maxdepth 1 -type d -name '*.framework' -print | /usr/bin/wc -l | /usr/bin/tr -d ' ')" != "87" ]]; then
-    echo "the signed iOS application must embed exactly 87 frameworks" >&2
+if [[ "$(/usr/bin/find "$app/Frameworks" -mindepth 1 -maxdepth 1 -print | /usr/bin/wc -l | /usr/bin/tr -d ' ')" != "88" ]] ||
+   [[ "$(/usr/bin/find "$app/Frameworks" -mindepth 1 -maxdepth 1 -type d -name '*.framework' -print | /usr/bin/wc -l | /usr/bin/tr -d ' ')" != "88" ]]; then
+    echo "the signed iOS application must embed exactly 88 frameworks" >&2
     exit 1
 fi
 for required_framework in KMediaVlc KMediaVlcLibVlc KMediaVlcCore \

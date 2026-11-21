@@ -29,15 +29,19 @@ path. The bridge deliberately excludes JNI and the macOS CGL/IOSurface
 renderer. Requests for `GPU_PUSH` fail closed until a native iOS GPU transport
 and its ownership tests exist.
 
-The candidate selects 84 playback modules from 286 source-built modules. It
+The candidate selects 85 playback modules from 286 source-built modules. It
 includes AudioUnit, VideoToolbox plus software fallback, local and HTTP(S)
 input, Matroska/MP4 demuxing, subtitles, and the conversion modules required by
-CPU pull. The package contains 87 dynamic frameworks per slice: bridge,
-libVLC, core, and the 84 selected plugins.
+CPU pull. The package contains 88 dynamic frameworks per slice: bridge,
+libVLC, core, and the 85 selected plugins.
+
+The `blend` video filter (LGPL-2.1-or-later, no contrib dependency) is part of
+the set because vmem cannot draw subpictures itself: without it libVLC renders
+subtitle tracks inside the media but never blends them into CPU-pull frames.
 
 Revision `04d555a9d391f009d4f510f508fef58c39bdf810` is the current source-build
 candidate. Device and simulator binaries and their archive reports must be
-rebuilt for this pin. The 84-plugin allowlist and 87-framework payload contract
+rebuilt for this pin. The 85-plugin allowlist and 88-framework payload contract
 remain in place; previous raw-plugin counts and playback evidence describe
 the earlier source revision. The archive remains `auditCandidate=true` while
 the new source, link and archive checks are open. Physical-device evidence is
@@ -70,7 +74,7 @@ dependency, so libEBML never fetches an undeclared dependency through CMake.
 ## Physical-device acceptance harness
 
 The same fail-closed smoke application used by the simulator can be compiled
-for a physical arm64 device. The first command validates all 87 framework
+for a physical arm64 device. The first command validates all 88 framework
 install names, architectures, platform load commands, and the pinned playback
 fixture before producing an unsigned application bundle:
 
@@ -104,7 +108,8 @@ identities into the signed bundle. The runner uses `devicectl` to install and
 foreground the exact smoke bundle, waits on its console, requires one
 structured `PASS` result, and uninstalls the test application afterward. The
 application exercises the pinned 12-second video, distinct CPU-pull frames,
-seek, end-of-stream preservation, and a muted two-second PCM audio lifecycle.
+the embedded subtitle track blended into those frames, seek, end-of-stream
+preservation, and a muted two-second PCM audio lifecycle.
 Merely building or signing the bundle is not device evidence; the command must
 pass on the intended physical device.
 

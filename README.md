@@ -95,7 +95,7 @@ calls Compose and never waits for a UI render.
   are included in the multiplatform release.
 - iOS 16.2 arm64 device and Apple-silicon simulator source-build recipes now
   produce shared libVLC 4 candidates. The stable C bridge excludes JNI, starts
-  with fail-closed CPU pull, and packages an 84-plugin allowlist as 87 dynamic
+  with fail-closed CPU pull, and packages an 85-plugin allowlist as 88 dynamic
   frameworks per slice. Both source-built slices pass relocation audit, and the
   repository now contains deterministic XCFramework/Maven assembly plus an
   independent archive verifier. Real simulator playback through the packaged

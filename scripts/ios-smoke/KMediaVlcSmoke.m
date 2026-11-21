@@ -33,6 +33,12 @@ static int64_t g_audio_progress = 0;
 static int64_t g_audio_duration = 0;
 static uint64_t g_tracks_generation = UINT64_MAX;
 static size_t g_subtitle_tracks = 0;
+// The fixture's video is grey and low-contrast (no channel above ~150), and
+// its default subtitle track is white text. Near-white pixels therefore only
+// appear when libVLC blends the subtitle into the CPU-pull frame.
+static const uint8_t kSubtitlePixelMinimum = 230;
+static const size_t kSubtitlePixelEvidence = 24;
+static size_t g_max_subtitle_pixels = 0;
 
 static NSURL *result_url(void) {
     NSURL *documents = [[[NSFileManager defaultManager]
@@ -90,6 +96,25 @@ static uint64_t sampled_frame_hash(
     return hash;
 }
 
+static size_t subtitle_pixel_count(
+    const uint8_t *pixels,
+    uint32_t width,
+    uint32_t height,
+    uint32_t stride) {
+    size_t count = 0;
+    for (uint32_t y = 0; y < height; y++) {
+        const uint8_t *row = pixels + (size_t)y * stride;
+        for (uint32_t x = 0; x < width; x++) {
+            const uint8_t *pixel = row + (size_t)x * 4;
+            if (pixel[0] >= kSubtitlePixelMinimum && pixel[1] >= kSubtitlePixelMinimum &&
+                pixel[2] >= kSubtitlePixelMinimum) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
 static void drain_latest_frame(void) {
     if (g_finished || g_player == NULL || g_phase != KMediaVlcSmokePhaseVideo) return;
     kmediavlc_frame_info info = {0};
@@ -111,6 +136,9 @@ static void drain_latest_frame(void) {
     uint64_t content_hash = valid
         ? sampled_frame_hash(pixels, info.width, info.height, info.stride)
         : 0;
+    const size_t subtitle_pixels = valid
+        ? subtitle_pixel_count(pixels, info.width, info.height, info.stride)
+        : 0;
     kmediavlc_frame_release(frame, -1);
     if (!valid) {
         finish_smoke(
@@ -130,6 +158,7 @@ static void drain_latest_frame(void) {
             2);
         return;
     }
+    if (subtitle_pixels > g_max_subtitle_pixels) g_max_subtitle_pixels = subtitle_pixels;
     if (info.serial != g_last_frame_serial) {
         g_last_frame_serial = info.serial;
         g_video_frame_count++;
@@ -324,6 +353,15 @@ static void poll_video(kmediavlc_player_snapshot snapshot) {
             finish_smoke(@"FAIL the embedded subtitle track was not listed", 25);
             return;
         }
+        if (g_max_subtitle_pixels < kSubtitlePixelEvidence) {
+            finish_smoke(
+                [NSString stringWithFormat:
+                    @"FAIL the embedded subtitle was not blended into CPU-pull frames "
+                     "subtitlePixels=%lu",
+                    (unsigned long)g_max_subtitle_pixels],
+                26);
+            return;
+        }
         begin_audio_playback();
         return;
     }
@@ -359,13 +397,14 @@ static void poll_audio(kmediavlc_player_snapshot snapshot) {
         finish_smoke(
             [NSString stringWithFormat:
                 @"PASS videoFrames=%lu videoDurationUs=%lld seekUs=%lld "
-                 "audioDurationUs=%lld audioProgressUs=%lld subtitleTracks=%lu",
+                 "audioDurationUs=%lld audioProgressUs=%lld subtitleTracks=%lu subtitlePixels=%lu",
                 (unsigned long)g_video_frame_count,
                 (long long)g_video_duration,
                 (long long)g_last_video_position,
                 (long long)g_audio_duration,
                 (long long)g_audio_progress,
-                (unsigned long)g_subtitle_tracks],
+                (unsigned long)g_subtitle_tracks,
+                (unsigned long)g_max_subtitle_pixels],
             0);
         return;
     }

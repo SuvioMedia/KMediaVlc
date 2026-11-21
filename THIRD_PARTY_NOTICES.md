@@ -132,11 +132,11 @@ macOS rows above, including the header-only utfcpp dependency compiled into
 libEBML's Matroska path, but use the system iOS iconv implementation instead
 of shipping libiconv.
 
-Both iOS slices target Xcode 26.6 (17F113), the iOS 26.5 SDK, arm64, and a
-minimum deployment version of iOS 16.2. The 84 selected VLC plugins and their
-application-private XCFramework graph must be rebuilt for the bumped revision.
-Existing simulator and device evidence belongs to the previous pin and does
-not make this candidate release-eligible.
+Both iOS slices target Xcode 27.0 (27A266a), the iOS 27.0 SDK, arm64, and a
+minimum deployment version of iOS 16.2. The 85 selected VLC plugins include the
+LGPL-2.1-or-later `blend` video filter, which has no contrib dependency.
+Device evidence belongs to the previous pin and does not make this candidate
+release-eligible.
 
 ## VLC core additional direct-source license
 

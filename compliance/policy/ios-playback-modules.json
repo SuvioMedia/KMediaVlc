@@ -121,6 +121,9 @@
       "yuy2_i420",
       "yuy2_i422"
     ],
+    "video_filter": [
+      "blend"
+    ],
     "video_output": [
       "vmem",
       "wdummy"

@@ -2138,6 +2138,7 @@ def verify_ios_runtime_contract(root: Path) -> None:
         "stream_filter",
         "text_renderer",
         "video_chroma",
+        "video_filter",
         "video_output",
     }
     if not isinstance(families, dict) or set(families) != expected_families:
@@ -2150,6 +2151,7 @@ def verify_ios_runtime_contract(root: Path) -> None:
     required_modules = {
         "audiounit_ios",
         "avcodec",
+        "blend",
         "cvpx",
         "https",
         "libass",
@@ -2160,13 +2162,13 @@ def verify_ios_runtime_contract(root: Path) -> None:
         "vmem",
     }
     if (
-        len(modules) != 84
-        or len(set(modules)) != 84
+        len(modules) != 85
+        or len(set(modules)) != 85
         or not required_modules.issubset(modules)
         or "vgl" in modules
         or any(not isinstance(name, str) or not re.fullmatch(r"[a-z0-9_]+", name) for name in modules)
     ):
-        fail("iOS playback allowlist must contain its 84 unique CPU-pull modules.")
+        fail("iOS playback allowlist must contain its 85 unique CPU-pull modules.")
     expected_additional = {
         "mkv": ["MIT"],
         "opus": ["BSD-2-Clause"],
@@ -2183,9 +2185,9 @@ def verify_ios_runtime_contract(root: Path) -> None:
     ):
         fail("iOS binary component policy has an unsupported identity.")
     expected_toolchain = {
-        "xcodeVersion": "26.6",
-        "xcodeBuild": "17F113",
-        "sdkVersion": "26.5",
+        "xcodeVersion": "27.0",
+        "xcodeBuild": "27A266a",
+        "sdkVersion": "27.0",
         "minimumIos": "16.2",
         "architecture": "arm64",
     }
@@ -2296,9 +2298,9 @@ def verify_ios_runtime_contract(root: Path) -> None:
         or recipe.get("resolvedContribPackages") != resolved_contribs
         or recipe.get("usesPrebuiltContribs") is not False
         or recipe.get("requiredFrameDeliveryModes") != ["CPU_PULL"]
-        or recipe.get("stagedPluginCount") != 84
+        or recipe.get("stagedPluginCount") != 85
         or recipe.get("rawSourceBuildPluginCount") != 286
-        or recipe.get("frameworkCountPerSlice") != 87
+        or recipe.get("frameworkCountPerSlice") != 88
         or recipe.get("requiresApplicationPrivateRelocation") is not True
         or recipe.get("requiresConsumerCodeSigning") is not True
         or recipe.get("candidateReleaseEligible") is not False
@@ -2434,7 +2436,7 @@ def verify_ios_runtime_contract(root: Path) -> None:
     device_smoke = (root / "scripts/run_ios_device_smoke.sh").read_text(encoding="utf-8")
     smoke_source = (root / "scripts/ios-smoke/KMediaVlcSmoke.m").read_text(encoding="utf-8")
     builder_markers = [
-        '!= "87"',
+        '!= "88"',
         "PLAYBACK_FIXTURE_SHA256",
         "libaudiounit_ios_plugin",
         "kmediavlc-playback.mkv",
@@ -2497,8 +2499,8 @@ def verify_ios_runtime_contract(root: Path) -> None:
     documentation_markers = [
         "iOS 16.2",
         "CPU_PULL",
-        "84 playback modules",
-        "87 dynamic frameworks",
+        "85 playback modules",
+        "88 dynamic frameworks",
         "XCFramework",
         "Maven artifact",
         "auditCandidate=true",

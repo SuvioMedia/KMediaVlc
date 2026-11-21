@@ -26,8 +26,9 @@ class StageVlcIosFrameworksTest(unittest.TestCase):
         self.assertEqual(
             "pending-framework-and-source-license-audit", policy["reviewStatus"]
         )
-        self.assertEqual(84, len(modules))
-        self.assertEqual(84, len({name for _, name in modules}))
+        self.assertEqual(85, len(modules))
+        self.assertEqual(85, len({name for _, name in modules}))
+        self.assertIn(("video_filter", "blend"), modules)
         self.assertIn(("audio_output", "audiounit_ios"), modules)
         self.assertIn(("codec", "videotoolbox"), modules)
         self.assertIn(("video_output", "vmem"), modules)
@@ -120,9 +121,9 @@ class StageVlcIosFrameworksTest(unittest.TestCase):
         self.assertEqual(
             {"16.2"}, {target["minimumOs"] for target in recipe["targets"].values()}
         )
-        self.assertEqual(84, recipe["stagedPluginCount"])
+        self.assertEqual(85, recipe["stagedPluginCount"])
         self.assertEqual(286, recipe["rawSourceBuildPluginCount"])
-        self.assertEqual(87, recipe["frameworkCountPerSlice"])
+        self.assertEqual(88, recipe["frameworkCountPerSlice"])
         self.assertIn("utfcpp", recipe["resolvedContribPackages"])
         self.assertEqual([], recipe["sourceOverlays"])
 
